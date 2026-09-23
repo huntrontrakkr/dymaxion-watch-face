@@ -57,6 +57,8 @@ shrinking areas, endpoints, the 400 ms schedule, and native/browser frame equali
 minutes, hour carries, midnight, and 12-hour rollovers.
 `tests/minute-flip-browser.mjs` exercises the live minute trigger, reduced motion,
 disabled motion, idle behavior, time scrubbing, and the responsive replay study.
+Workshop captures, real speed and 4× slower:
+`output/meridian/minute-shrink.gif`, `output/meridian/minute-shrink-slow.gif`.
 The shrink has not yet been run in the Emery emulator or on hardware.
 
 `output/minute-flip-study/` records the retired hinge flip: its replayable study
