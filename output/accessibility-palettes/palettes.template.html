@@ -1,0 +1,80 @@
+<div id="dymaxion-accessible-palettes">
+  <style>
+    #dymaxion-accessible-palettes { color: var(--foreground); }
+    #dymaxion-accessible-palettes .palette-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:28px 20px; margin-top:24px; }
+    #dymaxion-accessible-palettes figure { margin:0; min-width:0; text-align:center; }
+    #dymaxion-accessible-palettes figcaption { margin-bottom:10px; font-weight:500; }
+    #dymaxion-accessible-palettes canvas { display:block; width:200px; height:228px; margin:0 auto; image-rendering:pixelated; }
+    #dymaxion-accessible-palettes .materials { margin-top:10px; }
+    @media(max-width:470px) { #dymaxion-accessible-palettes .palette-grid { grid-template-columns:minmax(0,1fr); } }
+  </style>
+  <div class="viz-controls">
+    <label class="form-label">Color-vision preview
+      <select class="form-select" data-vision aria-label="Color-vision preview">
+        <option value="normal">Original colors</option><option value="protan">Protan simulation</option><option value="deutan">Deutan simulation</option><option value="tritan">Tritan simulation</option><option value="grayscale">Grayscale</option>
+      </select>
+    </label>
+    <label class="form-label">Bottom panel
+      <select class="form-select" data-panel aria-label="Bottom panel">
+        <option value="zones">Time zones</option><option value="weather">Weather · example data</option><option value="calendar">Calendar</option><option value="humidity">Humidity · example data</option><option value="tide">Tide · example data</option>
+      </select>
+    </label>
+  </div>
+  <div class="palette-grid">
+    <figure data-palette="8"><figcaption>High Visibility</figcaption><canvas width="200" height="228" role="img" aria-label="High Visibility watch palette"></canvas><div class="materials text-small">Yellow · black · white</div></figure>
+    <figure data-palette="9"><figcaption>Monochrome</figcaption><canvas width="200" height="228" role="img" aria-label="Monochrome watch palette"></canvas><div class="materials text-small">Black · white · gray</div></figure>
+    <figure data-palette="10"><figcaption>Blue &amp; Amber</figcaption><canvas width="200" height="228" role="img" aria-label="Blue and Amber watch palette"></canvas><div class="materials text-small">Deep blue · amber · white</div></figure>
+    <figure data-palette="11"><figcaption>Teal &amp; Rose</figcaption><canvas width="200" height="228" role="img" aria-label="Teal and Rose watch palette"></canvas><div class="materials text-small">Dark teal · pale rose</div></figure>
+    <figure data-palette="12"><figcaption>Amber Terminal</figcaption><canvas width="200" height="228" role="img" aria-label="Amber Terminal watch palette"></canvas><div class="materials text-small">Amber · ivory · black</div></figure>
+    <figure data-palette="13"><figcaption>Polar</figcaption><canvas width="200" height="228" role="img" aria-label="Polar watch palette"></canvas><div class="materials text-small">Navy · cyan · white</div></figure>
+  </div>
+  <span class="sr-only" aria-live="polite" data-status></span>
+  <script type="application/json" data-renders>__RENDERS__</script>
+  <script>
+    (() => {
+      __VISION__
+      const root=document.getElementById('dymaxion-accessible-palettes');
+      const renders=JSON.parse(root.querySelector('[data-renders]').textContent);
+      const vision=root.querySelector('[data-vision]'),panel=root.querySelector('[data-panel]');
+      const state={vision:'normal',panel:'zones'},pixels=new Map(),transforms=new Map();
+      let ready=false;
+      function draw(){
+        vision.value=state.vision;panel.value=state.panel;
+        if(!ready)return;
+        for(const entry of renders){
+          const canvas=root.querySelector('[data-palette="'+entry.id+'"] canvas');
+          const original=pixels.get(entry.id+'/'+state.panel),copy=new ImageData(new Uint8ClampedArray(original.data),200,228);
+          if(state.vision!=='normal')for(let i=0;i<copy.data.length;i+=4){
+            const rgb=[...copy.data.slice(i,i+3)],key=state.vision+'/'+rgb.join(',');
+            if(!transforms.has(key))transforms.set(key,DymaxionVision.simulateRGB(rgb,state.vision));
+            copy.data.set(transforms.get(key),i);
+          }
+          canvas.getContext('2d').putImageData(copy,0,0);
+          canvas.setAttribute('aria-label',entry.name+' watch, '+panel.selectedOptions[0].text+', '+vision.selectedOptions[0].text);
+        }
+        root.dataset.view=state.vision+'/'+state.panel;
+        root.querySelector('[data-status]').textContent='Six palettes: '+vision.selectedOptions[0].text+', '+panel.selectedOptions[0].text;
+      }
+      function restore(saved){
+        if(saved?.modelContent?.study!=='dymaxion-accessible-palettes-v1')return;
+        const value=saved.modelContent;
+        if(DymaxionVision.VISION_MODES.includes(value.vision))state.vision=value.vision;
+        if(['zones','weather','calendar','humidity','tide'].includes(value.panel))state.panel=value.panel;
+        draw();
+      }
+      function changed(){
+        state.vision=vision.value;state.panel=panel.value;draw();
+        if(window.openai?.setWidgetState)Promise.resolve(window.openai.setWidgetState({modelContent:{study:'dymaxion-accessible-palettes-v1',...state},privateContent:null})).catch(()=>{});
+      }
+      vision.addEventListener('change',changed);panel.addEventListener('change',changed);
+      restore(window.openai?.widgetState);
+      window.addEventListener('openai:set_globals',event=>restore(event.detail?.globals?.widgetState));
+      Promise.all(renders.flatMap(entry=>Object.entries(entry.images).map(([id,src])=>new Promise((resolve,reject)=>{
+        const img=new Image();img.onload=()=>{
+          const buffer=document.createElement('canvas');buffer.width=200;buffer.height=228;
+          const ctx=buffer.getContext('2d');ctx.drawImage(img,0,0);pixels.set(entry.id+'/'+id,ctx.getImageData(0,0,200,228));resolve();
+        };img.onerror=reject;img.src=src;
+      })))).then(()=>{ready=true;draw();}).catch(()=>{root.querySelector('[data-status]').textContent='Watch previews could not load.';});
+    })();
+  </script>
+</div>

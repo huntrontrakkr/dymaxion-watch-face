@@ -24,3 +24,16 @@ npm-debug.log*
 # System files
 .DS_Store
 Thumbs.db
+
+# Local development tools and generated web build
+.venv/
+/dist/
+test-results/
+tools/mobile-config.generated.html
+
+# Local reference captures and discarded framing/LCD studies
+/output/font-reference-study/
+/output/framing/
+/output/grid-marks/
+/output/lcd-reference/
+/output/open-corners/

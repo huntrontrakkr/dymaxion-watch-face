@@ -1,0 +1,85 @@
+<div id="dymaxion-broad-type-study">
+  <style>
+    #dymaxion-broad-type-study { color: var(--foreground); }
+    #dymaxion-broad-type-study .comparison { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 24px; align-items: start; margin-block: 20px; }
+    #dymaxion-broad-type-study figure { margin: 0 0 16px; min-width: 0; }
+    #dymaxion-broad-type-study figcaption { margin-bottom: 6px; }
+    #dymaxion-broad-type-study canvas { display: block; image-rendering: pixelated; max-width: 100%; }
+    #dymaxion-broad-type-study .strip { width: 100%; height: auto; }
+    #dymaxion-broad-type-study .watch { width: 200px; height: 228px; }
+    #dymaxion-broad-type-study .detail { color: var(--muted-foreground); margin-block: 5px 12px; }
+    #dymaxion-broad-type-study .glyph-proof { width: 100%; height: auto; }
+    #dymaxion-broad-type-study .grid-options { margin-top: 12px; }
+    #dymaxion-broad-type-study .readout-status { margin-block: 10px; }
+    @media (max-width: 590px) {
+      #dymaxion-broad-type-study .comparison { grid-template-columns: minmax(0, 1fr); }
+      #dymaxion-broad-type-study .watch-context { justify-self: center; }
+    }
+  </style>
+  <div class="viz-controls">
+    <label class="form-label">Readout
+      <select class="form-select" data-time aria-label="Readout">
+        <option>12:34</option><option>08:08</option><option>23:59</option><option>11:11</option><option>00:00</option><option>06:49</option><option>20:26</option><option>19:57</option>
+      </select>
+    </label>
+    <label class="form-label">Watch treatment
+      <select class="form-select" data-watch-style aria-label="Watch treatment">
+        <option value="solid">Solid</option><option value="joined" selected>Joined strokes</option><option value="grid">With triangular treatment</option>
+      </select>
+    </label>
+    <label class="form-label">Watch colors
+      <select class="form-select" data-palette aria-label="Watch colors">
+        <option value="paper">Paper / black ink</option><option value="dark">Airocean / white ink</option>
+      </select>
+    </label>
+  </div>
+  <div class="comparison">
+    <div>
+      <figure>
+        <figcaption>01 · Heavy, extended shapes</figcaption>
+        <canvas class="strip" data-strip="solid" width="200" height="40" role="img" aria-label="Solid broad numeral study"></canvas>
+      </figure>
+      <figure>
+        <figcaption>02 · Shared horizontal strokes</figcaption>
+        <canvas class="strip" data-strip="joined" width="200" height="40" role="img" aria-label="Broad numeral study with contextual stroke joins"></canvas>
+      </figure>
+      <figure>
+        <figcaption>03 · Triangular treatment</figcaption>
+        <canvas class="strip" data-strip="grid" width="200" height="40" role="img" aria-label="Broad numeral study with a triangular treatment"></canvas>
+      </figure>
+    </div>
+    <figure class="watch-context">
+      <figcaption>On the watch · 1× pixels</figcaption>
+      <canvas class="watch" data-watch width="200" height="228" role="img" aria-label="Watch context for the selected broad numeral treatment"></canvas>
+      <div class="detail text-small">200 × 228 · map and status held fixed</div>
+    </figure>
+  </div>
+  <div class="viz-controls">
+    <label class="form-label">Stroke reach · <output data-reach-value>2 px</output>
+      <input class="form-range" data-reach type="range" min="0" max="4" step="1" value="2" aria-label="Stroke reach">
+    </label>
+    <label class="form-label">Triangular treatment
+      <select class="form-select" data-effect aria-label="Triangular treatment">
+        <option value="etch">Etched surface</option><option value="trim">Trim the edges</option><option value="cells">Whole cells / coarse test</option>
+      </select>
+    </label>
+    <label class="form-label">Triangle edge
+      <select class="form-select" data-edge aria-label="Triangle edge"><option value="7">7 px</option><option value="9" selected>9 px</option><option value="11">11 px</option></select>
+    </label>
+    <label class="form-label">Grid alignment
+      <select class="form-select" data-phase aria-label="Grid alignment"><option value="0">Origin</option><option value="0.5">Quarter-cell shift</option><option value="1">Half-cell shift</option></select>
+    </label>
+  </div>
+  <div class="grid-options">
+    <label class="form-check"><input class="form-check-input" data-guides type="checkbox"><span class="form-check-label">Show construction grid on study 03</span></label>
+  </div>
+  <div class="readout-status text-small" data-status aria-live="polite"></div>
+  <hr>
+  <div class="detail">All ten numerals · solid outlines</div>
+  <div class="viz-grid">
+    <canvas class="glyph-proof" data-digits="01234" width="250" height="40" role="img" aria-label="Numerals zero through four"></canvas>
+    <canvas class="glyph-proof" data-digits="56789" width="250" height="40" role="img" aria-label="Numerals five through nine"></canvas>
+  </div>
+  <script type="application/json" data-watch-bases>__WATCH_BASES__</script>
+  <script>__BROAD_STUDY_SCRIPT__</script>
+</div>

@@ -1,0 +1,16 @@
+.palette-controls{margin:20px 0;padding:18px 0;border-top:1px solid #c2cbbd;border-bottom:1px solid #c2cbbd}
+.palette-controls h3{margin:0 0 14px;font-size:14px;font-weight:500}
+.palette-controls .field{display:flex;flex-direction:column;gap:6px;margin:12px 0;min-width:0}
+.palette-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 16px}
+.palette-actions button{font-size:12px;padding:10px}
+.palette-actions button:disabled{opacity:.5;cursor:default}
+.palette-colors{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
+.palette-controls input[type=color]{display:block;width:100%;max-width:none;height:36px;padding:2px;background:transparent;border:1px solid #c2cbbd}
+.palette-controls output{font:11px monospace;color:inherit}
+.palette-controls details{border-top:1px solid #c2cbbd;margin-top:14px;padding-top:6px}
+.palette-controls summary{padding:10px 0;font-size:12px;cursor:pointer}
+.palette-preview{display:flex;height:24px;margin:14px 0}
+.palette-preview span{flex:1}
+.palette-controls .toggle{display:flex;align-items:center;gap:12px;margin-top:16px}
+.palette-controls .toggle span{flex:1}
+.palette-controls [hidden]{display:none!important}

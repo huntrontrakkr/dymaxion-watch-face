@@ -1,0 +1,45 @@
+[
+  {
+    "width": 736,
+    "scheme": "light",
+    "viewport": 704,
+    "scroll": 704,
+    "overflows": [],
+    "height": 1135,
+    "errors": []
+  },
+  {
+    "width": 390,
+    "scheme": "light",
+    "viewport": 358,
+    "scroll": 358,
+    "overflows": [],
+    "height": 1679,
+    "errors": []
+  },
+  {
+    "width": 320,
+    "scheme": "dark",
+    "viewport": 288,
+    "scroll": 288,
+    "overflows": [],
+    "height": 1571,
+    "errors": []
+  },
+  {
+    "readouts": 1440,
+    "range": [
+      2,
+      197
+    ],
+    "equilateralError": 9.769962616701378e-15,
+    "cutGridError": 3.69662589812534e-14,
+    "trimmedPixels": 23604,
+    "minimumNumeralGap": 2,
+    "capHeight": 8,
+    "colonBlock": [
+      8,
+      8
+    ]
+  }
+]

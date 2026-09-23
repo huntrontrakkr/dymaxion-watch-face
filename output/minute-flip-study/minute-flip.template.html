@@ -1,0 +1,51 @@
+<div id="dymaxion-minute-flip-study">
+  <style>
+    #dymaxion-minute-flip-study { color: var(--foreground); }
+    #dymaxion-minute-flip-study .comparison { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 24px; align-items: start; margin-block: 20px; }
+    #dymaxion-minute-flip-study figure { margin: 0 0 18px; min-width: 0; }
+    #dymaxion-minute-flip-study figcaption { margin-bottom: 8px; }
+    #dymaxion-minute-flip-study canvas { display: block; image-rendering: pixelated; max-width: 100%; }
+    #dymaxion-minute-flip-study .strip { width: 100%; height: auto; }
+    #dymaxion-minute-flip-study .watch { width: 200px; height: 228px; }
+    #dymaxion-minute-flip-study .reference { margin-top: 24px; }
+    #dymaxion-minute-flip-study .status { margin-block: 12px; }
+    @media (max-width: 590px) {
+      #dymaxion-minute-flip-study .comparison { grid-template-columns: minmax(0, 1fr); }
+      #dymaxion-minute-flip-study .watch-context { justify-self: center; }
+    }
+  </style>
+  <div class="viz-controls">
+    <label class="form-label">Minute change
+      <select class="form-select" data-change aria-label="Minute change">
+        <option value="12:33">12:33 → 12:34</option><option value="12:59">12:59 → 13:00</option><option value="23:59">23:59 → 00:00</option><option value="09:09">09:09 → 09:10</option><option value="11:11">11:11 → 11:12</option><option value="08:08">08:08 → 08:09</option>
+      </select>
+    </label>
+    <label class="form-label">Watch colors
+      <select class="form-select" data-palette aria-label="Watch colors"><option value="paper">Paper / black ink</option><option value="dark">Airocean / white ink</option></select>
+    </label>
+  </div>
+  <div class="comparison">
+    <div>
+      <figure>
+        <figcaption>Triangle flip · 400 ms</figcaption>
+        <canvas class="strip" data-animation width="200" height="40" role="img" aria-label="Minute change using flipping triangular tiles"></canvas>
+      </figure>
+      <div class="viz-row"><button type="button" class="btn btn-primary" data-replay>Replay 400 ms</button></div>
+      <label class="form-label">Animation position · <output data-position class="tabular-nums">0 ms</output>
+        <input class="form-range" data-progress type="range" min="0" max="400" step="1" value="0" aria-label="Animation position">
+      </label>
+      <label class="form-check"><input class="form-check-input" data-guides type="checkbox"><span class="form-check-label">Show changing triangles</span></label>
+      <div class="status text-small" data-status aria-live="polite"></div>
+    </div>
+    <figure class="watch-context">
+      <figcaption>On the watch · 1× pixels</figcaption>
+      <canvas class="watch" data-watch width="200" height="228" role="img" aria-label="Animated clock at native watch resolution"></canvas>
+    </figure>
+  </div>
+  <div class="viz-grid reference">
+    <figure><figcaption data-before-label>Before · 12:33</figcaption><canvas class="strip" data-before width="200" height="40" role="img" aria-label="Old time"></canvas></figure>
+    <figure><figcaption data-after-label>After · 12:34</figcaption><canvas class="strip" data-after width="200" height="40" role="img" aria-label="New time"></canvas></figure>
+  </div>
+  <script type="application/json" data-watch-bases>__WATCH_BASES__</script>
+  <script>__FLIP_SCRIPT__</script>
+</div>

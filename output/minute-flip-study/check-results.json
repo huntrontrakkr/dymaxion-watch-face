@@ -1,0 +1,33 @@
+[
+  {
+    "liveMinute": true,
+    "reducedMotion": true,
+    "motionDisabled": true,
+    "idleStable": true,
+    "errors": []
+  },
+  {
+    "width": 704,
+    "scheme": "light",
+    "scroll": 704,
+    "height": 498,
+    "errors": [],
+    "replayCompletes": true
+  },
+  {
+    "width": 358,
+    "scheme": "light",
+    "scroll": 358,
+    "height": 963,
+    "errors": [],
+    "replayCompletes": true
+  },
+  {
+    "width": 288,
+    "scheme": "dark",
+    "scroll": 288,
+    "height": 921,
+    "errors": [],
+    "replayCompletes": true
+  }
+]

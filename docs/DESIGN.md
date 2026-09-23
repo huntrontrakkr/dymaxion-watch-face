@@ -1,0 +1,231 @@
+# A wrist Geoscope
+
+This face treats places and their relationships as the useful content. The map
+is the organizing idea; the time displays and markers are movable instruments
+around it. This is a contemporary interpretation of Fuller, not a reproduction
+of a historical artifact or an endorsed Buckminster Fuller Institute product.
+
+## What carries forward from the original concept
+
+`shared/map.js` preserves the original supplied designer's twelve normalized
+vertices, twenty face definitions, all twenty-two `GPLACE` placements, and the
+LCD partitioning of split triangles 9 and 16. Its forward and inverse mappings
+use the same gnomonic barycentric method. Atlas and Horizon place the same net
+above or below a readable clock and three zone displays.
+
+The coastlines are regenerated from Natural Earth 1:110m land data at the same
+0.5-degree sample centers. They are not a byte-for-byte copy of the pasted base64
+mask. The canonical geometry is unchanged. This implementation does **not**
+claim to be the exact Gray–Fuller within-triangle transform; the supplied
+concept's stated 0.022-edge validation bound has not been independently verified.
+The tests instead check thousands of forward/inverse pairs, split-face coverage,
+chirality, and agreement between map pixels and markers.
+
+The alternative derived tree/strip nets, compulsory hexagonal clock vessels,
+and forced triangular snapping are omitted. Pixel positioning and two
+starting compositions make space for experimentation without changing the map.
+
+## Fuller as a design constraint
+
+- **One connected planet:** preserve the canonical continental relationships;
+  omit political borders; make place markers meaningful and geographically true.
+- **The world as an information display:** light and shadow are computed from
+  the sun's direction. A daylight indicator beside each remote clock ties civil
+  time to the physical planet. A +1/−1 label makes date differences explicit.
+- **More from less:** bake geometry once; allocate one small map bitmap; redraw
+  on minute ticks; use short, bounded motion on launch and configuration changes.
+  No continuous background animation or second-tick service on the watch.
+- **Useful freedom:** vertical clock placement, independent place positions, explicit coordinates,
+  any named IANA zone, five small map glyphs, independent RGB222 marker colors, two
+  starting layouts, and fourteen [palettes](PALETTES.md).
+
+These are design interpretations based on BFI's accounts of the
+[Dymaxion map](https://www.bfi.org/about-fuller/big-ideas/dymaxion-map/),
+[Geoscope](https://www.bfi.org/about-fuller/big-ideas/geoscope/), and
+[design science](https://www.bfi.org/about-fuller/big-ideas/design-science/design-science-primer/).
+Shoji Sadao's contribution to the map is acknowledged alongside Fuller.
+
+## Map symbols
+
+Five abstract 5×5-pixel glyphs distinguish the three tracked places: diamond,
+point, ring, triangle, and plus. The former 9×9 pictograms competed with the
+map and made literal claims that the small display could not support. These
+marks are cartographic cues rather than miniature illustrations. The
+[map-glyph notes](MARKERS.md) show the set enlarged without interpolation.
+
+Each place has an independent color. A color can follow its theme's default or
+hold a custom choice, rounded to the nearest RGB222 shade so the browser and
+Pebble draw the same pixels. The chosen color runs through the map symbol,
+zone label, daylight dot and brief launch/settings pulse. The black or paper-colored
+halo keeps the 5×5-pixel mark separate from the map beneath it.
+
+## Typography
+
+The watch name is an **original pixel nameplate script**, drawn specifically as a
+wordmark. Its low, extended lowercase and long horizontal joins draw on the
+appliance nameplates of the 1950s. A wide swept D, shallow angular shoulders
+and a compact y descender give it a deliberately streamlined rhythm.
+It uses a 124×17 master with solid one-pixel strokes: no antialiasing,
+font conversion, scaled outlines or compression artifacts.
+
+The wordmark was drawn from scratch in `tools/generate-wordmark.py`; it does not
+use glyphs from DymaxionScript or another font. It takes the broad idea of a
+mid-century script nameplate as its brief. The sphere has been removed, leaving more
+space for the name. The SVG website artwork, browser pixels and native watch
+mask are generated from exactly the same original drawing.
+
+The **Dymaxion Span** option is an original 28-pixel-high cut drawn for
+this 200-pixel screen. Four 45-pixel digit advances and a 10-pixel colon total
+190 pixels on every minute. Wide horizontal strokes, clipped hexagonal turns
+and open counters draw substantial inspiration from [Seth Haller's Dymaxion v.1](https://haller.design/dymaxion-v1),
+whose variable-width extremes and hexagonal construction shaped the brief.
+The watch contours are independently drawn with a steady three-pixel stroke.
+Native C draws the authored pixel runs directly; this avoids the hidden side
+bearings and wrapping that Pebble's text layout adds at this width. The browser
+uses those same runs.
+
+The current default is a **triangular seven-segment experiment**. Its six outer
+electrodes follow a hexagon; the seventh crosses the interior slightly above
+center so the lower counter has more room. It uses one continuous 196-pixel
+strip of 330 equilateral cells, with seven-pixel edges and six rows. All source
+edges follow 0°, 60° or 120°. Electrode gutters are a uniform geometric inset;
+whole cells switch together, and the two colon triangles use the same lattice.
+The hexagon's sloping right edge makes `1` a bent, chevron-like figure; this is
+an explicit legibility tradeoff to review at native size, especially against `7`.
+
+This is a contemporary interpretation informed by [Synergetics §420](https://rwgrayprojects.com/synergetics/s04/p2000.html)
+and its equilateral relationships, not a historical display by Fuller. The
+two-dimensional lattice is not itself the three-dimensional isotropic vector matrix.
+The [interactive segment study](../designer/segment-study.html) separates the exact
+construction geometry from its square-pixel sampling, offers 1×/3× pixel proofs,
+and shows every numeral. It also lets each of the seven electrodes be switched
+independently. The watch uses the same generated 1,350 pixel runs (5,400 bytes).
+There is no antialiasing, horizontal distortion, or extra update timer. Unlit
+cells can be hidden; Span remains selectable and stacked time still uses Draft.
+
+**Dymaxion Draft** remains the information type. Its earlier display cut is
+available for optional stacked hours/minutes. The 12-pixel zone numerals are
+drawn separately with two-pixel stems. **Micro**
+has seven-pixel capitals, a five-pixel x-height, open counters and natural letter
+widths. Dates use a separately drawn oldstyle numeral set. Micro is not a reduced
+copy of the display font.
+
+The [interactive type study](../designer/type-study.html) places Span and Draft beside
+**Alegreya Sans** for calligraphic warmth, **Fira Sans** for instrument clarity,
+and **Recursive Sans** for restrained signpainting character. The lessons are
+proportion, open shapes and rhythm; no reference outlines are used in Draft.
+Recursive uses a 0.35 Casual instance and has no oldstyle figures, which the
+study makes explicit. Oldstyle figures offer varied text rhythm, not an assumed
+universal legibility advantage; the watch uses lining numerals for its clocks.
+
+- [Alegreya Sans / Huerta Tipográfica](https://github.com/huertatipografica/Alegreya-Sans)
+- [Fira / Carrois and Edenspiekermann](https://carrois.com/fira/)
+- [Recursive / ArrowType](https://www.recursive.design/)
+
+`tools/draft-lettering.py` holds Draft's original curves and pixel masters.
+`tools/generate-draft.py` also draws Span and builds grid-aligned TrueType
+contours, then checks every glyph and advance pixel-for-pixel through FreeType.
+Span's pixel runs are generated for direct native drawing, so its TTF is for
+browser proofing and does not add a watch resource. Pebble resource sizes for
+Draft are 44, 18 and 12; actual numeral/capital ink
+heights are 28, 12 and 7. Both the native clock and browser use
+integer placement, without relying on kerning or antialiasing. Reference proofs
+are prepared independently by `tools/prepare-watch-type.py` using the SDK's
+monochrome FreeType flags. The earlier Synergetic Mono study remains in the
+source history but is not used on the watch.
+
+Visual references for the wordmark's proportions include the
+[DymaxionScript specimen](https://www.fontsquirrel.com/fonts/dymaxionscript),
+[the Philco Automatic badge](https://i.pinimg.com/originals/17/2e/f9/172ef9184a2cf9e76744d8dff0aa2199.jpg),
+and [Crosley Shelvador](https://www.ebth.com/items/4447281-1950s-crosley-shelvador-automatic-refrigerator).
+These are visual research references, not source outlines or bundled artwork.
+
+## Proportion
+
+The clock occupies the same 200×46 area in either display mode. Span spans 190
+pixels with 28-pixel-tall numerals. The triangular construction occupies a
+196×37 envelope, with inset ink leaving room for the city/date caption. The
+map's bounds now follow the *visible pieces* of the split faces, removing unused
+space without changing the projection, proportions or coastline geometry.
+Landscape scale grows from 31.33 to 35.64 pixels per net edge, about 14 percent.
+The 200×104 raster gives the planetary view more of the watch's width.
+Atlas and Horizon balance the full-width clock against it. Earlier horizontal
+layouts migrate to these proportions; saved portrait layouts open as Atlas
+while preserving palette, tracked cities, time zones, and display preferences.
+
+## Motion and time
+
+The selected place gets a one-second expanding ring on launch/settings changes.
+Its time block gets the same accent. Animation stops afterward and is suppressed
+at 20% battery or below. The browser also respects reduced-motion preferences.
+An optional deliberate shake changes the bottom panel; this requires a separate
+10 Hz accelerometer subscription, described in [bottom panels](PANELS.md).
+There are no tap or touch subscriptions. This version does not implement a 3D
+folding animation.
+
+Named zones replace the concept's fixed numeric offsets. The phone sends the
+current UTC offset and the next eight transitions for each zone. The ninth
+transition marks the cache as stale with `?`; a connected phone refreshes the
+cache on startup, reconnection, settings changes, and periodic requests (six
+hours in manual-city mode, or the shorter weather/city refresh interval). Future
+government rule changes require an updated bundled IANA database. No city is
+inferred from the local UTC offset. The primary clock follows the watch's local
+time; markers belong only to explicitly configured places.
+
+The caption replaces “local” with the actual city, following the location-label
+idea in ForecasWatch 2. The phone requests a low-accuracy location at most once
+an hour, rounds coordinates to three decimals and sends them to
+[Photon's reverse endpoint](https://github.com/komoot/photon/blob/master/docs/api-v1.md).
+It chooses city/town/village rather than a street or nearby business. Only the
+returned name and timestamp are cached; coordinates are not persisted. Network
+or permission failures back off for 15 minutes. A failed refresh or a name more
+than two hours old is marked `?`; automatic names expire after six hours. An
+expired or missing name leaves the date rather than claiming a current city.
+
+Automatic city naming requires phone location permission and a connection for
+refreshes. Manual names work offline and do not expire. The Micro font supports
+Latin lettering; accents are folded to supported forms. Long captions truncate
+the city while preserving the date and AM/PM. The browser initially shows an
+explicitly labeled Norfolk example and only requests location on the preview
+button. The public Photon server has no availability guarantee; a larger-scale
+release should provision a geocoder with appropriate capacity.
+
+Solar shading follows the fractional-year/equation-of-time approximation in
+[NOAA's General Solar Position Calculations](https://gml.noaa.gov/grad/solcalc/solareqns.PDF).
+It is a visual solar clock, with quantized direction vectors and a dithered
+twilight boundary. It does not predict sunrise events or atmospheric refraction.
+
+## Lunar indicator
+
+The larger interchangeable widgets have been removed so the local time can
+span the face. A 9×9-pixel Moon glyph sits between the nameplate and Bluetooth
+status in the top bar. It can be disabled in settings.
+
+Eight simple phase drawings show new, crescent, quarter, gibbous and full Moon
+in waxing and waning order. The browser and watch share the same pixel masters;
+the native generator packs them into 9-bit rows. Approximate Sun and Moon ecliptic
+longitudes select the phase each minute. Its selection agrees within one of the
+eight steps with the [U.S. Naval Observatory's 2026 primary phase times](https://aa.usno.navy.mil/calculated/moon/phases?date=2026-09-01&nump=8).
+The [glyph sheet](screenshots/status-glyphs.svg) shows all eight shapes at 4× scale.
+The lit side follows a conventional northern-oriented view; location-specific
+sky rotation is outside this tiny indicator's purpose. The adjacent 7×11-pixel
+Bluetooth rune stays visible in both states and is dimmed and slashed when the
+watch is disconnected.
+
+## Current bounds
+
+Emery only: 200×228, RGB222. Three tracked places plus the local clock. The map
+has one baked horizontal size, with free vertical positioning within the
+display; arbitrary map scaling/rotation and configurable palette channels are
+not implemented. Seventy-four
+city-light points are retained from the supplied concept, rendered as individual
+pixels. The bottom band adds weather, humidity and NOAA tides through a phone
+companion with cached requests, plus a local two-week calendar. Weather coordinates
+come from configured places; the separate clock-city lookup uses the phone's
+location capability. There is no health metric integration.
+
+The browser is an interactive layout preview, not a firmware emulator. Its
+custom font pixel masters match the SDK FreeType output; surrounding layout
+and device services still require native verification. The checked-in emulator screenshots
+show the native output. Physical watch readability, power consumption, and the
+phone webview still need device testing.

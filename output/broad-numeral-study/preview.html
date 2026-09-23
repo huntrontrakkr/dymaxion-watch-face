@@ -1,0 +1,2294 @@
+<!doctype html>
+<html lang="en" data-visualize-standalone>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Rounded Type Study</title>
+<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
+</head>
+<body>
+<iframe id="codex-visualization" sandbox="allow-scripts" referrerpolicy="no-referrer" title="Rounded Type Study" data-srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-visualize-standalone&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;
+&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; &#x27;wasm-unsafe-eval&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src &#x27;unsafe-inline&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;&quot;&gt;
+&lt;title&gt;Rounded Type Study&lt;/title&gt;
+&lt;style&gt;:root {
+  color-scheme: light dark;
+  background-color: var(
+    --background,
+    var(--color-background-primary, light-dark(rgb(255 255 255), rgb(24 24 24)))
+  ) !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: var(
+    --color-background-primary,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --card: color-mix(in oklab, var(--foreground) 5%, var(--background));
+  --card-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --popover: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255), rgb(45 45 45))
+  );
+  --popover-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --primary: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --primary-foreground: var(
+    --color-text-inverse,
+    light-dark(rgb(255 255 255), rgb(13 13 13))
+  );
+  --secondary: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%))
+  );
+  --secondary-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: var(
+    --color-text-secondary,
+    light-dark(rgb(26 28 31 / 49.4%), rgb(255 255 255 / 49.8%))
+  );
+  --accent: var(
+    --color-background-info,
+    light-dark(rgb(229 242 255), rgb(13 39 63))
+  );
+  --accent-foreground: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --destructive: var(
+    --color-text-warning,
+    light-dark(rgb(226 85 7), rgb(255 133 73))
+  );
+  --border: var(
+    --color-border-secondary,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+  --input: var(
+    --color-border-primary,
+    light-dark(
+      rgb(26 28 31 / 11.8%),
+      color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+    )
+  );
+  --ring: var(
+    --color-ring-primary,
+    light-dark(rgb(51 156 255), rgb(131 195 255 / 76%))
+  );
+  --font-size-base: var(--font-text-md-size, 14px);
+  --blue: light-dark(rgb(51 156 255), rgb(51 156 255));
+  --orange: light-dark(rgb(226 85 7), rgb(251 106 34));
+  --green: light-dark(rgb(0 162 64), rgb(64 201 119));
+  --red: light-dark(rgb(224 46 42), rgb(255 103 100));
+  --purple: light-dark(rgb(146 79 247), rgb(173 123 249));
+  --yellow: light-dark(rgb(255 195 0), rgb(255 210 64));
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(rgb(243 136 59), rgb(245 154 86));
+  --viz-series-3: light-dark(rgb(93 201 119), rgb(116 213 139));
+  --viz-series-4: light-dark(rgb(235 119 177), rgb(240 143 192));
+  --viz-series-5: light-dark(rgb(155 121 236), rgb(170 145 239));
+  --viz-series-6: light-dark(rgb(58 185 177), rgb(90 203 194));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans: -apple-system, system-ui, &quot;Segoe UI&quot;, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;,
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 430;
+  --font-weight-medium: 500;
+  --icon-size: 16px;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --corner-shape: round;
+  --radius: var(--border-radius-lg, 10px);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url(&quot;data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 17 17&#x27;%3E%3Cpath d=&#x27;M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z&#x27;/%3E%3C/svg%3E&quot;);
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+}
+
+:root[data-theme=&quot;light&quot;] {
+  color-scheme: light;
+}
+
+:root[data-theme=&quot;dark&quot;] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html &gt; body {
+  /* Preserve MCP aliases for older inline renderers without creating :root cycles. */
+  --color-background-primary: var(
+    --background,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --color-text-primary: var(
+    --foreground,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --color-border-secondary: var(
+    --border,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+
+  margin: 0;
+  padding: var(--visualize-paint-gutter, 0px);
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans) !important;
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+}
+
+.cursor-interaction {
+  cursor: var(--cursor-interaction, pointer);
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: var(--cursor-interaction, pointer);
+  font-weight: var(--font-weight-medium, 500);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+}
+
+b,
+strong,
+th {
+  font-weight: var(--font-weight-medium);
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  corner-shape: var(--corner-shape);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--foreground);
+  font: inherit;
+  text-align: start;
+}
+
+.table :is(th, td) {
+  padding-block: 10px;
+  padding-inline: 0 24px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table-responsive &gt; .table :is(th, td) {
+  overflow-wrap: break-word;
+}
+
+.table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+.table :is(caption, thead th) {
+  font-weight: 600;
+}
+
+.table thead th {
+  padding-block: 8px;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+
+.table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+
+.table.table-sm :is(th, td) {
+  padding-block: 6px;
+}
+
+.table.table-sm :is(th, td):not(:last-child) {
+  padding-inline-end: 16px;
+}
+
+.table :is(.text-end, [align=&quot;right&quot;]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(.text-center, [align=&quot;center&quot;]) {
+  text-align: center;
+}
+
+.table .text-nowrap {
+  white-space: nowrap;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  corner-shape: var(--corner-shape);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+#widget &gt; :not(.card, .progress) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--popover-foreground);
+  background: var(--popover);
+  box-shadow: none;
+  font-size: var(--font-size-tooltip);
+  line-height: var(--line-height-tooltip);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+hr {
+  width: 100%;
+  height: 1px;
+  margin-block: 6px;
+  border: 0;
+  background: var(--border);
+}
+
+.nav {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.progress {
+  display: flex;
+  height: 8px;
+  margin-block: calc((var(--line-height-normal, 1.5em) - 8px) / 2);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+}
+
+.progress-bar:only-child {
+  border-radius: var(--radius-full);
+}
+
+.progress-bar {
+  height: 100%;
+  flex-shrink: 0;
+  border: 0;
+  background: var(--viz-series-1);
+}
+
+.viz-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--accent-foreground);
+  background: var(--accent);
+  font-weight: var(--font-weight-medium);
+}
+
+small,
+.text-small,
+.viz-badge {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls &gt; .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls &gt; .form-label &gt; :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.nav-link,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+.btn,
+.nav-link {
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: var(--cursor-interaction, pointer);
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover,
+.nav-link:not(:disabled):not([aria-disabled=&quot;true&quot;]):hover {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: padding-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: padding-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.nav-pills .nav-link {
+  min-width: 0;
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.nav-justified .nav-link {
+  flex: 1 1 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.nav-pills .nav-link.active {
+  color: var(--foreground);
+  background: var(--muted);
+}
+
+.btn:disabled,
+.nav-link:disabled,
+.nav-link[aria-disabled=&quot;true&quot;] {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type=&quot;file&quot;] {
+  padding: 0;
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control[type=&quot;file&quot;]::file-selector-button {
+  min-height: 26px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+}
+
+.form-control[type=&quot;file&quot;]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type=&quot;color&quot;] {
+  width: 40px;
+  height: 28px;
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  corner-shape: var(--corner-shape);
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 32px 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 10px) 50%;
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-check {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+  border-color: var(--input);
+  border-radius: var(--radius-sm);
+  corner-shape: var(--corner-shape);
+  background-color: var(--secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;]:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: &quot;&quot;;
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+}
+
+.form-check-input[type=&quot;radio&quot;] {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+}
+
+.form-check-input[type=&quot;radio&quot;]:checked {
+  border: 2px solid var(--primary);
+  background:
+    radial-gradient(circle, var(--primary-foreground) 0 2.5px, transparent 3px),
+    var(--primary);
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+  box-shadow: var(--shadow-sm);
+  content: &quot;&quot;;
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--primary);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 28px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  outline: none;
+  border: 0;
+  accent-color: var(--primary);
+  background: linear-gradient(
+      color-mix(in srgb, var(--foreground) 7%, transparent),
+      color-mix(in srgb, var(--foreground) 7%, transparent)
+    )
+    center / 100% 2px no-repeat;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-webkit-slider-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range::-moz-range-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+  [aria-pressed=&quot;true&quot;],
+  [aria-selected=&quot;true&quot;],
+  .is-selected
+) {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.btn.viz-tile:is([aria-pressed=&quot;true&quot;], [aria-selected=&quot;true&quot;], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible,
+.nav-link:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .btn,
+  .nav-link,
+  .form-control,
+  .form-select {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Keep small-screen WebKit from zooming when a text field receives focus. */
+  .form-control,
+  .form-select {
+    font-size: max(16px, var(--font-size-normal));
+  }
+
+  .form-control[type=&quot;file&quot;]::file-selector-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .form-control-color[type=&quot;color&quot;] {
+    width: 44px;
+    height: 44px;
+  }
+
+  .form-control:is(
+    [type=&quot;date&quot;],
+    [type=&quot;datetime-local&quot;],
+    [type=&quot;month&quot;],
+    [type=&quot;time&quot;],
+    [type=&quot;week&quot;]
+  ) {
+    min-width: 0;
+    max-width: 100%;
+    padding-block: 8px;
+  }
+
+  .form-check {
+    min-height: 44px;
+    padding-inline: 15px;
+  }
+
+  .form-check-input {
+    position: relative;
+  }
+
+  .form-check-input::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    content: &quot;&quot;;
+    transform: translate(-50%, -50%);
+  }
+
+  .form-check-label {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .form-range {
+    height: 44px;
+    touch-action: pan-y;
+  }
+
+  .form-range::-webkit-slider-runnable-track {
+    height: 44px;
+  }
+
+  .form-range::-moz-range-track {
+    height: 44px;
+  }
+
+  .form-range::-webkit-slider-thumb {
+    margin-top: 12px;
+  }
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget &gt; svg {
+  width: 100%;
+}
+
+/* Model-authored chart rules can otherwise stretch icons after these styles load. */
+svg.lucide {
+  display: block;
+  width: var(--icon-size) !important;
+  height: var(--icon-size) !important;
+  flex: none;
+  margin: 0 !important;
+  stroke-width: 1.6;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+
+html&gt;body{padding:0}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;script type=&quot;application/json&quot; id=&quot;codex-visualization-widget-state&quot;&gt;__CODEX_VISUALIZATION_WIDGET_STATE__&lt;/script&gt;
+&lt;script&gt;(() =&gt; {
+  const root = document.documentElement;
+  const mediaQuery = globalThis.matchMedia(&quot;(prefers-color-scheme: dark)&quot;);
+  const apply = Reflect.apply;
+  const isArray = Array.isArray;
+  const hasOwn = Object.hasOwn;
+  const parentWindow = globalThis.parent;
+  const stringify = JSON.stringify;
+  const parse = JSON.parse;
+  const encode = TextEncoder.prototype.encode.bind(new TextEncoder());
+  const initialStateElement = document.getElementById(
+    &quot;codex-visualization-widget-state&quot;,
+  );
+  const initialGlobals = parse(initialStateElement?.textContent ?? &quot;{}&quot;);
+  initialStateElement?.remove();
+  /** @type {Record&lt;string, unknown&gt; | null} */
+  let state = initialGlobals.widgetState ?? null;
+  const statePersistence = initialGlobals.statePersistence ?? &quot;none&quot;;
+  let nextStateRequestId = 0;
+  /** @type {Map&lt;number, { resolve: () =&gt; void; reject: (error: Error) =&gt; void; timeout: ReturnType&lt;typeof globalThis.setTimeout&gt;; serializedState: string }&gt;} */
+  const pendingStateWrites = new Map();
+  const persistenceError = () =&gt;
+    Object.assign(
+      new Error(&quot;The host could not persist the widget state update&quot;),
+      {
+        code: -32000,
+        data: { code: &quot;widget_state_persistence_failed&quot;, retryable: false },
+      },
+    );
+  /**
+   * @param {object} prototype
+   * @param {string} property
+   */
+  const getPrototypeGetter = (prototype, property) =&gt; {
+    // oxlint-disable-next-line typescript/unbound-method -- invoked through captured Reflect.apply
+    const getter = Object.getOwnPropertyDescriptor(prototype, property)?.get;
+    if (getter == null) {
+      throw new Error(`Missing ${property} getter`);
+    }
+    return getter;
+  };
+  const getMessageData = getPrototypeGetter(MessageEvent.prototype, &quot;data&quot;);
+  const getMessagePorts = getPrototypeGetter(MessageEvent.prototype, &quot;ports&quot;);
+  const getMessageSource = getPrototypeGetter(MessageEvent.prototype, &quot;source&quot;);
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const addHostMessageListener = MessagePort.prototype.addEventListener;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const postHostMessage = MessagePort.prototype.postMessage;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const startHostPort = MessagePort.prototype.start;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const stopMessagePropagation = Event.prototype.stopImmediatePropagation;
+  /** @type {MessagePort | null} */
+  let hostPort = null;
+  const postToHost = (type, payload) =&gt; {
+    if (hostPort != null) {
+      apply(postHostMessage, hostPort, [{ type, ...payload }]);
+    }
+  };
+  const openExternal = ({ href }) =&gt; {
+    if (globalThis.navigator.userActivation?.isActive === true) {
+      postToHost(&quot;open-external&quot;, { href });
+    }
+  };
+  const sendFollowUpMessage = ({ context, prompt, title }) =&gt; {
+    if (globalThis.navigator.userActivation?.isActive === true) {
+      postToHost(&quot;follow-up&quot;, { context, prompt, title });
+    }
+    return Promise.resolve();
+  };
+  /**
+   * @param {Record&lt;string, unknown&gt; | ((previous: Record&lt;string, unknown&gt; | null) =&gt; Record&lt;string, unknown&gt;)} next
+   * @returns {Promise&lt;void&gt;}
+   */
+  const setWidgetState = async (next) =&gt; {
+    const nextState = typeof next === &quot;function&quot; ? next(state) : next;
+    if (
+      nextState == null ||
+      typeof nextState !== &quot;object&quot; ||
+      isArray(nextState)
+    ) {
+      throw new TypeError(&quot;Widget state must be a JSON object&quot;);
+    }
+    const inputState = stringify(
+      nextState,
+      (_key, /** @type {unknown} */ value) =&gt; {
+        if (
+          typeof value === &quot;undefined&quot; ||
+          typeof value === &quot;function&quot; ||
+          typeof value === &quot;symbol&quot; ||
+          (typeof value === &quot;number&quot; &amp;&amp; !Number.isFinite(value))
+        ) {
+          throw new TypeError(&quot;Widget state must be a JSON object&quot;);
+        }
+        return value;
+      },
+    );
+    const parsedState = parse(inputState);
+    if (
+      parsedState == null ||
+      typeof parsedState !== &quot;object&quot; ||
+      isArray(parsedState)
+    ) {
+      throw new TypeError(&quot;Widget state must be a JSON object&quot;);
+    }
+    const storedState = {
+      modelContent: null,
+      privateContent: null,
+      ...parsedState,
+    };
+    const serializedState = stringify(storedState);
+    if (encode(serializedState).length &gt; 16 * 1024) {
+      throw new TypeError(
+        &quot;Widget state must be a JSON object of at most 16 KiB&quot;,
+      );
+    }
+    if (
+      hasOwn(storedState, &quot;imageIds&quot;) &amp;&amp;
+      (!isArray(storedState.imageIds) ||
+        storedState.imageIds.some(
+          (/** @type {unknown} */ id) =&gt; typeof id !== &quot;string&quot;,
+        ))
+    ) {
+      throw new TypeError(&quot;Widget state imageIds must be an array of strings&quot;);
+    }
+    if (storedState.imageIds?.length &gt; 0) {
+      throw Object.assign(
+        new TypeError(&quot;Visualization state does not support image attachments&quot;),
+        { code: -32602, data: { code: &quot;images_unsupported&quot; } },
+      );
+    }
+    state = storedState;
+    globalThis.openai.widgetState = state;
+    globalThis.dispatchEvent(
+      new CustomEvent(&quot;openai:set_globals&quot;, {
+        detail: { globals: { widgetState: state } },
+      }),
+    );
+    if (statePersistence === &quot;none&quot;) {
+      throw persistenceError();
+    }
+    const id = ++nextStateRequestId;
+    return new Promise((resolve, reject) =&gt; {
+      const timeout = globalThis.setTimeout(() =&gt; {
+        pendingStateWrites.delete(id);
+        reject(persistenceError());
+      }, 30_000);
+      pendingStateWrites.set(id, { resolve, reject, timeout, serializedState });
+      postToHost(&quot;widget-state-write&quot;, { id, state: serializedState });
+    });
+  };
+  const syncTheme = () =&gt; {
+    const theme = mediaQuery.matches ? &quot;dark&quot; : &quot;light&quot;;
+    root.dataset.theme = theme;
+    globalThis.openai = {
+      ...globalThis.openai,
+      openExternal,
+      sendFollowUpMessage,
+      setWidgetState,
+      theme,
+      visualizationStyleVariables: {},
+      visualizationTheme: theme,
+      widgetState: state,
+      statePersistence,
+      stateModelContext: &quot;none&quot;,
+    };
+    globalThis.dispatchEvent(
+      new CustomEvent(&quot;openai:set_globals&quot;, {
+        detail: { globals: globalThis.openai },
+      }),
+    );
+  };
+  const sendHeight = () =&gt; {
+    postToHost(&quot;height&quot;, {
+      height: Math.ceil(
+        Math.max(
+          document.body.scrollHeight,
+          document.body.getBoundingClientRect().height,
+        ),
+      ),
+    });
+  };
+
+  globalThis.addEventListener(
+    &quot;message&quot;,
+    (event) =&gt; {
+      const data = apply(getMessageData, event, []);
+      const ports = apply(getMessagePorts, event, []);
+      const source = apply(getMessageSource, event, []);
+      if (
+        hostPort != null ||
+        source !== parentWindow ||
+        typeof data !== &quot;object&quot; ||
+        data?.type !== &quot;codex-visualization-initialize&quot; ||
+        !isArray(ports) ||
+        ports.length !== 1
+      ) {
+        return;
+      }
+      apply(stopMessagePropagation, event, []);
+      const nextHostPort = ports[0];
+      try {
+        apply(addHostMessageListener, nextHostPort, [
+          &quot;message&quot;,
+          (event) =&gt; {
+            const data = apply(getMessageData, event, []);
+            if (typeof data === &quot;object&quot; &amp;&amp; data?.type === &quot;measure&quot;) {
+              sendHeight();
+            } else if (
+              typeof data === &quot;object&quot; &amp;&amp;
+              data?.type === &quot;widget-state-result&quot;
+            ) {
+              /** @type {unknown} */
+              const id = data.id;
+              if (typeof id !== &quot;number&quot;) {
+                return;
+              }
+              const pending = pendingStateWrites.get(id);
+              if (pending != null) {
+                pendingStateWrites.delete(id);
+                globalThis.clearTimeout(pending.timeout);
+                if (data.ok === true) {
+                  pending.resolve();
+                } else {
+                  pending.reject(persistenceError());
+                }
+              }
+            }
+          },
+        ]);
+        apply(startHostPort, nextHostPort, []);
+      } catch {
+        return;
+      }
+      hostPort = nextHostPort;
+      for (const [id, { serializedState }] of pendingStateWrites) {
+        postToHost(&quot;widget-state-write&quot;, { id, state: serializedState });
+      }
+      sendHeight();
+    },
+    { capture: true },
+  );
+  document.currentScript?.remove();
+  mediaQuery.addEventListener(&quot;change&quot;, syncTheme);
+  globalThis.addEventListener(&quot;click&quot;, (event) =&gt; {
+    if (event.defaultPrevented) {
+      return;
+    }
+    let element = null;
+    if (event.target instanceof globalThis.Element) {
+      element = event.target;
+    } else if (event.target instanceof globalThis.Node) {
+      element = event.target.parentElement;
+    }
+    const link = element?.closest(&quot;a[href]&quot;);
+    const href = link?.getAttribute(&quot;href&quot;);
+    if (href == null) {
+      return;
+    }
+    if (href.startsWith(&quot;#&quot;)) {
+      let id;
+      try {
+        id = decodeURIComponent(href.slice(1));
+      } catch {
+        return;
+      }
+      const target = id.length === 0 ? root : document.getElementById(id);
+      if (
+        target == null ||
+        globalThis.navigator.userActivation?.isActive !== true
+      ) {
+        return;
+      }
+      event.preventDefault();
+      postToHost(&quot;scroll-to&quot;, {
+        top: target.getBoundingClientRect().top + globalThis.scrollY,
+      });
+      return;
+    }
+    event.preventDefault();
+    openExternal({ href });
+  });
+  new ResizeObserver(sendHeight).observe(document.body);
+  syncTheme();
+})();
+&lt;/script&gt;
+&lt;div id=&quot;dymaxion-refined-type-study&quot;&gt;
+  &lt;style&gt;
+    #dymaxion-refined-type-study { color: var(--foreground); }
+    #dymaxion-refined-type-study .comparison { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 24px; align-items: start; margin-block: 20px; }
+    #dymaxion-refined-type-study figure { margin: 0 0 16px; min-width: 0; }
+    #dymaxion-refined-type-study figcaption { margin-bottom: 6px; }
+    #dymaxion-refined-type-study canvas { display: block; image-rendering: pixelated; max-width: 100%; }
+    #dymaxion-refined-type-study .strip, #dymaxion-refined-type-study .pair, #dymaxion-refined-type-study .glyph-proof { width: 100%; height: auto; }
+    #dymaxion-refined-type-study .construction { image-rendering: auto; }
+    #dymaxion-refined-type-study .watch { width: 200px; height: 228px; }
+    #dymaxion-refined-type-study .detail { color: var(--muted-foreground); margin-block: 5px 12px; }
+    #dymaxion-refined-type-study .readout-status { margin-block: 10px; }
+    #dymaxion-refined-type-study .pair-proofs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    @media (max-width: 590px) {
+      #dymaxion-refined-type-study .comparison { grid-template-columns: minmax(0, 1fr); }
+      #dymaxion-refined-type-study .watch-context { justify-self: center; }
+      #dymaxion-refined-type-study .pair-proofs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  &lt;/style&gt;
+  &lt;div class=&quot;viz-controls&quot;&gt;
+    &lt;label class=&quot;form-label&quot;&gt;Readout
+      &lt;select class=&quot;form-select&quot; data-time aria-label=&quot;Readout&quot;&gt;
+        &lt;option&gt;12:33&lt;/option&gt;&lt;option&gt;12:34&lt;/option&gt;&lt;option&gt;23:32&lt;/option&gt;&lt;option&gt;11:11&lt;/option&gt;&lt;option&gt;06:57&lt;/option&gt;&lt;option&gt;07:36&lt;/option&gt;&lt;option&gt;08:08&lt;/option&gt;&lt;option&gt;23:59&lt;/option&gt;&lt;option&gt;00:00&lt;/option&gt;&lt;option&gt;20:26&lt;/option&gt;
+      &lt;/select&gt;
+    &lt;/label&gt;
+    &lt;label class=&quot;form-label&quot;&gt;Watch lettering
+      &lt;select class=&quot;form-select&quot; data-watch-style aria-label=&quot;Watch lettering&quot;&gt;
+        &lt;option value=&quot;rounded&quot;&gt;Rounded numerals&lt;/option&gt;&lt;option value=&quot;trimmed&quot;&gt;Trimmed to grid&lt;/option&gt;
+      &lt;/select&gt;
+    &lt;/label&gt;
+    &lt;label class=&quot;form-label&quot;&gt;Watch colors
+      &lt;select class=&quot;form-select&quot; data-palette aria-label=&quot;Watch colors&quot;&gt;
+        &lt;option value=&quot;paper&quot;&gt;Paper / black ink&lt;/option&gt;&lt;option value=&quot;dark&quot;&gt;Airocean / white ink&lt;/option&gt;
+      &lt;/select&gt;
+    &lt;/label&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;comparison&quot;&gt;
+    &lt;div&gt;
+      &lt;figure&gt;
+        &lt;figcaption&gt;01 · Rounded numerals, balanced weight&lt;/figcaption&gt;
+        &lt;canvas class=&quot;strip&quot; data-strip=&quot;rounded&quot; width=&quot;200&quot; height=&quot;40&quot; role=&quot;img&quot; aria-label=&quot;Separate broad numerals with subtly rounded corners and a bold colon&quot;&gt;&lt;/canvas&gt;
+      &lt;/figure&gt;
+      &lt;figure&gt;
+        &lt;figcaption&gt;02 · Construction grid + selected cuts&lt;/figcaption&gt;
+        &lt;canvas class=&quot;strip construction&quot; data-strip=&quot;construction&quot; width=&quot;800&quot; height=&quot;160&quot; role=&quot;img&quot; aria-label=&quot;Equilateral construction grid over the original lettering, with selected corner cuts highlighted&quot;&gt;&lt;/canvas&gt;
+      &lt;/figure&gt;
+      &lt;figure&gt;
+        &lt;figcaption&gt;03 · Clean outline after trimming&lt;/figcaption&gt;
+        &lt;canvas class=&quot;strip&quot; data-strip=&quot;trimmed&quot; width=&quot;200&quot; height=&quot;40&quot; role=&quot;img&quot; aria-label=&quot;Numeral outlines trimmed along selected triangle edges&quot;&gt;&lt;/canvas&gt;
+      &lt;/figure&gt;
+    &lt;/div&gt;
+    &lt;figure class=&quot;watch-context&quot;&gt;
+      &lt;figcaption&gt;On the watch · 1× pixels&lt;/figcaption&gt;
+      &lt;canvas class=&quot;watch&quot; data-watch width=&quot;200&quot; height=&quot;228&quot; role=&quot;img&quot; aria-label=&quot;Selected lettering at native watch resolution&quot;&gt;&lt;/canvas&gt;
+      &lt;div class=&quot;detail text-small&quot;&gt;200 × 228 · fixed map and status&lt;/div&gt;
+    &lt;/figure&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;viz-controls&quot;&gt;
+    &lt;label class=&quot;form-label&quot;&gt;Grid row spacing
+      &lt;select class=&quot;form-select&quot; data-pitch aria-label=&quot;Grid row spacing&quot;&gt;&lt;option value=&quot;6&quot;&gt;6 px&lt;/option&gt;&lt;option value=&quot;8&quot; selected&gt;8 px / stroke height&lt;/option&gt;&lt;option value=&quot;10&quot;&gt;10 px&lt;/option&gt;&lt;/select&gt;
+    &lt;/label&gt;
+    &lt;label class=&quot;form-label&quot;&gt;Horizontal alignment
+      &lt;select class=&quot;form-select&quot; data-phase aria-label=&quot;Horizontal alignment&quot;&gt;&lt;option value=&quot;0&quot;&gt;Origin&lt;/option&gt;&lt;option value=&quot;0.5&quot;&gt;Quarter-cell shift&lt;/option&gt;&lt;option value=&quot;1&quot;&gt;Half-cell shift&lt;/option&gt;&lt;/select&gt;
+    &lt;/label&gt;
+    &lt;label class=&quot;form-label&quot;&gt;Maximum corner trim · &lt;output data-depth-value&gt;2 px&lt;/output&gt;
+      &lt;input class=&quot;form-range&quot; data-depth type=&quot;range&quot; min=&quot;0&quot; max=&quot;3&quot; step=&quot;0.5&quot; value=&quot;2&quot; aria-label=&quot;Maximum corner trim&quot;&gt;
+    &lt;/label&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;readout-status text-small&quot; data-status aria-live=&quot;polite&quot;&gt;&lt;/div&gt;
+  &lt;hr&gt;
+  &lt;div class=&quot;detail&quot;&gt;Spacing and rounded terminals&lt;/div&gt;
+  &lt;div class=&quot;pair-proofs&quot;&gt;
+    &lt;figure&gt;&lt;figcaption&gt;12&lt;/figcaption&gt;&lt;canvas class=&quot;pair&quot; data-pair=&quot;12&quot; width=&quot;96&quot; height=&quot;40&quot; role=&quot;img&quot; aria-label=&quot;One and two with separate rounded terminals&quot;&gt;&lt;/canvas&gt;&lt;/figure&gt;
+    &lt;figure&gt;&lt;figcaption&gt;23&lt;/figcaption&gt;&lt;canvas class=&quot;pair&quot; data-pair=&quot;23&quot; width=&quot;96&quot; height=&quot;40&quot; role=&quot;img&quot; aria-label=&quot;Two and three with separate rounded terminals&quot;&gt;&lt;/canvas&gt;&lt;/figure&gt;
+    &lt;figure&gt;&lt;figcaption&gt;32&lt;/figcaption&gt;&lt;canvas class=&quot;pair&quot; data-pair=&quot;32&quot; width=&quot;96&quot; height=&quot;40&quot; role=&quot;img&quot; aria-label=&quot;Three and two with separate rounded terminals&quot;&gt;&lt;/canvas&gt;&lt;/figure&gt;
+    &lt;figure&gt;&lt;figcaption&gt;33&lt;/figcaption&gt;&lt;canvas class=&quot;pair&quot; data-pair=&quot;33&quot; width=&quot;96&quot; height=&quot;40&quot; role=&quot;img&quot; aria-label=&quot;Two threes with separate rounded terminals&quot;&gt;&lt;/canvas&gt;&lt;/figure&gt;
+    &lt;figure&gt;&lt;figcaption&gt;67&lt;/figcaption&gt;&lt;canvas class=&quot;pair&quot; data-pair=&quot;67&quot; width=&quot;96&quot; height=&quot;40&quot; role=&quot;img&quot; aria-label=&quot;Six and seven with separate rounded terminals and matching top stroke weights&quot;&gt;&lt;/canvas&gt;&lt;/figure&gt;
+    &lt;figure&gt;&lt;figcaption&gt;57&lt;/figcaption&gt;&lt;canvas class=&quot;pair&quot; data-pair=&quot;57&quot; width=&quot;96&quot; height=&quot;40&quot; role=&quot;img&quot; aria-label=&quot;Five and seven with separate rounded terminals&quot;&gt;&lt;/canvas&gt;&lt;/figure&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;detail&quot;&gt;All ten numerals&lt;/div&gt;
+  &lt;div class=&quot;viz-grid&quot;&gt;
+    &lt;canvas class=&quot;glyph-proof&quot; data-digits=&quot;01234&quot; width=&quot;250&quot; height=&quot;40&quot; role=&quot;img&quot; aria-label=&quot;Numerals zero through four&quot;&gt;&lt;/canvas&gt;
+    &lt;canvas class=&quot;glyph-proof&quot; data-digits=&quot;56789&quot; width=&quot;250&quot; height=&quot;40&quot; role=&quot;img&quot; aria-label=&quot;Numerals five through nine&quot;&gt;&lt;/canvas&gt;
+  &lt;/div&gt;
+  &lt;script type=&quot;application/json&quot; data-watch-bases&gt;{&quot;paper&quot;:&quot;data:image/png;base64,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&quot;,&quot;dark&quot;:&quot;data:image/png;base64,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&quot;}&lt;/script&gt;
+  &lt;script&gt;(() =&gt; {
+  // shared/broad-numerals.js
+  var BROAD_METRICS = Object.freeze({
+    width: 200,
+    height: 40,
+    capHeight: 32,
+    capTop: 4,
+    stroke: 8,
+    margin: 2,
+    digitWidth: 45,
+    starts: Object.freeze([2, 49, 106, 153])
+  });
+  var BROAD_GLYPHS = Object.freeze({
+    &quot;0&quot;: &quot;M22 0H68Q75 0 80 4L86 8Q90 11 90 18V46Q90 53 84 57L78 61Q73 64 67 64H23Q17 64 12 61L6 57Q0 53 0 46V18Q0 11 6 7L12 3Q17 0 22 0Z M27 16Q23 16 20 20Q18 22 18 26V38Q18 42 21 45Q23 48 27 48H63Q67 48 70 44Q72 42 72 38V26Q72 22 69 19Q67 16 63 16Z&quot;,
+    &quot;1&quot;: &quot;M17 12L38 0H59V48H90V64H0V48H37V21L20 30L9 17Z&quot;,
+    &quot;2&quot;: &quot;M0 11L14 3Q20 0 28 0H66Q78 0 85 7Q90 12 90 21Q90 30 82 35L29 48H90V64H0V47Q0 40 11 36L65 22Q70 21 70 18Q70 16 64 16H25L12 23Z&quot;,
+    &quot;3&quot;: &quot;M2 0H66Q77 0 84 7Q90 12 90 21Q90 28 82 32Q90 36 90 44Q90 53 83 59Q77 64 65 64H0V48H64Q70 48 70 44Q70 40 64 40H18V24H64Q70 24 70 20Q70 16 64 16H2Z&quot;,
+    &quot;4&quot;: &quot;M47 0H69V32H90V48H69V64H49V48H0V37Z M24 32H49V13Z&quot;,
+    &quot;5&quot;: &quot;M0 0H90V16H20V24H65Q77 24 84 31Q90 37 90 45Q90 54 83 60Q77 64 65 64H0V48H64Q70 48 70 44Q70 40 64 40H0Z&quot;,
+    &quot;6&quot;: &quot;M26 0H90V16H29Q20 16 20 24H65Q76 24 83 31Q90 37 90 45Q90 54 83 60Q77 64 65 64H26Q15 64 7 57Q0 51 0 42V22Q0 12 8 6Q15 0 26 0Z M28 40Q20 40 20 44Q20 48 28 48H62Q70 48 70 44Q70 40 62 40Z&quot;,
+    &quot;7&quot;: &quot;M0 0H90V16L47 64H22L66 16H0Z&quot;,
+    &quot;8&quot;: &quot;M25 0H65Q77 0 84 7Q90 12 90 20Q90 28 82 32Q90 36 90 44Q90 53 83 59Q77 64 65 64H25Q13 64 6 57Q0 52 0 44Q0 36 8 32Q0 28 0 20Q0 12 8 6Q15 0 25 0Z M29 16Q21 16 21 20Q21 24 29 24H61Q69 24 69 20Q69 16 61 16Z M28 40Q20 40 20 44Q20 48 28 48H62Q70 48 70 44Q70 40 62 40Z&quot;
+  });
+  var { width, height, capHeight, capTop, stroke, digitWidth, starts } = BROAD_METRICS;
+  var index = (x, y) =&gt; y * width + x;
+  var glyphCache = /* @__PURE__ */ new Map();
+  function softenSquareCorners(original) {
+    const mask = new Uint8Array(original);
+    const ink = (x, y) =&gt; x &gt;= 0 &amp;&amp; x &lt; digitWidth &amp;&amp; y &gt;= 0 &amp;&amp; y &lt; capHeight ? original[y * digitWidth + x] : 0;
+    for (let y = 0; y &lt; capHeight; y++) for (let x = 0; x &lt; digitWidth; x++) {
+      if (!ink(x, y)) continue;
+      for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+        let square = true;
+        for (let k = 0; k &lt; 4; k++) {
+          if (!ink(x + sx * k, y) || !ink(x, y + sy * k) || ink(x + sx * k, y - sy) || ink(x - sx, y + sy * k)) square = false;
+        }
+        if (square &amp;&amp; ink(x + sx, y + sy)) mask[y * digitWidth + x] = 0;
+      }
+    }
+    return mask;
+  }
+  function glyphMask(character) {
+    if (glyphCache.has(character)) return glyphCache.get(character);
+    const canvas = document.createElement(&quot;canvas&quot;);
+    canvas.width = 180;
+    canvas.height = 128;
+    const ctx = canvas.getContext(&quot;2d&quot;, { willReadFrequently: true });
+    ctx.scale(2, 2);
+    if (character === &quot;9&quot;) {
+      ctx.translate(90, 64);
+      ctx.rotate(Math.PI);
+    }
+    ctx.fill(new Path2D(BROAD_GLYPHS[character === &quot;9&quot; ? &quot;6&quot; : character]), &quot;evenodd&quot;);
+    const rgba = ctx.getImageData(0, 0, 180, 128).data;
+    const mask = new Uint8Array(digitWidth * capHeight);
+    for (let y = 0; y &lt; capHeight; y++) for (let x = 0; x &lt; digitWidth; x++) {
+      let coverage = 0;
+      for (let sy = 0; sy &lt; 4; sy++) for (let sx = 0; sx &lt; 4; sx++)
+        coverage += rgba[((y * 4 + sy) * 180 + x * 4 + sx) * 4 + 3];
+      mask[y * digitWidth + x] = coverage &gt;= 255 * 8 ? 1 : 0;
+    }
+    const softened = softenSquareCorners(mask);
+    glyphCache.set(character, softened);
+    return softened;
+  }
+  function drawBroadDigit(ctx, character, x, y, ink = &quot;#000000&quot;) {
+    if (!/^\d$/.test(character)) throw new Error(&quot;Choose a single numeral.&quot;);
+    const mask = glyphMask(character);
+    ctx.fillStyle = ink;
+    for (let py = 0; py &lt; capHeight; py++) for (let px = 0; px &lt; digitWidth; px++)
+      if (mask[py * digitWidth + px]) ctx.fillRect(x + px, y + py, 1, 1);
+  }
+  function broadTimeGeometry(time) {
+    if (!/^\d{2}:\d{2}$/.test(time)) throw new Error(&quot;Use a readout such as 12:34.&quot;);
+    const mask = new Uint8Array(width * height), digits = [...time.replace(&quot;:&quot;, &quot;&quot;)];
+    for (let slot = 0; slot &lt; 4; slot++) {
+      const glyph = glyphMask(digits[slot]);
+      for (let y = 0; y &lt; capHeight; y++) for (let x = 0; x &lt; digitWidth; x++)
+        mask[index(starts[slot] + x, y + capTop)] = glyph[y * digitWidth + x];
+    }
+    for (const top of [9, 23]) for (let y = 0; y &lt; stroke; y++) for (let x = 0; x &lt; stroke; x++) {
+      const inset = y === 0 || y === 7 ? 2 : y === 1 || y === 6 ? 1 : 0;
+      if (x &gt;= inset &amp;&amp; x &lt; stroke - inset) mask[index(96 + x, top + y)] = 1;
+    }
+    return { mask, digits };
+  }
+  var SQRT3 = Math.sqrt(3);
+  var triangleCache = /* @__PURE__ */ new Map();
+  var signedArea = (a, b, p) =&gt; (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+  function broadTriangleGrid(pitch = 8, phase = 0) {
+    pitch = Math.max(6, Math.min(10, Number(pitch) || 8));
+    phase = Math.max(0, Math.min(1, Number(phase) || 0));
+    const key = pitch + &quot;:&quot; + phase;
+    if (triangleCache.has(key)) return triangleCache.get(key);
+    const edge = 2 * pitch / SQRT3, originX = 2 + phase * edge / 2, originY = capTop;
+    const cells = [], membership = new Int16Array(width * height).fill(-1);
+    for (let row = -2; row &lt; Math.ceil(height / pitch) + 2; row++) {
+      for (let column = -3; column &lt; Math.ceil(width * 2 / edge) + 3; column++) {
+        const x = originX + column * edge / 2, y = originY + row * pitch;
+        const vertices = row + column &amp; 1 ? [[x, y], [x + edge, y], [x + edge / 2, y + pitch]] : [[x + edge / 2, y], [x + edge, y + pitch], [x, y + pitch]];
+        const pixels = [], id = cells.length;
+        for (let py = Math.max(0, Math.floor(y)); py &lt; Math.min(height, Math.ceil(y + pitch)); py++) {
+          for (let px = Math.max(0, Math.floor(x)); px &lt; Math.min(width, Math.ceil(x + edge)); px++) {
+            const p = [px + 0.5, py + 0.5], sides = vertices.map((v, i) =&gt; signedArea(v, vertices[(i + 1) % 3], p));
+            if (!(sides.every((n) =&gt; n &gt;= -1e-8) || sides.every((n) =&gt; n &lt;= 1e-8))) continue;
+            const at = index(px, py);
+            if (membership[at] &gt;= 0) continue;
+            membership[at] = id;
+            pixels.push(at);
+          }
+        }
+        if (pixels.length) cells.push({ vertices, pixels });
+      }
+    }
+    const grid = { edge, pitch, phase, originX, originY, cells, membership };
+    triangleCache.set(key, grid);
+    return grid;
+  }
+  var CORNERS = Object.freeze({
+    &quot;0&quot;: [&quot;tl&quot;, &quot;tr&quot;, &quot;bl&quot;, &quot;br&quot;],
+    &quot;1&quot;: [&quot;tl&quot;],
+    &quot;2&quot;: [&quot;tl&quot;, &quot;tr&quot;],
+    &quot;3&quot;: [&quot;tr&quot;, &quot;br&quot;],
+    &quot;4&quot;: [],
+    &quot;5&quot;: [&quot;br&quot;],
+    &quot;6&quot;: [&quot;tl&quot;, &quot;bl&quot;, &quot;br&quot;],
+    &quot;7&quot;: [&quot;tr&quot;],
+    &quot;8&quot;: [&quot;tl&quot;, &quot;tr&quot;, &quot;bl&quot;, &quot;br&quot;],
+    &quot;9&quot;: [&quot;tl&quot;, &quot;tr&quot;, &quot;br&quot;]
+  });
+  function lineInRect(a, b, c, rect) {
+    const { x0, x1, y0, y1 } = rect, points = [];
+    for (const x of [x0, x1]) {
+      const y = (c - a * x) / b;
+      if (y &gt;= y0 - 1e-8 &amp;&amp; y &lt;= y1 + 1e-8) points.push([x, y]);
+    }
+    for (const y of [y0, y1]) {
+      const x = (c - b * y) / a;
+      if (x &gt;= x0 - 1e-8 &amp;&amp; x &lt;= x1 + 1e-8 &amp;&amp; !points.some((p) =&gt; Math.hypot(p[0] - x, p[1] - y) &lt; 1e-8)) points.push([x, y]);
+    }
+    return points.slice(0, 2);
+  }
+  function trimBroadGeometry(geometry, { pitch = 8, phase = 0, depth = 2 } = {}) {
+    const { digits, mask: original } = geometry;
+    const mask = new Uint8Array(original), removed = new Uint8Array(original.length);
+    const grid = broadTriangleGrid(pitch, phase), cuts = [];
+    depth = Math.max(0, Math.min(3, Number(depth) || 0));
+    for (let slot = 0; slot &lt; digits.length; slot++) for (const corner of CORNERS[digits[slot]]) {
+      const right = corner[1] === &quot;r&quot;, bottom = corner[0] === &quot;b&quot;;
+      const rect = {
+        x0: starts[slot] + (right ? 33 : 0),
+        x1: starts[slot] + (right ? 45 : 12),
+        y0: capTop + (bottom ? 24 : 0),
+        y1: capTop + (bottom ? 32 : 8)
+      };
+      const a = right ? -1 : 1, b = (bottom ? -1 : 1) / SQRT3;
+      const offset = a * grid.originX + b * grid.originY + grid.edge / 2;
+      let minimum = Infinity;
+      const candidates = [];
+      for (let y = rect.y0; y &lt; rect.y1; y++) for (let x = rect.x0; x &lt; rect.x1; x++) {
+        const at = index(x, y);
+        if (!original[at]) continue;
+        const value = a * (x + 0.5) + b * (y + 0.5);
+        candidates.push({ at, x, y, value });
+        minimum = Math.min(minimum, value);
+      }
+      if (!candidates.length) continue;
+      const c = offset + Math.ceil((minimum - offset + 1e-8) / grid.edge) * grid.edge;
+      const distance = (c - minimum) / Math.hypot(a, b);
+      if (distance &gt; depth || distance &lt; 0.2) continue;
+      const clipped = candidates.filter((p) =&gt; p.value &lt; c);
+      if (clipped.length &lt; 2) continue;
+      for (const p of clipped) {
+        mask[p.at] = 0;
+        removed[p.at] = 1;
+      }
+      cuts.push({ slot, corner, a, b, c, distance, points: lineInRect(a, b, c, rect), pixels: clipped.length });
+    }
+    return { mask, removed, grid, cuts };
+  }
+  function drawBroadTime(ctx, time, x = 0, y = 0, {
+    ink = &quot;#000000&quot;,
+    background = &quot;#FFFFFF&quot;,
+    guide = &quot;#557799&quot;,
+    cut = &quot;#0055AA&quot;,
+    trimmed = false,
+    showGrid = false,
+    pitch = 8,
+    phase = 0,
+    depth = 2
+  } = {}) {
+    const geometry = broadTimeGeometry(time);
+    const result = trimBroadGeometry(geometry, { pitch, phase, depth });
+    const display = trimmed ? result.mask : geometry.mask;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = background;
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = ink;
+    for (let py = 0; py &lt; height; py++) for (let px = 0; px &lt; width; px++)
+      if (display[index(px, py)]) ctx.fillRect(px, py, 1, 1);
+    if (showGrid) {
+      ctx.beginPath();
+      ctx.rect(0, 0, width, height);
+      ctx.clip();
+      ctx.strokeStyle = guide;
+      ctx.globalAlpha = 0.5;
+      ctx.lineWidth = 0.25;
+      ctx.beginPath();
+      for (const cell of result.grid.cells) {
+        cell.vertices.forEach((v, i) =&gt; i ? ctx.lineTo(...v) : ctx.moveTo(...v));
+        ctx.closePath();
+      }
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = cut;
+      ctx.lineWidth = 0.7;
+      ctx.beginPath();
+      for (const segment of result.cuts) if (segment.points.length === 2) {
+        ctx.moveTo(...segment.points[0]);
+        ctx.lineTo(...segment.points[1]);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+    return { ...result, original: geometry.mask };
+  }
+
+  // output/broad-numeral-study/refined-study.js
+  var root = document.getElementById(&quot;dymaxion-refined-type-study&quot;);
+  var find = (name) =&gt; root.querySelector(&quot;[data-&quot; + name + &quot;]&quot;);
+  var state = { time: &quot;12:33&quot;, watchStyle: &quot;rounded&quot;, palette: &quot;paper&quot;, pitch: 8, phase: 0, depth: 2 };
+  var choices = {
+    time: [&quot;12:33&quot;, &quot;12:34&quot;, &quot;23:32&quot;, &quot;11:11&quot;, &quot;06:57&quot;, &quot;07:36&quot;, &quot;08:08&quot;, &quot;23:59&quot;, &quot;00:00&quot;, &quot;20:26&quot;],
+    watchStyle: [&quot;rounded&quot;, &quot;trimmed&quot;],
+    palette: [&quot;paper&quot;, &quot;dark&quot;],
+    pitch: [6, 8, 10],
+    phase: [0, 0.5, 1]
+  };
+  var controls = {
+    time: find(&quot;time&quot;),
+    watchStyle: find(&quot;watch-style&quot;),
+    palette: find(&quot;palette&quot;),
+    pitch: find(&quot;pitch&quot;),
+    phase: find(&quot;phase&quot;),
+    depth: find(&quot;depth&quot;)
+  };
+  var bases = {};
+  function paint() {
+    find(&quot;depth-value&quot;).textContent = state.depth + &quot; px&quot;;
+    for (const [key, control] of Object.entries(controls)) control.value = state[key];
+    let proof;
+    for (const canvas2 of root.querySelectorAll(&quot;[data-strip]&quot;)) {
+      const style = canvas2.dataset.strip, ctx2 = canvas2.getContext(&quot;2d&quot;);
+      ctx2.setTransform(canvas2.width / 200, 0, 0, canvas2.height / 40, 0, 0);
+      proof = drawBroadTime(ctx2, state.time, 0, 0, {
+        ...state,
+        trimmed: style === &quot;trimmed&quot;,
+        showGrid: style === &quot;construction&quot;
+      });
+      canvas2.setAttribute(&quot;aria-label&quot;, state.time + &quot;, &quot; + {
+        rounded: &quot;separate numerals with softly rounded terminals and a bold colon&quot;,
+        construction: &quot;equilateral construction grid with selected outline cuts&quot;,
+        trimmed: &quot;clean pixel outline after trimming&quot;
+      }[style]);
+    }
+    const canvas = find(&quot;watch&quot;), ctx = canvas.getContext(&quot;2d&quot;), paper = state.palette === &quot;paper&quot;;
+    if (bases[state.palette]) ctx.drawImage(bases[state.palette], 0, 0);
+    else {
+      ctx.fillStyle = paper ? &quot;#FFFFFF&quot; : &quot;#000000&quot;;
+      ctx.fillRect(0, 0, 200, 228);
+    }
+    drawBroadTime(ctx, state.time, 0, 18, {
+      ...state,
+      ink: paper ? &quot;#000000&quot; : &quot;#FFFFFF&quot;,
+      background: paper ? &quot;#FFFFFF&quot; : &quot;#000000&quot;,
+      trimmed: state.watchStyle === &quot;trimmed&quot;
+    });
+    canvas.setAttribute(&quot;aria-label&quot;, state.time + &quot; with &quot; + state.watchStyle + &quot; lettering on the 200 by 228 pixel watch&quot;);
+    for (const canvas2 of root.querySelectorAll(&quot;[data-pair]&quot;)) {
+      drawBroadTime(canvas2.getContext(&quot;2d&quot;), canvas2.dataset.pair + &quot;:00&quot;);
+    }
+    for (const canvas2 of root.querySelectorAll(&quot;[data-digits]&quot;)) {
+      const ctx2 = canvas2.getContext(&quot;2d&quot;);
+      ctx2.fillStyle = &quot;#FFFFFF&quot;;
+      ctx2.fillRect(0, 0, 250, 40);
+      [...canvas2.dataset.digits].forEach((digit, index2) =&gt; drawBroadDigit(ctx2, digit, 2 + index2 * 50, 4));
+    }
+    find(&quot;status&quot;).textContent = &quot;8 px strokes + colon \xB7 2 px minimum spacing \xB7 &quot; + proof.cuts.length + &quot; corner cuts&quot;;
+  }
+  function restore(saved) {
+    if (saved?.modelContent?.study !== &quot;dymaxion-broad-v3&quot;) return;
+    const values = saved.modelContent.settings;
+    if (!values || typeof values !== &quot;object&quot;) return;
+    for (const key of Object.keys(state)) {
+      if (choices[key]?.includes(values[key])) state[key] = values[key];
+      else if (key === &quot;depth&quot; &amp;&amp; Number.isFinite(values.depth) &amp;&amp; values.depth &gt;= 0 &amp;&amp; values.depth &lt;= 3) state.depth = values.depth;
+    }
+    paint();
+  }
+  function save() {
+    if (window.openai?.setWidgetState) Promise.resolve(window.openai.setWidgetState({
+      modelContent: { study: &quot;dymaxion-broad-v3&quot;, settings: { ...state } },
+      privateContent: null
+    })).catch(() =&gt; {
+    });
+  }
+  for (const [key, control] of Object.entries(controls)) control.addEventListener(key === &quot;depth&quot; ? &quot;input&quot; : &quot;change&quot;, () =&gt; {
+    state[key] = [&quot;pitch&quot;, &quot;phase&quot;, &quot;depth&quot;].includes(key) ? Number(control.value) : control.value;
+    paint();
+    save();
+  });
+  paint();
+  restore(window.openai?.widgetState);
+  window.addEventListener(&quot;openai:set_globals&quot;, (event) =&gt; restore(event.detail?.globals?.widgetState));
+  for (const [key, src] of Object.entries(JSON.parse(find(&quot;watch-bases&quot;).textContent))) {
+    const image = new Image();
+    image.onload = () =&gt; {
+      bases[key] = image;
+      paint();
+    };
+    image.src = src;
+  }
+})();
+&lt;/script&gt;
+&lt;/div&gt;
+
+&lt;script src=&quot;https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  if (window.FloatingUIDOM == null) {
+    return;
+  }
+  const { autoUpdate, computePosition, flip, offset, shift, size } =
+    window.FloatingUIDOM;
+  const tooltipPlacements = new Set([&quot;top&quot;, &quot;right&quot;, &quot;bottom&quot;, &quot;left&quot;]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+  let lastPointerWasTouch = false;
+  let pinnedByTouch = false;
+
+  const getTrigger = (target) =&gt;
+    target?.nodeType === Node.ELEMENT_NODE
+      ? target.closest(&quot;[data-tooltip]&quot;)
+      : null;
+  const containsTarget = (trigger, target) =&gt;
+    target?.nodeType != null &amp;&amp; trigger.contains(target);
+  const getContent = (trigger) =&gt;
+    trigger.getAttribute(&quot;data-tooltip&quot;)?.trim() ?? &quot;&quot;;
+  const getPlacement = (trigger) =&gt; {
+    const placement = trigger.getAttribute(&quot;data-tooltip-placement&quot;);
+    return tooltipPlacements.has(placement) ? placement : &quot;top&quot;;
+  };
+  const getTooltip = () =&gt; {
+    if (tooltip == null) {
+      tooltip = document.createElement(&quot;div&quot;);
+      tooltip.id = tooltipId;
+      tooltip.className = &quot;tooltip&quot;;
+      tooltip.setAttribute(&quot;role&quot;, &quot;tooltip&quot;);
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) =&gt; {
+    const ids = new Set(
+      (trigger.getAttribute(&quot;aria-describedby&quot;) ?? &quot;&quot;)
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute(&quot;aria-describedby&quot;);
+    } else {
+      trigger.setAttribute(&quot;aria-describedby&quot;, [...ids].join(&quot; &quot;));
+    }
+  };
+  const clearOpenTimeout = () =&gt; {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) =&gt; {
+    clearOpenTimeout();
+    pinnedByTouch = false;
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating) =&gt; {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-width&quot;,
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-height&quot;,
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: &quot;fixed&quot;,
+    })
+      .then(({ x, y }) =&gt; {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = &quot;visible&quot;;
+      })
+      .catch(() =&gt; {
+        if (activeTrigger === trigger &amp;&amp; request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) =&gt; {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = &quot;hidden&quot;;
+    floating.style.transform = &quot;translate(0, 0)&quot;;
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    autoUpdateCleanup = autoUpdate(trigger, floating, () =&gt; {
+      updatePosition(trigger, floating);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) =&gt; {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() &lt; skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() =&gt; {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) =&gt; {
+    if (event.pointerType === &quot;touch&quot;) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handlePointer = (event) =&gt; {
+    lastPointerWasTouch =
+      event.type === &quot;pointerdown&quot; &amp;&amp; event.pointerType === &quot;touch&quot;;
+  };
+  const handleTouchClick = (event) =&gt; {
+    const isTouch = event.pointerType === &quot;touch&quot; || lastPointerWasTouch;
+    lastPointerWasTouch = false;
+    if (!isTouch || event.detail === 0) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (
+      trigger == null ||
+      !trigger.isConnected ||
+      getContent(trigger).length === 0 ||
+      (pinnedByTouch &amp;&amp; activeTrigger === trigger)
+    ) {
+      if (pinnedByTouch) {
+        closeTooltip();
+      }
+      return;
+    }
+    openTooltip(trigger);
+    pinnedByTouch = activeTrigger === trigger;
+    window.setTimeout(() =&gt; {
+      if (activeTrigger === trigger &amp;&amp; !trigger.isConnected) {
+        closeTooltip(false);
+      }
+    }, 0);
+  };
+  const handleLeave = (event) =&gt; {
+    if (pinnedByTouch) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger?.matches(&quot;:focus-visible&quot;)) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) =&gt; {
+    if (event.key === &quot;Escape&quot;) {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) =&gt; {
+    lastPointerWasTouch = false;
+    const trigger = getTrigger(event.target);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const destroy = () =&gt; {
+    closeTooltip(false);
+    lastPointerWasTouch = false;
+    document.removeEventListener(&quot;pointerover&quot;, handlePointerOpen);
+    document.removeEventListener(&quot;pointerdown&quot;, handlePointer);
+    document.removeEventListener(&quot;pointercancel&quot;, handlePointer);
+    document.removeEventListener(&quot;click&quot;, handleTouchClick);
+    document.removeEventListener(&quot;pointerout&quot;, handleLeave);
+    document.removeEventListener(&quot;focusin&quot;, handleFocusIn);
+    document.removeEventListener(&quot;focusout&quot;, handleLeave);
+    document.removeEventListener(&quot;keydown&quot;, handleKeyDown);
+    document.removeEventListener(&quot;contextmenu&quot;, handleContextMenu);
+    tooltip = null;
+  };
+
+  document.addEventListener(&quot;pointerover&quot;, handlePointerOpen);
+  document.addEventListener(&quot;pointerdown&quot;, handlePointer);
+  document.addEventListener(&quot;pointercancel&quot;, handlePointer);
+  document.addEventListener(&quot;click&quot;, handleTouchClick);
+  document.addEventListener(&quot;pointerout&quot;, handleLeave);
+  document.addEventListener(&quot;focusin&quot;, handleFocusIn);
+  document.addEventListener(&quot;focusout&quot;, handleLeave);
+  document.addEventListener(&quot;keydown&quot;, handleKeyDown);
+  document.addEventListener(&quot;contextmenu&quot;, handleContextMenu);
+  window.addEventListener(&quot;pagehide&quot;, destroy, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-tabs&quot;&gt;
+(() =&gt; {
+  const selector = &#x27;.nav[role=&quot;tablist&quot;] [role=&quot;tab&quot;]&#x27;;
+  const disabled = &#x27;:disabled,[aria-disabled=&quot;true&quot;]&#x27;;
+  const selectTab = (selected) =&gt; {
+    const panelId = selected.getAttribute(&quot;aria-controls&quot;);
+    for (const tab of selected.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;)) {
+      const active = tab === selected;
+      tab.classList.toggle(&quot;active&quot;, active);
+      tab.setAttribute(&quot;aria-selected&quot;, String(active));
+      const id = tab.getAttribute(&quot;aria-controls&quot;);
+      const panel = id &amp;&amp; document.getElementById(id);
+      if (panel != null) {
+        panel.hidden = id !== panelId;
+        if (!panel.hidden &amp;&amp; selected.id) {
+          panel.setAttribute(&quot;aria-labelledby&quot;, selected.id);
+        }
+      }
+    }
+  };
+  const interact = (event) =&gt; {
+    const tab = event.target?.closest?.(selector);
+    if (event.defaultPrevented || tab == null || tab.matches(disabled)) {
+      return;
+    }
+    if (event.type === &quot;click&quot;) {
+      selectTab(tab);
+      return;
+    }
+    const tabs = Array.from(
+      tab.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;),
+    ).filter((candidate) =&gt; !candidate.matches(disabled));
+    const current = tabs.indexOf(tab);
+    let next;
+    if (event.key === &quot;ArrowRight&quot; || event.key === &quot;ArrowDown&quot;) {
+      next = (current + 1) % tabs.length;
+    } else if (event.key === &quot;ArrowLeft&quot; || event.key === &quot;ArrowUp&quot;) {
+      next = (current + tabs.length - 1) % tabs.length;
+    } else if (event.key === &quot;Home&quot;) {
+      next = 0;
+    } else if (event.key === &quot;End&quot;) {
+      next = tabs.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    tabs[next].focus();
+    selectTab(tabs[next]);
+  };
+
+  for (const list of document.querySelectorAll(&#x27;.nav[role=&quot;tablist&quot;]&#x27;)) {
+    const selected =
+      list.querySelector(&#x27;[role=&quot;tab&quot;][aria-selected=&quot;true&quot;]&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;].active&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;]&#x27;);
+    if (selected != null) {
+      selectTab(selected);
+    }
+  }
+  document.addEventListener(&quot;click&quot;, interact);
+  document.addEventListener(&quot;keydown&quot;, interact);
+  window.addEventListener(&quot;pagehide&quot;, () =&gt; {
+    document.removeEventListener(&quot;click&quot;, interact);
+    document.removeEventListener(&quot;keydown&quot;, interact);
+  }, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-lucide&quot; async src=&quot;https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  const initialize = () =&gt; {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById(&quot;codex-visualization-lucide&quot;)
+    ?.addEventListener(&quot;load&quot;, initialize, { once: true });
+})();
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+<script>(() => {
+  const frame = document.getElementById("codex-visualization");
+  if (!(frame instanceof HTMLIFrameElement)) {
+    return;
+  }
+  let viewportHeight = globalThis.innerHeight;
+  const storageKey = `codex:visualization-widget-state-v2:${JSON.stringify([
+    globalThis.location.pathname,
+    globalThis.location.search,
+  ])}`;
+  const parseState = (serializedState) => {
+    if (
+      typeof serializedState !== "string" ||
+      new TextEncoder().encode(serializedState).length > 16 * 1024
+    ) {
+      throw new TypeError(
+        "Widget state must be a JSON object of at most 16 KiB",
+      );
+    }
+    /** @type {unknown} */
+    const state = JSON.parse(serializedState);
+    if (
+      state == null ||
+      typeof state !== "object" ||
+      Array.isArray(state) ||
+      ("imageIds" in state &&
+        (!Array.isArray(state.imageIds) || state.imageIds.length > 0))
+    ) {
+      throw new TypeError("Widget state must be a JSON object");
+    }
+    const storedState = { modelContent: null, privateContent: null, ...state };
+    const canonicalState = JSON.stringify(
+      storedState,
+      (_key, /** @type {unknown} */ value) => {
+        if (typeof value === "number" && !Number.isFinite(value)) {
+          throw new TypeError("Widget state must contain finite numbers");
+        }
+        return value;
+      },
+    );
+    if (new TextEncoder().encode(canonicalState).length > 16 * 1024) {
+      throw new TypeError(
+        "Widget state must be a JSON object of at most 16 KiB",
+      );
+    }
+    return storedState;
+  };
+  let storage = null;
+  let state = null;
+  try {
+    const localStorage = globalThis.localStorage;
+    const probeKey = `${storageKey}:probe`;
+    localStorage.setItem(probeKey, "1");
+    localStorage.removeItem(probeKey);
+    storage = localStorage;
+    const savedState = storage.getItem(storageKey);
+    if (savedState != null) {
+      try {
+        state = parseState(savedState);
+      } catch {
+        // Invalid saved state does not disable future writes.
+      }
+    }
+  } catch {
+    storage = null;
+  }
+  const initialGlobals = {
+    widgetState: state,
+    statePersistence: storage == null ? "none" : "local",
+  };
+
+  const channel = new MessageChannel();
+  channel.port1.addEventListener("message", (event) => {
+    const data = event.data;
+    if (typeof data !== "object" || data == null) {
+      return;
+    }
+    if (data.type === "widget-state-write") {
+      if (!Number.isSafeInteger(data.id) || data.id <= 0) {
+        return;
+      }
+      let ok = false;
+      try {
+        if (storage != null) {
+          const state = parseState(data.state);
+          storage.setItem(storageKey, JSON.stringify(state));
+          ok = true;
+        }
+      } catch {
+        // Storage denial, quota limits, and invalid state return a failed receipt.
+      }
+      channel.port1.postMessage({
+        type: "widget-state-result",
+        id: data.id,
+        ok,
+      });
+      return;
+    }
+    if (data.type === "height") {
+      const height = data.height;
+      if (
+        typeof height === "number" &&
+        Number.isFinite(height) &&
+        height >= 0 &&
+        height <= 10_000
+      ) {
+        frame.style.height = Math.ceil(height) + "px";
+      }
+      return;
+    }
+    if (data.type === "scroll-to") {
+      const top = data.top;
+      if (
+        typeof top === "number" &&
+        Number.isFinite(top) &&
+        top >= 0 &&
+        globalThis.navigator.userActivation?.isActive === true
+      ) {
+        globalThis.scrollTo({
+          top: Math.ceil(
+            globalThis.scrollY + frame.getBoundingClientRect().top + top,
+          ),
+        });
+      }
+      return;
+    }
+    if (data.type === "open-external") {
+      const rawHref = data.href;
+      if (typeof rawHref !== "string") {
+        return;
+      }
+      let href;
+      try {
+        const url = new URL(rawHref, document.baseURI);
+        if (url.protocol !== "https:") {
+          return;
+        }
+        href = url.href;
+      } catch {
+        return;
+      }
+      if (globalThis.navigator.userActivation?.isActive === true) {
+        const anchor = document.createElement("a");
+        anchor.href = href;
+        anchor.rel = "noopener noreferrer";
+        anchor.target = "_blank";
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+      }
+      return;
+    }
+    if (data.type === "follow-up") {
+      const prompt = data.prompt;
+      if (
+        typeof prompt !== "string" ||
+        globalThis.navigator.userActivation?.isActive !== true
+      ) {
+        return;
+      }
+      const title = data.title;
+      globalThis.prompt(typeof title === "string" ? title : prompt, prompt);
+    }
+  });
+  channel.port1.start();
+  const srcdoc = frame.dataset.srcdoc;
+  if (srcdoc == null) {
+    return;
+  }
+  globalThis.addEventListener("resize", () => {
+    const height = Number.parseFloat(frame.style.height);
+    if (!Number.isFinite(height) || height <= viewportHeight) {
+      frame.style.removeProperty("height");
+    }
+    viewportHeight = globalThis.innerHeight;
+    channel.port1.postMessage({ type: "measure" });
+  });
+  frame.addEventListener(
+    "load",
+    () => {
+      frame.contentWindow?.postMessage(
+        { type: "codex-visualization-initialize" },
+        "*",
+        [channel.port2],
+      );
+    },
+    { once: true },
+  );
+  // Match the trusted bootstrap element, not the same text in an authored title.
+  frame.srcdoc = srcdoc.replace(
+    '<script type="application/json" id="codex-visualization-widget-state">__CODEX_VISUALIZATION_WIDGET_STATE__<\/script>',
+    () =>
+      '<script type="application/json" id="codex-visualization-widget-state">' +
+      JSON.stringify(initialGlobals).replaceAll("<", "\\u003c") +
+      "<\/script>",
+  );
+  delete frame.dataset.srcdoc;
+})();
+</script>
+</body>
+</html>

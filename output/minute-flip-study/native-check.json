@@ -1,0 +1,42 @@
+{
+  "frames": 113,
+  "uniqueClockFrames": 7,
+  "changes": [
+    {
+      "ms": 1,
+      "clock": "3811d762ae5f",
+      "frame": 0
+    },
+    {
+      "ms": 848,
+      "clock": "4dbb114c4d6e",
+      "frame": 19
+    },
+    {
+      "ms": 1956,
+      "clock": "a22dfe5c3b38",
+      "frame": 44
+    },
+    {
+      "ms": 2000,
+      "clock": "253c7f8610da",
+      "frame": 45
+    },
+    {
+      "ms": 2044,
+      "clock": "51f26dfcbc42",
+      "frame": 46
+    },
+    {
+      "ms": 2088,
+      "clock": "ea603ecbda95",
+      "frame": 47
+    },
+    {
+      "ms": 2132,
+      "clock": "f2038ff55133",
+      "frame": 48
+    }
+  ],
+  "brightnessCorrection": 2.55
+}

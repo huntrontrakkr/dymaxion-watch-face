@@ -1,0 +1,242 @@
+[
+  {
+    "name": "High Visibility",
+    "checks": [
+      {
+        "mode": "normal",
+        "time": 19.555999999999997,
+        "minimumLabel": 9.039555596643915,
+        "dayCoast": 7.455177810447525,
+        "nightCoast": 9.039555596643915
+      },
+      {
+        "mode": "protan",
+        "time": 18.136814336,
+        "minimumLabel": 9.039557305853435,
+        "dayCoast": 7.45517678815492,
+        "nightCoast": 9.039557305853435
+      },
+      {
+        "mode": "deutan",
+        "time": 18.922727423999998,
+        "minimumLabel": 9.039550427209665,
+        "dayCoast": 7.455175824288167,
+        "nightCoast": 9.039550427209665
+      },
+      {
+        "mode": "tritan",
+        "time": 18.449869392,
+        "minimumLabel": 9.039555596643915,
+        "dayCoast": 7.455177810447524,
+        "nightCoast": 9.039555596643915
+      },
+      {
+        "mode": "grayscale",
+        "time": 19.555999999999997,
+        "minimumLabel": 9.039555596643915,
+        "dayCoast": 7.455177810447525,
+        "nightCoast": 9.039555596643915
+      }
+    ]
+  },
+  {
+    "name": "Monochrome",
+    "checks": [
+      {
+        "mode": "normal",
+        "time": 21,
+        "minimumLabel": 7.455177810447525,
+        "dayCoast": 7.455177810447525,
+        "nightCoast": 9.039555596643915
+      },
+      {
+        "mode": "protan",
+        "time": 21,
+        "minimumLabel": 7.45517678815492,
+        "dayCoast": 7.45517678815492,
+        "nightCoast": 9.039557305853435
+      },
+      {
+        "mode": "deutan",
+        "time": 20.999985695999996,
+        "minimumLabel": 7.455175824288167,
+        "dayCoast": 7.455175824288167,
+        "nightCoast": 9.039550427209665
+      },
+      {
+        "mode": "tritan",
+        "time": 21,
+        "minimumLabel": 7.455177810447524,
+        "dayCoast": 7.455177810447524,
+        "nightCoast": 9.039555596643915
+      },
+      {
+        "mode": "grayscale",
+        "time": 21,
+        "minimumLabel": 7.455177810447525,
+        "dayCoast": 7.455177810447525,
+        "nightCoast": 9.039555596643915
+      }
+    ]
+  },
+  {
+    "name": "Blue & Amber",
+    "checks": [
+      {
+        "mode": "normal",
+        "time": 21,
+        "minimumLabel": 8.580149118671576,
+        "dayCoast": 9.726068885257911,
+        "nightCoast": 4.00860935661396
+      },
+      {
+        "mode": "protan",
+        "time": 21,
+        "minimumLabel": 9.519808209937484,
+        "dayCoast": 7.581776171119629,
+        "nightCoast": 3.346931367927264
+      },
+      {
+        "mode": "deutan",
+        "time": 20.999985695999996,
+        "minimumLabel": 7.974969099592828,
+        "dayCoast": 10.022594926108045,
+        "nightCoast": 4.444568160504501
+      },
+      {
+        "mode": "tritan",
+        "time": 21,
+        "minimumLabel": 9.202221797133046,
+        "dayCoast": 8.030313002576472,
+        "nightCoast": 3.9683915085462904
+      },
+      {
+        "mode": "grayscale",
+        "time": 21,
+        "minimumLabel": 8.580149118671576,
+        "dayCoast": 9.726068885257911,
+        "nightCoast": 4.008609356613959
+      }
+    ]
+  },
+  {
+    "name": "Teal & Rose",
+    "checks": [
+      {
+        "mode": "normal",
+        "time": 21,
+        "minimumLabel": 11.58234607679742,
+        "dayCoast": 4.765269453136437,
+        "nightCoast": 4.1397847875627996
+      },
+      {
+        "mode": "protan",
+        "time": 21,
+        "minimumLabel": 10.402907657470642,
+        "dayCoast": 3.9861903198349906,
+        "nightCoast": 3.526151846457376
+      },
+      {
+        "mode": "deutan",
+        "time": 20.999985695999996,
+        "minimumLabel": 12.359244074639655,
+        "dayCoast": 5.344399928528123,
+        "nightCoast": 4.543986990108413
+      },
+      {
+        "mode": "tritan",
+        "time": 21,
+        "minimumLabel": 10.915696924505104,
+        "dayCoast": 4.3113663537914935,
+        "nightCoast": 4.130994746832078
+      },
+      {
+        "mode": "grayscale",
+        "time": 21,
+        "minimumLabel": 11.582346076797418,
+        "dayCoast": 4.765269453136436,
+        "nightCoast": 4.1397847875627996
+      }
+    ]
+  },
+  {
+    "name": "Amber Terminal",
+    "checks": [
+      {
+        "mode": "normal",
+        "time": 11.001890162719729,
+        "minimumLabel": 11.001890162719729,
+        "dayCoast": 7.49777148484633,
+        "nightCoast": 8.590275113515066
+      },
+      {
+        "mode": "protan",
+        "time": 9.605485255062014,
+        "minimumLabel": 9.605485255062014,
+        "dayCoast": 7.300378473814762,
+        "nightCoast": 8.396385524107139
+      },
+      {
+        "mode": "deutan",
+        "time": 11.913876901687486,
+        "minimumLabel": 11.913876901687486,
+        "dayCoast": 7.274074871114482,
+        "nightCoast": 8.694830399760862
+      },
+      {
+        "mode": "tritan",
+        "time": 9.890601084419139,
+        "minimumLabel": 9.890601084419139,
+        "dayCoast": 7.33732871756089,
+        "nightCoast": 8.482633763592371
+      },
+      {
+        "mode": "grayscale",
+        "time": 11.001890162719729,
+        "minimumLabel": 11.001890162719729,
+        "dayCoast": 7.497771484846332,
+        "nightCoast": 8.590275113515064
+      }
+    ]
+  },
+  {
+    "name": "Polar",
+    "checks": [
+      {
+        "mode": "normal",
+        "time": 18.564759652165534,
+        "minimumLabel": 8.639929928905667,
+        "dayCoast": 7.593761758790683,
+        "nightCoast": 6.821757988746721
+      },
+      {
+        "mode": "protan",
+        "time": 16.57566435902923,
+        "minimumLabel": 8.04678840501099,
+        "dayCoast": 7.523096373615917,
+        "nightCoast": 6.575203019963677
+      },
+      {
+        "mode": "deutan",
+        "time": 17.666319017889084,
+        "minimumLabel": 9.080840330929885,
+        "dayCoast": 7.6409204489770115,
+        "nightCoast": 6.151581772134231
+      },
+      {
+        "mode": "tritan",
+        "time": 17.05018447460817,
+        "minimumLabel": 8.294357571101783,
+        "dayCoast": 7.031785800940345,
+        "nightCoast": 6.272352911526808
+      },
+      {
+        "mode": "grayscale",
+        "time": 18.564759652165534,
+        "minimumLabel": 8.639929928905667,
+        "dayCoast": 7.593761758790683,
+        "nightCoast": 6.821757988746721
+      }
+    ]
+  }
+]

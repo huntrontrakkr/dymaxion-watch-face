@@ -1,0 +1,63 @@
+<div id="dymaxion-chart-refinement">
+  <style>
+    #dymaxion-chart-refinement { color:var(--foreground); }
+    #dymaxion-chart-refinement .comparison { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; margin-top:24px; }
+    #dymaxion-chart-refinement figure { margin:0; min-width:0; text-align:center; }
+    #dymaxion-chart-refinement figcaption { margin-bottom:10px; font-weight:500; }
+    #dymaxion-chart-refinement img { display:block; margin:0 auto; width:200px; height:auto; image-rendering:pixelated; }
+    #dymaxion-chart-refinement[data-detail="true"] .comparison { grid-template-columns:minmax(0,1fr); }
+    #dymaxion-chart-refinement[data-detail="true"] img { width:var(--pixel-width,200px); }
+    @media(max-width:470px) { #dymaxion-chart-refinement .comparison { grid-template-columns:minmax(0,1fr); } }
+  </style>
+  <div class="viz-controls">
+    <label class="form-label">Panel example
+      <select class="form-select" data-example aria-label="Panel example">
+        <option value="weather">Weather · 24 hours</option><option value="weather12">Weather · 12 hours · AM/PM</option><option value="humidity">Humidity · 24 hours</option><option value="tide">Tide · 24 hours</option><option value="tide48">Tide · 48 hours · feet</option><option value="mono">Weather · Monochrome</option>
+      </select>
+    </label>
+    <label class="form-check"><input class="form-check-input" data-detail type="checkbox" checked><span class="form-check-label">Enlarge chart detail</span></label>
+  </div>
+  <div class="comparison">
+    <figure><figcaption>Before</figcaption><img data-before width="200" height="44" alt="Previous chart spacing"></figure>
+    <figure><figcaption>Refined</figcaption><img data-after width="200" height="44" alt="Refined chart spacing"></figure>
+  </div>
+  <span class="sr-only" aria-live="polite" data-status></span>
+  <script type="application/json" data-renders>__RENDERS__</script>
+  <script>
+    (() => {
+      const root=document.getElementById('dymaxion-chart-refinement');
+      const renders=JSON.parse(root.querySelector('[data-renders]').textContent);
+      const example=root.querySelector('[data-example]'),detail=root.querySelector('[data-detail]');
+      const state={example:'weather',detail:true};
+      function fitPixels(){
+        const scale=Math.max(1,Math.min(3,Math.floor(root.clientWidth/200)));
+        root.style.setProperty('--pixel-width',200*scale+'px');
+      }
+      function draw(){
+        example.value=state.example;detail.checked=state.detail;root.dataset.detail=String(state.detail);
+        const entry=renders.find(r=>r.id===state.example),kind=state.detail?'chart':'watch';
+        for(const stage of ['before','after']){
+          const img=root.querySelector('[data-'+stage+']');img.src=entry[stage][kind];img.height=state.detail?44:228;
+          img.alt=(stage==='before'?'Previous':'Refined')+' '+entry.name+', example data';
+        }
+        root.dataset.view=state.example+'/'+kind;fitPixels();
+        root.querySelector('[data-status]').textContent=entry.name+', before and refined, '+(state.detail?'chart detail':'full watch');
+      }
+      function restore(saved){
+        if(saved?.modelContent?.study!=='dymaxion-chart-refinement-v1')return;
+        const value=saved.modelContent;
+        if(renders.some(r=>r.id===value.example))state.example=value.example;
+        if(typeof value.detail==='boolean')state.detail=value.detail;
+        draw();
+      }
+      function changed(){
+        state.example=example.value;state.detail=detail.checked;draw();
+        if(window.openai?.setWidgetState)Promise.resolve(window.openai.setWidgetState({modelContent:{study:'dymaxion-chart-refinement-v1',...state},privateContent:null})).catch(()=>{});
+      }
+      example.addEventListener('change',changed);detail.addEventListener('change',changed);
+      draw();restore(window.openai?.widgetState);
+      new ResizeObserver(fitPixels).observe(root);
+      window.addEventListener('openai:set_globals',event=>restore(event.detail?.globals?.widgetState));
+    })();
+  </script>
+</div>

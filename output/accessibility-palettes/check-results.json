@@ -1,0 +1,32 @@
+[
+  {
+    "width": 736,
+    "scheme": "light",
+    "geometry": {
+      "scroll": 704,
+      "width": 704,
+      "height": 987
+    },
+    "checks": "six renders, all simulations, panel switching, saved state, restoration, no errors or overflow"
+  },
+  {
+    "width": 390,
+    "scheme": "light",
+    "geometry": {
+      "scroll": 358,
+      "width": 358,
+      "height": 1985
+    },
+    "checks": "six renders, all simulations, panel switching, saved state, restoration, no errors or overflow"
+  },
+  {
+    "width": 320,
+    "scheme": "dark",
+    "geometry": {
+      "scroll": 288,
+      "width": 288,
+      "height": 1985
+    },
+    "checks": "six renders, all simulations, panel switching, saved state, restoration, no errors or overflow"
+  }
+]

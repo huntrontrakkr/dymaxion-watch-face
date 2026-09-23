@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dymaxion — typography on the wrist</title></head>
+<body class="type-study">
+  <main>
+    <a class="back" href="./">← Back to the watch workshop</a>
+    <p class="eyebrow">DYMAXION / LETTERING STUDY 03</p>
+    <h1>Precision with a human hand.</h1>
+    <p class="lead">The full-width Dymaxion Span, the earlier Draft cut, and three humanist references. Compare their curves, spacing, and rhythm against the same map at 200 × 228 pixels.</p>
+    <div class="study-controls">
+      <label>Readout <select id="study-time"><option>08:08</option><option>11:11</option><option selected>12:34</option><option>23:59</option><option>00:00</option></select></label>
+      <label>Clock numerals <select id="study-figures"><option value="lining">Lining / even height</option><option value="oldstyle">Oldstyle / varied height</option></select></label>
+      <label>Display <select id="study-scale"><option value="2">Enlarged pixels / 2×</option><option value="1">Actual pixel dimensions / 1×</option></select></label>
+    </div>
+    <div class="study-grid">
+      <article data-family="span"><p class="eyebrow">01 / DYMAXION SPAN</p><h2>Across the face.</h2><p class="role">The current watch · 190px clock line</p><canvas width="200" height="228" aria-label="Dymaxion Span watch face"></canvas><p class="figure-status"></p><p>Long horizontal strokes, clipped hexagonal corners, and stable spacing. Drawn for the full Pebble Time 2 width.</p><a href="./">Try the current face in the workshop ↗</a></article>
+      <article data-family="draft"><p class="eyebrow">02 / DYMAXION DRAFT</p><h2>Earlier display cut.</h2><p class="role">Retained for stacked time · 28px numerals / 7px Micro</p><canvas width="200" height="228" aria-label="Dymaxion Draft watch face"></canvas><p class="figure-status"></p><p>Soft, squared bowls and a few triangular details. Zone figures and tiny lettering remain on the current watch.</p><a href="./">Try the current face in the workshop ↗</a></article>
+      <article data-family="alegreya"><p class="eyebrow">03 / WARMTH</p><h2>Alegreya Sans</h2><p class="role">The humanist reference</p><canvas width="200" height="228" aria-label="Alegreya Sans watch face"></canvas><p class="figure-status"></p><p>Calligraphic proportions, softly tapered strokes, and lively figures. The closest match to a careful, human hand.</p><a href="https://github.com/huertatipografica/Alegreya-Sans">Juan Pablo del Peral / Huerta Tipográfica ↗</a></article>
+      <article data-family="fira"><p class="eyebrow">04 / CLARITY</p><h2>Fira Sans</h2><p class="role">The instrument reference</p><canvas width="200" height="228" aria-label="Fira Sans watch face"></canvas><p class="figure-status"></p><p>Clear apertures, steady shapes, and a firm presence. A useful reference for small labels and dependable clock numerals.</p><a href="https://carrois.com/fira/">Carrois / Edenspiekermann ↗</a></article>
+      <article data-family="recursive"><p class="eyebrow">05 / PERSONALITY</p><h2>Recursive Sans</h2><p class="role">A measured amount of play</p><canvas width="200" height="228" aria-label="Recursive Sans watch face"></canvas><p class="figure-status"></p><p>A small amount of its Casual character adds hand-painted warmth to an orderly structure. We should judge how much survives at watch size.</p><a href="https://www.recursive.design/">Stephen Nixon / ArrowType ↗</a></article>
+    </div>
+    <section class="study-notes"><h2>What to look for</h2><p>Compare the space around the colon, the shape of 2 and 4, the openings in 6 and 9, and the rhythm of 11:11 against 08:08. Clock numerals have equal advances; letters keep their natural widths.</p><p>Oldstyle figures rise and fall like lowercase letters. Span has lining numerals only, because stable positions make the large time easier to read. Try the oldstyle option on the other studies. Recursive also has no oldstyle set.</p><p>The original nameplate script is drawn directly on a 124 × 17 pixel grid. Its wide, low lowercase and horizontal joins give the watch a mid-century identity; the information lettering carries the readouts.</p><p class="technical">These are bitmap proofs using the same FreeType monochrome loading flags as Pebble's SDK. Span and Draft have exact pixel masters, with FreeType round-trip checks for every glyph. The new clock cut takes substantial inspiration from <a href="https://haller.design/dymaxion-v1">Seth Haller's Dymaxion v.1</a> without using its outlines. Physical e-paper readability remains to be checked on a watch. The reference fonts retain their designers' authorship and SIL Open Font Licenses.</p></section>
+    <p id="study-error" role="status"></p>
+  </main>
+  <script type="module" src="./type-study.js"></script>
+</body></html>

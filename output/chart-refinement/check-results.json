@@ -1,0 +1,32 @@
+[
+  {
+    "width": 736,
+    "scheme": "light",
+    "geometry": {
+      "scroll": 704,
+      "width": 704,
+      "height": 426
+    },
+    "checks": "six examples, detail/full-watch switch, saved state and restoration, no errors or overflow"
+  },
+  {
+    "width": 390,
+    "scheme": "light",
+    "geometry": {
+      "scroll": 358,
+      "width": 358,
+      "height": 646
+    },
+    "checks": "six examples, detail/full-watch switch, saved state and restoration, no errors or overflow"
+  },
+  {
+    "width": 320,
+    "scheme": "dark",
+    "geometry": {
+      "scroll": 288,
+      "width": 288,
+      "height": 646
+    },
+    "checks": "six examples, detail/full-watch switch, saved state and restoration, no errors or overflow"
+  }
+]

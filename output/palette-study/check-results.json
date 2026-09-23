@@ -1,0 +1,26 @@
+[
+  {
+    "width": 704,
+    "scheme": "light",
+    "scroll": 704,
+    "height": 673,
+    "errors": [],
+    "controls": true
+  },
+  {
+    "width": 358,
+    "scheme": "light",
+    "scroll": 358,
+    "height": 1328,
+    "errors": [],
+    "controls": true
+  },
+  {
+    "width": 288,
+    "scheme": "dark",
+    "scroll": 288,
+    "height": 1328,
+    "errors": [],
+    "controls": true
+  }
+]

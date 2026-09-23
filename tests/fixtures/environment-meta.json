@@ -1,0 +1,18 @@
+{
+  "capturedAt": 1790138092892,
+  "station": {
+    "station": "8518750",
+    "label": "BATTERY",
+    "tz": "America/New_York"
+  },
+  "place": {
+    "label": "NYC",
+    "name": "New York",
+    "tz": "America/New_York",
+    "lat": 40.7128,
+    "lon": -74.006,
+    "on": true,
+    "icon": 1,
+    "color": null
+  }
+}

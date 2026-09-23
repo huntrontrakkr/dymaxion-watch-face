@@ -1,0 +1,37 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_type": "W",
+        "osm_id": 407402140,
+        "osm_key": "building",
+        "osm_value": "yes",
+        "type": "house",
+        "housenumber": "485",
+        "street": "Saint Pauls Boulevard",
+        "locality": "Downtown",
+        "district": "Berkley",
+        "city": "Norfolk",
+        "state": "Virginia",
+        "country": "United States",
+        "postcode": "23510",
+        "countrycode": "US",
+        "extent": [
+          -76.2860621,
+          36.8512335,
+          -76.2856653,
+          36.8510032
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.2858637,
+          36.8511184
+        ]
+      }
+    }
+  ]
+}

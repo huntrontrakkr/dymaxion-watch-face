@@ -1,0 +1,87 @@
+<div id="dymaxion-refined-type-study">
+  <style>
+    #dymaxion-refined-type-study { color: var(--foreground); }
+    #dymaxion-refined-type-study .comparison { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 24px; align-items: start; margin-block: 20px; }
+    #dymaxion-refined-type-study figure { margin: 0 0 16px; min-width: 0; }
+    #dymaxion-refined-type-study figcaption { margin-bottom: 6px; }
+    #dymaxion-refined-type-study canvas { display: block; image-rendering: pixelated; max-width: 100%; }
+    #dymaxion-refined-type-study .strip, #dymaxion-refined-type-study .pair, #dymaxion-refined-type-study .glyph-proof { width: 100%; height: auto; }
+    #dymaxion-refined-type-study .construction { image-rendering: auto; }
+    #dymaxion-refined-type-study .watch { width: 200px; height: 228px; }
+    #dymaxion-refined-type-study .detail { color: var(--muted-foreground); margin-block: 5px 12px; }
+    #dymaxion-refined-type-study .readout-status { margin-block: 10px; }
+    #dymaxion-refined-type-study .pair-proofs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    @media (max-width: 590px) {
+      #dymaxion-refined-type-study .comparison { grid-template-columns: minmax(0, 1fr); }
+      #dymaxion-refined-type-study .watch-context { justify-self: center; }
+      #dymaxion-refined-type-study .pair-proofs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+  <div class="viz-controls">
+    <label class="form-label">Readout
+      <select class="form-select" data-time aria-label="Readout">
+        <option>12:33</option><option>12:34</option><option>23:32</option><option>11:11</option><option>06:57</option><option>07:36</option><option>08:08</option><option>23:59</option><option>00:00</option><option>20:26</option>
+      </select>
+    </label>
+    <label class="form-label">Watch lettering
+      <select class="form-select" data-watch-style aria-label="Watch lettering">
+        <option value="rounded">Rounded numerals</option><option value="trimmed">Trimmed to grid</option>
+      </select>
+    </label>
+    <label class="form-label">Watch colors
+      <select class="form-select" data-palette aria-label="Watch colors">
+        <option value="paper">Paper / black ink</option><option value="dark">Airocean / white ink</option>
+      </select>
+    </label>
+  </div>
+  <div class="comparison">
+    <div>
+      <figure>
+        <figcaption>01 · Rounded numerals, balanced weight</figcaption>
+        <canvas class="strip" data-strip="rounded" width="200" height="40" role="img" aria-label="Separate broad numerals with subtly rounded corners and a bold colon"></canvas>
+      </figure>
+      <figure>
+        <figcaption>02 · Construction grid + selected cuts</figcaption>
+        <canvas class="strip construction" data-strip="construction" width="800" height="160" role="img" aria-label="Equilateral construction grid over the original lettering, with selected corner cuts highlighted"></canvas>
+      </figure>
+      <figure>
+        <figcaption>03 · Clean outline after trimming</figcaption>
+        <canvas class="strip" data-strip="trimmed" width="200" height="40" role="img" aria-label="Numeral outlines trimmed along selected triangle edges"></canvas>
+      </figure>
+    </div>
+    <figure class="watch-context">
+      <figcaption>On the watch · 1× pixels</figcaption>
+      <canvas class="watch" data-watch width="200" height="228" role="img" aria-label="Selected lettering at native watch resolution"></canvas>
+      <div class="detail text-small">200 × 228 · fixed map and status</div>
+    </figure>
+  </div>
+  <div class="viz-controls">
+    <label class="form-label">Grid row spacing
+      <select class="form-select" data-pitch aria-label="Grid row spacing"><option value="6">6 px</option><option value="8" selected>8 px / stroke height</option><option value="10">10 px</option></select>
+    </label>
+    <label class="form-label">Horizontal alignment
+      <select class="form-select" data-phase aria-label="Horizontal alignment"><option value="0">Origin</option><option value="0.5">Quarter-cell shift</option><option value="1">Half-cell shift</option></select>
+    </label>
+    <label class="form-label">Maximum corner trim · <output data-depth-value>2 px</output>
+      <input class="form-range" data-depth type="range" min="0" max="3" step="0.5" value="2" aria-label="Maximum corner trim">
+    </label>
+  </div>
+  <div class="readout-status text-small" data-status aria-live="polite"></div>
+  <hr>
+  <div class="detail">Spacing and rounded terminals</div>
+  <div class="pair-proofs">
+    <figure><figcaption>12</figcaption><canvas class="pair" data-pair="12" width="96" height="40" role="img" aria-label="One and two with separate rounded terminals"></canvas></figure>
+    <figure><figcaption>23</figcaption><canvas class="pair" data-pair="23" width="96" height="40" role="img" aria-label="Two and three with separate rounded terminals"></canvas></figure>
+    <figure><figcaption>32</figcaption><canvas class="pair" data-pair="32" width="96" height="40" role="img" aria-label="Three and two with separate rounded terminals"></canvas></figure>
+    <figure><figcaption>33</figcaption><canvas class="pair" data-pair="33" width="96" height="40" role="img" aria-label="Two threes with separate rounded terminals"></canvas></figure>
+    <figure><figcaption>67</figcaption><canvas class="pair" data-pair="67" width="96" height="40" role="img" aria-label="Six and seven with separate rounded terminals and matching top stroke weights"></canvas></figure>
+    <figure><figcaption>57</figcaption><canvas class="pair" data-pair="57" width="96" height="40" role="img" aria-label="Five and seven with separate rounded terminals"></canvas></figure>
+  </div>
+  <div class="detail">All ten numerals</div>
+  <div class="viz-grid">
+    <canvas class="glyph-proof" data-digits="01234" width="250" height="40" role="img" aria-label="Numerals zero through four"></canvas>
+    <canvas class="glyph-proof" data-digits="56789" width="250" height="40" role="img" aria-label="Numerals five through nine"></canvas>
+  </div>
+  <script type="application/json" data-watch-bases>__WATCH_BASES__</script>
+  <script>__BROAD_STUDY_SCRIPT__</script>
+</div>

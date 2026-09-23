@@ -1,0 +1,28 @@
+// Stable wire IDs: append palettes so saved compositions retain their colors.
+// Every channel is one of 00, 55, AA, FF: the watch's native RGB222 colors.
+export const THEMES = [
+  {name:'Airocean',description:'Blue oceans, amber land, bright city lights.',bg:'#000000',ocean:'#0055AA',land:'#FFAA55',nightOcean:'#000055',nightLand:'#AA5500',edge:'#555555',ink:'#FFFFFF',accent:'#FFFFAA',marks:['#00FFAA','#FF55FF','#55AAFF'],moonShadow:'#555555',inactive:'#000055'},
+  {name:'Blueprint',description:'Cobalt paper and cool drafting ink.',bg:'#000055',ocean:'#0000AA',land:'#55AAFF',nightOcean:'#000055',nightLand:'#5555AA',edge:'#AAAAFF',ink:'#FFFFFF',accent:'#FFFF55',marks:['#55FFAA','#FFAA55','#FF55AA'],moonShadow:'#5555AA',inactive:'#0000AA'},
+  {name:'Paper',description:'White paper, black figures, orange annotations.',bg:'#FFFFFF',ocean:'#AAAAAA',land:'#005555',nightOcean:'#555555',nightLand:'#000000',edge:'#AAAAAA',ink:'#000000',accent:'#FF5500',marks:['#0055AA','#AA0055','#005500'],moonShadow:'#AAAAAA',inactive:'#AAAAAA'},
+  {name:'Spaceship Earth',description:'Deep green oceans and luminous green land.',bg:'#000000',ocean:'#005555',land:'#00AA55',nightOcean:'#000000',nightLand:'#005500',edge:'#55AA55',ink:'#AAFFAA',accent:'#FFFF55',marks:['#FF55AA','#FFAA00','#55AAFF'],moonShadow:'#005500',inactive:'#005500'},
+  {name:'DaVinci',description:'Warm paper, brown ink, and red chalk.',bg:'#FFFFAA',ocean:'#AAAA55',land:'#AA5500',nightOcean:'#555500',nightLand:'#550000',edge:'#555500',ink:'#550000',accent:'#AA0000',marks:['#550000','#AA0000','#555500'],moonShadow:'#AAAA55',inactive:'#AAAA55'},
+  {name:'TWA',description:'1950s airline red, white, and polished silver.',bg:'#FFFFFF',ocean:'#AAAAAA',land:'#FF0000',nightOcean:'#555555',nightLand:'#AA0000',edge:'#555555',ink:'#AA0000',accent:'#AA0000',marks:['#AA0000','#000000','#000055'],moonShadow:'#AAAAAA',inactive:'#AAAAAA'},
+  {name:'Earthrise',description:'Midnight blue, ivory, and copper light.',bg:'#000055',ocean:'#0055AA',land:'#FFFFAA',nightOcean:'#000000',nightLand:'#5555AA',edge:'#AAAAFF',ink:'#FFFFAA',accent:'#FFAA55',marks:['#FFAA55','#AAFFFF','#FFAAFF'],moonShadow:'#5555AA',inactive:'#0000AA'},
+  {name:'Sea Glass',description:'Pale mint, deep teal, and coral accents.',bg:'#AAFFFF',ocean:'#55AAAA',land:'#005555',nightOcean:'#005555',nightLand:'#000000',edge:'#005555',ink:'#005555',accent:'#AA0055',marks:['#AA0055','#000055','#005500'],moonShadow:'#55AAAA',inactive:'#55AAAA'},
+  {name:'High Visibility',description:'Yellow on black, bright coastlines, matching location glyphs.',bg:'#000000',ocean:'#555555',land:'#FFFFFF',nightOcean:'#000000',nightLand:'#AAAAAA',edge:'#AAAAAA',ink:'#FFFF00',accent:'#FFFFFF',marks:['#FFFFFF','#FFFF00','#AAAAAA'],moonShadow:'#555555',inactive:'#555555',zoneGlyphs:true,
+    panelColors:{temperature:'#FFFF00',rain:'#AAAAAA',humidity:'#FFFF00',tide:'#FFFFFF',saturday:'#FFFF00',sunday:'#FFFFFF',holiday:'#FFFF00',today:'#FFFFFF'}},
+  {name:'Monochrome',description:'Black and white; location identity comes from shape.',bg:'#FFFFFF',ocean:'#555555',land:'#FFFFFF',nightOcean:'#000000',nightLand:'#AAAAAA',edge:'#555555',ink:'#000000',accent:'#000000',marks:['#000000','#555555','#000000'],moonShadow:'#AAAAAA',inactive:'#AAAAAA',zoneGlyphs:true,
+    panelColors:{temperature:'#000000',rain:'#555555',humidity:'#000000',tide:'#000000',saturday:'#555555',sunday:'#555555',holiday:'#000000',today:'#000000'}},
+  {name:'Blue & Amber',description:'Deep blue and warm amber, with white instrument lettering.',bg:'#000000',ocean:'#000055',land:'#FFAA00',nightOcean:'#000000',nightLand:'#AA5500',edge:'#AAAAAA',ink:'#FFFFFF',accent:'#FFFFAA',marks:['#55AAFF','#FFAA00','#FFFFFF'],moonShadow:'#555555',inactive:'#000055',zoneGlyphs:true,
+    panelColors:{temperature:'#FFAA00',rain:'#55AAFF',humidity:'#FFFFAA',tide:'#55AAFF',saturday:'#55AAFF',sunday:'#FFAA00',holiday:'#FFFFAA',today:'#FFFFFF'}},
+  {name:'Teal & Rose',description:'Dark teal seas, pale rose land, clear light–dark separation.',bg:'#000000',ocean:'#005555',land:'#FFAAAA',nightOcean:'#000000',nightLand:'#AA5555',edge:'#AAAAAA',ink:'#FFFFFF',accent:'#FFAAAA',marks:['#55FFFF','#FFAAAA','#FFFFFF'],moonShadow:'#555555',inactive:'#005555',zoneGlyphs:true,
+    panelColors:{temperature:'#FFAAAA',rain:'#55FFFF',humidity:'#FFFFFF',tide:'#55FFFF',saturday:'#55FFFF',sunday:'#FFAAAA',holiday:'#FFFFFF',today:'#FFFFFF'}},
+  {name:'Amber Terminal',description:'Warm amber figures and ivory highlights on black.',bg:'#000000',ocean:'#555500',land:'#FFFFAA',nightOcean:'#000000',nightLand:'#AAAA55',edge:'#AAAAAA',ink:'#FFAA00',accent:'#FFFFAA',marks:['#FFFFAA','#FFAA55','#FFFFFF'],moonShadow:'#555500',inactive:'#555500',zoneGlyphs:true,
+    panelColors:{temperature:'#FFFFAA',rain:'#FFAA55',humidity:'#FFAA00',tide:'#FFFFAA',saturday:'#FFAA55',sunday:'#FFFFAA',holiday:'#FFFFFF',today:'#FFFFFF'}},
+  {name:'Polar',description:'White ground, navy figures, and cool cyan continents.',bg:'#FFFFFF',ocean:'#005555',land:'#AAFFFF',nightOcean:'#000055',nightLand:'#55AAAA',edge:'#555555',ink:'#000055',accent:'#000055',marks:['#000055','#005555','#550055'],moonShadow:'#AAAAAA',inactive:'#AAAAAA',zoneGlyphs:true,
+    panelColors:{temperature:'#000055',rain:'#005555',humidity:'#005555',tide:'#000055',saturday:'#005555',sunday:'#550055',holiday:'#000055',today:'#000055'}}
+];
+
+// Background, shadow, and illuminated pixels for the small phase glyphs.
+export const MOON_COLORS = THEMES.map(theme => [theme.bg, theme.moonShadow, theme.ink]);
+export const INACTIVE_SEGMENTS = THEMES.map(theme => theme.inactive);

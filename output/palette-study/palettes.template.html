@@ -1,0 +1,52 @@
+<div id="dymaxion-palette-comparison">
+  <style>
+    #dymaxion-palette-comparison { color: var(--foreground); }
+    #dymaxion-palette-comparison .palette-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 28px 20px; margin-top: 24px; }
+    #dymaxion-palette-comparison figure { margin: 0; min-width: 0; text-align: center; }
+    #dymaxion-palette-comparison figcaption { margin-bottom: 10px; font-weight: 500; }
+    #dymaxion-palette-comparison img { display: block; width: 200px; height: 228px; margin: 0 auto; image-rendering: pixelated; }
+    #dymaxion-palette-comparison .materials { margin-top: 10px; }
+    @media(max-width:470px) { #dymaxion-palette-comparison .palette-grid { grid-template-columns: minmax(0,1fr); } }
+  </style>
+  <div class="viz-controls">
+    <label class="form-label">Watch layout
+      <select class="form-select" data-layout aria-label="Watch layout"><option value="atlas">Atlas</option><option value="horizon">Horizon</option></select>
+    </label>
+    <label class="form-check"><input class="form-check-input" data-shading type="checkbox" checked><span class="form-check-label">Day/night shading</span></label>
+  </div>
+  <div class="palette-grid">
+    <figure data-palette="4"><figcaption>DaVinci</figcaption><img width="200" height="228" alt="DaVinci watch palette: warm paper and brown numerals"><div class="materials text-small">Brown ink · warm paper</div></figure>
+    <figure data-palette="5"><figcaption>TWA</figcaption><img width="200" height="228" alt="TWA watch palette: red numerals, white ground, and silver ocean"><div class="materials text-small">Airline red · white · silver</div></figure>
+    <figure data-palette="6"><figcaption>Earthrise</figcaption><img width="200" height="228" alt="Earthrise watch palette: ivory numerals on midnight blue"><div class="materials text-small">Midnight blue · ivory · copper</div></figure>
+    <figure data-palette="7"><figcaption>Sea Glass</figcaption><img width="200" height="228" alt="Sea Glass watch palette: dark teal numerals on pale aqua"><div class="materials text-small">Pale aqua · teal · rose</div></figure>
+  </div>
+  <script type="application/json" data-renders>__RENDERS__</script>
+  <script>
+    (() => {
+      const root=document.getElementById('dymaxion-palette-comparison');
+      const renders=JSON.parse(root.querySelector('[data-renders]').textContent);
+      const layout=root.querySelector('[data-layout]'),shading=root.querySelector('[data-shading]');
+      const state={layout:'atlas',shading:true};
+      function draw(){
+        layout.value=state.layout;shading.checked=state.shading;
+        const key=state.layout+(state.shading?'-shaded':'-day');
+        for(const entry of renders)root.querySelector('[data-palette="'+entry.id+'"] img').src=entry.images[key];
+        root.dataset.view=key;
+      }
+      function restore(saved){
+        if(saved?.modelContent?.study!=='dymaxion-palettes-v1')return;
+        const value=saved.modelContent;
+        if(['atlas','horizon'].includes(value.layout))state.layout=value.layout;
+        if(typeof value.shading==='boolean')state.shading=value.shading;
+        draw();
+      }
+      function changed(){
+        state.layout=layout.value;state.shading=shading.checked;draw();
+        if(window.openai?.setWidgetState)Promise.resolve(window.openai.setWidgetState({modelContent:{study:'dymaxion-palettes-v1',...state},privateContent:null})).catch(()=>{});
+      }
+      layout.addEventListener('change',changed);shading.addEventListener('change',changed);
+      draw();restore(window.openai?.widgetState);
+      window.addEventListener('openai:set_globals',event=>restore(event.detail?.globals?.widgetState));
+    })();
+  </script>
+</div>
