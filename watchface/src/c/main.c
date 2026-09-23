@@ -4,6 +4,7 @@
 #include "city.h"
 #include "display.h"
 #include "minute_flip.h"
+#include "caps.h"
 #include "palette.h"
 #include "generated/defaults.h"
 #include "generated/cities.h"
@@ -20,7 +21,7 @@ static GFont s_large,s_small,s_zone;
 static uint8_t s_settings[SETTINGS_SIZE];
 static uint8_t s_palette[PALETTE_SIZE];
 static uint8_t s_city[CITY_SIZE]={1};
-static uint8_t s_display[DISPLAY_SIZE]={1,2,1,0};
+static uint8_t s_display[DISPLAY_SIZE]=DEFAULT_DISPLAY;
 static bool s_map_dirty=true,s_connected=true;
 static BatteryChargeState s_battery;
 static int16_t s_sun[3];
@@ -29,7 +30,11 @@ static uint8_t s_selected=0,s_frame=16;
 static AppTimer *s_animation;
 static AppTimer *s_clock_timer;
 static ClockFlip s_clock_flip;
-static uint8_t s_clock_digits[4],s_clock_pixels[CLOCK_FRAME_BYTES];
+static ClockFace s_geodesic;
+// Flip state lives in the heap, sized for the active face; see clock_configure.
+static const ClockFace *s_clock_face;
+static uint8_t *s_clock_memory,*s_clock_pixels,*s_geodesic_data,*s_caps;
+static uint8_t s_clock_digits[4];
 static bool s_clock_ready,s_clock_running,s_clock_24,s_focused=true;
 static time_t s_clock_minute;
 static uint32_t s_clock_started;
@@ -129,6 +134,7 @@ static void clock_step(void *context){
   layer_mark_dirty(s_layer);
 }
 static void clock_prepare(struct tm *local,time_t now,bool animate){
+  if(!s_clock_face)return;
   bool format=is_24();int hour=local->tm_hour;if(!format){hour%=12;if(!hour)hour=12;}
   uint8_t digits[4]={hour/10,hour%10,local->tm_min/10,local->tm_min%10};
   time_t minute=now/60;
@@ -146,17 +152,41 @@ static uint8_t clock_shade(uint8_t from,uint8_t toward){
   for(int shift=0;shift<=4;shift+=2){int a=(from>>shift)&3,b=(toward>>shift)&3;out|=(a+(b>a?1:b<a?-1:0))<<shift;}
   return out;
 }
-static void draw_broad_time(GContext *ctx,struct tm *local,time_t now,int x,int y){
+static void draw_flip_time(GContext *ctx,struct tm *local,time_t now,int x,int y){
   clock_prepare(local,now,false);
   uint32_t ms=s_clock_running?clock_milliseconds()-s_clock_started:CLOCK_FLIP_MS;
   uint16_t elapsed=ms<CLOCK_FLIP_MS?ms:CLOCK_FLIP_MS;
   if(elapsed!=s_clock_frame){clock_flip_sample(&s_clock_flip,elapsed,s_clock_pixels);s_clock_frame=elapsed;}
   uint8_t colors[4]={palette()[0],palette()[6],clock_shade(palette()[0],palette()[6]),clock_shade(palette()[6],palette()[0])};
-  for(int row=0;row<CLOCK_HEIGHT;row++)for(int start=0;start<CLOCK_WIDTH;){
+  // Broad figures sit two pixels above the time block; Geodesic fills it.
+  int top=s_clock_face==&BROAD_FACE?y-2:y;
+  for(int row=0;row<s_clock_face->height;row++)for(int start=0;start<CLOCK_WIDTH;){
     uint8_t value=clock_frame_pixel(s_clock_pixels,row*CLOCK_WIDTH+start);int end=start+1;
     while(end<CLOCK_WIDTH&&clock_frame_pixel(s_clock_pixels,row*CLOCK_WIDTH+end)==value)end++;
-    line(ctx,x+start,y-2+row,x+end-1,y-2+row,(GColor){.argb=colors[value]});start=end;
+    line(ctx,x+start,top+row,x+end-1,top+row,(GColor){.argb=colors[value]});start=end;
   }
+}
+static void clock_release(void){
+  clock_stop();s_clock_ready=false;s_clock_face=NULL;
+  free(s_clock_memory);free(s_clock_pixels);free(s_geodesic_data);
+  s_clock_memory=s_clock_pixels=s_geodesic_data=NULL;
+}
+// Choose the flip face for the current display and allocate only its state.
+// Geodesic tables are a resource so the app image stays under 64 KB; if the
+// heap cannot hold them, the clock falls back to Span lettering.
+static void clock_configure(void){
+  clock_release();
+  if(s_settings[FLAGS]&STACKED)return;
+  const ClockFace *face=NULL;
+  if(s_display[1]==2)face=&BROAD_FACE;
+  else if(s_display[1]==4){
+    ResHandle handle=resource_get_handle(RESOURCE_ID_CLOCK_GEODESIC);size_t length=resource_size(handle);
+    s_geodesic_data=malloc(length);
+    if(s_geodesic_data&&resource_load(handle,s_geodesic_data,length)==length&&geodesic_face_init(&s_geodesic,s_geodesic_data,length))face=&s_geodesic;
+  }
+  if(face){s_clock_memory=malloc(clock_flip_bytes(face));s_clock_pixels=malloc(clock_frame_bytes(face));}
+  if(!face||!s_clock_memory||!s_clock_pixels){clock_release();return;}
+  clock_flip_attach(&s_clock_flip,face,s_clock_memory);s_clock_face=face;
 }
 static void focus_changed(bool focused){s_focused=focused;clock_stop();s_clock_ready=false;if(focused)layer_mark_dirty(s_layer);}
 static float lunar_sin(float degrees) {
@@ -220,21 +250,23 @@ static void draw_triangle_time(GContext *ctx,const char *timebuf,int x,int y){
   }
 }
 static int caption_width(const char *caption){return graphics_text_layout_get_content_size(caption,s_small,GRect(0,0,600,16),GTextOverflowModeFill,GTextAlignmentLeft).w;}
-static void clock_caption(char *out,size_t size,const char *date,const char *ampm,int width,time_t now){
+static int status_width(const char *caption){return s_caps?caps_width(s_caps,caption):0;}
+static void clock_caption(char *out,size_t size,const char *date,const char *ampm,int width,time_t now,const char *separator,int (*measure)(const char *)){
   char city[44]={0},prefix[24]={0},suffix[8]={0};
   if(city_usable(s_city,now))snprintf(city,sizeof(city),"%s%s",(const char *)s_city+8,city_stale(s_city,now)?"?":"");
-  if(!city[0]){snprintf(out,size,"%s%s%s",date,date[0]&&ampm[0]?" / ":"",ampm);return;}
-  if(date[0])snprintf(prefix,sizeof(prefix),"%s / ",date);
+  if(!city[0]){snprintf(out,size,"%s%s%s",date,date[0]&&ampm[0]?separator:"",ampm);return;}
+  if(date[0])snprintf(prefix,sizeof(prefix),"%s%s",date,separator);
   if(ampm[0])snprintf(suffix,sizeof(suffix)," %s",ampm);
   snprintf(out,size,"%s%s%s",prefix,city,suffix);
-  if(caption_width(out)>width){
+  if(measure(out)>width){
     size_t n=strlen(city);
-    do{if(n)city[--n]=0;snprintf(out,size,"%s%s...%s",prefix,city,suffix);}while(n&&caption_width(out)>width);
+    do{if(n)city[--n]=0;snprintf(out,size,"%s%s...%s",prefix,city,suffix);}while(n&&measure(out)>width);
   }
 }
 static void draw_time(GContext *ctx,struct tm *local,time_t now) {
   int x=s_settings[TIME_X],y=s_settings[TIME_Y],w=(s_settings[FLAGS]&STACKED)?72:200;
-  int h=(s_settings[FLAGS]&STACKED)?84:46;
+  bool geodesic=s_display[1]==4,status=s_settings[FLAGS]&STATUS_LINE;
+  int h=(s_settings[FLAGS]&STACKED)?84:geodesic?(status?64:76):46;
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(x,y,w,h),0,GCornerNone);
   char timebuf[8],datebuf[96];int hour=local->tm_hour;if(!is_24()){hour%=12;if(!hour)hour=12;}
   const char *ampm=is_24()?"":(local->tm_hour<12?"AM":"PM");
@@ -242,15 +274,16 @@ static void draw_time(GContext *ctx,struct tm *local,time_t now) {
     snprintf(timebuf,sizeof(timebuf),"%02d",hour);text(ctx,timebuf,s_large,GRect(x,y-14,w,44),GTextAlignmentCenter,color(6));
     snprintf(timebuf,sizeof(timebuf),"%02d",local->tm_min);text(ctx,timebuf,s_large,GRect(x,y+21,w,44),GTextAlignmentCenter,color(6));
     line(ctx,x+25,y+35,x+47,y+35,color(7));
-    clock_caption(datebuf,sizeof(datebuf),"",ampm,w-4,now);
+    clock_caption(datebuf,sizeof(datebuf),"",ampm,w-4,now," / ",caption_width);
     text(ctx,datebuf,s_small,GRect(x,y+69,w,15),GTextAlignmentCenter,color(7));
   }else {
     snprintf(timebuf,sizeof(timebuf),"%02d:%02d",hour,local->tm_min);
-    if(s_display[1]==2)draw_broad_time(ctx,local,now,x,y);
+    if(s_clock_face)draw_flip_time(ctx,local,now,x,y);
     else if(s_display[1]==1)draw_triangle_time(ctx,timebuf,x,y);else draw_span_time(ctx,timebuf,x,y);
+    if(status)return;
     char date[24];snprintf(date,sizeof(date),"%s %02d %s",(const char *[]) {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"}[local->tm_wday],local->tm_mday,(const char *[]) {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"}[local->tm_mon]);
-    clock_caption(datebuf,sizeof(datebuf),date,ampm,w-4,now);
-    text(ctx,datebuf,s_small,GRect(x,y+31,w,15),GTextAlignmentCenter,color(7));
+    clock_caption(datebuf,sizeof(datebuf),date,ampm,w-4,now," / ",caption_width);
+    text(ctx,datebuf,s_small,GRect(x,geodesic?y+61:y+31,w,15),GTextAlignmentCenter,color(7));
   }
 }
 static void draw_zones(GContext *ctx,time_t now,struct tm *local) {
@@ -279,6 +312,18 @@ static void draw_zones(GContext *ctx,time_t now,struct tm *local) {
     if(i==s_selected&&s_frame<16)line(ctx,x,y+35,x+59,y+35,mark_color(i));
   }
 }
+typedef struct {GContext *ctx;GColor color;} CapsPen;
+static void caps_span(void *context,int x,int y,int length){CapsPen *pen=context;line(pen->ctx,x,y,x+length-1,y,pen->color);}
+// Status line: lining capitals for date and city in place of the nameplate.
+static void draw_status_line(GContext *ctx,struct tm *local,time_t now,const char *battery){
+  char date[24],status[96];const char *ampm=is_24()?"":(local->tm_hour<12?"AM":"PM");
+  snprintf(date,sizeof(date),"%s %02d %s",(const char *[]){"Sun","Mon","Tue","Wed","Thu","Fri","Sat"}[local->tm_wday],local->tm_mday,
+    (const char *[]){"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"}[local->tm_mon]);
+  clock_caption(status,sizeof(status),date,ampm,s_settings[HEADER_SIZE+17]?126:140,now,"  ",status_width);
+  CapsPen accent={ctx,color(7)},ink={ctx,color(6)};
+  caps_draw(s_caps,status,4,12,false,caps_span,&accent);
+  caps_draw(s_caps,battery,195,12,true,caps_span,&ink);
+}
 static void update_proc(Layer *layer,GContext *ctx) {
   time_t now=time(NULL);struct tm local=*localtime(&now);
   graphics_context_set_antialiased(ctx,false);
@@ -304,11 +349,14 @@ static void update_proc(Layer *layer,GContext *ctx) {
   bool zones=!panels_draw(ctx,now,&local,s_small,palette(),is_24());
   if(zones)draw_zones(ctx,now,&local);
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(0,0,200,18),0,GCornerNone);
-  draw_identity(ctx);
+  char battery[8];snprintf(battery,sizeof(battery),"%d%%",s_battery.charge_percent);
+  if((s_settings[FLAGS]&STATUS_LINE)&&s_caps)draw_status_line(ctx,&local,now,battery);
+  else {
+    draw_identity(ctx);
+    text(ctx,battery,s_small,GRect(160,0,35,15),GTextAlignmentRight,color(6));
+  }
   draw_moon_indicator(ctx,now);
   draw_bluetooth_indicator(ctx);
-  char battery[8];snprintf(battery,sizeof(battery),"%d%%",s_battery.charge_percent);
-  text(ctx,battery,s_small,GRect(160,0,35,15),GTextAlignmentRight,color(6));
 }
 static void animation_step(void *context) {
   s_animation=NULL;s_frame++;layer_mark_dirty(s_layer);
@@ -340,7 +388,7 @@ static void request_sync(void) {
 static void tick(struct tm *local_time,TimeUnits changed) {
   s_map_dirty=true;layer_mark_dirty(s_layer);
   time_t now=time(NULL);panels_tick(now);
-  if(s_display[1]==2&&!(s_settings[FLAGS]&STACKED))clock_prepare(local_time,now,true);
+  if(s_clock_face)clock_prepare(local_time,now,true);
   int interval=panels_refresh_minutes();if(!(s_city[1]&1)&&interval>60)interval=60;
   if((now/60)%interval==0)request_sync();
 }
@@ -359,6 +407,7 @@ static void received(DictionaryIterator *iter,void *context) {
   if(display&&display->type==TUPLE_BYTE_ARRAY&&display_normalize(next_display,display->value->data,display->length)&&memcmp(s_display,next_display,DISPLAY_SIZE)){
     clock_stop();s_clock_ready=false;
     memcpy(s_display,next_display,DISPLAY_SIZE);persist_write_data(3,s_display,DISPLAY_SIZE);
+    clock_configure();
   }
   Tuple *city=dict_find(iter,MESSAGE_KEY_CITY);
   if(city&&city->type==TUPLE_BYTE_ARRAY&&city_valid(city->value->data,city->length)&&memcmp(s_city,city->value->data,CITY_SIZE)){
@@ -368,6 +417,7 @@ static void received(DictionaryIterator *iter,void *context) {
   if(t&&t->type==TUPLE_BYTE_ARRAY&&settings_valid(t->value->data,t->length)&&memcmp(s_settings,t->value->data,SETTINGS_SIZE)){
     clock_stop();s_clock_ready=false;
     memcpy(s_settings,t->value->data,SETTINGS_SIZE);persist_write_data(1,s_settings,SETTINGS_SIZE);s_map_dirty=true;changed=true;
+    clock_configure();
   }
   Tuple *custom=dict_find(iter,MESSAGE_KEY_PALETTE);
   if(custom&&custom->type==TUPLE_BYTE_ARRAY&&palette_valid(custom->value->data,custom->length)){
@@ -400,6 +450,10 @@ static void init(void) {
   s_large=fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_DRAFT_44));
   s_small=fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_DRAFT_12));
   s_zone=fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_DRAFT_18));
+  ResHandle caps=resource_get_handle(RESOURCE_ID_TYPE_CAPS);size_t caps_length=resource_size(caps);
+  s_caps=malloc(caps_length);
+  if(s_caps&&(resource_load(caps,s_caps,caps_length)!=caps_length||!caps_valid(s_caps,caps_length))){free(s_caps);s_caps=NULL;}
+  clock_configure();
   s_window=window_create();s_layer=layer_create(GRect(0,0,200,228));
   layer_set_update_proc(s_layer,update_proc);layer_add_child(window_get_root_layer(s_window),s_layer);
   window_set_background_color(s_window,color(0));window_stack_push(s_window,false);
@@ -417,5 +471,6 @@ static void deinit(void) {
   tick_timer_service_unsubscribe();if(s_accel_subscribed)accel_data_service_unsubscribe();battery_state_service_unsubscribe();connection_service_unsubscribe();app_message_deregister_callbacks();
   layer_destroy(s_layer);window_destroy(s_window);if(s_map)gbitmap_destroy(s_map);
   fonts_unload_custom_font(s_large);fonts_unload_custom_font(s_small);fonts_unload_custom_font(s_zone);
+  clock_release();free(s_caps);
 }
 int main(void) {init();app_event_loop();deinit();}

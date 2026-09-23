@@ -1,15 +1,26 @@
 import {BROAD_METRICS, broadTimeMask, broadTriangleGrid} from './broad-numerals.js';
+import {GEODESIC_METRICS, geodesicTimeMask, geodesicTriangleGrid} from './geodesic-numerals.js';
 
 export const FLIP_DURATION = 400;
 export const TILE_DURATION = 320;
 export const FLIP_SCALE = Object.freeze(Array.from({length: 33}, (_, i) => Math.round(Math.cos(i * Math.PI / 64) * 1024)));
-const {width: W, height: H, starts, digitWidth} = BROAD_METRICS;
-const slotAt = x => starts.findIndex(start => x >= start && x < start + digitWidth);
-let defaultGrid;
+// Clock faces that share the minute flip. Each is a 200-pixel-wide strip with
+// four fixed numeral slots; only pixels inside a slot may change.
+export const FLIP_FACES = Object.freeze({
+  broad: {metrics: BROAD_METRICS, mask: broadTimeMask, lattice: () => broadTriangleGrid(8, 0)},
+  geodesic: {metrics: GEODESIC_METRICS, mask: geodesicTimeMask, lattice: geodesicTriangleGrid}
+});
+function face(name) {
+  const f = FLIP_FACES[name];
+  if (!f) throw new Error('Unknown clock face.');
+  return f;
+}
+const slotFinder = ({starts, digitWidth}) => x => starts.findIndex(start => x >= start && x < start + digitWidth);
+const grids = new Map();
 
-export function flipGrid() {
-  if (defaultGrid) return defaultGrid;
-  const grid = broadTriangleGrid(8, 0);
+export function flipGrid(name = 'broad') {
+  if (grids.has(name)) return grids.get(name);
+  const grid = face(name).lattice();
   const cells = grid.cells.map((cell, id) => {
     // Every tile hinges along the same 60-degree family of lattice edges.
     // Q8 coordinates make the inverse projection identical on browser and watch.
@@ -20,13 +31,15 @@ export function flipGrid() {
     return {...cell, id, ax: a[0], ay: a[1], nx, ny, length2: nx * nx + ny * ny,
       centerX: Math.round(cell.vertices.reduce((sum, p) => sum + p[0], 0) / 3 * 256)};
   });
-  defaultGrid = {...grid, cells};
-  return defaultGrid;
+  const result = {...grid, cells};
+  grids.set(name, result);
+  return result;
 }
 
-export function planPixelFlip(before, after) {
-  if (before.length !== W * H || after.length !== W * H) throw new Error('Clock frames must be 200 by 40 pixels.');
-  const grid = flipGrid(), active = new Uint8Array(grid.cells.length), delays = new Uint8Array(grid.cells.length);
+export function planPixelFlip(before, after, name = 'broad') {
+  const {width: W, height: H} = face(name).metrics, slotAt = slotFinder(face(name).metrics);
+  if (before.length !== W * H || after.length !== W * H) throw new Error(`Clock frames must be ${W} by ${H} pixels.`);
+  const grid = flipGrid(name), active = new Uint8Array(grid.cells.length), delays = new Uint8Array(grid.cells.length);
   let changedSlots = 0, changedPixels = 0;
   for (let i = 0; i < before.length; i++) if (before[i] !== after[i]) {
     const slot = slotAt(i % W);
@@ -36,18 +49,22 @@ export function planPixelFlip(before, after) {
   const changed = grid.cells.filter(cell => active[cell.id]);
   const min = Math.min(...changed.map(cell => cell.centerX)), max = Math.max(...changed.map(cell => cell.centerX));
   for (const cell of changed) delays[cell.id] = max > min ? Math.round((FLIP_DURATION - TILE_DURATION) * (cell.centerX - min) / (max - min)) : 0;
-  return {before: new Uint8Array(before), after: new Uint8Array(after), grid, active, delays, changedSlots,
+  return {face: name, before: new Uint8Array(before), after: new Uint8Array(after), grid, active, delays, changedSlots,
     changedPixels, changedCells: changed.length, duration: changed.length ? FLIP_DURATION : 0};
 }
 
-export function planMinuteFlip(from, to) {
-  return {...planPixelFlip(broadTimeMask(from), broadTimeMask(to)), from, to};
+export function planMinuteFlip(from, to, name = 'broad') {
+  const {mask} = face(name);
+  return {...planPixelFlip(mask(from), mask(to), name), from, to};
 }
+export function clockMask(time, name = 'broad') { return face(name).mask(time); }
 
 // Palette indices: background, ink, tilted background, tilted ink.
 // Start with the new drawing underneath, then hinge the old tile out of the way.
 // Unchanged cells, unchanged numerals, inter-digit gaps and colon stay stationary.
-export function sampleMinuteFlip(plan, elapsed, output = new Uint8Array(W * H)) {
+export function sampleMinuteFlip(plan, elapsed, output) {
+  const metrics = face(plan.face ?? 'broad').metrics, {width: W, height: H} = metrics, slotAt = slotFinder(metrics);
+  output ??= new Uint8Array(W * H);
   output.set(plan.after);
   if (elapsed >= plan.duration || !plan.changedCells) return output;
   const phases = new Int8Array(plan.active.length).fill(-1);
@@ -82,6 +99,7 @@ function shade(from, toward) {
   }).join('');
 }
 export function drawFlipPixels(ctx, pixels, x = 0, y = 0, {ink = '#000000', background = '#FFFFFF'} = {}) {
+  const W = 200, H = pixels.length / W;
   const colors = [background, ink, shade(background, ink), shade(ink, background)];
   for (let row = 0; row < H; row++) {
     let start = 0;
@@ -100,21 +118,22 @@ export function minuteFlipClock({invalidate, now = () => performance.now(),
   let previous = null, current = null, request = null;
   function stop() { if (request !== null) cancelFrame(request); request = null; current = null; }
   return {
-    update(time, minute, key, animate = true) {
+    update(time, minute, key, animate = true, name = 'broad') {
+      key = name + '/' + key;
       if (previous?.time === time && previous.minute === minute && previous.key === key) {
         if (!animate) stop();
         return;
       }
       stop();
       if (animate && previous && previous.key === key && minute === previous.minute + 1 && time !== previous.time) {
-        const plan = planMinuteFlip(previous.time, time);
+        const plan = planMinuteFlip(previous.time, time, name);
         if (plan.changedCells) current = {plan, started: now()};
       }
-      previous = {time, minute, key};
+      previous = {time, minute, key, name};
     },
     frame() {
       if (!previous) return null;
-      if (!current) return broadTimeMask(previous.time);
+      if (!current) return face(previous.name).mask(previous.time);
       const elapsed = Math.max(0, now() - current.started), result = sampleMinuteFlip(current.plan, elapsed);
       if (elapsed >= FLIP_DURATION) stop();
       else if (request === null) request = requestFrame(() => { request = null; invalidate?.(); });

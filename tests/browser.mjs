@@ -30,7 +30,14 @@ try{
   await page.locator('#pos-y').fill('22');await page.locator('#pos-y').press('Tab');assert.equal((await saved()).time[1],22);
   await page.locator('#screen').focus();await page.keyboard.press('Shift+ArrowDown');assert.equal((await saved()).time[1],27);
   await page.locator('#moonIndicator').uncheck();assert.equal((await saved()).moonIndicator,false);
-  await page.getByRole('button',{name:'Horizon',exact:true}).click();assert.equal((await saved()).time[1],134);
+  await page.getByRole('button',{name:'Horizon',exact:true}).click();
+  // Geodesic figures take Horizon's taller variant; changing numerals keeps the composition.
+  assert.deepEqual([(await saved()).time[1],(await saved()).map[1],(await saved()).statusLine],[121,16,true]);
+  await page.getByRole('tab',{name:'Character',exact:true}).click();await page.getByLabel('Numerical display',{exact:true}).selectOption('broad');
+  assert.deepEqual([(await saved()).time[1],(await saved()).map[1],(await saved()).statusLine],[134,24,false]);
+  assert.equal(await page.locator('[data-preset="horizon"]').getAttribute('aria-pressed'),'true');
+  await page.getByLabel('Numerical display',{exact:true}).selectOption('geodesic');assert.equal((await saved()).time[1],121);
+  await page.getByRole('tab',{name:'Composition',exact:true}).click();
   assert.equal((await saved()).moonIndicator,false);
   await page.locator('#moonIndicator').check();
   assert.equal(await page.getByRole('button',{name:'Original axis',exact:true}).count(),0);
@@ -62,7 +69,7 @@ try{
   for(let i=0;i<4;i++){await page.waitForTimeout(260);await checkPixels();}
   await page.waitForTimeout(160);
   await page.screenshot({path:'test-results/workshop.png',fullPage:true});
-  for(const preset of ['Atlas','Horizon']){await page.getByRole('button',{name:preset,exact:true}).click();await page.locator('#screen').screenshot({path:`test-results/preview-${preset}.png`});}
+  for(const preset of ['Meridian','Atlas','Horizon']){await page.getByRole('button',{name:preset,exact:true}).click();await page.locator('#screen').screenshot({path:`test-results/preview-${preset}.png`});}
   await page.getByRole('button',{name:'Atlas',exact:true}).click();await page.getByRole('tab',{name:'Character',exact:true}).click();await page.screenshot({path:'test-results/type-specimen.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});await page.getByRole('tab',{name:'Composition',exact:true}).click();
   await page.waitForFunction(()=>{const r=document.querySelector('#screen').getBoundingClientRect(),d=devicePixelRatio;return Math.abs((r.left+scrollX)*d-Math.round((r.left+scrollX)*d))<.005&&Math.abs((r.top+scrollY)*d-Math.round((r.top+scrollY)*d))<.005;});
@@ -74,7 +81,7 @@ try{
     Pebble:{addEventListener:(name,fn)=>handlers[name]=fn,openURL:url=>opened=url,sendAppMessage:(message,success)=>{messages.push(message);success();}}};
   vm.runInNewContext(readFileSync('watchface/src/pkjs/index.js','utf8'),context);
   handlers.ready();assert.equal(messages[0].SETTINGS.length,PACKET_SIZE);
-  assert.deepEqual(Array.from(messages[0].DISPLAY),[1,2,1,0]);
+  assert.deepEqual(Array.from(messages[0].DISPLAY),[1,4,1,0],'a fresh install shows Geodesic figures');
   handlers.showConfiguration();assert.ok(opened.startsWith('data:text/html;charset=utf-8,'));
   const mobile=await browser.newPage({viewport:{width:390,height:844}});mobile.on('pageerror',e=>errors.push(e.message));await mobile.goto(opened);
   assert.equal(await mobile.locator('#theme option').count(),THEMES.length);

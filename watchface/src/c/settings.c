@@ -10,7 +10,7 @@ int32_t calendar_ordinal(int year,int month,int day) {
     +before_month[month-1]+day-1+(month>2 && leap);
 }
 bool settings_valid(const uint8_t *s,unsigned length) {
-  if(length!=SETTINGS_SIZE || s[VERSION]!=7 || s[THEME]>=THEME_COUNT || s[FORMAT]>2 || s[ORIENTATION]!=0 || s[FLAGS]>63 || s[ENABLED]>7)return false;
+  if(length!=SETTINGS_SIZE || s[VERSION]!=7 || s[THEME]>=THEME_COUNT || s[FORMAT]>2 || s[ORIENTATION]!=0 || s[FLAGS]>127 || s[ENABLED]>7)return false;
   bool stacked=s[FLAGS]&STACKED;
   if(s[TIME_X]>(stacked?128:0) || s[TIME_Y]<16 || s[TIME_Y]>(stacked?144:182))return false;
   if(s[MAP_X]!=0 || s[MAP_Y]>124)return false;

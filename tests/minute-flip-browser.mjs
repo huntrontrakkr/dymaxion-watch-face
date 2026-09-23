@@ -13,8 +13,9 @@ try {
   await page.goto(base);await page.waitForFunction(()=>document.querySelector('#preview-time').textContent.includes('LIVE'));
   await page.locator('#reset').click();
   const screen=page.locator('#screen');
-  const clock=()=>screen.evaluate(c=>[...c.getContext('2d').getImageData(0,18,200,40).data]);
-  assert.equal(await screen.getAttribute('data-clock-display'),'broad');
+  // The default Meridian clock is a 64-pixel Geodesic strip at y=16.
+  const clock=()=>screen.evaluate(c=>[...c.getContext('2d').getImageData(0,16,200,64).data]);
+  assert.equal(await screen.getAttribute('data-clock-display'),'geodesic');
   assert.equal(await screen.getAttribute('data-clock-animating'),'false');
   const before=await clock();
   await page.clock.runFor(1002);
@@ -34,7 +35,7 @@ try {
   assert.equal(await screen.getAttribute('data-clock-animating'),'false','scrubbing is a discontinuity, not a minute tick');
   await page.locator('#live').click();assert.equal(await screen.getAttribute('data-clock-animating'),'false');
   await page.reload();await page.waitForFunction(()=>document.querySelector('#preview-time').textContent.includes('LIVE'));
-  assert.equal(await screen.getAttribute('data-clock-display'),'broad');
+  assert.equal(await screen.getAttribute('data-clock-display'),'geodesic');
   assert.deepEqual(errors,[]);reports.push({liveMinute:true,reducedMotion:true,motionDisabled:true,idleStable:true,errors});
   await page.close();
   for(const [width,scheme] of [[736,'light'],[390,'light'],[320,'dark']]){

@@ -4,7 +4,7 @@ import {paletteFor} from '../shared/palette-settings.js';
 import {paletteControls} from '../shared/palette-controls.js';
 import moment from 'moment-timezone';
 import {drawBitmapText,drawIdentity,fitLabel,textWidth} from '../shared/type.js';
-import {defaults,THEMES,PLACES,PRESETS,validateSettings,clampPosition,blockSize,markColor,quantizeColor} from '../shared/settings.js';
+import {defaults,THEMES,PLACES,PRESETS,activePreset,presetFor,withClockDisplay,validateSettings,clampPosition,blockSize,markColor,quantizeColor} from '../shared/settings.js';
 import {MARKERS,drawMarkerPixels} from '../shared/markers.js';
 import {makeMap,direction,dot,MAP_SIZE} from '../shared/map.js';
 import {sunDirection} from '../shared/solar.js';
@@ -52,7 +52,7 @@ let footerPage=settings.footer.home,panelChanged=Date.now(),environmentMode='sam
 let currentCity={name:'Norfolk',sample:true};
 const cityLocation=locationService({getSettings:()=>settings,storage:localStorage,send:city=>{currentCity=city;render();}});
 const cityEditor=cityControls($('city-controls'),()=>settings,value=>{settings=validateSettings({...settings,location:value},zoneExists);save();},()=>cityLocation.refresh());
-const displayEditor=displayControls($('display-controls'),()=>settings,value=>{Object.assign(settings,value);save();});
+const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings=withClockDisplay(settings,value.clockDisplay,value.segmentGrid);sync();save();});
 const paletteEditor=paletteControls($('palette-controls'),()=>settings,patch=>{settings=validateSettings({...settings,...patch},zoneExists);sync();save();});
 const environment=environmentService({getSettings:()=>settings,storage:localStorage,send:(kind,data)=>{liveData[kind]=data;render();}});
 const panelEditor=panelControls($('panel-controls'),()=>settings,footer=>{
@@ -78,11 +78,11 @@ function positionFields(){
   $('element').value=selected;$('pos-x').value=pos[0];$('pos-y').value=pos[1];
   $('pos-x').max=200-w;$('pos-y').max=228-h;$('pos-y').min=selected==='map'?0:16;
 }
-const drawings={atlas:'M5 5H35V12H5ZM3 19 13 16 19 24 28 17 37 25 26 34 15 28 6 33ZM4 38H11M16 38H23M28 38H35',horizon:'M3 7 13 4 19 12 28 5 37 13 26 22 15 16 6 21ZM5 28H35V34H5ZM4 40H11M16 40H23M28 40H35'};
-for(const [id,name] of [['atlas','Atlas'],['horizon','Horizon']]){
+const drawings={meridian:'M4 4H20M28 4H36M7 8H33V20H7ZM3 26 13 23 19 30 28 24 37 31 26 38 15 33 6 37ZM4 43H11M16 43H23M28 43H35',atlas:'M5 5H35V12H5ZM3 19 13 16 19 24 28 17 37 25 26 34 15 28 6 33ZM4 38H11M16 38H23M28 38H35',horizon:'M3 7 13 4 19 12 28 5 37 13 26 22 15 16 6 21ZM5 28H35V34H5ZM4 40H11M16 40H23M28 40H35'};
+for(const [id,name] of [['meridian','Meridian'],['atlas','Atlas'],['horizon','Horizon']]){
   const button=document.createElement('button');button.type='button';button.dataset.preset=id;button.setAttribute('aria-pressed','false');
   button.innerHTML=`<svg viewBox="0 0 40 46" aria-hidden="true"><path d="${drawings[id]}"/></svg><span>${name}</span>`;
-  button.onclick=()=>{Object.assign(settings,clone(PRESETS[id]));sync();save();pulse();};$('presets').append(button);
+  button.onclick=()=>{Object.assign(settings,presetFor(id,settings.clockDisplay));sync();save();pulse();};$('presets').append(button);
 }
 THEMES.forEach((t,i)=>{
   const button=document.createElement('button');button.type='button';button.dataset.theme=i;button.setAttribute('aria-pressed','false');
@@ -147,13 +147,13 @@ function placesUI(){
 }
 markerGallery();
 function sync(){
-  for(const key of ['dayNight','edges','lights','sun','motion','stacked','moonIndicator'])$(key).checked=settings[key];
+  for(const key of ['dayNight','edges','lights','sun','motion','stacked','statusLine','moonIndicator'])$(key).checked=settings[key];
   $('format').value=settings.format;
   document.querySelectorAll('[data-theme]').forEach(b=>b.setAttribute('aria-pressed',String(settings.customPalette===null&&+b.dataset.theme===settings.theme)));
-  document.querySelectorAll('[data-preset]').forEach(b=>{const preset=PRESETS[b.dataset.preset];b.setAttribute('aria-pressed',String(['orientation','stacked','time','map','zones'].every(k=>JSON.stringify(settings[k])===JSON.stringify(preset[k]))));});
+  const current=activePreset(settings);document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.preset===current)));
   positionFields();placesUI();panelEditor.refresh();cityEditor.refresh();displayEditor.refresh();paletteEditor.refresh();
 }
-for(const key of ['dayNight','edges','lights','sun','motion','stacked','moonIndicator'])$(key).onchange=()=>{settings[key]=$(key).checked;move('time',settings.time);positionFields();displayEditor.refresh();save();};
+for(const key of ['dayNight','edges','lights','sun','motion','stacked','statusLine','moonIndicator'])$(key).onchange=()=>{settings[key]=$(key).checked;move('time',settings.time);positionFields();displayEditor.refresh();save();};
 $('format').onchange=()=>{settings.format=+$('format').value;save();};
 $('element').onchange=()=>{selected=$('element').value;positionFields();$('guides').checked=true;render();};
 for(const axis of ['x','y'])$('pos-'+axis).onchange=()=>{const value=Number($('pos-'+axis).value);if(!Number.isFinite(value))return;const p=getPosition(selected).slice();p[axis==='x'?0:1]=value;move(selected,p);positionFields();save();};
@@ -202,6 +202,7 @@ function mapImage(now,pal,sun){
   }
   g.putImageData(img,0,0);cacheKey=key;mapCache={canvas:offscreen,sunPoint};return mapCache;
 }
+function statusWidth(){return settings.moonIndicator?126:140;}
 function use24(){return settings.format===1||(settings.format===0&&!new Intl.DateTimeFormat(undefined,{hour:'numeric'}).resolvedOptions().hour12);}
 const two=n=>String(n).padStart(2,'0');
 function clockParts(date){let h=date.hours();return {h:use24()?h:h%12||12,m:date.minutes(),ampm:h<12?'AM':'PM'};}
@@ -219,21 +220,24 @@ function render(){
   const [tx,ty]=settings.time,[tw,th]=blockSize(settings,'time'),{h,m:minute,ampm}=clockParts(local);
   const city=settings.location.mode==='manual'?settings.location.name:currentCity.sample?currentCity.name:cityIsUsable(currentCity)?currentCity.name+(currentCity.stale||Date.now()/1000-currentCity.fetched>7200?'?':''):'';
   const caption=clockCaption(settings.stacked?'':local.format('ddd DD MMM'),city,use24()?'':ampm,tw-4,t=>textWidth(watchTypeface.text.small,t));
+  // Status line: lining capitals, date and city at the top left instead of the nameplate.
+  const status=settings.statusLine?clockCaption(local.format('ddd DD MMM').toUpperCase(),city.toUpperCase(),use24()?'':ampm,statusWidth(),t=>textWidth(watchTypeface.lining.small,t),'  '):'';
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
-  if(settings.stacked||settings.clockDisplay!=='broad')minuteClock.reset();
+  if(settings.stacked||!['broad','geodesic'].includes(settings.clockDisplay))minuteClock.reset();
   if(settings.stacked){paintText(two(h),tx+tw/2,ty+30,48,pal.ink,'center');paintText(two(minute),tx+tw/2,ty+65,48,pal.ink,'center');strokeLine(tx+25,ty+35,tx+47,ty+35,pal.accent);paintText(caption,tx+tw/2,ty+81,11,pal.accent,'center');}
   else{
     const value=two(h)+':'+two(minute);
-    if(settings.clockDisplay==='broad'){
-      minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset].join('/'),settings.motion&&!reducedMotion.matches&&!document.hidden);
-      drawFlipPixels(ctx,minuteClock.frame(),tx,ty-2,{ink:pal.ink,background:pal.bg});
+    if(settings.clockDisplay==='broad'||settings.clockDisplay==='geodesic'){
+      const geodesic=settings.clockDisplay==='geodesic';
+      minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset].join('/'),settings.motion&&!reducedMotion.matches&&!document.hidden,settings.clockDisplay);
+      drawFlipPixels(ctx,minuteClock.frame(),tx,geodesic?ty:ty-2,{ink:pal.ink,background:pal.bg});
     }else if(settings.clockDisplay==='triangles')drawTriangleTime(ctx,value,tx,ty-1,pal.ink,pal.inactive,settings.segmentGrid);
     else paintText(value,tx+tw/2,ty+30,50,pal.ink,'center');
-    paintText(caption,tx+tw/2,ty+43,11,pal.accent,'center');
+    if(!settings.statusLine)paintText(caption,tx+tw/2,settings.clockDisplay==='geodesic'?ty+73:ty+43,11,pal.accent,'center');
   }
   canvas.dataset.clockDisplay=settings.stacked?'draft':settings.clockDisplay;
   canvas.dataset.clockAnimating=String(minuteClock.active);
-  canvas.dataset.clockCaption=caption;
+  canvas.dataset.clockCaption=settings.statusLine?status:caption;
   $('city-state').textContent=settings.location.mode==='manual'?'The clock uses your entered city name.':currentCity.sample?'Norfolk is an example city in this preview. The watch uses your phone’s location.':city?`Current city: ${currentCity.name}${currentCity.stale?' (last known location)':''}.`:'City unavailable. Allow location in the phone app, or enter a city name.';
   if(settings.footer.enabled){ctx.fillStyle=pal.bg;ctx.fillRect(0,184,200,44);}
   if(!settings.footer.enabled||footerPage==='zones')settings.places.forEach((p,i)=>{
@@ -249,7 +253,10 @@ function render(){
   drawFooter(ctx,settings,footerPage,{...(environmentMode==='sample'?sampleEnvironment(+now):liveData),palette:pal},+now,watchTypeface.text.small,use24());
   $('panel-preview-label').textContent=settings.footer.enabled?PANEL_PAGES.find(([id])=>id===footerPage)[1]:'Time zones';
   $('data-state').textContent=environmentMode==='sample'?'Example curves for layout preview. Live data is available below.':`Live forecast for ${settings.places[settings.footer.weather.place].name}. ${liveData.weather?.error?'Weather update unavailable; cached data is marked OLD.':''} ${liveData.tide?.error?'NOAA update unavailable.':''}`;
-  ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,18);drawIdentity(ctx,watchIdentity,4,0,pal.ink,pal.bg);drawMoonIndicator(now);drawBluetoothIndicator();paintText('86%',195,12,11,pal.ink,'right');
+  ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,18);
+  if(settings.statusLine){drawBitmapText(ctx,watchTypeface.lining.small,status,4,12,pal.accent);drawBitmapText(ctx,watchTypeface.lining.small,'86%',195,12,pal.ink,'right');}
+  else{drawIdentity(ctx,watchIdentity,4,0,pal.ink,pal.bg);paintText('86%',195,12,11,pal.ink,'right');}
+  drawMoonIndicator(now);drawBluetoothIndicator();
   // All watch pixels already come from RGB222 colors and native bitmap masks.
   // Avoid a final quantization pass that would hide accidental antialiasing.
   if($('guides').checked){const [x,y]=getPosition(selected),[w,h]=blockSize(settings,selected);ctx.fillStyle='#FF5500';for(let i=0;i<w;i++)if(i%4<2){ctx.fillRect(x+i,y,1,1);ctx.fillRect(x+i,y+h-1,1,1);}for(let i=0;i<h;i++)if(i%4<2){ctx.fillRect(x,y+i,1,1);ctx.fillRect(x+w-1,y+i,1,1);}}

@@ -14,15 +14,21 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
 - Explicit latitude/longitude for every place, with five small geometric map
   glyphs. Every place can have its own color, snapped to Pebble's 64-color grid.
   The local clock follows the watch; no location is guessed from an offset.
-- Two horizontal compositions, Atlas and Horizon. The local clock fills 196 of
-  200 pixels with rounded broad numerals and moves vertically;
-  the map and places remain independently movable.
+- **Meridian**, the default composition: a quiet status line (date, city,
+  Moon, Bluetooth, battery) replaces the nameplate, 56-pixel **Geodesic**
+  figures sit over the map, and the zones close the face. Geodesic is an
+  original monoline figure set: circular bowls, and every diagonal at exactly
+  60°, the angle of the icosahedral net itself. See [Meridian](docs/MERIDIAN.md).
+- Atlas and Horizon remain available, with positions fitted to whichever
+  numerals you choose. The map and places stay independently movable, and the
+  status line can be switched on or off in any composition.
   Optional stacked hours/minutes retain the earlier display cut.
-- A 400 ms minute transition: only changed triangular tiles hinge away to reveal
-  the new time. Rounded corners, heavy strokes, and the bold colon remain crisp.
+- A 400 ms minute transition for Geodesic and rounded broad numerals: only
+  changed triangular tiles hinge away to reveal the new time.
   Motion stops at 20% battery or when **Brief animations** is disabled.
   See [minute transitions](docs/MINUTE-FLIP.md).
-- The earlier triangular seven-segment experiment remains available: six hexagonal
+- Rounded broad numerals, Span lettering and the earlier triangular seven-segment
+  experiment remain available. The segment display has six hexagonal
   edges and a raised waist, assembled from whole equilateral cells. Switch styles in
   **Character → Numerical display**. `/segment-study.html` lets you toggle each electrode.
 - The clock caption names the current city, using the phone's location at most
@@ -46,9 +52,9 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
 - Persistent configuration and an **offline phone settings page** included in
   the PBW. Hosting a website is not required to configure the watch.
 
-| Atlas | Horizon |
-| --- | --- |
-| ![Atlas preview](output/restored-open-face/atlas-airocean.png) | ![Horizon preview](output/restored-open-face/horizon-airocean.png) |
+| Meridian | Paper | Spaceship Earth | Horizon |
+| --- | --- | --- | --- |
+| ![Meridian preview](output/meridian/meridian-airocean.png) | ![Meridian on Paper](output/meridian/meridian-paper.png) | ![Meridian on Spaceship Earth](output/meridian/meridian-spaceship-earth.png) | ![Horizon with Geodesic figures](output/meridian/horizon-geodesic.png) |
 
 ## Try the workshop
 
@@ -96,8 +102,13 @@ pebble install --phone <phone-ip>
 ```
 
 The installable file is `watchface/build/watchface.pbw`. Target: Emery only,
-200×228 pixels, 64 colors. SDK 4.33.1 reports 92,670 bytes of resources and a
-62,845-byte static RAM footprint; the map bitmap adds about 22 KB of heap.
+200×228 pixels, 64 colors. Before the Meridian revision, SDK 4.33.1 reported
+92,670 bytes of resources and a 62,845-byte static RAM footprint; the map bitmap
+adds about 22 KB of heap. Meridian adds 13,622 bytes of raw resources (Geodesic
+masters and flip lattice, status-line capitals), which load into the heap only
+when used, and moves the minute-flip buffers from static memory to the heap. An
+ARM cross-compile of the app sources measures 2,671 fewer static bytes than
+before; the SDK's own report for this revision is still to be taken.
 
 The project also remains compatible with opening the `watchface` folder in the
 [Pebble Browser Emulator](https://github.com/huntrontrakkr/pebble-browser-emulator).
@@ -108,9 +119,10 @@ That browser emulator integration has not been exercised in this revision.
 ```sh
 npm ci
 npx playwright install chromium
-npm run generate              # map, markers, palette, status, triangular display, defaults
+npm run generate              # map, markers, palette, status, triangular display, caps, defaults
 node tools/generate-chart-axis.mjs # compact chart numerals and layout constants
 npm run generate:clock        # rounded pixel masters and native minute-flip geometry
+npm run generate:geodesic     # Geodesic masters, packed resource and native layout
 npm run companion             # phone bundle, including offline configuration HTML
 npm test                      # projection, DST, solar, providers, native packets/calendar/shake
 npm run dev                   # keep running in another terminal
@@ -134,16 +146,21 @@ there is no continuous animation or additional sensor.
 Run `pebble clean` before building after changes to AppMessage keys or resources.
 
 Tests require a host C compiler (`cc`). Playwright may require its documented
-Linux runtime libraries. Native verification used the Emery SDK emulator:
-installation, both layouts, AppMessage settings, bottom panels, shake cycling
-and low-battery suppression.
+Linux runtime libraries. Native verification before the Meridian revision used
+the Emery SDK emulator: installation, both layouts, AppMessage settings, bottom
+panels, shake cycling and low-battery suppression. The Meridian revision was
+verified with host C tests (Geodesic minute-flip frames from the packed resource
+and status-line capitals, both pixel-for-pixel against the browser), a strict
+Cortex-M3 compile of every native source, and the browser suites; it has not yet
+been run in the SDK emulator.
 Physical hardware and an actual phone webview have not been tested.
 
 | Source | Responsibility |
 | --- | --- |
 | `shared/map.js` | Preserved original Gray net and gnomonic coordinate mapping |
 | `shared/markers.js` | Five original 5×5 map-glyph pixel masters and legacy-ID migration |
-| `shared/settings.js` | Themes, presets, locations, bounds, validation |
+| `shared/settings.js` | Themes, presets (Meridian, Atlas, Horizon), locations, bounds, validation |
+| `shared/geodesic-numerals.js` | Geodesic figure skeletons, pixel masters and clock strip |
 | `shared/protocol.js` | Named time zones → compact native packet |
 | `shared/solar.js` | Solar direction model used by the workshop |
 | `shared/moon.js` | UTC lunar phase and eight native-size glyphs |

@@ -29,9 +29,9 @@ export function encodeCity(city={}){
   b[0]=1;b[1]=(city.manual?1:0)|(city.stale?2:0);v.setUint32(4,city.fetched||0,true);
   [...name].forEach((ch,i)=>b[8+i]=ch.charCodeAt(0));return b;
 }
-export function clockCaption(date,city,ampm,width,measure){
-  const prefix=date?date+' / ':'',suffix=ampm?' '+ampm:'';
-  if(!city)return (date+(date&&ampm?' / ':'')+ampm).trim();
+export function clockCaption(date,city,ampm,width,measure,separator=' / '){
+  const prefix=date?date+separator:'',suffix=ampm?' '+ampm:'';
+  if(!city)return (date+(date&&ampm?separator:'')+ampm).trim();
   let name=city;
   if(measure(prefix+name+suffix)>width){
     while(name&&measure(prefix+name+'...'+suffix)>width)name=name.slice(0,-1);

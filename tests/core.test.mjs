@@ -45,7 +45,8 @@ test('invalid imports fail before replacing settings; placements are constrained
   const s=defaults();assert.throws(()=>validateSettings({...s,places:[{}]},zoneExists));
   s.places[0].tz='Invented/Zone';assert.throws(()=>validateSettings(s,zoneExists));
   s.places[0].tz='Europe/London';s.places[0].lat=91;assert.throws(()=>validateSettings(s,zoneExists));
-  s.places[0].lat=51;s.time=[-100,900];assert.deepEqual(validateSettings(s,zoneExists).time,[0,182]);
+  s.places[0].lat=51;s.time=[-100,900];assert.deepEqual(validateSettings(s,zoneExists).time,[0,164],'the 64-pixel Geodesic strip stays on screen');
+  assert.deepEqual(validateSettings({...s,clockDisplay:'broad',statusLine:false},zoneExists).time,[0,182]);
   assert.throws(()=>validateSettings({...s,time:[NaN,4]},zoneExists));
   for(const theme of THEMES)for(const v of Object.values(theme).flat())if(typeof v==='string'&&v.startsWith('#'))assert.match(v,/^#(?:00|55|AA|FF){3}$/i);
   for(const palette of MOON_COLORS)for(const color of palette)assert.match(color,/^#(?:00|55|AA|FF){3}$/i);
@@ -137,13 +138,16 @@ test('lunar phase selects the eight familiar glyphs near published primary phase
   assert.deepEqual(halo,MARKER_HALO_ROWS.map(row=>mask(row,'#')));
 });
 test('full-width clock and top-bar moon migrate old widget settings',()=>{
-  const s=defaults();assert.deepEqual(s.time,[0,20]);assert.equal(s.moonIndicator,true);
+  const s=defaults();assert.deepEqual(s.time,PRESETS.meridian.time);assert.equal(s.moonIndicator,true);
+  assert.equal(s.statusLine,true);assert.equal(s.clockDisplay,'geodesic');
+  assert.equal(encodeSettings(s)[2]&64,64,'the status line travels as flag 64');assert.equal(encodeSettings({...s,statusLine:false})[2]&64,0);
   const packet=encodeSettings(s);assert.equal(packet[0],7);assert.equal(packet[16+17],1);
   assert.equal(packet[16+72+17],0);assert.equal(packet[16+71],0);assert.ok(packet[16+70]>=0xc0);
   const disabled=encodeSettings({...s,moonIndicator:false});assert.equal(disabled[16+17],0);
-  const old={...s,time:[28,20],widgets:[{type:4,pos:[2,29]},{type:2,pos:[174,29]}]};delete old.moonIndicator;
+  const old={...s,time:[28,20],widgets:[{type:4,pos:[2,29]},{type:2,pos:[174,29]}]};delete old.moonIndicator;delete old.statusLine;
   const migrated=validateSettings(old,zoneExists);
   assert.deepEqual(migrated.time,PRESETS.atlas.time);assert.equal(migrated.moonIndicator,true);
+  assert.equal(migrated.statusLine,false,'saved faces keep their nameplate');
   assert.equal('widgets' in migrated,false);
   assert.throws(()=>validateSettings({...s,moonIndicator:3},zoneExists));
 });

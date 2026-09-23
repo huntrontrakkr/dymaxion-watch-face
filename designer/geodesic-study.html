@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dymaxion — Geodesic figures</title><style>
+*{box-sizing:border-box}body{margin:0;background:#f1efe6;color:#253b38;font:15px/1.55 system-ui,sans-serif}main{max-width:1140px;margin:auto;padding:32px}a{color:inherit}h1{font-weight:500;line-height:1.15;margin:.6em 0 .4em}p{max-width:780px}label{display:inline-flex;gap:8px;align-items:center;margin:0 20px 18px 0}select,input{font:inherit}select{padding:6px;background:#faf9f1;border:1px solid #a6b6a8;color:inherit}article{padding:20px;border:1px solid #bac7b8;margin:24px 0;min-width:0}h2{font-size:19px;font-weight:500;margin:0 0 4px}.pixel-scroll{overflow-x:auto}canvas{display:block;image-rendering:pixelated;margin:14px 0;flex:none}small{display:block;color:#62756c}.note{font-size:12px;color:#62756c}ul{max-width:780px;padding-left:20px}li{margin:4px 0}@media(max-width:640px){main{padding:18px}article{padding:12px}}
+</style></head><body><main><a href="./">← Watch workshop</a>
+<h1>Ten figures. One angle.</h1>
+<p>Geodesic is a clock figure set drawn for this face. Each figure is a single stroke of constant weight: bowls are true circles, and every diagonal runs at exactly 60°, the angle of the icosahedral net's own triangle edges. The 4, 6, 7 and 9 share that angle with the map beneath them.</p>
+<label>Time <select id="study-time" aria-label="Time"><option>12:38</option><option>20:11</option><option>23:59</option><option>04:16</option><option>09:25</option><option>17:47</option></select></label>
+<label>Pixel size <select id="study-scale" aria-label="Pixel size"><option value="3">3× pixels</option><option value="1">Actual watch pixels</option></select></label>
+<article><h2>The watch strip</h2><small>200 × 64 pixels · 56-pixel figures in 34-pixel tabular cells · the same lattice as the minute flip</small>
+<div class="pixel-scroll"><canvas id="strip" width="200" height="64" aria-label="Geodesic clock at watch resolution"></canvas></div>
+<p class="note">Fixed cells keep the readout still from minute to minute, so the 400 ms triangle flip only moves the figures that change.</p></article>
+<article><h2>Construction</h2><small>Centre-line skeleton over the approved 1-bit masters, with 60° guides</small>
+<div class="pixel-scroll"><canvas id="construction" aria-label="Figure skeletons over their pixel masters"></canvas></div>
+<ul><li><strong>One weight.</strong> 14 units of a 100-unit cap height: a 7.8-pixel stem that stays open at 56 pixels.</li>
+<li><strong>Circles for bowls.</strong> The 2, 3, 5, 6, 8 and 9 are built on circles, a quiet echo of the globe the map unfolds.</li>
+<li><strong>60° for everything else.</strong> The 1's flag is cut vertically into a small lattice triangle; the 4 and 7 run at the net's own angle, and the 6 and 9 leave their bowls on a 60° tangent.</li>
+<li><strong>Sampled once.</strong> The generator samples each skeleton at 8×8 per pixel and freezes the result. The workshop and the watch then draw the same approved masters.</li></ul></article>
+<script type="module" src="./geodesic-study.js"></script>
+</main></body></html>

@@ -2,7 +2,9 @@
 // Each electrode is a group of complete cells in ONE equilateral lattice.
 // Source geometry stays equilateral; only the final pixel-center sampling is square.
 export const SEGMENT_DIGITS=[63,6,91,79,102,109,125,7,127,111];
-export const DISPLAY_STYLES=['span','triangles','broad'];
+export const DISPLAY_STYLES=['span','triangles','broad','geodesic'];
+// Wire codes. 3 was the retired LCD style, which the watch migrates to broad.
+export const DISPLAY_CODES=Object.freeze({span:0,triangles:1,broad:2,geodesic:4});
 export {INACTIVE_SEGMENTS} from './palettes.js';
 export const SEGMENT_NAMES=['Top','Upper right','Lower right','Bottom','Lower left','Upper left','Waist'];
 const SQRT3=Math.sqrt(3),EDGE=7,HEIGHT=EDGE*SQRT3/2,WIDTH=196,ROWS=6;
@@ -57,7 +59,7 @@ export function drawTriangleTime(ctx,time,x,y,ink,inactive,showInactive=true){
   }
 }
 export function encodeDisplay(settings){
-  const style=DISPLAY_STYLES.indexOf(settings.clockDisplay);
-  if(style<0||typeof settings.segmentGrid!=='boolean')throw new Error('Invalid clock display.');
+  const style=DISPLAY_CODES[settings.clockDisplay];
+  if(style===undefined||typeof settings.segmentGrid!=='boolean')throw new Error('Invalid clock display.');
   return new Uint8Array([1,style,+settings.segmentGrid,0]);
 }

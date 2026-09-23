@@ -1,4 +1,4 @@
-import {defaults,PLACES,THEMES,PRESETS,validateSettings,blockSize,clampPosition,markColor,quantizeColor} from '../shared/settings.js';
+import {defaults,PLACES,THEMES,PRESETS,presetFor,withClockDisplay,validateSettings,blockSize,clampPosition,markColor,quantizeColor} from '../shared/settings.js';
 import {MARKERS} from '../shared/markers.js';
 import {panelControls} from '../shared/panel-controls.js';
 import {cityControls} from '../shared/city-controls.js';
@@ -10,11 +10,11 @@ const exists=zone=>data.zoneNames.indexOf(zone)>=0;
 let s=validateSettings(data.settings||defaults(),exists);
 const panelEditor=panelControls($('panel-controls'),()=>s,footer=>{s.footer=validateSettings({...s,footer},exists).footer;});
 const cityEditor=cityControls($('city-controls'),()=>s,location=>{s.location=validateSettings({...s,location},exists).location;});
-const displayEditor=displayControls($('display-controls'),()=>s,value=>{Object.assign(s,value);});
+const displayEditor=displayControls($('display-controls'),()=>s,value=>{s=withClockDisplay(s,value.clockDisplay,value.segmentGrid);refresh();});
 const paletteEditor=paletteControls($('palette-controls'),()=>s,patch=>{s=validateSettings({...s,...patch},exists);refresh();});
 function options(select,entries){select.replaceChildren();entries.forEach(([label,value])=>select.add(new Option(label,value)));}
 options($('theme'),THEMES.map((t,i)=>[t.name,i]));
-for(const [key,title] of [['moonIndicator','Moon in top bar'],['dayNight','Day and night'],['lights','City lights'],['sun','Subsolar diamond'],['edges','Face edges'],['motion','Brief animations'],['stacked','Stack hours and minutes']]){
+for(const [key,title] of [['moonIndicator','Moon in top bar'],['dayNight','Day and night'],['lights','City lights'],['sun','Subsolar diamond'],['edges','Face edges'],['motion','Brief animations'],['stacked','Stack hours and minutes'],['statusLine','Status line instead of nameplate']]){
   const label=document.createElement('label');label.textContent=title;const input=document.createElement('input');input.type='checkbox';input.id=key;label.append(input);$('switches').append(label);
 }
 function refresh(){
@@ -23,7 +23,7 @@ function refresh(){
   displayEditor.refresh();
   paletteEditor.refresh();
   $('theme').value=s.theme;$('format').value=s.format;
-  for(const k of ['moonIndicator','dayNight','lights','sun','edges','motion','stacked'])$(k).checked=s[k];
+  for(const k of ['moonIndicator','dayNight','lights','sun','edges','motion','stacked','statusLine'])$(k).checked=s[k];
   $('places').replaceChildren();
   s.places.forEach((p,i)=>{
     const set=document.createElement('fieldset');set.innerHTML=`<legend>Place ${i+1}</legend><label>Show this place<input type="checkbox" data-key="on"></label><label>City<select data-city></select></label><label>Short label<input data-key="label" maxlength="7" required></label><label>Map glyph<select data-key="icon"></select></label><div class="symbol-preview"><canvas data-symbol-preview width="9" height="9" aria-hidden="true"></canvas><small data-symbol-meaning></small></div><label>Marker color<input type="color" data-color aria-label="Color for place ${i+1}"></label><small data-color-label></small><button type="button" class="quiet" data-reset-color>Use theme color</button><details><summary>Custom location</summary><label>IANA time zone<input data-key="tz" required></label><div class="xy"><label>Latitude<input data-key="lat" type="number" step="any" min="-90" max="90" required></label><label>Longitude<input data-key="lon" type="number" step="any" min="-180" max="180" required></label></div></details>`;
@@ -42,9 +42,9 @@ function refresh(){
     ['X','Y'].forEach((axis,j)=>{const labelEl=document.createElement('label');labelEl.textContent=label+' '+axis;const input=document.createElement('input');input.type='number';input.value=pos[j];input.min=j&&key!=='map'?16:0;input.max=(j?228:200)-size[j];input.required=true;input.onchange=()=>pos[j]=Number(input.value);labelEl.append(input);row.append(labelEl);});$('positions').append(row);
   }
 }
-$('preset').onchange=()=>{const preset=$('preset').value;if(preset!=='custom')Object.assign(s,JSON.parse(JSON.stringify(PRESETS[preset])));refresh();};
+$('preset').onchange=()=>{const preset=$('preset').value;if(preset!=='custom')Object.assign(s,presetFor(preset,s.clockDisplay));refresh();};
 for(const key of ['theme','format'])$(key).onchange=()=>{s[key]=Number($(key).value);if(key==='theme'){s.customPalette=null;refresh();}};
-for(const key of ['moonIndicator','dayNight','lights','sun','edges','motion','stacked'])$(key).onchange=()=>{s[key]=$(key).checked;if(key==='stacked'){s.time=clampPosition(s,'time',s.time);refresh();}};
+for(const key of ['moonIndicator','dayNight','lights','sun','edges','motion','stacked','statusLine'])$(key).onchange=()=>{s[key]=$(key).checked;if(key==='stacked'||key==='statusLine'){s.time=clampPosition(s,'time',s.time);refresh();}};
 function importText(text){try{s=validateSettings(JSON.parse(text),exists);$('error').textContent='Composition loaded.';$('preset').value='custom';refresh();}catch(e){$('error').textContent=e.message;}}
 $('file').onchange=async()=>{const file=$('file').files[0];if(!file)return;if(file.size>50000){$('error').textContent='Settings file is too large.';return;}importText(await file.text());};
 $('import').onclick=()=>importText($('json').value);

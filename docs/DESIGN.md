@@ -74,6 +74,18 @@ mid-century script nameplate as its brief. The sphere has been removed, leaving 
 space for the name. The SVG website artwork, browser pixels and native watch
 mask are generated from exactly the same original drawing.
 
+The default clock is **Geodesic**, an original monoline figure set drawn for
+the Meridian composition. Each figure is one stroke of constant weight, 7.8
+pixels at a 56-pixel cap height: bowls are true circles, and every diagonal
+runs at exactly 60°, the angle of the icosahedral net's triangle edges. The 1's
+flag is cut vertically into a small lattice triangle; the 6 and 9 leave their
+bowls on a 60° tangent. Figures sit centred in 34-pixel tabular cells so the
+readout never shifts and the minute flip moves only what changes. In Meridian,
+a status line of Draft Micro lining capitals carries the date and city in place
+of the nameplate. The reasoning, and a comparison with the previous default,
+are in [Meridian](MERIDIAN.md); the [construction study](../designer/geodesic-study.html)
+overlays each skeleton on its pixel master.
+
 The **Dymaxion Span** option is an original 28-pixel-high cut drawn for
 this 200-pixel screen. Four 45-pixel digit advances and a 10-pixel colon total
 190 pixels on every minute. Wide horizontal strokes, clipped hexagonal turns
@@ -84,7 +96,7 @@ Native C draws the authored pixel runs directly; this avoids the hidden side
 bearings and wrapping that Pebble's text layout adds at this width. The browser
 uses those same runs.
 
-The current default is a **triangular seven-segment experiment**. Its six outer
+The **triangular seven-segment experiment** remains selectable. Its six outer
 electrodes follow a hexagon; the seventh crosses the interior slightly above
 center so the lower counter has more room. It uses one continuous 196-pixel
 strip of 330 equilateral cells, with seven-pixel edges and six rows. All source
@@ -142,7 +154,12 @@ These are visual research references, not source outlines or bundled artwork.
 
 ## Proportion
 
-The clock occupies the same 200×46 area in either display mode. Span spans 190
+Meridian stacks a status line, the 200×64 Geodesic strip, the map and the
+zones with even 10–12 pixel gaps: figures from y=20 to 76, map ink from 86 to
+177, zones from 189. Atlas and Horizon use positions fitted to the taller strip
+when Geodesic is selected.
+
+With broad, Span or segment numerals, the clock occupies the same 200×46 area. Span spans 190
 pixels with 28-pixel-tall numerals. The triangular construction occupies a
 196×37 envelope, with inset ink leaving room for the city/date caption. The
 map's bounds now follow the *visible pieces* of the split faces, removing unused

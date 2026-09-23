@@ -1,57 +1,114 @@
 #include "minute_flip.h"
 #include <string.h>
 #include <limits.h>
-typedef struct {int32_t ax,ay,nx,ny,length2,center_x;} ClockCell;
+#include "generated/broad_clock_sizes.h"
 #include "generated/broad_clock_data.h"
-static const uint8_t STARTS[4]={2,49,106,153};
+#include "generated/geodesic_clock_sizes.h"
 static bool bit(const uint8_t *bits,int i){return (bits[i>>3]>>(i&7))&1;}
 static void set_bit(uint8_t *bits,int i){bits[i>>3]|=1u<<(i&7);}
 static void set_pixel(uint8_t *pixels,int i,uint8_t value){int shift=(i&3)*2;pixels[i>>2]=(pixels[i>>2]&~(3u<<shift))|(value<<shift);}
-static int slot_at(int x){for(int s=0;s<4;s++)if(x>=STARTS[s]&&x<STARTS[s]+45)return s;return -1;}
-void clock_mask(const uint8_t digits[4],uint8_t bits[CLOCK_MASK_BYTES]){
-  memset(bits,0,CLOCK_MASK_BYTES);
-  for(int s=0;s<4;s++)if(digits[s]<10)for(int y=0;y<32;y++)for(int x=0;x<45;x++)
-    if(bit(CLOCK_GLYPHS[digits[s]],y*45+x))set_bit(bits,(y+4)*200+STARTS[s]+x);
+static int slot_at(const ClockFace *f,int x){
+  for(int s=0;s<4;s++)if(x>=f->starts[s]&&x<f->starts[s]+f->digit_width)return s;
+  return -1;
+}
+
+static const uint8_t *broad_glyph(const ClockFace *f,int digit){(void)f;return CLOCK_GLYPHS[digit];}
+static uint16_t broad_owner(const ClockFace *f,int x,int y){(void)f;return CLOCK_OWNERS[y*CLOCK_WIDTH+x];}
+static void broad_cell(const ClockFace *f,int id,ClockCell *out){(void)f;*out=CLOCK_CELLS[id];}
+static void broad_colon(uint8_t *bits){
   for(int top=9;top<=23;top+=14)for(int y=0;y<8;y++){
     int inset=(y==0||y==7)?2:(y==1||y==6)?1:0;
-    for(int x=inset;x<8-inset;x++)set_bit(bits,(top+y)*200+96+x);
+    for(int x=inset;x<8-inset;x++)set_bit(bits,(top+y)*CLOCK_WIDTH+96+x);
   }
 }
-void clock_flip_prepare(ClockFlip *f,const uint8_t before[4],const uint8_t after[4]){
-  clock_mask(before,f->before);clock_mask(after,f->after);
-  memset(f->active,0,sizeof(f->active));memset(f->delay,0,sizeof(f->delay));f->changed_slots=0;f->changed_cells=0;
-  for(int i=0;i<CLOCK_PIXELS;i++)if(bit(f->before,i)!=bit(f->after,i)){
-    int slot=slot_at(i%200);if(slot<0)continue;
-    f->active[CLOCK_OWNERS[i]]=1;f->changed_slots|=1u<<slot;
-  }
-  int32_t min=INT32_MAX,max=INT32_MIN;
-  for(int c=0;c<CLOCK_CELL_COUNT;c++)if(f->active[c]){
-    f->changed_cells++;int32_t x=CLOCK_CELLS[c].center_x;if(x<min)min=x;if(x>max)max=x;
-  }
-  if(max>min)for(int c=0;c<CLOCK_CELL_COUNT;c++)if(f->active[c])
-    f->delay[c]=(80*(CLOCK_CELLS[c].center_x-min)+(max-min)/2)/(max-min);
+const ClockFace BROAD_FACE={40,4,32,45,{2,49,106,153},CLOCK_CELL_COUNT,broad_glyph,broad_owner,broad_cell,broad_colon,NULL};
+
+static uint16_t u16(const uint8_t *p){return (uint16_t)(p[0]|p[1]<<8);}
+static const uint8_t *geodesic_glyph(const ClockFace *f,int digit){return f->data+digit*GEODESIC_GLYPH_BYTES;}
+// Each row stores where its owner changes; a binary search finds the cell.
+static uint16_t geodesic_owner(const ClockFace *f,int x,int y){
+  const uint8_t *row=f->data+GEODESIC_ROWS_AT+y*6,*b=f->data+GEODESIC_BOUNDARIES_AT+2*u16(row+2);
+  int lo=0,hi=row[4];
+  while(lo<hi){int mid=(lo+hi)/2;if(b[2*mid]<=x)lo=mid+1;else hi=mid;}
+  return u16(row)+(lo?b[2*(lo-1)+1]:0);
 }
-void clock_flip_sample(const ClockFlip *f,uint16_t elapsed,uint8_t pixels[CLOCK_FRAME_BYTES]){
-  memset(pixels,0,CLOCK_FRAME_BYTES);
-  for(int i=0;i<CLOCK_PIXELS;i++)if(bit(f->after,i))set_pixel(pixels,i,1);
-  if(elapsed>=CLOCK_FLIP_MS||!f->changed_cells)return;
-  int8_t phases[CLOCK_CELL_COUNT];
-  for(int c=0;c<CLOCK_CELL_COUNT;c++){
-    int local=(int)elapsed-f->delay[c];
-    phases[c]=!f->active[c]||local>=320?-1:local<=0?0:local*32/320;
+static void geodesic_cell(const ClockFace *f,int id,ClockCell *out){
+  const uint8_t *c=f->data+GEODESIC_CELLS_AT+id*10;
+  out->ax=(int32_t)u16(c)-GEODESIC_BIAS;out->ay=(int32_t)u16(c+2)-GEODESIC_BIAS;
+  out->nx=(int16_t)u16(c+4);out->ny=(int16_t)u16(c+6);
+  out->length2=out->nx*out->nx+out->ny*out->ny;out->center_x=(int32_t)u16(c+8)-GEODESIC_BIAS;
+}
+static void geodesic_colon(uint8_t *bits){
+  static const uint8_t tops[2]=GEODESIC_COLON_TOPS;
+  for(int d=0;d<2;d++)for(int y=0;y<8;y++){
+    int inset=(y==0||y==7)?2:(y==1||y==6)?1:0;
+    for(int x=inset;x<8-inset;x++)set_bit(bits,(tops[d]+y)*CLOCK_WIDTH+GEODESIC_COLON_X+x);
   }
-  for(int y=0;y<40;y++)for(int x=0;x<200;x++){
-    int slot=slot_at(x);if(slot<0||!(f->changed_slots&(1u<<slot)))continue;
-    int at=y*200+x,id=CLOCK_OWNERS[at],phase=phases[id];if(phase<0)continue;
-    if(!phase){set_pixel(pixels,at,bit(f->before,at));continue;}
+}
+bool geodesic_face_init(ClockFace *f,const uint8_t *data,size_t length){
+  if(!f||!data||length!=GEODESIC_BYTES)return false;
+  static const uint8_t starts[4]=GEODESIC_STARTS;
+  *f=(ClockFace){GEODESIC_HEIGHT,GEODESIC_CAP_TOP,GEODESIC_CAP_HEIGHT,GEODESIC_DIGIT_WIDTH,{0},GEODESIC_CELL_COUNT,
+    geodesic_glyph,geodesic_owner,geodesic_cell,geodesic_colon,data};
+  memcpy(f->starts,starts,4);
+  // Reject a resource whose rows point outside it or name a missing tile.
+  for(int y=0;y<GEODESIC_HEIGHT;y++){
+    const uint8_t *row=data+GEODESIC_ROWS_AT+y*6,*b=data+GEODESIC_BOUNDARIES_AT+2*u16(row+2);
+    if(GEODESIC_BOUNDARIES_AT+2u*(u16(row+2)+row[4])>length||u16(row)>=GEODESIC_CELL_COUNT)return false;
+    for(int k=0;k<row[4];k++)if(b[2*k]>=CLOCK_WIDTH||u16(row)+b[2*k+1]>=GEODESIC_CELL_COUNT)return false;
+  }
+  return true;
+}
+
+void clock_flip_attach(ClockFlip *flip,const ClockFace *face,uint8_t *memory){
+  size_t mask=(size_t)clock_pixels(face)/8;
+  *flip=(ClockFlip){face,memory,memory+mask,memory+2*mask,memory+2*mask+face->cell_count,0,0};
+}
+void clock_mask(const ClockFace *f,const uint8_t digits[4],uint8_t *bits){
+  memset(bits,0,(size_t)clock_pixels(f)/8);
+  for(int s=0;s<4;s++)if(digits[s]<10){
+    const uint8_t *glyph=f->glyph(f,digits[s]);
+    for(int y=0;y<f->cap_height;y++)for(int x=0;x<f->digit_width;x++)
+      if(bit(glyph,y*f->digit_width+x))set_bit(bits,(y+f->cap_top)*CLOCK_WIDTH+f->starts[s]+x);
+  }
+  f->colon(bits);
+}
+void clock_flip_prepare(ClockFlip *flip,const uint8_t before[4],const uint8_t after[4]){
+  const ClockFace *f=flip->face;
+  clock_mask(f,before,flip->before);clock_mask(f,after,flip->after);
+  memset(flip->active,0,f->cell_count);memset(flip->delay,0,f->cell_count);flip->changed_slots=0;flip->changed_cells=0;
+  for(int i=0;i<clock_pixels(f);i++)if(bit(flip->before,i)!=bit(flip->after,i)){
+    int slot=slot_at(f,i%CLOCK_WIDTH);if(slot<0)continue;
+    flip->active[f->owner(f,i%CLOCK_WIDTH,i/CLOCK_WIDTH)]=1;flip->changed_slots|=1u<<slot;
+  }
+  int32_t min=INT32_MAX,max=INT32_MIN;ClockCell c;
+  for(int id=0;id<f->cell_count;id++)if(flip->active[id]){
+    flip->changed_cells++;f->cell(f,id,&c);if(c.center_x<min)min=c.center_x;if(c.center_x>max)max=c.center_x;
+  }
+  if(max>min)for(int id=0;id<f->cell_count;id++)if(flip->active[id]){
+    f->cell(f,id,&c);flip->delay[id]=(80*(c.center_x-min)+(max-min)/2)/(max-min);
+  }
+}
+// Phases are sampled into the delay array's twin: -1 still, 0 old face, 1..32 hinge.
+void clock_flip_sample(const ClockFlip *flip,uint16_t elapsed,uint8_t *pixels){
+  const ClockFace *f=flip->face;const int W=CLOCK_WIDTH,H=f->height;
+  memset(pixels,0,clock_frame_bytes(f));
+  for(int i=0;i<W*H;i++)if(bit(flip->after,i))set_pixel(pixels,i,1);
+  if(elapsed>=CLOCK_FLIP_MS||!flip->changed_cells)return;
+  for(int y=0;y<H;y++)for(int x=0;x<W;x++){
+    int slot=slot_at(f,x);if(slot<0||!(flip->changed_slots&(1u<<slot)))continue;
+    int at=y*W+x,id=f->owner(f,x,y);if(!flip->active[id])continue;
+    int local=(int)elapsed-flip->delay[id];if(local>=320)continue;
+    int phase=local<=0?0:local*32/320;
+    if(!phase){set_pixel(pixels,at,bit(flip->before,at));continue;}
     int scale=CLOCK_SCALES[phase];if(!scale)continue;
-    const ClockCell *c=&CLOCK_CELLS[id];int px=x*256+128,py=y*256+128;
-    int64_t distance=(px-c->ax)*c->nx+(py-c->ay)*c->ny,denominator=(int64_t)c->length2*scale;
-    int64_t source_x=px+distance*c->nx*(1024-scale)/denominator;
-    int64_t source_y=py+distance*c->ny*(1024-scale)/denominator;
-    if(source_x<0||source_x>=200*256||source_y<0||source_y>=40*256)continue;
-    int sx=source_x/256,sy=source_y/256;if(CLOCK_OWNERS[sy*200+sx]!=id)continue;
-    bool ink=slot_at(sx)==slot&&bit(f->before,sy*200+sx);
+    ClockCell c;f->cell(f,id,&c);int px=x*256+128,py=y*256+128;
+    int64_t distance=(int64_t)(px-c.ax)*c.nx+(int64_t)(py-c.ay)*c.ny,denominator=(int64_t)c.length2*scale;
+    int64_t source_x=px+distance*c.nx*(1024-scale)/denominator;
+    int64_t source_y=py+distance*c.ny*(1024-scale)/denominator;
+    if(source_x<0||source_x>=W*256||source_y<0||source_y>=H*256)continue;
+    int sx=source_x/256,sy=source_y/256;if(f->owner(f,sx,sy)!=id)continue;
+    bool ink=slot_at(f,sx)==slot&&bit(flip->before,sy*W+sx);
     set_pixel(pixels,at,ink+(scale<850?2:0));
   }
 }

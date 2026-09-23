@@ -6,7 +6,10 @@ The Emery build packages three original **Dymaxion Draft** cuts:
 - `DymaxionDraftZone.ttf`: remote-zone numerals.
 - `DymaxionDraftMicro.ttf`: dates and small labels.
 
-The horizontal clock uses **Dymaxion Span**. Its exact pixel runs are generated
+The default Geodesic clock and the status line do not use font resources: their
+pixel masters are raw resources in `resources/data/` (`clock-geodesic.bin` from
+`tools/generate-geodesic-clock.mjs`, `caps.bin` from `tools/generate-caps.mjs`,
+which packs Draft Micro's lining capitals). The Span option uses **Dymaxion Span**. Its exact pixel runs are generated
 in `watchface/src/c/generated/span_font.h` and drawn directly by native C to
 avoid Pebble text-layout margins at the full 190-pixel line length.
 `DymaxionSpan.ttf` is a proof font and is not packaged in the PBW.

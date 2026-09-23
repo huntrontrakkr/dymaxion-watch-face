@@ -6,7 +6,7 @@ export const PACKET_VERSION=7; // Small map glyph set; per-place RGB222 colors u
 export const zoneExists = name => !!moment.tz.zone(name);
 export function encodeSettings(input,now=Date.now()) {
   const s=validateSettings(input,zoneExists),bytes=new Uint8Array(PACKET_SIZE),v=new DataView(bytes.buffer);
-  const flags=(s.dayNight?1:0)|(s.edges?2:0)|(s.lights?4:0)|(s.motion?8:0)|(s.sun?16:0)|(s.stacked?32:0);
+  const flags=(s.dayNight?1:0)|(s.edges?2:0)|(s.lights?4:0)|(s.motion?8:0)|(s.sun?16:0)|(s.stacked?32:0)|(s.statusLine?64:0);
   bytes.set([PACKET_VERSION,s.theme,flags,s.format,s.orientation,...s.time,...s.map,...s.zones.flat(),s.places.reduce((n,p,i)=>n|(p.on?1<<i:0),0)]);
   const map=makeMap();
   s.places.forEach((p,i)=>{

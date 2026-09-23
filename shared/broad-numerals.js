@@ -96,7 +96,16 @@ export function broadTriangleGrid(pitch = 8, phase = 0) {
   phase = Math.max(0, Math.min(1, Number(phase) || 0));
   const key = pitch + ':' + phase;
   if (triangleCache.has(key)) return triangleCache.get(key);
-  const edge = 2 * pitch / SQRT3, originX = 2 + phase * edge / 2, originY = capTop;
+  const edge = 2 * pitch / SQRT3;
+  const grid = {...equilateralGrid({width, height, pitch, originX: 2 + phase * edge / 2, originY: capTop}), phase};
+  triangleCache.set(key, grid);
+  return grid;
+}
+// One continuous lattice over a whole clock strip. Each pixel belongs to the
+// first cell whose closed triangle contains its centre; cells are numbered in
+// row order, so ids increase from left to right along every pixel row.
+export function equilateralGrid({width, height, pitch, originX, originY}) {
+  const edge = 2 * pitch / SQRT3;
   const cells = [], membership = new Int16Array(width * height).fill(-1);
   for (let row = -2; row < Math.ceil(height / pitch) + 2; row++) {
     for (let column = -3; column < Math.ceil(width * 2 / edge) + 3; column++) {
@@ -109,7 +118,7 @@ export function broadTriangleGrid(pitch = 8, phase = 0) {
         for (let px = Math.max(0, Math.floor(x)); px < Math.min(width, Math.ceil(x + edge)); px++) {
           const p = [px + .5, py + .5], sides = vertices.map((v, i) => signedArea(v, vertices[(i + 1) % 3], p));
           if (!(sides.every(n => n >= -1e-8) || sides.every(n => n <= 1e-8))) continue;
-          const at = index(px, py);
+          const at = py * width + px;
           if (membership[at] >= 0) continue;
           membership[at] = id; pixels.push(at);
         }
@@ -117,9 +126,7 @@ export function broadTriangleGrid(pitch = 8, phase = 0) {
       if (pixels.length) cells.push({vertices, pixels});
     }
   }
-  const grid = {edge, pitch, phase, originX, originY, cells, membership};
-  triangleCache.set(key, grid);
-  return grid;
+  return {edge, pitch, originX, originY, width, height, cells, membership};
 }
 
 const CORNERS = Object.freeze({

@@ -25,7 +25,10 @@ test('the display is one equilateral lattice, with six hexagonal edges and whole
   assert.equal(glyphs.size,10,'all ten numerals must remain distinct');
 });
 test('display preferences migrate, validate, and travel separately from the stable layout packet',()=>{
-  const s=defaults();assert.deepEqual([...encodeDisplay(s)],[1,2,1,0]);delete s.clockDisplay;delete s.segmentGrid;
+  const s=defaults();assert.deepEqual([...encodeDisplay(s)],[1,4,1,0],'new faces use Geodesic figures');
+  assert.deepEqual([...encodeDisplay({...s,clockDisplay:'broad'})],[1,2,1,0]);
+  for(const clockDisplay of ['span','triangles','broad','geodesic'])assert.notEqual(encodeDisplay({...s,clockDisplay})[1],3,'code 3 is the retired LCD style');
+  delete s.clockDisplay;delete s.segmentGrid;
   assert.equal(validateSettings(s,zoneExists).clockDisplay,'broad');
   assert.throws(()=>validateSettings({...s,clockDisplay:'unknown'},zoneExists));assert.throws(()=>validateSettings({...s,segmentGrid:'false'},zoneExists));
   assert.deepEqual([...encodeDisplay({...defaults(),clockDisplay:'span',segmentGrid:false})],[1,0,0,0]);
@@ -53,6 +56,7 @@ test('native segment rendering matches the browser geometry pixel for pixel acro
   }
   assert.deepEqual(execFileSync('test-results/display-test'),Buffer.concat(frames));
   writeFileSync('test-results/display-triangles.bin',encodeDisplay({...defaults(),clockDisplay:'triangles'}));
-  writeFileSync('test-results/display-broad.bin',encodeDisplay(defaults()));
+  writeFileSync('test-results/display-broad.bin',encodeDisplay({...defaults(),clockDisplay:'broad'}));
+  writeFileSync('test-results/display-geodesic.bin',encodeDisplay(defaults()));
   writeFileSync('test-results/display-span.bin',encodeDisplay({...defaults(),clockDisplay:'span'}));
 });
