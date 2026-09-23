@@ -85,3 +85,7 @@ https://huntrontrakkr.github.io/pebble-browser-emulator/#/github/huntrontrakkr/d
 3. Render the icosahedral net and terminator natively.
 4. Hex time vessels, extra time zones and the subsolar glyph.
 5. Theme selection through a PebbleKit JS configuration page.
+
+## License
+
+[Apache License 2.0](LICENSE)
