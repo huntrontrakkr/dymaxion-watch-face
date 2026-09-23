@@ -78,7 +78,7 @@ The default clock is **Chamfer**: the Draft zone numerals enlarged three times,
 to a 36-pixel cap height, with every exposed pixel corner cut on a 45° line and
 every inside step filled on the same diagonal. The big clock and the zone clocks
 are one drawing at two sizes. It is deliberately smaller than the map. Figures
-sit in 27-pixel tabular cells so the readout never shifts and the minute flip
+sit in 27-pixel tabular cells so the readout never shifts and the minute transition
 moves only what changes. In Meridian,
 a status line of Draft Micro lining capitals carries the date and city in place
 of the nameplate. The reasoning, and a comparison with the previous default,

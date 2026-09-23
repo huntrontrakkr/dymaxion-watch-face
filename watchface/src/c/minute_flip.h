@@ -4,7 +4,8 @@
 #include <stdint.h>
 #define CLOCK_WIDTH 200
 #define CLOCK_FLIP_MS 400
-typedef struct {int32_t ax,ay,nx,ny,length2,center_x;} ClockCell;
+// A tile's centroid in Q8 pixels: tiles shrink toward it.
+typedef struct {int32_t cx,cy;} ClockCell;
 // A 200-pixel strip with four fixed numeral slots and one equilateral lattice.
 // Broad reads static tables; Chamfer reads a resource loaded into the heap.
 typedef struct ClockFace ClockFace;

@@ -33,10 +33,8 @@ static uint16_t chamfer_owner(const ClockFace *f,int x,int y){
   return u16(row)+(lo?b[2*(lo-1)+1]:0);
 }
 static void chamfer_cell(const ClockFace *f,int id,ClockCell *out){
-  const uint8_t *c=f->data+CHAMFER_CELLS_AT+id*10;
-  out->ax=(int32_t)u16(c)-CHAMFER_BIAS;out->ay=(int32_t)u16(c+2)-CHAMFER_BIAS;
-  out->nx=(int16_t)u16(c+4);out->ny=(int16_t)u16(c+6);
-  out->length2=out->nx*out->nx+out->ny*out->ny;out->center_x=(int32_t)u16(c+8)-CHAMFER_BIAS;
+  const uint8_t *c=f->data+CHAMFER_CELLS_AT+id*4;
+  out->cx=(int32_t)u16(c)-CHAMFER_BIAS;out->cy=(int32_t)u16(c+2)-CHAMFER_BIAS;
 }
 static void chamfer_colon(uint8_t *bits){
   static const uint8_t tops[2]=CHAMFER_COLON_TOPS,rows[CHAMFER_COLON_WIDTH]=CHAMFER_COLON_ROWS;
@@ -81,32 +79,29 @@ void clock_flip_prepare(ClockFlip *flip,const uint8_t before[4],const uint8_t af
   }
   int32_t min=INT32_MAX,max=INT32_MIN;ClockCell c;
   for(int id=0;id<f->cell_count;id++)if(flip->active[id]){
-    flip->changed_cells++;f->cell(f,id,&c);if(c.center_x<min)min=c.center_x;if(c.center_x>max)max=c.center_x;
+    flip->changed_cells++;f->cell(f,id,&c);if(c.cx<min)min=c.cx;if(c.cx>max)max=c.cx;
   }
   if(max>min)for(int id=0;id<f->cell_count;id++)if(flip->active[id]){
-    f->cell(f,id,&c);flip->delay[id]=(80*(c.center_x-min)+(max-min)/2)/(max-min);
+    f->cell(f,id,&c);flip->delay[id]=(80*(c.cx-min)+(max-min)/2)/(max-min);
   }
 }
-// Phases are sampled into the delay array's twin: -1 still, 0 old face, 1..32 hinge.
+// Each changed tile holds the old face, then shrinks (shaded) to its centroid,
+// uncovering the new face. Tiles without a changed pixel stay still.
 void clock_flip_sample(const ClockFlip *flip,uint16_t elapsed,uint8_t *pixels){
   const ClockFace *f=flip->face;const int W=CLOCK_WIDTH,H=f->height;
   memset(pixels,0,clock_frame_bytes(f));
   for(int i=0;i<W*H;i++)if(bit(flip->after,i))set_pixel(pixels,i,1);
   if(elapsed>=CLOCK_FLIP_MS||!flip->changed_cells)return;
   for(int y=0;y<H;y++)for(int x=0;x<W;x++){
-    int slot=slot_at(f,x);if(slot<0||!(flip->changed_slots&(1u<<slot)))continue;
     int at=y*W+x,id=f->owner(f,x,y);if(!flip->active[id])continue;
     int local=(int)elapsed-flip->delay[id];if(local>=320)continue;
     int phase=local<=0?0:local*32/320;
     if(!phase){set_pixel(pixels,at,bit(flip->before,at));continue;}
     int scale=CLOCK_SCALES[phase];if(!scale)continue;
-    ClockCell c;f->cell(f,id,&c);int px=x*256+128,py=y*256+128;
-    int64_t distance=(int64_t)(px-c.ax)*c.nx+(int64_t)(py-c.ay)*c.ny,denominator=(int64_t)c.length2*scale;
-    int64_t source_x=px+distance*c.nx*(1024-scale)/denominator;
-    int64_t source_y=py+distance*c.ny*(1024-scale)/denominator;
-    if(source_x<0||source_x>=W*256||source_y<0||source_y>=H*256)continue;
-    int sx=source_x/256,sy=source_y/256;if(f->owner(f,sx,sy)!=id)continue;
-    bool ink=slot_at(f,sx)==slot&&bit(flip->before,sy*W+sx);
-    set_pixel(pixels,at,ink+(scale<850?2:0));
+    ClockCell c;f->cell(f,id,&c);
+    int32_t sx=c.cx+(x*256+128-c.cx)*1024/scale,sy=c.cy+(y*256+128-c.cy)*1024/scale;
+    if(sx<0||sx>=W*256||sy<0||sy>=H*256)continue;
+    sx>>=8;sy>>=8;if(f->owner(f,sx,sy)!=id)continue;
+    set_pixel(pixels,at,bit(flip->before,sy*W+sx)+2);
   }
 }

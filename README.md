@@ -24,7 +24,7 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
   status line can be switched on or off in any composition.
   Optional stacked hours/minutes retain the earlier display cut.
 - A 400 ms minute transition for Chamfer and rounded broad numerals: only
-  changed triangular tiles hinge away to reveal the new time.
+  the map-scale triangles over changed figures shrink away to reveal the new time.
   Motion stops at 20% battery or when **Brief animations** is disabled.
   See [minute transitions](docs/MINUTE-FLIP.md).
 - Rounded broad numerals, Span lettering and the earlier triangular seven-segment
@@ -104,10 +104,10 @@ pebble install --phone <phone-ip>
 The installable file is `watchface/build/watchface.pbw`. Target: Emery only,
 200×228 pixels, 64 colors. Before the Meridian revision, SDK 4.33.1 reported
 92,670 bytes of resources and a 62,845-byte static RAM footprint; the map bitmap
-adds about 22 KB of heap. Meridian adds 8,346 bytes of raw resources (Chamfer
-masters and flip lattice, status-line capitals), which load into the heap only
-when used, and moves the minute-flip buffers from static memory to the heap. An
-ARM cross-compile of the app sources measures 2,725 fewer static bytes than
+adds about 22 KB of heap. Meridian adds 3,952 bytes of raw resources (Chamfer
+masters and transition lattice, status-line capitals), which load into the heap only
+when used, and moves the minute-transition buffers from static memory to the heap. An
+ARM cross-compile of the app sources measures 17,167 fewer static bytes than
 before; the SDK's own report for this revision is still to be taken.
 
 The project also remains compatible with opening the `watchface` folder in the
@@ -121,7 +121,7 @@ npm ci
 npx playwright install chromium
 npm run generate              # map, markers, palette, status, triangular display, caps, defaults
 node tools/generate-chart-axis.mjs # compact chart numerals and layout constants
-npm run generate:clock        # rounded pixel masters and native minute-flip geometry
+npm run generate:clock        # rounded pixel masters and native transition geometry
 npm run generate:chamfer      # Chamfer masters, packed resource and native layout
 npm run companion             # phone bundle, including offline configuration HTML
 npm test                      # projection, DST, solar, providers, native packets/calendar/shake
@@ -149,7 +149,7 @@ Tests require a host C compiler (`cc`). Playwright may require its documented
 Linux runtime libraries. Native verification before the Meridian revision used
 the Emery SDK emulator: installation, both layouts, AppMessage settings, bottom
 panels, shake cycling and low-battery suppression. The Meridian revision was
-verified with host C tests (Chamfer minute-flip frames from the packed resource
+verified with host C tests (Chamfer minute-transition frames from the packed resource
 and status-line capitals, both pixel-for-pixel against the browser), a strict
 Cortex-M3 compile of every native source, and the browser suites; it has not yet
 been run in the SDK emulator.

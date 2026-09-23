@@ -1,13 +1,15 @@
-import {BROAD_METRICS, broadTimeMask, broadTriangleGrid} from './broad-numerals.js';
+import {BROAD_METRICS, broadTimeMask, equilateralGrid} from './broad-numerals.js';
 import {CHAMFER_METRICS, chamferTimeMask, chamferTriangleGrid} from './chamfer-numerals.js';
 
 export const FLIP_DURATION = 400;
 export const TILE_DURATION = 320;
 export const FLIP_SCALE = Object.freeze(Array.from({length: 33}, (_, i) => Math.round(Math.cos(i * Math.PI / 64) * 1024)));
-// Clock faces that share the minute flip. Each is a 200-pixel-wide strip with
-// four fixed numeral slots; only pixels inside a slot may change.
+// Clock faces that share the minute transition. Each is a 200-pixel-wide strip
+// with four fixed numeral slots; only pixels inside a slot may change. The
+// lattice is one row of triangles as tall as the figures: the map's own scale.
 export const FLIP_FACES = Object.freeze({
-  broad: {metrics: BROAD_METRICS, mask: broadTimeMask, lattice: () => broadTriangleGrid(8, 0)},
+  broad: {metrics: BROAD_METRICS, mask: broadTimeMask,
+    lattice: () => equilateralGrid({width: 200, height: 40, pitch: BROAD_METRICS.capHeight, originX: 2, originY: BROAD_METRICS.capTop})},
   chamfer: {metrics: CHAMFER_METRICS, mask: chamferTimeMask, lattice: chamferTriangleGrid}
 });
 function face(name) {
@@ -22,14 +24,10 @@ export function flipGrid(name = 'broad') {
   if (grids.has(name)) return grids.get(name);
   const grid = face(name).lattice();
   const cells = grid.cells.map((cell, id) => {
-    // Every tile hinges along the same 60-degree family of lattice edges.
-    // Q8 coordinates make the inverse projection identical on browser and watch.
-    const hinge = cell.vertices[0][1] === cell.vertices[1][1] ? 2 : 0;
-    const a = cell.vertices[hinge].map(v => Math.round(v * 256));
-    const b = cell.vertices[(hinge + 1) % 3].map(v => Math.round(v * 256));
-    const nx = a[1] - b[1], ny = b[0] - a[0];
-    return {...cell, id, ax: a[0], ay: a[1], nx, ny, length2: nx * nx + ny * ny,
-      centerX: Math.round(cell.vertices.reduce((sum, p) => sum + p[0], 0) / 3 * 256)};
+    // Every tile shrinks toward its centroid. Q8 coordinates make the inverse
+    // projection identical on browser and watch.
+    const [cx, cy] = [0, 1].map(axis => Math.round(cell.vertices.reduce((sum, p) => sum + p[axis], 0) / 3 * 256));
+    return {...cell, id, cx, cy, centerX: cx};
   });
   const result = {...grid, cells};
   grids.set(name, result);
@@ -59,11 +57,11 @@ export function planMinuteFlip(from, to, name = 'broad') {
 }
 export function clockMask(time, name = 'broad') { return face(name).mask(time); }
 
-// Palette indices: background, ink, tilted background, tilted ink.
-// Start with the new drawing underneath, then hinge the old tile out of the way.
-// Unchanged cells, unchanged numerals, inter-digit gaps and colon stay stationary.
+// Palette indices: background, ink, shaded background, shaded ink.
+// Start with the new drawing underneath, then shrink each old tile, shaded so
+// the triangle reads, to its centroid. Tiles without a changed pixel stay still.
 export function sampleMinuteFlip(plan, elapsed, output) {
-  const metrics = face(plan.face ?? 'broad').metrics, {width: W, height: H} = metrics, slotAt = slotFinder(metrics);
+  const {width: W, height: H} = face(plan.face ?? 'broad').metrics;
   output ??= new Uint8Array(W * H);
   output.set(plan.after);
   if (elapsed >= plan.duration || !plan.changedCells) return output;
@@ -73,21 +71,18 @@ export function sampleMinuteFlip(plan, elapsed, output) {
     if (local < TILE_DURATION) phases[cell.id] = Math.max(0, Math.floor(local * 32 / TILE_DURATION));
   }
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const slot = slotAt(x);
-    if (slot < 0 || !(plan.changedSlots & (1 << slot))) continue;
-    const at = y * W + x, id = plan.grid.membership[at], phase = phases[id];
+    const at = y * W + x, id = plan.grid.membership[at], phase = id < 0 ? -1 : phases[id];
     if (phase < 0) continue;
     if (phase === 0) { output[at] = plan.before[at]; continue; }
     const scale = FLIP_SCALE[phase];
     if (!scale) continue;
-    const cell = plan.grid.cells[id], px = x * 256 + 128, py = y * 256 + 128;
-    const distance = (px - cell.ax) * cell.nx + (py - cell.ay) * cell.ny;
-    const denominator = cell.length2 * scale;
-    const sx = Math.floor((px + Math.trunc(distance * cell.nx * (1024 - scale) / denominator)) / 256);
-    const sy = Math.floor((py + Math.trunc(distance * cell.ny * (1024 - scale) / denominator)) / 256);
-    if (sx < 0 || sx >= W || sy < 0 || sy >= H || plan.grid.membership[sy * W + sx] !== id) continue;
-    const ink = slotAt(sx) === slot ? plan.before[sy * W + sx] : 0;
-    output[at] = ink + (scale < 850 ? 2 : 0);
+    const cell = plan.grid.cells[id];
+    const sx = cell.cx + Math.trunc((x * 256 + 128 - cell.cx) * 1024 / scale);
+    const sy = cell.cy + Math.trunc((y * 256 + 128 - cell.cy) * 1024 / scale);
+    if (sx < 0 || sx >= W * 256 || sy < 0 || sy >= H * 256) continue;
+    const source = (sy >> 8) * W + (sx >> 8);
+    if (plan.grid.membership[source] !== id) continue;
+    output[at] = plan.before[source] + 2;
   }
   return output;
 }
@@ -112,7 +107,7 @@ export function drawFlipPixels(ctx, pixels, x = 0, y = 0, {ink = '#000000', back
 }
 
 // Idle clocks have no animation callbacks. Discontinuous time changes settle
-// immediately; a real adjacent minute advances through exactly one short flip.
+// immediately; a real adjacent minute advances through exactly one short transition.
 export function minuteFlipClock({invalidate, now = () => performance.now(),
   requestFrame = callback => requestAnimationFrame(callback), cancelFrame = id => cancelAnimationFrame(id)} = {}) {
   let previous = null, current = null, request = null;

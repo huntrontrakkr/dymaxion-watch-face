@@ -1,7 +1,7 @@
 // Chamfer clock figures: the Draft zone numerals, enlarged three times with
 // every exposed pixel corner cut on a clean 45-degree line and every inside
 // step filled on the same diagonal. The big clock and the zone clocks are one
-// drawing at two sizes. Figures sit in fixed tabular cells so the minute flip
+// drawing at two sizes. Figures sit in fixed tabular cells so the minute transition
 // can reuse its lattice unchanged.
 import pixelMasters from '../assets/type/chamfer-clock.json' with {type: 'json'};
 import {equilateralGrid} from './broad-numerals.js';
@@ -10,7 +10,7 @@ export const CHAMFER_SCALE = 3;
 export const CHAMFER_METRICS = Object.freeze({
   width: 200, height: 40, capHeight: 36, capTop: 2, digitWidth: 27,
   starts: Object.freeze([37, 67, 106, 136]), colonX: 97, colonWidth: 6,
-  colonTops: Object.freeze([11, 26]), pitch: 9
+  colonTops: Object.freeze([11, 26]), pitch: 36
 });
 const {width, height, capHeight, capTop, digitWidth, starts, colonX, colonWidth, colonTops} = CHAMFER_METRICS;
 const index = (x, y) => y * width + x;
@@ -80,7 +80,7 @@ export function chamferTimeMask(time) {
     if (colonDot(x, y)) mask[index(colonX + x, top + y)] = 1;
   return mask;
 }
-// Nine-pixel lattice rows: the 36-pixel figures span exactly four.
+// One lattice row as tall as the figures, near the map's own triangle scale.
 let grid;
 export function chamferTriangleGrid() {
   return grid ??= equilateralGrid({width, height, pitch: CHAMFER_METRICS.pitch, originX: 2, originY: capTop});

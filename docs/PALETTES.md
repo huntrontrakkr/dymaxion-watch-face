@@ -68,7 +68,7 @@ has been copied into the face.
 
 `shared/palettes.js` is the palette source. Every theme includes the daylight
 and night map colors, lettering, annotations, three default place colors, moon
-shadow, and inactive triangular-display color. The minute flip shades derive
+shadow, and inactive triangular-display color. The minute-transition shades derive
 from each palette's ink and ground. Independent custom place colors retain
 their existing settings. New palettes provide chart and calendar defaults;
 custom panel colors are retained until **Use theme colors** is selected.

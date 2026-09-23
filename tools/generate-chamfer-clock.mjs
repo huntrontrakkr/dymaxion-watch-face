@@ -1,5 +1,5 @@
 // Builds the Chamfer figures from the Draft zone numerals (tools/draft-lettering.py),
-// writes the approved pixel masters and the native minute-flip lattice resource.
+// writes the approved pixel masters and the native minute-transition lattice resource.
 // Pure geometry: no browser is needed.
 import {mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 const source = readFileSync('tools/draft-lettering.py', 'utf8');
@@ -16,7 +16,7 @@ mkdirSync('assets/type', {recursive: true});
 writeFileSync('assets/type/chamfer-clock.json', JSON.stringify(data.glyphs) + '\n');
 
 // The lattice is pure arithmetic, so Node computes it directly. Browser and
-// watch then share one table: cell geometry in Q8, plus per-row owner runs.
+// watch then share one table: tile centroids in Q8, plus per-row owner runs.
 const {CHAMFER_METRICS: M, colonDot} = await import('../shared/chamfer-numerals.js');
 const colonRows = Array.from({length: M.colonWidth}, (_, y) => Array.from({length: M.colonWidth}, (_, x) => colonDot(x, y) ? 1 << x : 0).reduce((a, b) => a | b, 0));
 const {flipGrid} = await import('../shared/minute-flip.js');
@@ -40,16 +40,14 @@ for (let y = 0; y < M.height; y++) for (let x = 0, id = rows[y].first, k = 0; x 
 }
 // One raw resource, loaded into the heap only while Chamfer figures are shown:
 // the static app image stays inside Pebble's 64 KB process limit.
-const BIAS = 8192, cellBytes = 10, rowBytes = 6, glyphBytes = data.glyphs[0].length;
+const BIAS = 8192, cellBytes = 4, rowBytes = 6, glyphBytes = data.glyphs[0].length;
 const cellsAt = 10 * glyphBytes, rowsAt = cellsAt + grid.cells.length * cellBytes, boundariesAt = rowsAt + M.height * rowBytes;
 const total = boundariesAt + boundaries.length * 2, out = Buffer.alloc(total);
 data.glyphs.forEach((g, i) => Buffer.from(g).copy(out, i * glyphBytes));
 const u16 = (v, at, what) => { if (!Number.isInteger(v) || v < 0 || v > 0xffff) throw new Error(`${what} out of range: ${v}`); out.writeUInt16LE(v, at); };
 grid.cells.forEach((c, i) => {
   const at = cellsAt + i * cellBytes;
-  if (c.nx * c.nx + c.ny * c.ny !== c.length2) throw new Error('Cell length must be derivable on the watch.');
-  u16(c.ax + BIAS, at, 'ax'); u16(c.ay + BIAS, at + 2, 'ay'); out.writeInt16LE(c.nx, at + 4); out.writeInt16LE(c.ny, at + 6);
-  u16(c.centerX + BIAS, at + 8, 'centerX');
+  u16(c.cx + BIAS, at, 'cx'); u16(c.cy + BIAS, at + 2, 'cy');
 });
 rows.forEach((r, y) => {
   const at = rowsAt + y * rowBytes;

@@ -41,24 +41,24 @@ beside the Moon, Bluetooth and battery marks that were already there. The
 caption row under the clock disappears.
 
 **Still the same instrument.** The same map, palettes, places, panels,
-minute flip and settings. Chamfer fits the original Atlas and Horizon
+settings and 400 ms minute transition (now a shrink of map-scale triangles). Chamfer fits the original Atlas and Horizon
 positions, with the caption 12 pixels below the figures when the nameplate is
 shown; switching numerals keeps whichever composition you are in.
 
 ## Engineering notes
 
 - The clock strip is 200 × 40 pixels: figures from y=24 to 60 in Meridian,
-  colon squares with the same cut corners. The 36-pixel cap is exactly four
-  rows of a 9-pixel lattice, so the 400 ms triangle flip works unchanged and
-  only changed figures move.
+  colon squares with the same cut corners. The minute transition uses one row
+  of 36-pixel triangles over the figures, and only the tiles over changed
+  figures move.
 - `tools/generate-chamfer-clock.mjs` reads the zone masters from
   `tools/draft-lettering.py`, cuts them geometrically (8 × 8 samples per
-  pixel), and packs the masters and flip lattice into a 6,744-byte resource.
+  pixel), and packs the masters and transition lattice into a 2,350-byte resource.
 - Pebble limits an app's static image to 64 KB and the face was already at
   62.8 KB. Chamfer's resource and the status-line capitals (1,602 bytes) load
-  into the heap only when used; the flip buffers (4,476 bytes for Chamfer) moved
+  into the heap only when used; the transition buffers (4,068 bytes for Chamfer) moved
   from static memory to the heap for both faces. An ARM cross-compile of the app
-  sources measures 2,725 bytes *less* static memory than before.
+  sources measures 17,167 bytes *less* static memory than before.
 - The watch finds lattice cells by binary search over per-row runs instead of
   a lookup table. Host tests compare native frames, read from the packed
   resource, with the browser at every sampled stage of seven transitions, and

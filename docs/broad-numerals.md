@@ -1,7 +1,7 @@
 # Broad numeral study
 
 An original clock alphabet, September 23, 2026. Rounded broad numerals are now
-available on the native face and in the workshop, with a [400 ms minute flip](MINUTE-FLIP.md).
+available on the native face and in the workshop, with a [400 ms minute transition](MINUTE-FLIP.md).
 The outline study lives in `shared/broad-numerals.js` and the
 self-contained comparison at `output/broad-numeral-study/rounded-type-study.html`.
 The earlier `broad-type-study.html` and `refined-type-study.html` proofs remain
