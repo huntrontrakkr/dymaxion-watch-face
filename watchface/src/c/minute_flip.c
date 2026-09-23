@@ -3,7 +3,7 @@
 #include <limits.h>
 #include "generated/broad_clock_sizes.h"
 #include "generated/broad_clock_data.h"
-#include "generated/geodesic_clock_sizes.h"
+#include "generated/chamfer_clock_sizes.h"
 static bool bit(const uint8_t *bits,int i){return (bits[i>>3]>>(i&7))&1;}
 static void set_bit(uint8_t *bits,int i){bits[i>>3]|=1u<<(i&7);}
 static void set_pixel(uint8_t *pixels,int i,uint8_t value){int shift=(i&3)*2;pixels[i>>2]=(pixels[i>>2]&~(3u<<shift))|(value<<shift);}
@@ -24,38 +24,36 @@ static void broad_colon(uint8_t *bits){
 const ClockFace BROAD_FACE={40,4,32,45,{2,49,106,153},CLOCK_CELL_COUNT,broad_glyph,broad_owner,broad_cell,broad_colon,NULL};
 
 static uint16_t u16(const uint8_t *p){return (uint16_t)(p[0]|p[1]<<8);}
-static const uint8_t *geodesic_glyph(const ClockFace *f,int digit){return f->data+digit*GEODESIC_GLYPH_BYTES;}
+static const uint8_t *chamfer_glyph(const ClockFace *f,int digit){return f->data+digit*CHAMFER_GLYPH_BYTES;}
 // Each row stores where its owner changes; a binary search finds the cell.
-static uint16_t geodesic_owner(const ClockFace *f,int x,int y){
-  const uint8_t *row=f->data+GEODESIC_ROWS_AT+y*6,*b=f->data+GEODESIC_BOUNDARIES_AT+2*u16(row+2);
+static uint16_t chamfer_owner(const ClockFace *f,int x,int y){
+  const uint8_t *row=f->data+CHAMFER_ROWS_AT+y*6,*b=f->data+CHAMFER_BOUNDARIES_AT+2*u16(row+2);
   int lo=0,hi=row[4];
   while(lo<hi){int mid=(lo+hi)/2;if(b[2*mid]<=x)lo=mid+1;else hi=mid;}
   return u16(row)+(lo?b[2*(lo-1)+1]:0);
 }
-static void geodesic_cell(const ClockFace *f,int id,ClockCell *out){
-  const uint8_t *c=f->data+GEODESIC_CELLS_AT+id*10;
-  out->ax=(int32_t)u16(c)-GEODESIC_BIAS;out->ay=(int32_t)u16(c+2)-GEODESIC_BIAS;
+static void chamfer_cell(const ClockFace *f,int id,ClockCell *out){
+  const uint8_t *c=f->data+CHAMFER_CELLS_AT+id*10;
+  out->ax=(int32_t)u16(c)-CHAMFER_BIAS;out->ay=(int32_t)u16(c+2)-CHAMFER_BIAS;
   out->nx=(int16_t)u16(c+4);out->ny=(int16_t)u16(c+6);
-  out->length2=out->nx*out->nx+out->ny*out->ny;out->center_x=(int32_t)u16(c+8)-GEODESIC_BIAS;
+  out->length2=out->nx*out->nx+out->ny*out->ny;out->center_x=(int32_t)u16(c+8)-CHAMFER_BIAS;
 }
-static void geodesic_colon(uint8_t *bits){
-  static const uint8_t tops[2]=GEODESIC_COLON_TOPS;
-  for(int d=0;d<2;d++)for(int y=0;y<8;y++){
-    int inset=(y==0||y==7)?2:(y==1||y==6)?1:0;
-    for(int x=inset;x<8-inset;x++)set_bit(bits,(tops[d]+y)*CLOCK_WIDTH+GEODESIC_COLON_X+x);
-  }
+static void chamfer_colon(uint8_t *bits){
+  static const uint8_t tops[2]=CHAMFER_COLON_TOPS,rows[CHAMFER_COLON_WIDTH]=CHAMFER_COLON_ROWS;
+  for(int d=0;d<2;d++)for(int y=0;y<CHAMFER_COLON_WIDTH;y++)for(int x=0;x<CHAMFER_COLON_WIDTH;x++)
+    if(rows[y]&(1u<<x))set_bit(bits,(tops[d]+y)*CLOCK_WIDTH+CHAMFER_COLON_X+x);
 }
-bool geodesic_face_init(ClockFace *f,const uint8_t *data,size_t length){
-  if(!f||!data||length!=GEODESIC_BYTES)return false;
-  static const uint8_t starts[4]=GEODESIC_STARTS;
-  *f=(ClockFace){GEODESIC_HEIGHT,GEODESIC_CAP_TOP,GEODESIC_CAP_HEIGHT,GEODESIC_DIGIT_WIDTH,{0},GEODESIC_CELL_COUNT,
-    geodesic_glyph,geodesic_owner,geodesic_cell,geodesic_colon,data};
+bool chamfer_face_init(ClockFace *f,const uint8_t *data,size_t length){
+  if(!f||!data||length!=CHAMFER_BYTES)return false;
+  static const uint8_t starts[4]=CHAMFER_STARTS;
+  *f=(ClockFace){CHAMFER_HEIGHT,CHAMFER_CAP_TOP,CHAMFER_CAP_HEIGHT,CHAMFER_DIGIT_WIDTH,{0},CHAMFER_CELL_COUNT,
+    chamfer_glyph,chamfer_owner,chamfer_cell,chamfer_colon,data};
   memcpy(f->starts,starts,4);
   // Reject a resource whose rows point outside it or name a missing tile.
-  for(int y=0;y<GEODESIC_HEIGHT;y++){
-    const uint8_t *row=data+GEODESIC_ROWS_AT+y*6,*b=data+GEODESIC_BOUNDARIES_AT+2*u16(row+2);
-    if(GEODESIC_BOUNDARIES_AT+2u*(u16(row+2)+row[4])>length||u16(row)>=GEODESIC_CELL_COUNT)return false;
-    for(int k=0;k<row[4];k++)if(b[2*k]>=CLOCK_WIDTH||u16(row)+b[2*k+1]>=GEODESIC_CELL_COUNT)return false;
+  for(int y=0;y<CHAMFER_HEIGHT;y++){
+    const uint8_t *row=data+CHAMFER_ROWS_AT+y*6,*b=data+CHAMFER_BOUNDARIES_AT+2*u16(row+2);
+    if(CHAMFER_BOUNDARIES_AT+2u*(u16(row+2)+row[4])>length||u16(row)>=CHAMFER_CELL_COUNT)return false;
+    for(int k=0;k<row[4];k++)if(b[2*k]>=CLOCK_WIDTH||u16(row)+b[2*k+1]>=CHAMFER_CELL_COUNT)return false;
   }
   return true;
 }

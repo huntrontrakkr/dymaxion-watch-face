@@ -45,7 +45,7 @@ test('invalid imports fail before replacing settings; placements are constrained
   const s=defaults();assert.throws(()=>validateSettings({...s,places:[{}]},zoneExists));
   s.places[0].tz='Invented/Zone';assert.throws(()=>validateSettings(s,zoneExists));
   s.places[0].tz='Europe/London';s.places[0].lat=91;assert.throws(()=>validateSettings(s,zoneExists));
-  s.places[0].lat=51;s.time=[-100,900];assert.deepEqual(validateSettings(s,zoneExists).time,[0,164],'the 64-pixel Geodesic strip stays on screen');
+  s.places[0].lat=51;s.time=[-100,900];assert.deepEqual(validateSettings(s,zoneExists).time,[0,188],'the 40-pixel Chamfer strip stays on screen');
   assert.deepEqual(validateSettings({...s,clockDisplay:'broad',statusLine:false},zoneExists).time,[0,182]);
   assert.throws(()=>validateSettings({...s,time:[NaN,4]},zoneExists));
   for(const theme of THEMES)for(const v of Object.values(theme).flat())if(typeof v==='string'&&v.startsWith('#'))assert.match(v,/^#(?:00|55|AA|FF){3}$/i);
@@ -139,7 +139,7 @@ test('lunar phase selects the eight familiar glyphs near published primary phase
 });
 test('full-width clock and top-bar moon migrate old widget settings',()=>{
   const s=defaults();assert.deepEqual(s.time,PRESETS.meridian.time);assert.equal(s.moonIndicator,true);
-  assert.equal(s.statusLine,true);assert.equal(s.clockDisplay,'geodesic');
+  assert.equal(s.statusLine,true);assert.equal(s.clockDisplay,'chamfer');
   assert.equal(encodeSettings(s)[2]&64,64,'the status line travels as flag 64');assert.equal(encodeSettings({...s,statusLine:false})[2]&64,0);
   const packet=encodeSettings(s);assert.equal(packet[0],7);assert.equal(packet[16+17],1);
   assert.equal(packet[16+72+17],0);assert.equal(packet[16+71],0);assert.ok(packet[16+70]>=0xc0);

@@ -74,17 +74,15 @@ mid-century script nameplate as its brief. The sphere has been removed, leaving 
 space for the name. The SVG website artwork, browser pixels and native watch
 mask are generated from exactly the same original drawing.
 
-The default clock is **Geodesic**, an original monoline figure set drawn for
-the Meridian composition. Each figure is one stroke of constant weight, 7.8
-pixels at a 56-pixel cap height: bowls are true circles, and every diagonal
-runs at exactly 60°, the angle of the icosahedral net's triangle edges. The 1's
-flag is cut vertically into a small lattice triangle; the 6 and 9 leave their
-bowls on a 60° tangent. Figures sit centred in 34-pixel tabular cells so the
-readout never shifts and the minute flip moves only what changes. In Meridian,
+The default clock is **Chamfer**: the Draft zone numerals enlarged three times,
+to a 36-pixel cap height, with every exposed pixel corner cut on a 45° line and
+every inside step filled on the same diagonal. The big clock and the zone clocks
+are one drawing at two sizes. It is deliberately smaller than the map. Figures
+sit in 27-pixel tabular cells so the readout never shifts and the minute flip
+moves only what changes. In Meridian,
 a status line of Draft Micro lining capitals carries the date and city in place
 of the nameplate. The reasoning, and a comparison with the previous default,
-are in [Meridian](MERIDIAN.md); the [construction study](../designer/geodesic-study.html)
-overlays each skeleton on its pixel master.
+are in [Meridian](MERIDIAN.md).
 
 The **Dymaxion Span** option is an original 28-pixel-high cut drawn for
 this 200-pixel screen. Four 45-pixel digit advances and a 10-pixel colon total
@@ -154,10 +152,10 @@ These are visual research references, not source outlines or bundled artwork.
 
 ## Proportion
 
-Meridian stacks a status line, the 200×64 Geodesic strip, the map and the
-zones with even 10–12 pixel gaps: figures from y=20 to 76, map ink from 86 to
-177, zones from 189. Atlas and Horizon use positions fitted to the taller strip
-when Geodesic is selected.
+Meridian stacks a status line, the 200×40 Chamfer strip (figures from y=24 to
+60), the map at Atlas's position and the zones from 189. Atlas and Horizon keep
+their original positions with Chamfer; the caption sits 12 pixels below the
+figures.
 
 With broad, Span or segment numerals, the clock occupies the same 200×46 area. Span spans 190
 pixels with 28-pixel-tall numerals. The triangular construction occupies a

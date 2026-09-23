@@ -30,10 +30,10 @@ static uint8_t s_selected=0,s_frame=16;
 static AppTimer *s_animation;
 static AppTimer *s_clock_timer;
 static ClockFlip s_clock_flip;
-static ClockFace s_geodesic;
+static ClockFace s_chamfer;
 // Flip state lives in the heap, sized for the active face; see clock_configure.
 static const ClockFace *s_clock_face;
-static uint8_t *s_clock_memory,*s_clock_pixels,*s_geodesic_data,*s_caps;
+static uint8_t *s_clock_memory,*s_clock_pixels,*s_chamfer_data,*s_caps;
 static uint8_t s_clock_digits[4];
 static bool s_clock_ready,s_clock_running,s_clock_24,s_focused=true;
 static time_t s_clock_minute;
@@ -158,7 +158,7 @@ static void draw_flip_time(GContext *ctx,struct tm *local,time_t now,int x,int y
   uint16_t elapsed=ms<CLOCK_FLIP_MS?ms:CLOCK_FLIP_MS;
   if(elapsed!=s_clock_frame){clock_flip_sample(&s_clock_flip,elapsed,s_clock_pixels);s_clock_frame=elapsed;}
   uint8_t colors[4]={palette()[0],palette()[6],clock_shade(palette()[0],palette()[6]),clock_shade(palette()[6],palette()[0])};
-  // Broad figures sit two pixels above the time block; Geodesic fills it.
+  // Broad figures sit two pixels above the time block; Chamfer fills it.
   int top=s_clock_face==&BROAD_FACE?y-2:y;
   for(int row=0;row<s_clock_face->height;row++)for(int start=0;start<CLOCK_WIDTH;){
     uint8_t value=clock_frame_pixel(s_clock_pixels,row*CLOCK_WIDTH+start);int end=start+1;
@@ -168,11 +168,11 @@ static void draw_flip_time(GContext *ctx,struct tm *local,time_t now,int x,int y
 }
 static void clock_release(void){
   clock_stop();s_clock_ready=false;s_clock_face=NULL;
-  free(s_clock_memory);free(s_clock_pixels);free(s_geodesic_data);
-  s_clock_memory=s_clock_pixels=s_geodesic_data=NULL;
+  free(s_clock_memory);free(s_clock_pixels);free(s_chamfer_data);
+  s_clock_memory=s_clock_pixels=s_chamfer_data=NULL;
 }
 // Choose the flip face for the current display and allocate only its state.
-// Geodesic tables are a resource so the app image stays under 64 KB; if the
+// Chamfer tables are a resource so the app image stays under 64 KB; if the
 // heap cannot hold them, the clock falls back to Span lettering.
 static void clock_configure(void){
   clock_release();
@@ -180,9 +180,9 @@ static void clock_configure(void){
   const ClockFace *face=NULL;
   if(s_display[1]==2)face=&BROAD_FACE;
   else if(s_display[1]==4){
-    ResHandle handle=resource_get_handle(RESOURCE_ID_CLOCK_GEODESIC);size_t length=resource_size(handle);
-    s_geodesic_data=malloc(length);
-    if(s_geodesic_data&&resource_load(handle,s_geodesic_data,length)==length&&geodesic_face_init(&s_geodesic,s_geodesic_data,length))face=&s_geodesic;
+    ResHandle handle=resource_get_handle(RESOURCE_ID_CLOCK_CHAMFER);size_t length=resource_size(handle);
+    s_chamfer_data=malloc(length);
+    if(s_chamfer_data&&resource_load(handle,s_chamfer_data,length)==length&&chamfer_face_init(&s_chamfer,s_chamfer_data,length))face=&s_chamfer;
   }
   if(face){s_clock_memory=malloc(clock_flip_bytes(face));s_clock_pixels=malloc(clock_frame_bytes(face));}
   if(!face||!s_clock_memory||!s_clock_pixels){clock_release();return;}
@@ -265,8 +265,8 @@ static void clock_caption(char *out,size_t size,const char *date,const char *amp
 }
 static void draw_time(GContext *ctx,struct tm *local,time_t now) {
   int x=s_settings[TIME_X],y=s_settings[TIME_Y],w=(s_settings[FLAGS]&STACKED)?72:200;
-  bool geodesic=s_display[1]==4,status=s_settings[FLAGS]&STATUS_LINE;
-  int h=(s_settings[FLAGS]&STACKED)?84:geodesic?(status?64:76):46;
+  bool chamfer=s_display[1]==4,status=s_settings[FLAGS]&STATUS_LINE;
+  int h=(s_settings[FLAGS]&STACKED)?84:chamfer?(status?40:52):46;
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(x,y,w,h),0,GCornerNone);
   char timebuf[8],datebuf[96];int hour=local->tm_hour;if(!is_24()){hour%=12;if(!hour)hour=12;}
   const char *ampm=is_24()?"":(local->tm_hour<12?"AM":"PM");
@@ -283,7 +283,7 @@ static void draw_time(GContext *ctx,struct tm *local,time_t now) {
     if(status)return;
     char date[24];snprintf(date,sizeof(date),"%s %02d %s",(const char *[]) {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"}[local->tm_wday],local->tm_mday,(const char *[]) {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"}[local->tm_mon]);
     clock_caption(datebuf,sizeof(datebuf),date,ampm,w-4,now," / ",caption_width);
-    text(ctx,datebuf,s_small,GRect(x,geodesic?y+61:y+31,w,15),GTextAlignmentCenter,color(7));
+    text(ctx,datebuf,s_small,GRect(x,chamfer?y+38:y+31,w,15),GTextAlignmentCenter,color(7));
   }
 }
 static void draw_zones(GContext *ctx,time_t now,struct tm *local) {

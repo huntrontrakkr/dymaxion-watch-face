@@ -2,9 +2,9 @@
 // Each electrode is a group of complete cells in ONE equilateral lattice.
 // Source geometry stays equilateral; only the final pixel-center sampling is square.
 export const SEGMENT_DIGITS=[63,6,91,79,102,109,125,7,127,111];
-export const DISPLAY_STYLES=['span','triangles','broad','geodesic'];
+export const DISPLAY_STYLES=['span','triangles','broad','chamfer'];
 // Wire codes. 3 was the retired LCD style, which the watch migrates to broad.
-export const DISPLAY_CODES=Object.freeze({span:0,triangles:1,broad:2,geodesic:4});
+export const DISPLAY_CODES=Object.freeze({span:0,triangles:1,broad:2,chamfer:4});
 export {INACTIVE_SEGMENTS} from './palettes.js';
 export const SEGMENT_NAMES=['Top','Upper right','Lower right','Bottom','Lower left','Upper left','Waist'];
 const SQRT3=Math.sqrt(3),EDGE=7,HEIGHT=EDGE*SQRT3/2,WIDTH=196,ROWS=6;

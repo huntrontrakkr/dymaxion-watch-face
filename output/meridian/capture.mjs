@@ -6,7 +6,7 @@ import {writeFileSync} from 'node:fs';
 import {defaults, presetFor} from '../../shared/settings.js';
 const base = process.env.PREVIEW_URL || 'http://127.0.0.1:5173';
 const d = defaults();
-const previous = theme => ({...d, ...presetFor('atlas', 'broad'), clockDisplay: 'broad', theme});
+const previous = theme => ({...d, ...presetFor('atlas'), clockDisplay: 'broad', theme});
 const shots = {
   'meridian-airocean': [d],
   'meridian-paper': [{...d, theme: 2}],
@@ -15,8 +15,8 @@ const shots = {
   'meridian-12h': [{...d, format: 2}],
   'meridian-late': [d, '2026-09-24T03:59:30Z'],
   'meridian-weather': [{...d, footer: {...d.footer, enabled: true, home: 'weather'}}],
-  'horizon-geodesic': [{...d, ...presetFor('horizon', 'geodesic')}],
-  'atlas-geodesic': [{...d, ...presetFor('atlas', 'geodesic')}],
+  'horizon-chamfer': [{...d, ...presetFor('horizon')}],
+  'atlas-chamfer': [{...d, ...presetFor('atlas')}],
   'previous-atlas-airocean': [previous(0)],
   'previous-atlas-paper': [previous(2)]
 };

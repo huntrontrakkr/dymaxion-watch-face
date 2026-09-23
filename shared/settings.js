@@ -30,22 +30,13 @@ export const PLACES = [
   ['UTC','Greenwich','Etc/UTC',51.4769,0]
 ].map(([label,name,tz,lat,lon])=>({label,name,tz,lat,lon}));
 export const PRESETS = {
-  // Meridian: a status line replaces the nameplate; tall figures sit over the map.
-  meridian:{orientation:0,stacked:false,statusLine:true,time:[0,16],map:[0,80],zones:[[4,189],[70,189],[136,189]]},
+  // Meridian: a status line replaces the nameplate; the figures sit small over the map.
+  meridian:{orientation:0,stacked:false,statusLine:true,time:[0,22],map:[0,73],zones:[[4,189],[70,189],[136,189]]},
   atlas:{orientation:0,stacked:false,statusLine:false,time:[0,20],map:[0,73],zones:[[4,189],[70,189],[136,189]]},
   horizon:{orientation:0,stacked:false,statusLine:false,time:[0,134],map:[0,24],zones:[[4,189],[70,189],[136,189]]}
 };
 export const PRESET_KEYS = ['orientation','stacked','statusLine','time','map','zones'];
-// The 64-pixel Geodesic strip needs its own positions in the older compositions.
-// Horizon moves the date into the status line; Atlas keeps its nameplate and caption.
-const GEODESIC_PRESETS = {
-  atlas:{time:[0,18],map:[0,90],zones:[[4,191],[70,191],[136,191]]},
-  horizon:{statusLine:true,time:[0,121],map:[0,16]}
-};
-export function presetFor(name,clockDisplay){
-  const preset=JSON.parse(JSON.stringify(PRESETS[name]));
-  return clockDisplay==='geodesic'?{...preset,...JSON.parse(JSON.stringify(GEODESIC_PRESETS[name]??{}))}:preset;
-}
+export function presetFor(name){return JSON.parse(JSON.stringify(PRESETS[name]));}
 export function activePreset(settings){
   return Object.keys(PRESETS).find(name=>{const p=presetFor(name,settings.clockDisplay);return PRESET_KEYS.every(k=>JSON.stringify(settings[k])===JSON.stringify(p[k]));})??null;
 }
@@ -65,14 +56,14 @@ const LEGACY_PRESETS=[{
 }];
 export function defaults() {
   return {version:1,markerSet:2,theme:0,customPalettes:[],customPalette:null,format:1,dayNight:true,edges:false,lights:true,motion:true,sun:true,moonIndicator:true,
-    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'geodesic',segmentGrid:true,location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
+    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',segmentGrid:true,location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
 }
 export function blockSize(settings,key) {
   if(key==='map')return MAP_SIZE;
   if(key==='time'){
     if(settings.stacked)return [72,84];
-    // Geodesic: a 64-pixel figure strip, plus the caption when there is no status line.
-    if(settings.clockDisplay==='geodesic')return [200,settings.statusLine?64:76];
+    // Chamfer: a 40-pixel figure strip, plus the caption when there is no status line.
+    if(settings.clockDisplay==='chamfer')return [200,settings.statusLine?40:52];
     return [200,46];
   }
   return [60,36];

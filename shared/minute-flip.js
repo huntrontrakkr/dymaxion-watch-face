@@ -1,5 +1,5 @@
 import {BROAD_METRICS, broadTimeMask, broadTriangleGrid} from './broad-numerals.js';
-import {GEODESIC_METRICS, geodesicTimeMask, geodesicTriangleGrid} from './geodesic-numerals.js';
+import {CHAMFER_METRICS, chamferTimeMask, chamferTriangleGrid} from './chamfer-numerals.js';
 
 export const FLIP_DURATION = 400;
 export const TILE_DURATION = 320;
@@ -8,7 +8,7 @@ export const FLIP_SCALE = Object.freeze(Array.from({length: 33}, (_, i) => Math.
 // four fixed numeral slots; only pixels inside a slot may change.
 export const FLIP_FACES = Object.freeze({
   broad: {metrics: BROAD_METRICS, mask: broadTimeMask, lattice: () => broadTriangleGrid(8, 0)},
-  geodesic: {metrics: GEODESIC_METRICS, mask: geodesicTimeMask, lattice: geodesicTriangleGrid}
+  chamfer: {metrics: CHAMFER_METRICS, mask: chamferTimeMask, lattice: chamferTriangleGrid}
 });
 function face(name) {
   const f = FLIP_FACES[name];

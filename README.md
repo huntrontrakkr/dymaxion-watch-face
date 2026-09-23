@@ -15,15 +15,15 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
   glyphs. Every place can have its own color, snapped to Pebble's 64-color grid.
   The local clock follows the watch; no location is guessed from an offset.
 - **Meridian**, the default composition: a quiet status line (date, city,
-  Moon, Bluetooth, battery) replaces the nameplate, 56-pixel **Geodesic**
-  figures sit over the map, and the zones close the face. Geodesic is an
-  original monoline figure set: circular bowls, and every diagonal at exactly
-  60°, the angle of the icosahedral net itself. See [Meridian](docs/MERIDIAN.md).
-- Atlas and Horizon remain available, with positions fitted to whichever
-  numerals you choose. The map and places stay independently movable, and the
+  Moon, Bluetooth, battery) replaces the nameplate, 36-pixel **Chamfer**
+  figures sit over the map, and the zones close the face. Chamfer is the Draft
+  zone numerals at three times the size, every corner cut at 45°, so the big
+  clock and the zone clocks are one design. See [Meridian](docs/MERIDIAN.md).
+- Atlas and Horizon remain available in their original positions with any
+  numerals. The map and places stay independently movable, and the
   status line can be switched on or off in any composition.
   Optional stacked hours/minutes retain the earlier display cut.
-- A 400 ms minute transition for Geodesic and rounded broad numerals: only
+- A 400 ms minute transition for Chamfer and rounded broad numerals: only
   changed triangular tiles hinge away to reveal the new time.
   Motion stops at 20% battery or when **Brief animations** is disabled.
   See [minute transitions](docs/MINUTE-FLIP.md).
@@ -54,7 +54,7 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
 
 | Meridian | Paper | Spaceship Earth | Horizon |
 | --- | --- | --- | --- |
-| ![Meridian preview](output/meridian/meridian-airocean.png) | ![Meridian on Paper](output/meridian/meridian-paper.png) | ![Meridian on Spaceship Earth](output/meridian/meridian-spaceship-earth.png) | ![Horizon with Geodesic figures](output/meridian/horizon-geodesic.png) |
+| ![Meridian preview](output/meridian/meridian-airocean.png) | ![Meridian on Paper](output/meridian/meridian-paper.png) | ![Meridian on Spaceship Earth](output/meridian/meridian-spaceship-earth.png) | ![Horizon with Chamfer figures](output/meridian/horizon-chamfer.png) |
 
 ## Try the workshop
 
@@ -104,10 +104,10 @@ pebble install --phone <phone-ip>
 The installable file is `watchface/build/watchface.pbw`. Target: Emery only,
 200×228 pixels, 64 colors. Before the Meridian revision, SDK 4.33.1 reported
 92,670 bytes of resources and a 62,845-byte static RAM footprint; the map bitmap
-adds about 22 KB of heap. Meridian adds 13,622 bytes of raw resources (Geodesic
+adds about 22 KB of heap. Meridian adds 8,346 bytes of raw resources (Chamfer
 masters and flip lattice, status-line capitals), which load into the heap only
 when used, and moves the minute-flip buffers from static memory to the heap. An
-ARM cross-compile of the app sources measures 2,671 fewer static bytes than
+ARM cross-compile of the app sources measures 2,725 fewer static bytes than
 before; the SDK's own report for this revision is still to be taken.
 
 The project also remains compatible with opening the `watchface` folder in the
@@ -122,7 +122,7 @@ npx playwright install chromium
 npm run generate              # map, markers, palette, status, triangular display, caps, defaults
 node tools/generate-chart-axis.mjs # compact chart numerals and layout constants
 npm run generate:clock        # rounded pixel masters and native minute-flip geometry
-npm run generate:geodesic     # Geodesic masters, packed resource and native layout
+npm run generate:chamfer      # Chamfer masters, packed resource and native layout
 npm run companion             # phone bundle, including offline configuration HTML
 npm test                      # projection, DST, solar, providers, native packets/calendar/shake
 npm run dev                   # keep running in another terminal
@@ -149,7 +149,7 @@ Tests require a host C compiler (`cc`). Playwright may require its documented
 Linux runtime libraries. Native verification before the Meridian revision used
 the Emery SDK emulator: installation, both layouts, AppMessage settings, bottom
 panels, shake cycling and low-battery suppression. The Meridian revision was
-verified with host C tests (Geodesic minute-flip frames from the packed resource
+verified with host C tests (Chamfer minute-flip frames from the packed resource
 and status-line capitals, both pixel-for-pixel against the browser), a strict
 Cortex-M3 compile of every native source, and the browser suites; it has not yet
 been run in the SDK emulator.
@@ -160,7 +160,7 @@ Physical hardware and an actual phone webview have not been tested.
 | `shared/map.js` | Preserved original Gray net and gnomonic coordinate mapping |
 | `shared/markers.js` | Five original 5×5 map-glyph pixel masters and legacy-ID migration |
 | `shared/settings.js` | Themes, presets (Meridian, Atlas, Horizon), locations, bounds, validation |
-| `shared/geodesic-numerals.js` | Geodesic figure skeletons, pixel masters and clock strip |
+| `shared/chamfer-numerals.js` | Chamfer figure masters (zone numerals ×3, 45° cuts) and clock strip |
 | `shared/protocol.js` | Named time zones → compact native packet |
 | `shared/solar.js` | Solar direction model used by the workshop |
 | `shared/moon.js` | UTC lunar phase and eight native-size glyphs |

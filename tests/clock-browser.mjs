@@ -8,7 +8,7 @@ try{
   await page.route('https://photon.komoot.io/**',route=>{lookups++;return route.fulfill({json:fixture});});
   await page.clock.install({time:new Date('2026-09-23T16:34:00Z')});
   await page.goto(base);await page.waitForFunction(()=>document.querySelector('#preview-time').textContent.includes('LIVE'));await page.locator('#reset').click();
-  const screen=page.locator('#screen');assert.equal(await screen.getAttribute('data-clock-display'),'geodesic');
+  const screen=page.locator('#screen');assert.equal(await screen.getAttribute('data-clock-display'),'chamfer');
   await page.getByRole('tab',{name:'Character',exact:true}).click();await page.getByLabel('Numerical display',{exact:true}).selectOption('triangles');await page.getByRole('tab',{name:'Composition',exact:true}).click();
   assert.match(await page.locator('#city-state').textContent(),/example city/);assert.equal(lookups,0,'no location lookup without preview request');
   await page.getByRole('button',{name:'Preview my current city'}).click();await page.waitForFunction(()=>document.querySelector('#city-state').textContent==='Current city: Norfolk.');

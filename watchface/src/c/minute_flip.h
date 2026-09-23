@@ -6,7 +6,7 @@
 #define CLOCK_FLIP_MS 400
 typedef struct {int32_t ax,ay,nx,ny,length2,center_x;} ClockCell;
 // A 200-pixel strip with four fixed numeral slots and one equilateral lattice.
-// Broad reads static tables; Geodesic reads a resource loaded into the heap.
+// Broad reads static tables; Chamfer reads a resource loaded into the heap.
 typedef struct ClockFace ClockFace;
 struct ClockFace {
   uint8_t height,cap_top,cap_height,digit_width,starts[4];
@@ -23,7 +23,7 @@ typedef struct {
   uint16_t changed_cells;uint8_t changed_slots;
 } ClockFlip;
 extern const ClockFace BROAD_FACE;
-bool geodesic_face_init(ClockFace *face,const uint8_t *data,size_t length);
+bool chamfer_face_init(ClockFace *face,const uint8_t *data,size_t length);
 static inline int clock_pixels(const ClockFace *face){return CLOCK_WIDTH*face->height;}
 static inline size_t clock_frame_bytes(const ClockFace *face){return (size_t)clock_pixels(face)/4;}
 // Heap bytes for a flip's working state: both masks, then per-tile flags and delays.

@@ -223,17 +223,17 @@ function render(){
   // Status line: lining capitals, date and city at the top left instead of the nameplate.
   const status=settings.statusLine?clockCaption(local.format('ddd DD MMM').toUpperCase(),city.toUpperCase(),use24()?'':ampm,statusWidth(),t=>textWidth(watchTypeface.lining.small,t),'  '):'';
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
-  if(settings.stacked||!['broad','geodesic'].includes(settings.clockDisplay))minuteClock.reset();
+  if(settings.stacked||!['broad','chamfer'].includes(settings.clockDisplay))minuteClock.reset();
   if(settings.stacked){paintText(two(h),tx+tw/2,ty+30,48,pal.ink,'center');paintText(two(minute),tx+tw/2,ty+65,48,pal.ink,'center');strokeLine(tx+25,ty+35,tx+47,ty+35,pal.accent);paintText(caption,tx+tw/2,ty+81,11,pal.accent,'center');}
   else{
     const value=two(h)+':'+two(minute);
-    if(settings.clockDisplay==='broad'||settings.clockDisplay==='geodesic'){
-      const geodesic=settings.clockDisplay==='geodesic';
+    if(settings.clockDisplay==='broad'||settings.clockDisplay==='chamfer'){
+      const chamfer=settings.clockDisplay==='chamfer';
       minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset].join('/'),settings.motion&&!reducedMotion.matches&&!document.hidden,settings.clockDisplay);
-      drawFlipPixels(ctx,minuteClock.frame(),tx,geodesic?ty:ty-2,{ink:pal.ink,background:pal.bg});
+      drawFlipPixels(ctx,minuteClock.frame(),tx,chamfer?ty:ty-2,{ink:pal.ink,background:pal.bg});
     }else if(settings.clockDisplay==='triangles')drawTriangleTime(ctx,value,tx,ty-1,pal.ink,pal.inactive,settings.segmentGrid);
     else paintText(value,tx+tw/2,ty+30,50,pal.ink,'center');
-    if(!settings.statusLine)paintText(caption,tx+tw/2,settings.clockDisplay==='geodesic'?ty+73:ty+43,11,pal.accent,'center');
+    if(!settings.statusLine)paintText(caption,tx+tw/2,settings.clockDisplay==='chamfer'?ty+50:ty+43,11,pal.accent,'center');
   }
   canvas.dataset.clockDisplay=settings.stacked?'draft':settings.clockDisplay;
   canvas.dataset.clockAnimating=String(minuteClock.active);

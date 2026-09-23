@@ -31,12 +31,12 @@ try{
   await page.locator('#screen').focus();await page.keyboard.press('Shift+ArrowDown');assert.equal((await saved()).time[1],27);
   await page.locator('#moonIndicator').uncheck();assert.equal((await saved()).moonIndicator,false);
   await page.getByRole('button',{name:'Horizon',exact:true}).click();
-  // Geodesic figures take Horizon's taller variant; changing numerals keeps the composition.
-  assert.deepEqual([(await saved()).time[1],(await saved()).map[1],(await saved()).statusLine],[121,16,true]);
+  // Chamfer figures fit every composition's original positions; changing numerals keeps it.
+  assert.deepEqual([(await saved()).time[1],(await saved()).map[1],(await saved()).statusLine],[134,24,false]);
   await page.getByRole('tab',{name:'Character',exact:true}).click();await page.getByLabel('Numerical display',{exact:true}).selectOption('broad');
   assert.deepEqual([(await saved()).time[1],(await saved()).map[1],(await saved()).statusLine],[134,24,false]);
   assert.equal(await page.locator('[data-preset="horizon"]').getAttribute('aria-pressed'),'true');
-  await page.getByLabel('Numerical display',{exact:true}).selectOption('geodesic');assert.equal((await saved()).time[1],121);
+  await page.getByLabel('Numerical display',{exact:true}).selectOption('chamfer');assert.equal((await saved()).time[1],134);
   await page.getByRole('tab',{name:'Composition',exact:true}).click();
   assert.equal((await saved()).moonIndicator,false);
   await page.locator('#moonIndicator').check();
@@ -81,7 +81,7 @@ try{
     Pebble:{addEventListener:(name,fn)=>handlers[name]=fn,openURL:url=>opened=url,sendAppMessage:(message,success)=>{messages.push(message);success();}}};
   vm.runInNewContext(readFileSync('watchface/src/pkjs/index.js','utf8'),context);
   handlers.ready();assert.equal(messages[0].SETTINGS.length,PACKET_SIZE);
-  assert.deepEqual(Array.from(messages[0].DISPLAY),[1,4,1,0],'a fresh install shows Geodesic figures');
+  assert.deepEqual(Array.from(messages[0].DISPLAY),[1,4,1,0],'a fresh install shows Chamfer figures');
   handlers.showConfiguration();assert.ok(opened.startsWith('data:text/html;charset=utf-8,'));
   const mobile=await browser.newPage({viewport:{width:390,height:844}});mobile.on('pageerror',e=>errors.push(e.message));await mobile.goto(opened);
   assert.equal(await mobile.locator('#theme option').count(),THEMES.length);
