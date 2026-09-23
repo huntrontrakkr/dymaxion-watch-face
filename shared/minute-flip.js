@@ -57,9 +57,9 @@ export function planMinuteFlip(from, to, name = 'broad') {
 }
 export function clockMask(time, name = 'broad') { return face(name).mask(time); }
 
-// Palette indices: background, ink, shaded background, shaded ink.
-// Start with the new drawing underneath, then shrink each old tile, shaded so
-// the triangle reads, to its centroid. Tiles without a changed pixel stay still.
+// Palette indices: background, ink (the shaded pair is unused by the shrink).
+// Start with the new drawing underneath, then shrink each old tile to its
+// centroid in the face's own colors. Tiles without a changed pixel stay still.
 export function sampleMinuteFlip(plan, elapsed, output) {
   const {width: W, height: H} = face(plan.face ?? 'broad').metrics;
   output ??= new Uint8Array(W * H);
@@ -82,7 +82,7 @@ export function sampleMinuteFlip(plan, elapsed, output) {
     if (sx < 0 || sx >= W * 256 || sy < 0 || sy >= H * 256) continue;
     const source = (sy >> 8) * W + (sx >> 8);
     if (plan.grid.membership[source] !== id) continue;
-    output[at] = plan.before[source] + 2;
+    output[at] = plan.before[source];
   }
   return output;
 }

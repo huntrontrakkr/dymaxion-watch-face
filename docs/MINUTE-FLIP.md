@@ -10,14 +10,14 @@ The lattice is a single row of triangles as tall as the figures (36 pixels for
 Chamfer, 32 for broad), close to the scale of the map's own faces: 34 and 37
 tiles across the strip.
 
-Each selected tile keeps the old drawing, shaded so the triangle reads, and
+Each selected tile keeps the old drawing in the face's own ink and ground and
 shrinks toward its centroid, taking its contents with it, until it vanishes into
 the new frame underneath. The scale eases in along a cosine. Each tile moves for
 320 ms; a left-to-right stagger adds at
 most 80 ms. There is no secondary settling animation. Tiles without a changed
 pixel stay still; a changed tile can cover part of a neighbouring figure or the
-colon, which shrink with it and reappear unchanged behind. Facet shading
-uses the active RGB222 palette and disappears when the tile finishes.
+colon, which shrink with it and reappear unchanged behind. No shading is
+added: the motion alone separates old from new.
 
 The horizontal main clock uses this motion. Zone clocks and stacked Draft time
 keep their existing rendering. Chamfer figures are the default for new

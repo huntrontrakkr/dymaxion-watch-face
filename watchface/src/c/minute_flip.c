@@ -85,7 +85,7 @@ void clock_flip_prepare(ClockFlip *flip,const uint8_t before[4],const uint8_t af
     f->cell(f,id,&c);flip->delay[id]=(80*(c.cx-min)+(max-min)/2)/(max-min);
   }
 }
-// Each changed tile holds the old face, then shrinks (shaded) to its centroid,
+// Each changed tile holds the old face, then shrinks to its centroid,
 // uncovering the new face. Tiles without a changed pixel stay still.
 void clock_flip_sample(const ClockFlip *flip,uint16_t elapsed,uint8_t *pixels){
   const ClockFace *f=flip->face;const int W=CLOCK_WIDTH,H=f->height;
@@ -102,6 +102,6 @@ void clock_flip_sample(const ClockFlip *flip,uint16_t elapsed,uint8_t *pixels){
     int32_t sx=c.cx+(x*256+128-c.cx)*1024/scale,sy=c.cy+(y*256+128-c.cy)*1024/scale;
     if(sx<0||sx>=W*256||sy<0||sy>=H*256)continue;
     sx>>=8;sy>>=8;if(f->owner(f,sx,sy)!=id)continue;
-    set_pixel(pixels,at,bit(flip->before,sy*W+sx)+2);
+    set_pixel(pixels,at,bit(flip->before,sy*W+sx));
   }
 }

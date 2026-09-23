@@ -18,27 +18,25 @@ test('every adjacent minute selects exactly the changed triangles and fits insid
     assert.deepEqual(sampleMinuteFlip(plan,400),after);
   }
 });
-test('untouched tiles stay fixed while each changed tile shrinks to its centroid',()=>{
+test('untouched tiles stay fixed while each changed tile shrinks to its centroid in the face colors',()=>{
   const plan=planPixelFlip(mask('12:33'),mask('12:34'));
-  const covered=new Map();
+  let moving=false;
   for(const ms of [40,80,120,160,200,240,280,320,360,399]){
     const frame=sampleMinuteFlip(plan,ms);
     for(let i=0;i<8000;i++){
-      assert(frame[i]>=0&&frame[i]<=3);
-      const id=plan.grid.membership[i];
-      if(!plan.active[id]){assert.equal(frame[i],plan.before[i]);assert.equal(frame[i],plan.after[i]);}
-      else if(frame[i]<2)assert(frame[i]===plan.before[i]||frame[i]===plan.after[i]);
+      assert(frame[i]===0||frame[i]===1,'no shading: ink and ground only');
+      if(!plan.active[plan.grid.membership[i]]){assert.equal(frame[i],plan.before[i]);assert.equal(frame[i],plan.after[i]);}
     }
-    // The shaded remainder of every changed tile only ever gets smaller.
-    for(const cell of plan.grid.cells)if(plan.active[cell.id]){
-      const area=cell.pixels.filter(i=>frame[i]>1).length,last=covered.get(cell.id);
-      if(last!==undefined&&last>0)assert(area<=last,`tile ${cell.id} grew at ${ms} ms`);
-      covered.set(cell.id,area);
-    }
+    if(frame.some((v,i)=>v!==plan.before[i])&&frame.some((v,i)=>v!==plan.after[i]))moving=true;
   }
-  assert([...covered.values()].every(area=>area===0),'every tile has vanished by the end');
-  const mid=sampleMinuteFlip(plan,160);
-  assert(mid.some(v=>v>1),'shrinking tiles are shaded so the triangles read');
+  assert(moving,'mid-transition frames show the old drawing shrinking over the new');
+  // A tile's old drawing only ever retreats toward its centroid.
+  const cell=plan.grid.cells.find(c=>plan.active[c.id]),spread=ms=>{
+    const frame=sampleMinuteFlip(plan,ms),cx=cell.cx/256,cy=cell.cy/256;
+    return Math.max(0,...cell.pixels.filter(i=>frame[i]!==plan.after[i]).map(i=>Math.hypot(i%200+.5-cx,Math.floor(i/200)+.5-cy)));
+  };
+  const spreads=[100,200,300,390].map(ms=>spread(ms+plan.delays[cell.id]));
+  for(let k=1;k<spreads.length;k++)assert(spreads[k]<=spreads[k-1]+1e-9,`spread grew: ${spreads}`);
   const still=planPixelFlip(mask('12:34'),mask('12:34'));
   assert.equal(still.duration,0);assert.equal(still.changedCells,0);
   assert.deepEqual(sampleMinuteFlip(still,0),still.after);
