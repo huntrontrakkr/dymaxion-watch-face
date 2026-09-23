@@ -1,0 +1,26 @@
+# Pebble SDK build output
+watchface/build/
+watchface/.lock-waf*
+watchface/.waf*
+*.pbw
+!watchface/dist/*.pbw
+
+# Python bytecode from waf / data-prep scripts
+__pycache__/
+*.pyc
+
+# Node (designer tooling, pebble-tool)
+node_modules/
+npm-debug.log*
+
+# Editors
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.swp
+*~
+
+# System files
+.DS_Store
+Thumbs.db

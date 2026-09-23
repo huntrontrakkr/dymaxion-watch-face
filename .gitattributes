@@ -1,0 +1,7 @@
+* text=auto eol=lf
+
+# Binary resources
+*.png binary
+*.pbi binary
+*.pbw binary
+*.bin binary

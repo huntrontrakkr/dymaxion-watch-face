@@ -1,0 +1,24 @@
+{
+  "name": "dymaxion",
+  "author": "huntrontrakkr",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "Dymaxion",
+    "uuid": "9c30165f-5852-4e13-8806-9809ab3d4fe3",
+    "sdkVersion": "3",
+    "projectType": "native",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "emery"
+    ],
+    "watchapp": {
+      "watchface": true
+    },
+    "messageKeys": [],
+    "resources": {
+      "media": []
+    }
+  }
+}
