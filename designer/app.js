@@ -15,6 +15,7 @@ import {CITIES} from '../shared/cities.js';
 import {panelControls} from '../shared/panel-controls.js';
 import {drawFooter} from '../shared/panel-render.js';
 import {sampleEnvironment} from '../shared/panel-data.js';
+import {SYSTEM_CLOCKS,drawSystemTime} from '../shared/system-clock.js';
 import {environmentService} from '../tools/environment-service.js';
 import {PANEL_PAGES} from '../shared/panel-settings.js';
 import {cityControls} from '../shared/city-controls.js';
@@ -243,7 +244,8 @@ function render(){
       minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset].join('/'),settings.motion&&!reducedMotion.matches&&!document.hidden,settings.clockDisplay);
       drawFlipPixels(ctx,minuteClock.frame(),tx,chamfer?ty:ty-2,{ink:pal.ink,background:pal.bg});
       if(chamfer&&!use24())drawBitmapText(ctx,watchTypeface.lining.small,ampm,tx+167,ty+9,pal.accent);
-    }else if(settings.clockDisplay==='triangles')drawTriangleTime(ctx,value,tx,ty-1,pal.ink,pal.inactive,settings.segmentGrid);
+    }else if(SYSTEM_CLOCKS.includes(settings.clockDisplay))drawSystemTime(ctx,settings.clockDisplay,value,tx,ty,pal.ink);
+    else if(settings.clockDisplay==='triangles')drawTriangleTime(ctx,value,tx,ty-1,pal.ink,pal.inactive,settings.segmentGrid);
     // Span keeps fixed 45-pixel slots (as on the watch): draw the full readout,
     // then clear the first slot when the leading zero is off.
     else{paintText(value.replace(/^ /,'0'),tx+tw/2,ty+30,50,pal.ink,'center');if(value[0]===' '){ctx.fillStyle=pal.bg;ctx.fillRect(tx+5,ty,45,th);}}

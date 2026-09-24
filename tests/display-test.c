@@ -4,7 +4,7 @@
 #include "display.h"
 int main(void){
   uint8_t p[4]={1,1,1,0};assert(display_valid(p,4));assert(!display_valid(NULL,4));assert(!display_valid(p,3));
-  p[0]=2;assert(!display_valid(p,4));p[0]=1;p[1]=2;assert(display_valid(p,4));p[1]=3;assert(display_valid(p,4));p[1]=4;assert(display_valid(p,4));p[1]=5;assert(!display_valid(p,4));p[1]=1;p[2]=2;assert(display_valid(p,4));p[2]=3;assert(display_valid(p,4));p[2]=4;assert(!display_valid(p,4));p[2]=1;p[3]=1;assert(display_valid(p,4));p[3]=3;assert(!display_valid(p,4));p[3]=64;assert(!display_valid(p,4));p[3]=4;assert(!display_valid(p,4));
+  p[0]=2;assert(!display_valid(p,4));p[0]=1;p[1]=2;assert(display_valid(p,4));p[1]=3;assert(display_valid(p,4));p[1]=4;assert(display_valid(p,4));p[1]=5;assert(display_valid(p,4));p[1]=8;assert(display_valid(p,4));p[1]=9;assert(!display_valid(p,4));p[1]=1;p[2]=2;assert(display_valid(p,4));p[2]=3;assert(display_valid(p,4));p[2]=4;assert(!display_valid(p,4));p[2]=1;p[3]=1;assert(display_valid(p,4));p[3]=3;assert(!display_valid(p,4));p[3]=64;assert(!display_valid(p,4));p[3]=4;assert(!display_valid(p,4));
   uint8_t normalized[4]={9,9,9,9};
   assert(!display_normalize(normalized,p,4));assert(!memcmp(normalized,(uint8_t[]){9,9,9,9},4));
   assert(!display_normalize(normalized,NULL,4));assert(!display_normalize(NULL,p,4));

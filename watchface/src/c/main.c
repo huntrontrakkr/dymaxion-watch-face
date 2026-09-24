@@ -3,6 +3,7 @@
 #include "panels.h"
 #include "city.h"
 #include "solar.h"
+#include "generated/system_clock.h"
 #include "display.h"
 #include "minute_flip.h"
 #include "caps.h"
@@ -238,6 +239,14 @@ static void draw_span_time(GContext *ctx,const char *timebuf,int x,int y) {
     cursor+=glyph==10?10:45;
   }
 }
+// Pebble system fonts (display codes 5-8): one centred line, placed so the
+// figures sit centred in the 40-pixel strip (generated/system_clock.h).
+static void draw_system_time(GContext *ctx,const char *timebuf,int x,int y){
+  for(int i=0;i<SYSTEM_CLOCK_COUNT;i++)if(SYSTEM_CLOCK_FONTS[i].code==s_display[1]){
+    const SystemClockFont *f=&SYSTEM_CLOCK_FONTS[i];
+    text(ctx,timebuf[0]==' '?timebuf+1:timebuf,fonts_get_system_font(f->key),GRect(x,y+f->box_top,200,f->box_height),GTextAlignmentCenter,color(6));
+  }
+}
 static void draw_triangle_time(GContext *ctx,const char *timebuf,int x,int y){
   uint8_t digits[4]={timebuf[0]-'0',timebuf[1]-'0',timebuf[3]-'0',timebuf[4]-'0'};
   GColor inactive=(GColor){.argb=custom_palette()?s_palette[PAL_INACTIVE]:TRIANGLE_INACTIVE[s_settings[THEME]]};
@@ -263,7 +272,7 @@ static void clock_caption(char *out,size_t size,const char *date,const char *amp
 static void draw_meridiem(GContext *ctx,const char *ampm,int x,int baseline);
 static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
   int x=s_settings[TIME_X],w=(s_settings[FLAGS]&STACKED)?72:200;
-  int h=(s_settings[FLAGS]&STACKED)?84:s_display[1]==4?40:46;
+  int h=(s_settings[FLAGS]&STACKED)?84:s_display[1]>=4?40:46;
   int y=clock_top_for_visible(s_settings[TIME_Y],h,visible);
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(x,y,w,h),0,GCornerNone);
   char timebuf[8],datebuf[96];int hour=local->tm_hour;if(!is_24()){hour%=12;if(!hour)hour=12;}
@@ -280,6 +289,7 @@ static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
     if(s_clock_face)draw_flip_time(ctx,local,now,x,y);
     // 12-hour Chamfer time carries AM/PM beside the figures, top-aligned with them.
     if(s_display[1]==4&&*ampm)draw_meridiem(ctx,ampm,x+167,y+9);
+    else if(s_display[1]>=5)draw_system_time(ctx,timebuf,x,y);
     else if(s_display[1]==1)draw_triangle_time(ctx,timebuf,x,y);else draw_span_time(ctx,timebuf,x,y);
   }
 }

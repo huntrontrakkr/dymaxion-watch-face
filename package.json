@@ -11,6 +11,7 @@
     "generate:display": "node tools/generate-triangle-display.mjs",
     "generate:clock": "node tools/generate-broad-clock.mjs",
     "generate:chamfer": "node tools/generate-chamfer-clock.mjs",
+    "generate:system": "node tools/generate-system-clock.mjs",
     "generate:markers": "node tools/generate-markers.mjs",
     "generate:status": "node tools/generate-status-glyphs.mjs",
     "companion": "node tools/bundle-companion.mjs",

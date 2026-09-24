@@ -2,9 +2,10 @@
 // Each electrode is a group of complete cells in ONE equilateral lattice.
 // Source geometry stays equilateral; only the final pixel-center sampling is square.
 export const SEGMENT_DIGITS=[63,6,91,79,102,109,125,7,127,111];
-export const DISPLAY_STYLES=['span','triangles','broad','chamfer'];
+// Codes 5-8 are Pebble system fonts (shared/system-clock.js).
+export const DISPLAY_STYLES=['span','triangles','broad','chamfer','leco','bitham-bold','bitham-light','bitham-medium'];
 // Wire codes. 3 was the retired LCD style, which the watch migrates to broad.
-export const DISPLAY_CODES=Object.freeze({span:0,triangles:1,broad:2,chamfer:4});
+export const DISPLAY_CODES=Object.freeze({span:0,triangles:1,broad:2,chamfer:4,leco:5,'bitham-bold':6,'bitham-light':7,'bitham-medium':8});
 export {INACTIVE_SEGMENTS} from './palettes.js';
 export const SEGMENT_NAMES=['Top','Upper right','Lower right','Bottom','Lower left','Upper left','Waist'];
 const SQRT3=Math.sqrt(3),EDGE=7,HEIGHT=EDGE*SQRT3/2,WIDTH=196,ROWS=6;

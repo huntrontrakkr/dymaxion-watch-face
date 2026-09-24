@@ -31,6 +31,13 @@ try{
   await study.getByLabel('Show unlit triangles',{exact:true}).uncheck();const initial=await study.locator('#geometry').screenshot();await study.getByLabel('Waist',{exact:true}).uncheck();assert.notDeepEqual(await study.locator('#geometry').screenshot(),initial);
   await study.getByLabel('Waist',{exact:true}).check();await study.getByLabel('Show unlit triangles',{exact:true}).check();await study.getByLabel('Pixel size',{exact:true}).selectOption('3');await study.screenshot({path:'test-results/triangular-display-study.png',fullPage:true});
   await study.setViewportSize({width:390,height:844});assert(await study.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'proof should scroll inside its container on a phone');
+  // Pebble's built-in fonts are numeral styles too; the choice persists.
+  await page.locator('#stacked').uncheck();await page.getByRole('tab',{name:'Character',exact:true}).click();
+  for(const id of ['leco','bitham-bold','bitham-light','bitham-medium']){
+    await page.getByLabel('Numerical display',{exact:true}).selectOption(id);assert.equal(await screen.getAttribute('data-clock-display'),id);
+  }
+  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).clockDisplay,'bitham-medium');
+  await page.getByLabel('Numerical display',{exact:true}).selectOption('chamfer');
   // Leading zero is on by default and switches off from the display controls.
   await page.getByRole('tab',{name:'Character',exact:true}).click();
   assert.equal(await page.getByLabel('Leading zero',{exact:true}).isChecked(),true);

@@ -3,7 +3,7 @@
 #include "generated/triangle_display.h"
 // Styles: 0 Span, 1 triangles, 2 broad, 3 retired LCD (migrates to broad), 4 Chamfer.
 // Accept saved experimental packets so their display choice can be migrated.
-bool display_valid(const uint8_t *p,size_t length){return p&&length==DISPLAY_SIZE&&p[0]==1&&p[1]<=4&&p[2]<=3&&p[3]<64&&(p[3]&3)<3&&((p[3]&3)||!p[3]);}
+bool display_valid(const uint8_t *p,size_t length){return p&&length==DISPLAY_SIZE&&p[0]==1&&p[1]<=8&&p[2]<=3&&p[3]<64&&(p[3]&3)<3&&((p[3]&3)||!p[3]);}
 bool display_normalize(uint8_t out[DISPLAY_SIZE],const uint8_t *data,size_t length){
   if(!out||!display_valid(data,length))return false;
   memmove(out,data,DISPLAY_SIZE);

@@ -26,6 +26,9 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
   the map-scale triangles over changed figures shrink away to reveal the new time.
   Motion stops at 20% battery or when **Brief animations** is disabled.
   See [minute transitions](docs/MINUTE-FLIP.md).
+- Pebble's own clock fonts as extra numeral styles: Leco, Bitham Bold, Bitham
+  Light and Bitham Medium, read from the watch firmware (no app memory), with a
+  pixel-exact workshop preview.
 - Rounded broad numerals, Span lettering and the earlier triangular seven-segment
   experiment remain available. The segment display has six hexagonal
   edges and a raised waist, assembled from whole equilateral cells. Switch styles in
@@ -127,6 +130,7 @@ npm run generate              # map, markers, palette, status, triangular displa
 node tools/generate-chart-axis.mjs # compact chart numerals and layout constants
 npm run generate:clock        # rounded pixel masters and native transition geometry
 npm run generate:chamfer      # Chamfer masters, packed resource and native layout
+npm run generate:system       # Pebble system-font preview glyphs and placement
 npm run companion             # phone bundle, including offline configuration HTML
 npm test                      # projection, DST, solar, providers, native packets/calendar/flick guard
 npm run dev                   # keep running in another terminal

@@ -3,6 +3,7 @@ import {MARKERS,LEGACY_MARKER_IDS} from './markers.js';
 import {defaultFooter,validateFooter} from './panel-settings.js';
 import {validateLocation} from './city.js';
 import {DISPLAY_STYLES} from './triangle-display.js';
+import {SYSTEM_CLOCKS} from './system-clock.js';
 import {THEMES} from './palettes.js';
 import {paletteFor,validatePalettes} from './palette-settings.js';
 export {THEMES,MOON_COLORS} from './palettes.js';
@@ -76,7 +77,8 @@ export function blockSize(settings,key) {
   if(key==='map')return MAP_SIZE;
   if(key==='time'){
     if(settings.stacked)return [72,84];
-    if(settings.clockDisplay==='chamfer')return [200,40];
+    // Chamfer and the system fonts sit in a 40-pixel strip.
+    if(settings.clockDisplay==='chamfer'||SYSTEM_CLOCKS.includes(settings.clockDisplay))return [200,40];
     return [200,46];
   }
   return [60,36];
