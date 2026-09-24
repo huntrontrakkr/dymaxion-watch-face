@@ -39,7 +39,7 @@ static bool s_clock_ready,s_clock_running,s_clock_24,s_focused=true;
 static time_t s_clock_minute;
 static uint32_t s_clock_started;
 static uint16_t s_clock_frame=UINT16_MAX;
-static ShakeState s_shake;
+static TapState s_tap;
 static bool s_accel_subscribed;
 static int s_map_w,s_map_h;
 
@@ -317,7 +317,7 @@ static void update_proc(Layer *layer,GContext *ctx) {
   time_t now=time(NULL);struct tm local=*localtime(&now);
   graphics_context_set_antialiased(ctx,false);
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,layer_get_bounds(layer),0,GCornerNone);
-  if(s_map_dirty){sun_update(now);rebuild_map();}
+  if(s_map_dirty){sun_update(now-now%300);rebuild_map();}
   int mx=s_settings[MAP_X],my=s_settings[MAP_Y];
   if(s_map)graphics_draw_bitmap_in_rect(ctx,s_map,GRect(mx,my,s_map_w,s_map_h));
   else text(ctx,"MAP UNAVAILABLE",s_small,GRect(0,90,200,30),GTextAlignmentCenter,color(6));
@@ -359,17 +359,17 @@ static void pulse(void) {
   if((s_settings[FLAGS]&MOTION)&&s_battery.charge_percent>20&&s_settings[ENABLED]) {s_frame=0;s_animation=app_timer_register(65,animation_step,NULL);}
   layer_mark_dirty(s_layer);
 }
-static void acceleration(AccelData *data,uint32_t count) {
-  for(uint32_t i=0;i<count;i++)if(panel_shake(&s_shake,data[i].x,data[i].y,data[i].z,data[i].timestamp,data[i].did_vibrate)){
-    if(panels_cycle(time(NULL)))layer_mark_dirty(s_layer);
-  }
+// A wrist flick changes panels. Pebble's tap service is a hardware interrupt,
+// so nothing samples the accelerometer or wakes the watch between flicks.
+static void tapped(AccelAxisType axis,int32_t direction) {
+  time_t seconds;uint16_t ms;time_ms(&seconds,&ms);
+  if(panel_tap(&s_tap,(uint64_t)seconds*1000+ms)&&panels_cycle(time(NULL)))layer_mark_dirty(s_layer);
 }
 static void configure_shake(void) {
-  bool wanted=panels_shake_enabled()&&s_battery.charge_percent>20;
+  bool wanted=panels_shake_enabled();
   if(wanted==s_accel_subscribed)return;
-  memset(&s_shake,0,sizeof(s_shake));
-  if(wanted){accel_data_service_subscribe(5,acceleration);accel_service_set_sampling_rate(ACCEL_SAMPLING_10HZ);}
-  else accel_data_service_unsubscribe();
+  memset(&s_tap,0,sizeof(s_tap));
+  if(wanted)accel_tap_service_subscribe(tapped);else accel_tap_service_unsubscribe();
   s_accel_subscribed=wanted;
 }
 static void request_sync(void) {
@@ -377,7 +377,10 @@ static void request_sync(void) {
   if(app_message_outbox_begin(&iter)==APP_MSG_OK){dict_write_uint8(iter,MESSAGE_KEY_REQUEST,1);app_message_outbox_send();}
 }
 static void tick(struct tm *local_time,TimeUnits changed) {
-  s_map_dirty=true;layer_mark_dirty(s_layer);
+  // The terminator moves about a pixel every few minutes: relight the map every
+  // five minutes instead of reading and shading all 20,800 pixels each minute.
+  if(local_time->tm_min%5==0)s_map_dirty=true;
+  layer_mark_dirty(s_layer);
   time_t now=time(NULL);panels_tick(now);
   if(s_clock_face)clock_prepare(local_time,now,true);
   int interval=panels_refresh_minutes();if(!(s_city[1]&1)&&interval>60)interval=60;
@@ -459,7 +462,7 @@ static void init(void) {
 static void deinit(void) {
   clock_stop();app_focus_service_unsubscribe();
   if(s_animation)app_timer_cancel(s_animation);
-  tick_timer_service_unsubscribe();if(s_accel_subscribed)accel_data_service_unsubscribe();battery_state_service_unsubscribe();connection_service_unsubscribe();app_message_deregister_callbacks();
+  tick_timer_service_unsubscribe();if(s_accel_subscribed)accel_tap_service_unsubscribe();battery_state_service_unsubscribe();connection_service_unsubscribe();app_message_deregister_callbacks();
   layer_destroy(s_layer);window_destroy(s_window);if(s_map)gbitmap_destroy(s_map);
   fonts_unload_custom_font(s_large);fonts_unload_custom_font(s_small);fonts_unload_custom_font(s_zone);
   clock_release();free(s_caps);

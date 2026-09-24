@@ -43,9 +43,9 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
 - A configurable 44-pixel bottom band: time zones, a weather chart, a two-week
   calendar, humidity and NOAA tide predictions. Choose the pages, their order,
   colors, units, chart scales and starting page in **Panels**.
-- Optional deliberate shake to change panels, with a three-second cooldown.
-  Shake sensing stops at 20% battery or below. Disable it for a fixed page or
-  timed rotation using the existing minute tick. No tap or touch subscription.
+- Optional wrist flick to change panels, using Pebble's hardware tap detection
+  (no accelerometer sampling). Disable it for a fixed page or timed rotation
+  using the existing minute tick.
 - Brief marker pulses on launch/settings changes; real battery and a pixel
   Bluetooth connection indicator.
 - Persistent configuration and an **offline phone settings page** included in
@@ -123,7 +123,7 @@ node tools/generate-chart-axis.mjs # compact chart numerals and layout constants
 npm run generate:clock        # rounded pixel masters and native transition geometry
 npm run generate:chamfer      # Chamfer masters, packed resource and native layout
 npm run companion             # phone bundle, including offline configuration HTML
-npm test                      # projection, DST, solar, providers, native packets/calendar/shake
+npm test                      # projection, DST, solar, providers, native packets/calendar/flick guard
 npm run dev                   # keep running in another terminal
 npm run test:browser          # desktop/mobile UI and simulated Pebble bridge
 ```

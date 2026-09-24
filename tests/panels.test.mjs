@@ -48,7 +48,7 @@ test('environment refresh caches, rate limits failures and discards responses fo
   s.footer.pages=['weather'];s.footer.home='weather';const work=race.refresh();s.places[0]={...s.places[1]};resolve(rawWeather);await work;
   assert(!pending.some(m=>m.data.samples?.length),'an old location must never overwrite the new one');
 });
-test('native panels validate actual provider packets and reject accidental shake patterns',()=>{
+test('native panels validate actual provider packets and guard wrist flicks',()=>{
   mkdirSync('test-results',{recursive:true});const s=defaults();s.footer.tide={...s.footer.tide,...meta.station};
   writeFileSync('test-results/footer.bin',encodeFooter(s));writeFileSync('test-results/weather.bin',encodeEnvironment(weather,'weather'));writeFileSync('test-results/tide.bin',encodeEnvironment(tide,'tide'));
   execFileSync('cc',['-std=c11','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/panels-test.c','watchface/src/c/panel_data.c','watchface/src/c/settings.c','-o','test-results/panels-test']);

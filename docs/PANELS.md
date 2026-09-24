@@ -101,17 +101,19 @@ clocks without reserving that band.
 ## Changing pages and battery use
 
 Choose any one to five pages, reorder them, and select a starting page. A
-deliberate back-and-forth shake advances one page. Detection requires three
-strong alternating excursions along one axis within 1.1 seconds, then applies
-a three-second cooldown. Samples marked as motor vibration are ignored.
+quick wrist flick advances one page. It uses Pebble's accelerometer tap
+service, a hardware interrupt: nothing samples the accelerometer and the watch
+does not wake between flicks, so it stays on at any battery level. One flick can
+raise a tap on more than one axis, so taps within 1.5 seconds of a page change
+are ignored (`panel_tap`). The tap service unsubscribes when flicks are
+disabled, when there is only one page or when panels are disabled.
 
-Shake uses five-sample batches at 10 Hz, the lowest supported sampling rate.
-It unsubscribes when disabled, when there is only one page, when panels are
-disabled, or when battery charge reaches 20%. It resumes above that threshold.
-There is no accelerometer tap subscription or touch handler. Shake still uses
-sensor and CPU power; its physical battery cost has not been measured.
+Other periodic work is kept small. The map is relit every five minutes, not
+every minute (the terminator moves about a pixel in that time), and the weather
+chart's sunrise/sunset shading and header time are cached until the chart
+window or the next event moves.
 
-For no app accelerometer sampling, disable shake and use a fixed page or timed
+For no panel changes by motion, disable flicks and use a fixed page or timed
 rotation (1, 2, 5, 10, 15, 30 or 60 minutes). Rotation uses the existing minute
 tick. A manually changed page restarts the interval. The workshop's **Next
 bottom panel** button previews the same order.
@@ -163,10 +165,11 @@ The companion never supplies those examples to the watch.
 Automated checks cover settings migration, packet validation, missing hourly
 values, cache reuse/backoff, late responses, fractional-hour forecast locations,
 calendar parity between JavaScript and C across DST/leap/year boundaries, and
-shake rejection/cooldown. Browser checks cover all five pages, live-response
+the wrist-flick guard. Browser checks cover the default pages, live-response
 fixtures, page order, timed rotation, persistence, unit conversion and mobile
-layout. The native Emery emulator verifies AppMessage delivery, rendered pages,
-shake-to-calendar and the 20% battery cutoff. Real requests were also checked
+layout. An earlier revision was verified in the Emery emulator (AppMessage
+delivery, rendered pages, and the since-replaced shake detector); the wrist-flick
+version has not yet run in the emulator or on hardware. Real requests were also checked
 for New York, Kathmandu and NOAA station 8518750 (The Battery).
 
 Physical wrist-motion sensitivity, power consumption and phone webview behavior

@@ -39,17 +39,9 @@ int main(int argc,char **argv){
   memcpy(copy,t,sizeof(t));copy[48+2]=24;assert(!environment_valid(copy,sizeof(t),true));
   memcpy(copy,t,sizeof(t));copy[48]=0xff;copy[49]=0x7f;assert(!environment_valid(copy,sizeof(t),true));
   assert(environment_start_index(w,0)==-1);assert(environment_start_index(w,0xffffffff)==-1);
-  ShakeState shake={0};uint64_t ms=10000;
-  assert(!panel_shake(&shake,0,0,1000,ms,false));
-  // Normal wrist movement, a single impact, and vibration do not cycle.
-  for(int i=0;i<50;i++)assert(!panel_shake(&shake,(i%2?400:-400),0,1000,ms+=100,false));
-  assert(!panel_shake(&shake,2400,0,1000,ms+=100,false));
-  for(int i=0;i<20;i++)assert(!panel_shake(&shake,0,0,1000,ms+=100,false));
-  for(int i=0;i<8;i++)assert(!panel_shake(&shake,(i%2?2400:-2400),0,1000,ms+=100,true));
-  for(int i=0;i<20;i++)assert(!panel_shake(&shake,0,0,1000,ms+=100,false));
-  assert(!panel_shake(&shake,2400,0,1000,ms+=100,false));
-  assert(!panel_shake(&shake,-2400,0,1000,ms+=100,false));
-  assert(panel_shake(&shake,2400,0,1000,ms+=100,false));
-  for(int i=0;i<20;i++)assert(!panel_shake(&shake,(i%2?2400:-2400),0,1000,ms+=100,false));
-  puts("Native panel packets and shake rejection cases passed.");return 0;
+  // One flick's several tap events change one panel; the next flick after the guard changes another.
+  TapState tap={0};uint64_t ms=10000;
+  assert(panel_tap(&tap,ms));assert(!panel_tap(&tap,ms+5));assert(!panel_tap(&tap,ms+TAP_GUARD_MS-1));
+  assert(panel_tap(&tap,ms+TAP_GUARD_MS));assert(!panel_tap(&tap,ms+TAP_GUARD_MS+200));
+  puts("Native panel packets and wrist-flick guard passed.");return 0;
 }

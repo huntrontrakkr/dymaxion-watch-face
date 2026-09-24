@@ -183,7 +183,7 @@ function marker(x,y,icon,color,bg){
   drawMarkerPixels(ctx,icon,x,y,color);
 }
 function mapImage(now,pal,sun){
-  const key=[pal.bg,pal.ocean,pal.land,pal.nightOcean,pal.nightLand,pal.edge,settings.dayNight,settings.edges,Math.floor(now/60000)].join('/');
+  const key=[pal.bg,pal.ocean,pal.land,pal.nightOcean,pal.nightLand,pal.edge,settings.dayNight,settings.edges,Math.floor(now/300000)].join('/');
   if(key===cacheKey&&mapCache)return mapCache;
   const [w,h]=MAP_SIZE,data=mapPixels;
   const offscreen=document.createElement('canvas');offscreen.width=w;offscreen.height=h;
@@ -216,7 +216,7 @@ function render(){
   if(!mapPixels.length||!watchTypeface||!watchSpan)return;
   if(!settings.footer.pages.includes(footerPage))footerPage=settings.footer.home;
   if(settings.footer.enabled&&settings.footer.rotationMinutes&&Date.now()-panelChanged>=settings.footer.rotationMinutes*60000){footerPage=settings.footer.pages[(settings.footer.pages.indexOf(footerPage)+1)%settings.footer.pages.length];panelChanged=Date.now();}
-  const now=new Date(Date.now()+offset*3600000),local=moment(now),sun=sunDirection(now),pal=paletteFor(settings);
+  const now=new Date(Date.now()+offset*3600000),local=moment(now),sun=sunDirection(new Date(Math.floor(+now/300000)*300000)),pal=paletteFor(settings);
   ctx.clearRect(0,0,200,228);ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,228);
   const m=makeMap(),[mx,my]=settings.map,cached=mapImage(now,pal,sun);
   ctx.drawImage(cached.canvas,mx,my);

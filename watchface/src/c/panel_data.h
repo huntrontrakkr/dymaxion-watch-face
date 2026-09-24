@@ -14,5 +14,8 @@ bool environment_valid(const uint8_t *p,unsigned length,bool tide);
 int environment_start_index(const uint8_t *p,uint32_t now);
 typedef struct {int year,month,day,weekday;bool today,holiday,weekend;} CalendarCell;
 void panel_calendar(int year,int month,int day,int weekday,const uint8_t *config,CalendarCell out[14]);
-typedef struct {bool initialized;int32_t baseline[3];int8_t axis,sign;uint8_t swings;uint64_t began,cooldown;} ShakeState;
-bool panel_shake(ShakeState *state,int16_t x,int16_t y,int16_t z,uint64_t timestamp,bool vibrating);
+// One wrist flick can raise several tap events (one per axis); a short guard
+// keeps a single flick to a single panel change.
+#define TAP_GUARD_MS 1500
+typedef struct {uint64_t cooldown;} TapState;
+bool panel_tap(TapState *state,uint64_t now_ms);

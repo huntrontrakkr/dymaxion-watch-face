@@ -29,7 +29,7 @@ try{
   await page.getByRole('button',{name:'Use theme colors',exact:true}).click();
   assert.equal(await page.getByLabel('Temperature panel color',{exact:true}).inputValue(),'#000000');
   assert.equal(await page.getByLabel('Rain panel color',{exact:true}).inputValue(),'#555555');
-  await page.getByLabel('Shake to change panels',{exact:true}).uncheck();await page.getByLabel('Automatic rotation',{exact:true}).selectOption('1');
+  await page.getByLabel('Flick to change panels',{exact:true}).uncheck();await page.getByLabel('Automatic rotation',{exact:true}).selectOption('1');
   await page.clock.fastForward(61000);assert.equal(await page.locator('#panel-preview-label').textContent(),'Weather');
   await page.getByLabel('Automatic rotation',{exact:true}).selectOption('0');
   await page.getByLabel('Starting panel',{exact:true}).selectOption('weather');

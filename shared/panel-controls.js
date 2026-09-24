@@ -12,9 +12,9 @@ export function panelControls(root,getSettings,onChange){
   root.innerHTML=toggle('enabled','Enable bottom panels','A 44-pixel band replaces the place clocks one panel at a time.')
     +`<div class="panel-order" data-order></div>`
     +select('home','Starting panel',PANEL_PAGES)
-    +toggle('shake','Shake to change panels','A deliberate back-and-forth shake; a three-second cooldown. Motion sensing pauses at 20% battery.')
+    +toggle('shake','Flick to change panels','A quick wrist flick moves to the next panel. Uses Pebble’s built-in tap detection, which costs almost no battery.')
     +select('rotationMinutes','Automatic rotation',[[0,'Off — keep the panel until changed'],...[1,2,5,10,15,30,60].map(n=>[n,`Every ${n} minute${n===1?'':'s'}`])])
-    +`<p class="micro">No touch controls or tap gestures. Automatic rotation uses the existing minute tick. Turn off shake to stop accelerometer sampling.</p>`
+    +`<p class="micro">No touch controls. Automatic rotation uses the existing minute tick; flicks use the watch’s hardware tap detection, so nothing samples the accelerometer.</p>`
     +`<details open><summary>Weather & humidity</summary>`+toggle('weather.enabled','Fetch weather','Open-Meteo forecast for one of your configured places.')
     +select('weather.place','Forecast location',[[0,'Place 1'],[1,'Place 2'],[2,'Place 3']])+select('horizon','Chart horizon',[[12,'12 hours'],[24,'24 hours'],[48,'48 hours']])
     +select('weather.temperatureUnit','Temperature units',[['c','Celsius'],['f','Fahrenheit']])+select('weather.precipitation','Rain overlay',[['off','Off'],['probability','Precipitation probability'],['amount','Precipitation amount']])

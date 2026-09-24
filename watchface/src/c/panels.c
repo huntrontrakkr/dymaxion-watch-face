@@ -11,6 +11,27 @@ static time_t s_changed;
 static GFont s_font;
 static const uint8_t *s_caps;
 static const float *s_daylight;
+// Daylight is recomputed only when its inputs change: the chart's columns when
+// the window, width or place moves (hourly), the next sunrise or sunset once it
+// has passed. Each redraw otherwise reuses them.
+static struct {uint32_t t0;int count,left,right;float place[3];uint8_t day[25];} s_columns;
+static struct {uint32_t valid_until,event;bool rise;float place[3];} s_sun_event;
+static bool same_place(const float a[3],const float b[3]){return a[0]==b[0]&&a[1]==b[1]&&a[2]==b[2];}
+static void daylight_columns(uint32_t t0,int count,int left,int right){
+  if(s_columns.t0==t0&&s_columns.count==count&&s_columns.left==left&&s_columns.right==right&&same_place(s_columns.place,s_daylight))return;
+  s_columns.t0=t0;s_columns.count=count;s_columns.left=left;s_columns.right=right;memcpy(s_columns.place,s_daylight,sizeof(s_columns.place));
+  memset(s_columns.day,0,sizeof(s_columns.day));
+  for(int xx=left;xx<=right&&xx<200;xx++)if(solar_up(t0+(uint32_t)((xx-left)*(count-1)*3600/(right-left)),s_daylight))s_columns.day[xx/8]|=1u<<(xx%8);
+}
+static uint32_t next_sun_event(uint32_t now,bool *rise){
+  if(now>=s_sun_event.valid_until||!same_place(s_sun_event.place,s_daylight)){
+    memcpy(s_sun_event.place,s_daylight,sizeof(s_sun_event.place));
+    s_sun_event.event=solar_next_event(now,s_daylight,48,&s_sun_event.rise);
+    // Valid until the event passes; with none (polar day or night), for an hour.
+    s_sun_event.valid_until=s_sun_event.event?s_sun_event.event:now+3600;
+  }
+  *rise=s_sun_event.rise;return s_sun_event.event;
+}
 static const uint8_t *s_palette;
 static bool s_clock24;
 static GColor color(int i){return (GColor){.argb=s_palette[i]};}
@@ -136,7 +157,7 @@ static void graph_draw(GContext *ctx,time_t now){
     snprintf(right,sizeof(right),"%s %s",usefirst?"H":"L",timebuf);
   }else if(!tide&&s_footer[F_SOLAR]&&s_daylight){
     // Sunrise and sunset at the daylight place, the same source as the shading.
-    bool rise;time_t sun=solar_next_event((uint32_t)now,s_daylight,48,&rise);
+    bool rise;time_t sun=next_sun_event((uint32_t)now,&rise);
     if(sun){struct tm *t=localtime(&sun);char timebuf[16];clock_label(timebuf,sizeof(timebuf),t->tm_hour*60+t->tm_min);snprintf(right,sizeof(right),"%s %s",rise?"RISE":"SET",timebuf);}
   }
   if(!right[0]&&!tide&&!humidity&&s_footer[F_RAIN]){
@@ -152,9 +173,9 @@ static void graph_draw(GContext *ctx,time_t now){
   GColor ink=custom(tide?F_TIDE_COLOR:humidity?F_HUMID_COLOR:F_TEMP_COLOR),rain_ink=dim(custom(F_RAIN_COLOR),color(0));
   // Daylight per pixel column: the sun's altitude at that moment and place.
   if(!tide&&s_footer[F_DAYLIGHT]&&s_daylight){
-    uint32_t t0=read_u32(p+8)+(uint32_t)start*3600;
+    daylight_columns(read_u32(p+8)+(uint32_t)start*3600,count,layout.left,layout.right);
     for(int xx=layout.left;xx<=layout.right;xx++){
-      bool day=solar_up(t0+(uint32_t)((xx-layout.left)*(count-1)*3600/(layout.right-layout.left)),s_daylight);
+      bool day=(s_columns.day[xx/8]>>(xx%8))&1;
       rect(ctx,xx,layout.daylight,1,1,day?color(7):color(5));
       if(!day&&xx%4==0)for(int y=layout.top+2;y<=layout.bottom;y+=4)rect(ctx,xx,y,1,1,color(5));
     }

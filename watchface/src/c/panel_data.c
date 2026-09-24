@@ -86,17 +86,4 @@ void panel_calendar(int year,int month,int day,int weekday,const uint8_t *config
     out[i]=d;shift_day(&d,1);
   }
 }
-bool panel_shake(ShakeState *s,int16_t x,int16_t y,int16_t z,uint64_t now,bool vibrating){
-  int16_t values[3]={x,y,z};
-  if(!s->initialized){for(int i=0;i<3;i++)s->baseline[i]=values[i];s->initialized=true;return false;}
-  int axis=0,peak=0,residual[3];
-  for(int i=0;i<3;i++){residual[i]=values[i]-s->baseline[i];s->baseline[i]+=residual[i]/8;if(abs(residual[i])>peak){peak=abs(residual[i]);axis=i;}}
-  if(vibrating||now<s->cooldown){s->swings=0;return false;}
-  if(s->swings&&now-s->began>1100)s->swings=0;
-  if(peak<1300)return false;
-  int sign=residual[axis]>0?1:-1;
-  if(!s->swings||s->axis!=axis){s->axis=axis;s->sign=sign;s->swings=1;s->began=now;}
-  else if(sign!=s->sign){s->sign=sign;s->swings++;}
-  if(s->swings<3)return false;
-  s->swings=0;s->cooldown=now+3000;return true;
-}
+bool panel_tap(TapState *s,uint64_t now){if(now<s->cooldown)return false;s->cooldown=now+TAP_GUARD_MS;return true;}
