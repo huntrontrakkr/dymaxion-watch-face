@@ -334,7 +334,7 @@ static void update_proc(Layer *layer,GContext *ctx) {
     if(i==s_selected&&s_frame<16)pixel_rows(ctx,PULSE_GLYPHS[s_frame/4],PULSE_SIZE,PULSE_SIZE,pos.x-8,pos.y-8,mark_color(i));
   }
   draw_time(ctx,&local,now);
-  bool zones=!panels_draw(ctx,now,&local,s_small,palette(),is_24());
+  bool zones=!panels_draw(ctx,now,&local,s_small,s_caps,palette(),is_24());
   if(zones)draw_zones(ctx,now,&local);
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(0,0,200,18),0,GCornerNone);
   char battery[8];snprintf(battery,sizeof(battery),"%d%%",s_battery.charge_percent);

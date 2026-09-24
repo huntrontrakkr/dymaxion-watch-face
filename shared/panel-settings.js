@@ -1,3 +1,4 @@
+import {HOLIDAY_REGIONS} from './calendar.js';
 import {paletteFor,PANEL_COLOR_ROLES,DEFAULT_PANEL_COLORS as LEGACY_COLORS} from './palette-settings.js';
 export {PANEL_COLOR_ROLES} from './palette-settings.js';
 export const PANEL_PAGES=[['zones','Time zones'],['weather','Weather'],['calendar','Two-week calendar'],['humidity','Humidity'],['tide','Tide']];
@@ -20,7 +21,7 @@ export const TIDE_STATIONS=[
 export function defaultFooter(){return {
   enabled:true,pages:PANEL_PAGES.map(([id])=>id),home:'zones',rotationMinutes:0,shake:true,horizon:24,
   weather:{enabled:true,place:0,temperatureUnit:'c',precipitation:'probability',rainUnit:'mm',rainMax:5,daylight:true,solarTimes:true,grid:false,rangeLabels:true,temperatureScale:'auto',temperatureMin:-10,temperatureMax:40,humidityScale:'percent',refreshMinutes:60},
-  calendar:{weekStart:1,weeks:'current-next',weekends:'sat-sun',holidays:'none',todayStyle:'fill'},
+  calendar:{weekStart:6,weeks:'current-next',weekends:'sat-sun',holidays:'none',todayStyle:'fill'},
   tide:{station:'',label:'TIDE',tz:'America/New_York',unit:'m',zeroLine:true,scale:'auto',min:-1,max:3},
   colorMode:'theme',colors:{...LEGACY_COLORS}
 };}
@@ -39,7 +40,7 @@ export function validateFooter(input,zoneExists,quantize){
   choice(w,'temperatureScale',['auto','fixed']);choice(w,'humidityScale',['percent','auto']);choice(w,'refreshMinutes',[30,60,120,180]);
   if(!Number.isFinite(w.temperatureMin)||!Number.isFinite(w.temperatureMax)||w.temperatureMin< -150||w.temperatureMax>150||w.temperatureMax-w.temperatureMin<1)throw new Error('Temperature bounds need a minimum below the maximum, between −150 and 150.');
   if(!Number.isFinite(w.rainMax)||w.rainMax<.1||w.rainMax>100)throw new Error('Rain scale must be between 0.1 and 100 mm/hour.');
-  choice(c,'weekStart',[0,1]);choice(c,'weeks',['current-next','previous-current']);choice(c,'weekends',['sat-sun','fri-sat','none']);choice(c,'holidays',['none','us']);choice(c,'todayStyle',['fill','outline']);
+  choice(c,'weekStart',[0,1,6]);choice(c,'weeks',['current-next','previous-current']);choice(c,'weekends',['sat-sun','fri-sat','none']);choice(c,'holidays',HOLIDAY_REGIONS.map(([id])=>id));choice(c,'todayStyle',['fill','outline']);
   if(typeof t.station!=='string'||!/^([A-Z0-9]{7})?$/.test(t.station))throw new Error('Enter a seven-character NOAA tide station ID.');
   if(typeof t.label!=='string'||!/^[A-Z0-9 -]{1,7}$/.test(t.label))throw new Error('Tide labels need 1–7 uppercase letters or numbers.');
   if(typeof t.tz!=='string'||t.tz.length>80||!zoneExists(t.tz))throw new Error('Choose the tide station’s IANA time zone.');

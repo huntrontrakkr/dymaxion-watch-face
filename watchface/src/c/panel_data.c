@@ -8,7 +8,8 @@ bool footer_valid(const uint8_t *p,unsigned length){
   if(!(used&(1<<p[F_HOME])))return false;
   const uint8_t rotations[]={0,1,2,5,10,15,30,60},horizons[]={12,24,48},refresh[]={30,60,120,180};
   if(!one_of(p[F_ROTATE],rotations,8)||!one_of(p[F_HORIZON],horizons,3)||!one_of(p[F_REFRESH],refresh,4)||p[F_RAIN]>2||p[F_WEEKENDS]>2)return false;
-  const uint8_t booleans[]={F_FAHRENHEIT,F_DAYLIGHT,F_GRID,F_SOLAR,F_WEEK_START,F_PREVIOUS,F_HOLIDAYS,F_TODAY_OUTLINE,F_TEMP_FIXED,F_HUMID_AUTO,F_RAIN_INCH,F_TIDE_FEET,F_WEATHER_ON,F_RANGE_LABELS,F_TIDE_ZERO,F_TIDE_ON,F_SHAKE};
+  if((p[F_WEEK_START]>1&&p[F_WEEK_START]!=6)||p[F_HOLIDAYS]>=HOLIDAY_REGION_COUNT)return false;
+  const uint8_t booleans[]={F_FAHRENHEIT,F_DAYLIGHT,F_GRID,F_SOLAR,F_PREVIOUS,F_TODAY_OUTLINE,F_TEMP_FIXED,F_HUMID_AUTO,F_RAIN_INCH,F_TIDE_FEET,F_WEATHER_ON,F_RANGE_LABELS,F_TIDE_ZERO,F_TIDE_ON,F_SHAKE};
   for(unsigned i=0;i<sizeof(booleans);i++)if(p[booleans[i]]>1)return false;
   for(int i=21;i<=28;i++)if((p[i]&0xc0)!=0xc0)return false;
   int lo=read_i16(p+F_TEMP_MIN),hi=read_i16(p+F_TEMP_MAX);if(lo< -1500||hi>1500||hi-lo<10)return false;
@@ -39,6 +40,32 @@ int environment_start_index(const uint8_t *p,uint32_t now){
 }
 static int days_in_month(int y,int m){static const uint8_t n[]={31,28,31,30,31,30,31,31,30,31,30,31};return n[m-1]+(m==2&&y%4==0&&(y%100!=0||y%400==0));}
 static void shift_day(CalendarCell *d,int dir){d->day+=dir;d->weekday=(d->weekday+dir+7)%7;if(d->day==0){if(--d->month==0){d->month=12;d->year--;}d->day=days_in_month(d->year,d->month);}else if(d->day>days_in_month(d->year,d->month)){d->day=1;if(++d->month==13){d->month=1;d->year++;}}}
+// Region order matches HOLIDAY_REGIONS in shared/calendar.js.
+static int32_t easter_ordinal(int year){
+  int a=year%19,b=year/100,c=year%100,d=b/4,e=b%4,f=(b+8)/25,g=(b-f+1)/3,h=(19*a+b-d-g+15)%30,i=c/4,k=c%4;
+  int l=(32+2*e+2*i-h-k)%7,m=(a+11*h+22*l)/451,t=h+l-7*m+114;
+  return calendar_ordinal(year,t/31,t%31+1);
+}
+typedef struct {const uint8_t (*fixed)[2];uint8_t fixed_count;const uint8_t (*weekday)[3];uint8_t weekday_count;const int8_t *easter;uint8_t easter_count;} HolidayRules;
+static const uint8_t CA_FIXED[][2]={{1,1},{7,1},{9,30},{11,11},{12,25},{12,26}},CA_WEEKDAY[][3]={{5,1,18},{9,1,1},{10,1,8}};
+static const uint8_t MX_FIXED[][2]={{1,1},{5,1},{9,16},{12,25}},MX_WEEKDAY[][3]={{2,1,1},{3,1,15},{11,1,15}};
+static const uint8_t UK_FIXED[][2]={{1,1},{12,25},{12,26}},UK_WEEKDAY[][3]={{5,1,1},{5,1,25},{8,1,25}};
+static const uint8_t DE_FIXED[][2]={{1,1},{5,1},{10,3},{12,25},{12,26}};
+static const uint8_t FR_FIXED[][2]={{1,1},{5,1},{5,8},{7,14},{8,15},{11,1},{11,11},{12,25}};
+static const uint8_t AU_FIXED[][2]={{1,1},{1,26},{4,25},{12,25},{12,26}},AU_WEEKDAY[][3]={{6,1,8}};
+static const int8_t GOOD_FRIDAY_MONDAY[]={-2,1},DE_EASTER[]={-2,1,39,50},FR_EASTER[]={1,39,50};
+static const HolidayRules RULES[HOLIDAY_REGION_COUNT]={
+  [2]={CA_FIXED,6,CA_WEEKDAY,3,GOOD_FRIDAY_MONDAY,2},[3]={MX_FIXED,4,MX_WEEKDAY,3,NULL,0},
+  [4]={UK_FIXED,3,UK_WEEKDAY,3,GOOD_FRIDAY_MONDAY,2},[5]={DE_FIXED,5,NULL,0,DE_EASTER,4},
+  [6]={FR_FIXED,8,NULL,0,FR_EASTER,3},[7]={AU_FIXED,5,AU_WEEKDAY,1,GOOD_FRIDAY_MONDAY,2}
+};
+static bool regional_holiday(const CalendarCell *d,int region){
+  const HolidayRules *r=&RULES[region];int stamp=calendar_ordinal(d->year,d->month,d->day);
+  for(int i=0;i<r->fixed_count;i++)if(r->fixed[i][0]==d->month&&r->fixed[i][1]==d->day)return true;
+  for(int i=0;i<r->weekday_count;i++)if(r->weekday[i][0]==d->month&&r->weekday[i][1]==d->weekday&&d->day>=r->weekday[i][2]&&d->day<r->weekday[i][2]+7)return true;
+  if(r->easter_count){int32_t easter=easter_ordinal(d->year);for(int i=0;i<r->easter_count;i++)if(easter+r->easter[i]==stamp)return true;}
+  return false;
+}
 static bool holiday(const CalendarCell *d){
   int m=d->month,n=d->day,w=d->weekday,stamp=calendar_ordinal(d->year,m,n);
   static const uint8_t fixed[][2]={{1,1},{6,19},{7,4},{11,11},{12,25}};
@@ -53,7 +80,7 @@ void panel_calendar(int year,int month,int day,int weekday,const uint8_t *config
   int offset=(weekday-config[F_WEEK_START]+7)%7+(config[F_PREVIOUS]?7:0);
   for(int i=0;i<offset;i++)shift_day(&d,-1);
   for(int i=0;i<14;i++){
-    d.today=i==offset;d.holiday=config[F_HOLIDAYS]&&holiday(&d);
+    d.today=i==offset;d.holiday=config[F_HOLIDAYS]==1?holiday(&d):config[F_HOLIDAYS]>1&&regional_holiday(&d,config[F_HOLIDAYS]);
     d.weekend=config[F_WEEKENDS]==0?(d.weekday==0||d.weekday==6):config[F_WEEKENDS]==1?(d.weekday==5||d.weekday==6):false;
     out[i]=d;shift_day(&d,1);
   }

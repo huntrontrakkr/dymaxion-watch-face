@@ -19,12 +19,16 @@ Its side-label strip grows from measured text width; hour-label frequency comes
 from available chart width, and Emery gets distinct major/minor ticks. Those
 layout principles are adapted here to our much shorter 44-pixel panel.
 
-Vertical range labels use an original four-pixel-wide, seven-pixel-high numeral
-cut, with compact minus signs and decimal points. Horizontal hour labels use
-the existing Draft Micro lettering at its native size, on one fixed baseline.
-Its oldstyle numerals retain their authored ascenders and descenders. Both cuts
-use whole pixels, with no font scaling or antialiasing. Headings, the calendar,
-the map and the large clock keep their lettering.
+Range labels and hour labels share an original four-pixel-wide,
+seven-pixel-high numeral cut, with compact minus signs, decimal points and A/P
+marks, in the ink color rather than the series color. Headings and calendar
+dates use Draft Micro's lining capitals, the same cut as the status line, so
+every panel figure sits on the baseline. All text is whole pixels, with no
+font scaling or antialiasing.
+
+Rain probability or amount is drawn behind the temperature line, one RGB222
+step toward the ground, so the temperature line leads; the header names the
+peak. Night hours carry a dotted field and a grey daylight strip.
 
 The left gutter measures both range labels, allowing two pixels of outer padding
 and three before the plot. A normal two-digit temperature scale needs 14 pixels
@@ -36,7 +40,7 @@ With a two-digit range, the plot is 184 × 22 pixels rather than 167 × 20, abou
 minor ticks and longer ticks beneath labeled hours. Normal 12/24/48-hour views
 with a 24-hour clock label every 2/3/6 hours: seven/nine/nine labels instead of
 three. AM/PM labels reserve more width. Narrower or partial data windows choose
-spacing from the available width and the measured Micro font. Label boxes stay
+spacing from the available width and the measured numeral cut. Label boxes stay
 inside the display and retain at least two pixels between neighboring labels.
 Each label uses the local hour supplied with its sample, including DST repeats
 and jumps. No additional provider samples or refreshes are needed.
@@ -63,13 +67,16 @@ Native Emery screenshots, with actual forecast and NOAA response data:
 | --- | --- | --- |
 | Time zones | Existing three place clocks | Places and layout controls remain available |
 | Weather | Temperature line, optional precipitation bars, daylight strip/night dots, next rise/set | Place, °C/°F, 12/24/48 hours, probability/amount/off, mm/in, rain scale, automatic/fixed temperature range, refresh interval |
-| Calendar | Weekday labels and fourteen dates, with today highlighted | Sunday/Monday start, previous/current or current/next week, weekend pattern, observed U.S. federal holidays, filled/outlined today |
+| Calendar | Weekday labels and fourteen dates, with today highlighted | Saturday (default), Sunday or Monday start; previous/current or current/next week; weekend pattern in one weekend color; optional public holidays for the United States (federal, observed dates), Canada, Mexico, the United Kingdom (England and Wales), Germany, France or Australia; filled/outlined today |
 | Humidity | Relative humidity line and optional daylight context | Fixed 0–100% or fitted range; uses the weather location and cache |
 | Tide | Predicted water-height curve and next high/low time | NOAA station, station time zone, meters/feet, automatic/fixed scale, zero line |
 
 Chart range labels, faint midline and colors are configurable. Colors follow
-the active theme by default; the six palettes beginning with High Visibility
-include their own chart and calendar colors. Editing a color retains the entire
+the active theme by default; every light-ground palette and the six palettes
+beginning with High Visibility include their own chart and calendar colors, at
+7:1 contrast or better against the ground. Saturday and Sunday share the
+weekend color (the packet still carries a separate Sunday slot for older
+exports; it is not drawn). Editing a color retains the entire
 current set as custom colors, so a later palette change preserves it. **Use
 theme colors** resumes following the palette. Old exports with edited panel
 colors remain custom. All colors snap to RGB222.
@@ -158,3 +165,7 @@ Physical wrist-motion sensitivity, power consumption and phone webview behavior
 still need hardware testing. The [accelerometer API](https://developer.repebble.com/docs/c/Foundation/Event_Service/AccelerometerService/)
 documents the available sampling rates and batching. U.S. observed holiday
 rules follow the [OPM calendar](https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/).
+Other regions mark national public holidays on their calendar dates (fixed
+dates, nth-weekday rules and Western Easter offsets); substitute weekdays and
+state or provincial holidays are not shown. Browser and watch agree on every
+holiday from 2024 through 2030 in host tests.

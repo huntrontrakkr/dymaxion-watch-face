@@ -1,20 +1,35 @@
 #include "panels.h"
 #include "settings.h"
 #include "chart_axis.h"
+#include "caps.h"
 #include "generated/footer_defaults.h"
 #define MIN(a,b) ((a)<(b)?(a):(b))
 #define MAX(a,b) ((a)>(b)?(a):(b))
 static uint8_t s_footer[FOOTER_SIZE],s_weather[WEATHER_SIZE],s_tide[TIDE_SIZE],s_page;
 static time_t s_changed;
 static GFont s_font;
+static const uint8_t *s_caps;
 static const uint8_t *s_palette;
 static bool s_clock24;
 static GColor color(int i){return (GColor){.argb=s_palette[i]};}
 static GColor custom(int i){return (GColor){.argb=s_footer[i]};}
 static void rect(GContext *ctx,int x,int y,int w,int h,GColor c){graphics_context_set_fill_color(ctx,c);graphics_fill_rect(ctx,GRect(x,y,w,h),0,GCornerNone);}
 static void line(GContext *ctx,int x,int y,int xx,int yy,GColor c){graphics_context_set_stroke_color(ctx,c);graphics_draw_line(ctx,GPoint(x,y),GPoint(xx,yy));}
-static void label(GContext *ctx,const char *t,int x,int baseline,int width,GTextAlignment align,GColor c){graphics_context_set_text_color(ctx,c);graphics_draw_text(ctx,t,s_font,GRect(x,baseline-12,width,15),GTextOverflowModeFill,align,NULL);}
-static int label_width(const char *t){return graphics_text_layout_get_content_size(t,s_font,GRect(0,0,200,15),GTextOverflowModeFill,GTextAlignmentLeft).w;}
+typedef struct {GContext *ctx;GColor color;} PanelPen;
+static void panel_span(void *context,int x,int y,int length){PanelPen *pen=context;line(pen->ctx,x,y,x+length-1,y,pen->color);}
+// Panel text uses the status line's lining capitals (Draft Micro text only if
+// the caps resource failed to load). Alignment matches drawBitmapText.
+static void label(GContext *ctx,const char *t,int x,int baseline,int width,GTextAlignment align,GColor c){
+  if(!s_caps){graphics_context_set_text_color(ctx,c);graphics_draw_text(ctx,t,s_font,GRect(x,baseline-12,width,15),GTextOverflowModeFill,align,NULL);return;}
+  int w=caps_width(s_caps,t);PanelPen pen={ctx,c};
+  if(align==GTextAlignmentCenter)x+=width/2-(w+1)/2;else if(align==GTextAlignmentRight)x+=width-w;
+  caps_draw(s_caps,t,x,baseline,false,panel_span,&pen);
+}
+// One RGB222 step per channel toward the ground: rain sits dimmed behind the line.
+static GColor dim(GColor c,GColor ground){
+  uint8_t out=0xc0;for(int shift=0;shift<6;shift+=2){int a=(c.argb>>shift)&3,b=(ground.argb>>shift)&3;out|=(a+(b>a)-(b<a))<<shift;}
+  return (GColor){.argb=out};
+}
 static void axis_label(GContext *ctx,const char *text,int x,int y,GColor ink){
   graphics_context_set_stroke_color(ctx,ink);
   while(*text){const ChartGlyph *glyph=chart_glyph(*text++);
@@ -69,7 +84,7 @@ static void calendar_draw(GContext *ctx,const struct tm *local){
   for(int col=0;col<7;col++)label(ctx,weekdays[(col+s_footer[F_WEEK_START])%7],4+col*28,201,24,GTextAlignmentCenter,color(5));
   for(int i=0;i<14;i++){
     CalendarCell d=cells[i];int x=4+(i%7)*28,y=i<7?212:224;char day[3];snprintf(day,sizeof(day),"%d",d.day);
-    GColor ink=d.holiday?custom(F_HOLIDAY_COLOR):d.weekend?custom(d.weekday==0?F_SUN_COLOR:F_SAT_COLOR):color(6);
+    GColor ink=d.holiday?custom(F_HOLIDAY_COLOR):d.weekend?custom(F_SAT_COLOR):color(6);
     if(d.today){
       if(s_footer[F_TODAY_OUTLINE]){graphics_context_set_stroke_color(ctx,custom(F_TODAY_COLOR));graphics_draw_rect(ctx,GRect(x+1,y-9,22,11));}
       else{rect(ctx,x+1,y-9,22,11,custom(F_TODAY_COLOR));ink=gcolor_legible_over(custom(F_TODAY_COLOR));}
@@ -118,9 +133,9 @@ static void graph_draw(GContext *ctx,time_t now){
   }
   label(ctx,title,4,191,104,GTextAlignmentLeft,color(6));label(ctx,right,107,191,89,GTextAlignmentRight,color(7));
   char upper[12],lower[12];chart_value_label(upper,sizeof(upper),hi,tide);chart_value_label(lower,sizeof(lower),lo,tide);
-  ChartLayout layout=chart_layout(upper,lower,count,s_footer[F_RANGE_LABELS],label_width(s_clock24?"23":"12A"));
+  ChartLayout layout=chart_layout(upper,lower,count,s_footer[F_RANGE_LABELS],chart_text_width(s_clock24?"23":"12A"));
   int plot_height=layout.bottom-layout.top+1;
-  GColor ink=custom(tide?F_TIDE_COLOR:humidity?F_HUMID_COLOR:F_TEMP_COLOR);
+  GColor ink=custom(tide?F_TIDE_COLOR:humidity?F_HUMID_COLOR:F_TEMP_COLOR),rain_ink=dim(custom(F_RAIN_COLOR),color(0));
   for(int i=0;i<count;i++){
     int x=chart_x(layout,i);const uint8_t *sample=p+(tide?48+(start+i)*4:32+(start+i)*8);
     int end=chart_x(layout,MIN(i+1,count-1));
@@ -130,15 +145,15 @@ static void graph_draw(GContext *ctx,time_t now){
     }
     if(!tide&&!humidity&&s_footer[F_RAIN]){
       int rain=s_footer[F_RAIN]==1?sample[3]*plot_height/100:MIN(plot_height,(uint16_t)read_i16(sample+4)*plot_height/(uint16_t)read_i16(s_footer+F_RAIN_MAX));
-      if(rain)rect(ctx,x,layout.bottom+1-rain,MIN(MIN(3,MAX(1,end-x-1)),layout.right-x+1),rain,custom(F_RAIN_COLOR));
+      if(rain)rect(ctx,x,layout.bottom+1-rain,MIN(MIN(3,MAX(1,end-x-1)),layout.right-x+1),rain,rain_ink);
     }
   }
   if(s_footer[F_GRID])for(int x=layout.left;x<=layout.right;x+=4)rect(ctx,x,(layout.top+layout.bottom)/2,1,1,color(5));
   if(tide&&s_footer[F_TIDE_ZERO]&&lo<0&&hi>0)for(int x=layout.left;x<=layout.right;x+=4)rect(ctx,x,chart_y(0,lo,hi),MIN(2,layout.right-x+1),1,color(5));
   for(int i=1;i<count;i++)line(ctx,chart_x(layout,i-1),chart_y(metric(p,start+i-1,tide,humidity),lo,hi),chart_x(layout,i),chart_y(metric(p,start+i,tide,humidity),lo,hi),ink);
   if(s_footer[F_RANGE_LABELS]){
-    axis_label(ctx,upper,layout.left-3-chart_text_width(upper),layout.top,ink);
-    axis_label(ctx,lower,layout.left-3-chart_text_width(lower),layout.bottom-6,ink);
+    axis_label(ctx,upper,layout.left-3-chart_text_width(upper),layout.top,color(6));
+    axis_label(ctx,lower,layout.left-3-chart_text_width(lower),layout.bottom-6,color(6));
   }
   line(ctx,layout.left,layout.axis,layout.right,layout.axis,color(5));
   for(int i=0;i<count;i++){
@@ -146,14 +161,13 @@ static void graph_draw(GContext *ctx,time_t now){
     line(ctx,x,layout.axis+1,x,layout.axis+(major?2:1),major?color(6):color(5));
     if(major){
       chart_hour_label(value,sizeof(value),p[tide?48+(start+i)*4+2:32+(start+i)*8+7],s_clock24);
-      int width=label_width(value);
-      label(ctx,value,chart_hour_left(layout,i,width),layout.label_baseline,width,GTextAlignmentLeft,color(6));
+      axis_label(ctx,value,chart_hour_left(layout,i,chart_text_width(value)),layout.label_baseline-6,color(6));
     }
   }
 }
-bool panels_draw(GContext *ctx,time_t now,const struct tm *local,GFont font,const uint8_t *palette,bool clock24){
+bool panels_draw(GContext *ctx,time_t now,const struct tm *local,GFont font,const uint8_t *caps,const uint8_t *palette,bool clock24){
   if(!s_footer[F_ENABLED])return false;
-  s_font=font;s_palette=palette;s_clock24=clock24;
+  s_font=font;s_caps=caps;s_palette=palette;s_clock24=clock24;
   rect(ctx,0,184,200,44,color(0));
   if(s_page==PANEL_CALENDAR)calendar_draw(ctx,local);else if(s_page!=PANEL_ZONES)graph_draw(ctx,now);
   page_dots(ctx);return s_page!=PANEL_ZONES;

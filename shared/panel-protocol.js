@@ -1,3 +1,4 @@
+import {HOLIDAY_REGIONS} from './calendar.js';
 import {pebbleColor} from './settings.js';
 import {PANEL_PAGES,PANEL_COLOR_ROLES,panelColors} from './panel-settings.js';
 import {environmentIsValid} from './panel-data.js';
@@ -7,7 +8,7 @@ export function encodeFooter(s){
   const f=s.footer,w=f.weather,c=f.calendar,t=f.tide,b=new Uint8Array(FOOTER_SIZE),v=new DataView(b.buffer);
   b.set([1,+f.enabled,f.pages.length,ids.indexOf(f.home),...Array.from({length:5},(_,i)=>f.pages[i]?ids.indexOf(f.pages[i]):255)]);
   b[9]=f.rotationMinutes;b[10]=f.horizon;b[11]=+(w.temperatureUnit==='f');b[12]=['off','probability','amount'].indexOf(w.precipitation);
-  b[13]=+w.daylight;b[14]=+w.grid;b[15]=+w.solarTimes;b[16]=c.weekStart;b[17]=+(c.weeks==='previous-current');b[18]=['sat-sun','fri-sat','none'].indexOf(c.weekends);b[19]=+(c.holidays==='us');b[20]=+(c.todayStyle==='outline');
+  b[13]=+w.daylight;b[14]=+w.grid;b[15]=+w.solarTimes;b[16]=c.weekStart;b[17]=+(c.weeks==='previous-current');b[18]=['sat-sun','fri-sat','none'].indexOf(c.weekends);b[19]=HOLIDAY_REGIONS.findIndex(([id])=>id===c.holidays);b[20]=+(c.todayStyle==='outline');
   const colors=panelColors(s);PANEL_COLOR_ROLES.forEach((role,i)=>b[21+i]=pebbleColor(colors[role]));
   b[29]=+(w.temperatureScale==='fixed');b[30]=+(w.humidityScale==='auto');v.setInt16(31,Math.round(w.temperatureMin*10),true);v.setInt16(33,Math.round(w.temperatureMax*10),true);
   b[35]=+(w.rainUnit==='in');b[36]=+(t.unit==='ft');b[37]=w.refreshMinutes;b[38]=+w.enabled;b[39]=+w.rangeLabels;b[40]=+t.zeroLine;b[41]=+!!t.station;b[42]=+f.shake;

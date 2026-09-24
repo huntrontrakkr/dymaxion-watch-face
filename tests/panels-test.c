@@ -3,8 +3,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include "panel_data.h"
+#include "settings.h"
 static void read_file(const char *path,uint8_t *p,size_t n){FILE *f=fopen(path,"rb");assert(f);assert(fread(p,1,n,f)==n);fclose(f);}
 int main(int argc,char **argv){
+  if(argc==5&&strcmp(argv[1],"holidays")==0){
+    // Every holiday of a region from 1 January of the first year to the end of
+    // the last, read through 14-day calendar windows that start on the day.
+    uint8_t config[FOOTER_SIZE]={0};config[F_HOLIDAYS]=atoi(argv[2]);
+    int year=atoi(argv[3]),last=atoi(argv[4]),month=1,day=1,weekday=(calendar_ordinal(year,1,1)+1)%7;
+    while(year<=last){
+      config[F_WEEK_START]=weekday;CalendarCell days[14];panel_calendar(year,month,day,weekday,config,days);
+      for(int i=0;i<14;i++)if(days[i].holiday&&days[i].year<=last)printf("%04d-%02d-%02d\n",days[i].year,days[i].month,days[i].day);
+      year=days[13].year;month=days[13].month;day=days[13].day;weekday=days[13].weekday;
+      // advance one day past the window's end
+      config[F_WEEK_START]=weekday;panel_calendar(year,month,day,weekday,config,days);
+      year=days[1].year;month=days[1].month;day=days[1].day;weekday=days[1].weekday;
+    }
+    return 0;
+  }
   if(argc==9&&strcmp(argv[1],"calendar")==0){
     uint8_t config[FOOTER_SIZE]={0};config[F_WEEK_START]=atoi(argv[6]);config[F_PREVIOUS]=atoi(argv[7]);config[F_HOLIDAYS]=atoi(argv[8]);
     CalendarCell days[14];panel_calendar(atoi(argv[2]),atoi(argv[3]),atoi(argv[4]),atoi(argv[5]),config,days);

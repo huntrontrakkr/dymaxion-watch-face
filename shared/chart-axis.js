@@ -1,6 +1,4 @@
-import {textWidth} from './type.js';
-// Original narrow optical cut for the vertical range labels.
-// Horizontal labels use the existing Draft Micro font at its native size.
+// Original narrow optical cut for the range labels and the hour axis.
 export const AXIS_GLYPHS={
   '0':['.##.','#..#','#..#','#..#','#..#','#..#','.##.'],
   '1':['..#.','.##.','..#.','..#.','..#.','..#.','.###'],
@@ -43,10 +41,10 @@ export function chartLayout(upper,lower,count,rangeLabels=true,hourWidth=12){
 }
 export const chartX=(layout,index)=>layout.left+Math.trunc(index*(layout.right-layout.left)/(layout.count-1));
 export const chartY=(value,lo,hi,top=CHART.top,bottom=CHART.bottom)=>bottom-Math.max(0,Math.min(bottom-top,Math.trunc((value-lo)*(bottom-top)/Math.max(1,hi-lo))));
-export function chartHourLabels(layout,hours,clock24,font){
+export function chartHourLabels(layout,hours,clock24){
   const labels=[];
   for(let index=0;index<layout.count;index+=layout.step){
-    const text=axisHour(hours[index],clock24),width=textWidth(font,text),tick=chartX(layout,index);
+    const text=axisHour(hours[index],clock24),width=axisTextWidth(text),tick=chartX(layout,index);
     const x=Math.max(CHART.labelLeft,Math.min(CHART.labelRight-width,tick-Math.floor(width/2)));
     labels.push({index,tick,x,width,text});
   }
