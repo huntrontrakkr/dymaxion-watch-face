@@ -8,8 +8,9 @@
 // the retired framing experiment.
 bool display_valid(const uint8_t *p,size_t length){
   if(!p||length!=DISPLAY_SIZE||p[1]>9)return false;
-  // Version 2 byte 2: bit 1 no leading zero, bits 2-3 where place times go.
-  if(p[0]==2)return !(p[2]&~0x0e)&&((p[2]>>2)&3)<ZONE_TIMES_COUNT&&p[3]<MAP_BACKGROUND_COUNT;
+  // Version 2 byte 2: bit 1 no leading zero, bits 2-3 where place times go,
+  // bit 4 their side.
+  if(p[0]==2)return !(p[2]&~0x1e)&&((p[2]>>2)&3)<ZONE_TIMES_COUNT&&p[3]<MAP_BACKGROUND_COUNT;
   return p[0]==1&&p[2]<=3&&p[3]<64&&(p[3]&3)<3&&((p[3]&3)||!p[3]);
 }
 bool display_normalize(uint8_t out[DISPLAY_SIZE],const uint8_t *data,size_t length){

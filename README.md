@@ -38,9 +38,9 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
   points** (a dot wherever the triangles meet), **Fine triangle points** (split
   once more) or **Triangle lines** (every edge dotted). It is baked into spare bits of the map data, so it costs the watch no
   memory. **Composition → The planetary clock → Map background**.
-- Place times can sit beside the clock: the figures shift left and up to three
-  places stack on the right, in the status-line capitals. Choose **Character →
-  Place times**: in the bottom panel (default), beside the clock whenever the
+- Place times can sit beside the clock: the figures shift aside and up to three
+  places stack left of them (or right), in the status-line capitals, with any
+  day offset next to the place's label. Choose **Character → Place times**: in the bottom panel (default), beside the clock whenever the
   panel shows weather, tides or the calendar (or Quick View covers it), or
   always. Works with Chamfer and the Pebble system fonts; the minute transition
   is unchanged.

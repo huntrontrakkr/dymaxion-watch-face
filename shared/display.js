@@ -7,12 +7,13 @@ export const DISPLAY_CODES=Object.freeze({span:0,broad:2,chamfer:4,leco:5,'bitha
 import {MAP_BACKGROUNDS} from './map-background.js';
 import {ZONE_TIMES} from './zone-column.js';
 // Version 2: [2, style, options, map background]. Byte 2: bit 1 no leading zero
-// (clear by default), bits 2-3 index ZONE_TIMES; bit 0 is retired. Byte 3
+// (clear by default), bits 2-3 index ZONE_TIMES, bit 4 puts them on the right;
+// bit 0 is retired. Byte 3
 // indexes MAP_BACKGROUNDS.
 export function encodeDisplay(settings){
   const style=DISPLAY_CODES[settings.clockDisplay],background=MAP_BACKGROUNDS.indexOf(settings.mapBackground??'none'),zones=ZONE_TIMES.indexOf(settings.zoneTimes??'panel');
   if(style===undefined)throw new Error('Invalid clock display.');
   if(background<0)throw new Error('Invalid map background.');
   if(zones<0)throw new Error('Invalid place-time placement.');
-  return new Uint8Array([2,style,(settings.leadingZero===false?2:0)|zones<<2,background]);
+  return new Uint8Array([2,style,(settings.leadingZero===false?2:0)|zones<<2|(settings.zoneSide==='right'?16:0),background]);
 }

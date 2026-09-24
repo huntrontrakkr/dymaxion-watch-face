@@ -18,7 +18,7 @@ Their masks come from `shared/clock-styles.js` and
 `watchface/src/c/clock_styles.c`, which emit the same horizontal runs; the
 watch draws those styles from the same runs when the transition is off.
 With place times beside the clock, the same strip is drawn 36 pixels to the
-left; the transition itself is unchanged.
+right (or left); the transition itself is unchanged.
 
 Each selected tile keeps the old drawing in the face's own ink and ground and
 shrinks toward its centroid, taking its contents with it, until it vanishes into

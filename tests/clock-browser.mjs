@@ -72,7 +72,8 @@ try{
   assert.equal(await page.getByLabel('Place times',{exact:true}).inputValue(),'panel');assert.equal(await beside(),'false');
   await page.getByLabel('Place times',{exact:true}).selectOption('beside-hidden');
   assert.equal(await page.locator('#panel-preview-label').textContent(),'Time zones');assert.equal(await beside(),'false','zones page: times stay in the panel');
-  const column=()=>screen.evaluate(c=>[...c.getContext('2d').getImageData(130,22,70,40).data]);const empty=await column();
+  const column=(x=0)=>screen.evaluate((c,x)=>[...c.getContext('2d').getImageData(x,22,70,40).data],x);const empty=await column();
+  assert.equal(await page.getByLabel('Place times side',{exact:true}).inputValue(),'left');
   await page.locator('#next-panel').click();assert.notEqual(await page.locator('#panel-preview-label').textContent(),'Time zones');
   assert.equal(await beside(),'true','another panel: times move beside the clock');assert.notDeepEqual(await column(),empty);
   assert.match(await screen.getAttribute('data-clock-caption'),/ PM$/,'12-hour AM/PM moves to the status line beside the place times');
@@ -80,6 +81,12 @@ try{
   assert.equal(await beside(),'false');
   await page.locator('#quick-view').check();assert.equal(await beside(),'true','Quick View covers the panel');await page.locator('#quick-view').uncheck();
   await page.getByLabel('Place times',{exact:true}).selectOption('beside');assert.equal(await beside(),'true');
+  const leftColumn=await column(0),rightEmpty=await column(130);
+  await page.getByLabel('Place times side',{exact:true}).selectOption('right');
+  assert.notDeepEqual(await column(130),rightEmpty,'the column moves to the right');assert.notDeepEqual(await column(0),leftColumn);
+  await screen.screenshot({path:'test-results/place-times-right.png'});
+  await page.getByLabel('Place times side',{exact:true}).selectOption('left');
+  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).zoneSide,'left');
   assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).zoneTimes,'beside');
   await screen.screenshot({path:'test-results/place-times-beside.png'});
   await page.getByLabel('Numerical display',{exact:true}).selectOption('broad');assert.equal(await beside(),'false');assert(await page.getByLabel('Place times',{exact:true}).isDisabled(),'Broad fills the width');

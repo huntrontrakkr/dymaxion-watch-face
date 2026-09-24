@@ -297,7 +297,7 @@ static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
     if(hour<10&&!leading_zero())timebuf[0]=' ';
     uint8_t digits[4]={timebuf[0]==' '?10:timebuf[0]-'0',timebuf[1]-'0',timebuf[3]-'0',timebuf[4]-'0'};
     // Beside the place times, the figures shift left and the column fills the right.
-    int cx=s_beside?x+ZONE_COLUMN_SHIFT:x;
+    int cx=s_beside?x+zone_clock_shift(s_display[2]&ZONE_SIDE_RIGHT):x;
     if(s_clock_face)draw_flip_time(ctx,local,now,cx,y);
     else if(s_display[1]>=5)draw_system_time(ctx,timebuf,cx,y);
     else draw_span_time(ctx,digits,cx,y);
@@ -343,8 +343,9 @@ static void caps_span(void *context,int x,int y,int length){CapsPen *pen=context
 // Status line: lining capitals for date and city at the top of the face.
 static void draw_meridiem(GContext *ctx,const char *ampm,int x,int baseline){if(s_caps){CapsPen pen={ctx,color(7)};caps_draw(s_caps,ampm,x,baseline,false,caps_span,&pen);}}
 static int caps_measure(const char *text,const void *font){return caps_width(font,text);}
-// Up to three places stacked beside the clock: label in the place's color,
-// time in ink, A/P and day offset in the accent (shared/zone-column.js).
+// Up to three places stacked beside the clock: label in the place's color with
+// its day offset, time in ink, A/P and day offset in the accent
+// (shared/zone-column.js).
 static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int x,int y){
   int count=0,row=0;
   for(int i=0;i<3;i++)if(s_settings[ENABLED]&(1<<i))count++;
@@ -353,7 +354,7 @@ static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;int delta;bool stale;
     struct tm zone=zone_time(z,now,local,&delta,&stale);char label[8];
     snprintf(label,sizeof(label),"%.7s",(const char *)z);
-    ZoneRow r;zone_row(&r,label,zone.tm_hour,zone.tm_min,is_24(),delta,stale,caps_measure,s_caps);
+    ZoneRow r;zone_row(&r,label,zone.tm_hour,zone.tm_min,is_24(),delta,stale,s_display[2]&ZONE_SIDE_RIGHT,caps_measure,s_caps);
     int base=y+zone_row_baseline(row++,count);
     CapsPen mark={ctx,mark_color(i)},ink={ctx,color(6)},accent={ctx,color(7)};
     caps_draw(s_caps,r.label,x+r.label_x,base,false,caps_span,&mark);

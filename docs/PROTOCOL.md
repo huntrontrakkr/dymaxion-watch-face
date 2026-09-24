@@ -170,7 +170,8 @@ Bitham 42 Bold, Bitham 42 Light, Bitham 42 Medium Numbers) and 9 Leco Delta
 (Leco 42 with 60-degree corners), drawn from the bundled `clock-glyphs.bin`
 figures so the minute transition can run over them. Byte 2 bits 2–3 place the
 zone times: 0 in the bottom panel, 1 beside the clock whenever the band shows
-something else (another panel, or a Quick View card), 2 always beside the clock.
+something else (another panel, or a Quick View card), 2 always beside the clock;
+bit 4 puts them right of the clock instead of left (the default).
 Beside the clock needs Chamfer or a system font (styles 4–9); Broad and Span
 fill the strip. Byte 2 bit 1 turns the leading zero off (the first digit slot stays blank for
 hours under ten). Bit 1 is clear in every older packet, so the zero stays on. Byte 3 selects the

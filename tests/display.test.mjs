@@ -24,6 +24,9 @@ test('display preferences migrate, validate, and travel separately from the stab
   assert.equal(defaults().zoneTimes,'panel','place times stay in the panel by default');
   assert.deepEqual([...encodeDisplay({...defaults(),zoneTimes:'beside-hidden'})],[2,4,4,0]);
   assert.deepEqual([...encodeDisplay({...defaults(),zoneTimes:'beside',leadingZero:false})],[2,4,10,0]);
+  assert.equal(defaults().zoneSide,'left','place times sit left of the clock by default');
+  assert.deepEqual([...encodeDisplay({...defaults(),zoneTimes:'beside',zoneSide:'right'})],[2,4,24,0]);
+  assert.throws(()=>validateSettings({...s,zoneSide:'top'},zoneExists));
   assert.equal(validateSettings({...s,zoneTimes:'beside'},zoneExists).zoneTimes,'beside');
   assert.equal(validateSettings(s,zoneExists).zoneTimes,'panel','older files keep place times in the panel');
   assert.throws(()=>validateSettings({...s,zoneTimes:'top'},zoneExists));

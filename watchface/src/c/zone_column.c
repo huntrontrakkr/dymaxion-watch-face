@@ -11,7 +11,10 @@ int zone_row_baseline(int index,int count){
   int block=7+14*(count-1);
   return 2+(35-block)/2+index*14+7;
 }
-void zone_row(ZoneRow *row,const char *label,int hour,int minute,bool clock24,int delta,bool stale,ZoneMeasure measure,const void *font){
+// The label with its day offset right after it; time and A/P in fixed slots
+// flush right, so the times line up in one column.
+void zone_row(ZoneRow *row,const char *label,int hour,int minute,bool clock24,int delta,bool stale,bool right,ZoneMeasure measure,const void *font){
+  int x=right?200-ZONE_COLUMN_WIDTH:ZONE_COLUMN_INSET,end=right?200-ZONE_COLUMN_INSET:ZONE_COLUMN_WIDTH;
   int h=clock24?hour:(hour%12?hour%12:12);
   unsigned hh=(unsigned)h%100,mm=(unsigned)minute%60;
   row->time[0]='0'+hh/10;row->time[1]='0'+hh%10;row->time[2]=':';row->time[3]='0'+mm/10;row->time[4]='0'+mm%10;row->time[5]=0;
@@ -19,14 +22,12 @@ void zone_row(ZoneRow *row,const char *label,int hour,int minute,bool clock24,in
   if(stale)snprintf(row->day,sizeof(row->day),"?");
   else if(delta)snprintf(row->day,sizeof(row->day),"%+d",delta>9?9:delta<-9?-9:delta);
   else row->day[0]=0;
-  // Fixed slots for the day offset and A/P keep the times in one column.
-  row->day_x=ZONE_COLUMN_RIGHT-measure(row->day,font);
-  int group_end=ZONE_COLUMN_RIGHT-measure("+1",font)-2;
-  row->suffix_x=group_end-(clock24?0:measure("P",font));
+  row->suffix_x=end-(clock24?0:measure("P",font));
   row->time_x=row->suffix_x-measure(row->time,font);
+  int room=row->time_x-ZONE_COLUMN_GAP-x-(row->day[0]?measure(row->day,font)+1:0);
   size_t n=0;
   for(;n<7&&label[n];n++)row->label[n]=(label[n]>='a'&&label[n]<='z')?label[n]-'a'+'A':label[n];
   row->label[n]=0;
-  while(n&&measure(row->label,font)>row->time_x-3-ZONE_COLUMN_X)row->label[--n]=0;
-  row->label_x=ZONE_COLUMN_X;
+  while(n&&measure(row->label,font)>room)row->label[--n]=0;
+  row->label_x=x;row->day_x=x+measure(row->label,font)+1;
 }

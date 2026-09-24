@@ -22,7 +22,7 @@ import {cityControls} from '../shared/city-controls.js';
 import {cityIsUsable,cityHasPosition,clockCaption} from '../shared/city.js';
 import {locationService} from '../tools/location-service.js';
 import {displayControls} from '../shared/display-controls.js';
-import {ZONE_COLUMN,zonesBeside,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
+import {zoneColumn,zonesBeside,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
 import {minuteFlipClock,drawFlipPixels,FLIP_FACES,flipOffset} from '../shared/minute-flip.js';
 
 const $=id=>document.getElementById(id),zoneExists=tz=>!!moment.tz.zone(tz);
@@ -53,7 +53,7 @@ let footerPage=settings.footer.home,panelChanged=Date.now(),environmentMode='sam
 let currentCity={name:'Norfolk',sample:true,lat:36.9,lon:-76.3};
 const cityLocation=locationService({getSettings:()=>settings,storage:localStorage,send:city=>{currentCity=city;render();}});
 const cityEditor=cityControls($('city-controls'),()=>settings,value=>{settings=validateSettings({...settings,location:value},zoneExists);save();},()=>cityLocation.refresh());
-const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes};sync();save();});
+const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zoneSide:value.zoneSide};sync();save();});
 const paletteEditor=paletteControls($('palette-controls'),()=>settings,patch=>{settings=validateSettings({...settings,...patch},zoneExists);sync();save();});
 const environment=environmentService({getSettings:()=>settings,storage:localStorage,send:(kind,data)=>{liveData[kind]=data;render();}});
 const panelEditor=panelControls($('panel-controls'),()=>settings,footer=>{
@@ -247,14 +247,14 @@ function render(){
     const value=hourText(h,settings.leadingZero)+':'+two(minute);
     // Every horizontal style animates its minute change through the same shrink.
     const style=settings.clockDisplay;
-    minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset,beside].join('/'),settings.motion&&!reducedMotion.matches&&!document.hidden,style);
+    minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset,beside,settings.zoneSide].join('/'),settings.motion&&!reducedMotion.matches&&!document.hidden,style);
     // Beside the place times, the figures shift left and the column fills the right.
-    drawFlipPixels(ctx,minuteClock.frame(),tx+(beside?ZONE_COLUMN.shift:0),ty+flipOffset(style),{ink:pal.ink,background:pal.bg});
+    drawFlipPixels(ctx,minuteClock.frame(),tx+(beside?zoneColumn(settings.zoneSide).shift:0),ty+flipOffset(style),{ink:pal.ink,background:pal.bg});
     if(beside){
       const font=watchTypeface.lining.small,shown=settings.places.map((p,i)=>[p,i]).filter(([p])=>p.on);
       shown.forEach(([p,i],row)=>{
         const there=moment(now).tz(p.tz),delta=Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000);
-        const r=zoneRow({label:p.label,hour:there.hours(),minute:there.minutes(),clock24:use24(),delta},t=>textWidth(font,t)),base=ty+zoneRowBaseline(row,shown.length);
+        const r=zoneRow({label:p.label,hour:there.hours(),minute:there.minutes(),clock24:use24(),delta,side:settings.zoneSide},t=>textWidth(font,t)),base=ty+zoneRowBaseline(row,shown.length);
         drawBitmapText(ctx,font,r.label,tx+r.labelX,base,markColor(p,settings,i));drawBitmapText(ctx,font,r.time,tx+r.timeX,base,pal.ink);
         drawBitmapText(ctx,font,r.suffix,tx+r.suffixX,base,pal.accent);drawBitmapText(ctx,font,r.day,tx+r.dayX,base,pal.accent);
       });
