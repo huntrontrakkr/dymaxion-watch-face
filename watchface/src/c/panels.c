@@ -178,16 +178,6 @@ static void graph_draw(GContext *ctx,time_t now){
     axis_label(ctx,lower,layout.left-3-chart_text_width(lower),layout.bottom-6,color(6));
   }
   line(ctx,layout.left,layout.axis,layout.right,layout.axis,color(5));
-  // High (up) and low (down) tides as small triangles standing on the baseline.
-  if(!tide&&!humidity&&s_footer[F_TIDE_MARKS]&&s_footer[F_TIDE_ON]&&environment_start_index(s_tide,(uint32_t)now)>=0&&!(s_tide[2]&2)){
-    uint32_t times[16],t0=read_u32(p+8)+(uint32_t)start*3600,span=(uint32_t)(count-1)*3600;bool highs[16];
-    int n=tide_extremes(s_tide,times,highs,16);
-    for(int k=0;k<n;k++){
-      if(times[k]<t0||times[k]>t0+span)continue;
-      int tx=layout.left+(int)((int64_t)(times[k]-t0)*(layout.right-layout.left)/span);
-      for(int r=0;r<3;r++){int half=highs[k]?r:2-r;for(int dx=-half;dx<=half;dx++)if(tx+dx>=layout.left&&tx+dx<=layout.right)rect(ctx,tx+dx,layout.axis-3+r,1,1,custom(F_TIDE_COLOR));}
-    }
-  }
   for(int i=0;i<count;i++){
     bool major=i%layout.step==0;int x=chart_x(layout,i);
     line(ctx,x,layout.axis+1,x,layout.axis+(major?2:1),major?color(6):color(5));

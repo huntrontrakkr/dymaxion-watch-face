@@ -59,17 +59,6 @@ export function sampleEnvironment(now=Date.now()){
     samples:Array.from({length:SAMPLE_COUNT},(_,i)=>({height:Math.round(85+80*Math.cos((i-3)*Math.PI/6.2)),hour:weather.samples[i].hour}))};
   return {weather,tide};
 }
-// High and low tides from the hourly predictions: local extrema, refined by a
-// parabola through the neighbouring hours. Mirrored in panel_data.c.
-export function tideExtremes(tide){
-  const h=tide?.samples?.map(p=>p.height)||[],out=[];
-  for(let i=1;i+1<h.length;i++){
-    const high=h[i]>h[i-1]&&h[i]>=h[i+1],low=h[i]<h[i-1]&&h[i]<=h[i+1];if(!high&&!low)continue;
-    const curve=h[i-1]-2*h[i]+h[i+1];
-    out.push({high,time:tide.start+i*HOUR+(curve?Math.trunc(1800*(h[i-1]-h[i+1])/curve):0)});
-  }
-  return out;
-}
 export function dataWindow(data,now,horizon){
   if(!data?.samples?.length)return null;
   const start=Math.max(0,Math.floor((now/1000-data.start)/HOUR)),samples=data.samples.slice(start,start+horizon+1);

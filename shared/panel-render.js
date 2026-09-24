@@ -1,5 +1,5 @@
 import {calendarCells} from './calendar.js';
-import {dataWindow,tideExtremes} from './panel-data.js';
+import {dataWindow} from './panel-data.js';
 import {drawBitmapText,textWidth} from './type.js';
 import {panelColors} from './panel-settings.js';
 import {drawPixelLine} from './pixels.js';
@@ -71,16 +71,6 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       if(w.rangeLabels){drawAxisText(ctx,upper,layout.left-3,layout.top,pal.ink,'right');drawAxisText(ctx,lower,layout.left-3,bottom-6,pal.ink,'right');}
       line(layout.left,layout.axis,layout.right,layout.axis,pal.edge);
       for(let i=0;i<samples.length;i++){const major=i%layout.step===0;line(x(i),layout.axis+1,x(i),layout.axis+(major?2:1),major?pal.ink:pal.edge);}
-      // High (up) and low (down) tides as small triangles standing on the baseline.
-      const tideSeries=data.tide;
-      if(!tide&&!humidity&&w.tideMarks&&tideSeries&&(f.tide.station||tideSeries.demo)&&!tideSeries.error){
-        const t0=series.start+window.start*3600,span=(samples.length-1)*3600;
-        for(const e of tideExtremes(tideSeries)){
-          if(e.time<t0||e.time>t0+span)continue;
-          const tx=layout.left+Math.trunc((e.time-t0)*(layout.right-layout.left)/span);
-          for(let r=0;r<3;r++){const half=e.high?r:2-r;for(let dx=-half;dx<=half;dx++)if(tx+dx>=layout.left&&tx+dx<=layout.right)rect(tx+dx,layout.axis-3+r,1,1,c.tide);}
-        }
-      }
       // Hour labels use the compact chart numerals, smaller than the header.
       for(const label of chartHourLabels(layout,samples.map(p=>p.hour),clock24))drawAxisText(ctx,label.text,label.x,layout.labelBaseline-6,pal.ink);
     }

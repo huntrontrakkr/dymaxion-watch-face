@@ -15,8 +15,8 @@ bool footer_valid(const uint8_t *p,unsigned length){
   int lo=read_i16(p+F_TEMP_MIN),hi=read_i16(p+F_TEMP_MAX);if(lo< -1500||hi>1500||hi-lo<10)return false;
   int rain=(uint16_t)read_i16(p+F_RAIN_MAX),tlo=read_i16(p+F_TIDE_MIN),thi=read_i16(p+F_TIDE_MAX);
   if(rain<1||rain>1000||p[F_TIDE_FIXED]>1||tlo< -10000||thi>10000||thi-tlo<10)return false;
-  if(p[F_WEATHER_PLACE]>2||p[F_HUMID_LINE]>1||p[F_TIDE_MARKS]>1)return false;
-  for(int i=53;i<FOOTER_SIZE;i++)if(p[i])return false;
+  if(p[F_WEATHER_PLACE]>2||p[F_HUMID_LINE]>1)return false;
+  for(int i=52;i<FOOTER_SIZE;i++)if(p[i])return false;
   return true;
 }
 static bool label_valid(const uint8_t *p){if(p[7])return false;for(int i=0;i<7&&p[i];i++)if(!((p[i]>='A'&&p[i]<='Z')||(p[i]>='0'&&p[i]<='9')||p[i]==' '||p[i]=='-'||p[i]=='+'))return false;return true;}
@@ -33,16 +33,6 @@ bool environment_valid(const uint8_t *p,unsigned length,bool tide){
     else if(value< -1000||value>650||s[2]>100||s[3]>100||(uint16_t)read_i16(s+4)>5000||s[6]>1||s[7]>23)return false;
   }
   return true;
-}
-int tide_extremes(const uint8_t *p,uint32_t *times,bool *high,int max){
-  int n=0,count=p[1];uint32_t start=read_u32(p+8);
-  for(int i=1;i+1<count&&n<max;i++){
-    int a=read_i16(p+48+(i-1)*4),b=read_i16(p+48+i*4),c=read_i16(p+48+(i+1)*4);
-    bool up=b>a&&b>=c,down=b<a&&b<=c;if(!up&&!down)continue;
-    int curve=a-2*b+c;
-    times[n]=start+(uint32_t)i*3600+(curve?1800*(a-c)/curve:0);high[n]=up;n++;
-  }
-  return n;
 }
 int environment_start_index(const uint8_t *p,uint32_t now){
   if(!p[1])return -1;

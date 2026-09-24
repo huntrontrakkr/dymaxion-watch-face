@@ -31,13 +31,7 @@ step toward the ground, so the temperature line leads; the header names the
 peak. Humidity joins the same chart as a dotted line in the humidity color on
 its own fixed 0–100% scale (it has no range labels; the header reads it out),
 so temperature, humidity, rain and daylight share one timeline. It can be turned
-off in the weather settings. When a tide station is set, high and low tides
-appear as small triangles standing on the baseline (up for high, down for low)
-in the tide color: timing only, without adding a fourth line. Times come from
-the hourly predictions, each extreme refined by a parabola through its
-neighbouring hours (`tideExtremes`, `tide_extremes`); the tide panel keeps the
-full curve and heights. The phone fetches NOAA predictions whenever a station
-is set and either the tide panel or the weather chart's tide marks are on. Night carries a dotted field and a grey daylight strip, shaded per pixel
+off in the weather settings. Tides stay on their own panel. Night carries a dotted field and a grey daylight strip, shaded per pixel
 column from the sun's altitude at the wearer's position (the phone's rounded
 location; the forecast place when there is none, such as a manual city). The
 edges fall at the actual sunrise and sunset (-0.833°), and the header's RISE/SET
@@ -80,10 +74,10 @@ Native Emery screenshots, with actual forecast and NOAA response data:
 | Page | Display | Configuration |
 | --- | --- | --- |
 | Time zones | Existing three place clocks | Places and layout controls remain available |
-| Weather | One chart: temperature line, dotted humidity line (fixed 0–100%), dimmed precipitation bars, daylight strip/night dots, high/low tide marks; header gives temperature, humidity and next rise/set | Place, °C/°F, 12/24/48 hours, probability/amount/off, mm/in, rain scale, automatic/fixed temperature range, refresh interval |
+| Weather | One chart: temperature line, dotted humidity line (fixed 0–100%), dimmed precipitation bars, daylight strip/night dots; header gives temperature, humidity and next rise/set | Place, °C/°F, 12/24/48 hours, probability/amount/off, mm/in, rain scale, automatic/fixed temperature range, refresh interval |
 | Calendar | Weekday labels and fourteen dates, with today highlighted | Sunday (default), Monday or Saturday start; previous/current or current/next week; weekend pattern in one weekend color; optional public holidays for the United States (federal, observed dates), Canada, Mexico, the United Kingdom (England and Wales), Germany, France or Australia; filled/outlined today |
 | Humidity | Relative humidity alone (not in the default rotation; the weather chart carries it) | Fixed 0–100% or fitted range; uses the weather location and cache |
-| Tide | Predicted water-height curve and next high/low time (optional: not in the default rotation, since the weather chart marks highs and lows; switch it on under the panel list) | NOAA station, station time zone, meters/feet, automatic/fixed scale, zero line |
+| Tide | Predicted water-height curve and next high/low time (optional: not in the default rotation; switch it on in the panel list. NOAA predictions are fetched only while it is included) | NOAA station, station time zone, meters/feet, automatic/fixed scale, zero line |
 
 Chart range labels, faint midline and colors are configurable. Colors follow
 the active theme by default; every light-ground palette and the six palettes

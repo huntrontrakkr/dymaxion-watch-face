@@ -5,7 +5,7 @@ import {execFileSync} from 'node:child_process';
 import {defaults,validateSettings} from '../shared/settings.js';
 import {zoneExists} from '../shared/protocol.js';
 import {encodeFooter,encodeEnvironment} from '../shared/panel-protocol.js';
-import {normalizeForecast,normalizeTide,dataWindow,tideUrls,environmentIsValid,tideExtremes,sampleEnvironment} from '../shared/panel-data.js';
+import {normalizeForecast,normalizeTide,dataWindow,tideUrls,environmentIsValid} from '../shared/panel-data.js';
 import {calendarCells,usHoliday,isHoliday,HOLIDAY_REGIONS} from '../shared/calendar.js';
 import {environmentService} from '../tools/environment-service.js';
 const read=name=>JSON.parse(readFileSync('tests/fixtures/'+name+'.json','utf8'));
@@ -36,8 +36,8 @@ test('environment refresh caches, rate limits failures and discards responses fo
   let s=defaults(),now=meta.capturedAt,calls=0,fail=false;const messages=[],store=new Map();
   s.footer.tide={...s.footer.tide,...meta.station};
   const service=environmentService({getSettings:()=>s,now:()=>now,storage:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v)},send:(kind,data)=>messages.push({kind,data}),getJSON:async url=>{calls++;if(fail)throw new Error('Offline');return url.includes('open-meteo')?rawWeather:url.includes('interval=hilo')?extrema:hourly;}});
-  // The default rotation has no tide panel; the weather chart's tide marks still need NOAA data.
-  assert.equal(s.footer.pages.includes('tide'),false);
+  // The tide panel is optional; with it in the rotation, NOAA predictions are fetched.
+  s.footer.pages=[...s.footer.pages,'tide'];
   await service.refresh();assert.equal(calls,3);assert(messages.some(m=>m.kind==='tide'&&m.data.samples.length===49));
   await service.refresh();assert.equal(calls,3,'fresh data must not cause more requests');
   s.footer.tide.unit='ft';s.footer.tide.scale='fixed';s.footer.horizon=12;
@@ -45,8 +45,7 @@ test('environment refresh caches, rate limits failures and discards responses fo
   now+=61*60000;fail=true;await service.refresh();assert.equal(calls,4);assert(messages.some(m=>m.kind==='weather'&&m.data.error&&m.data.samples.length===49));
   await service.refresh();assert.equal(calls,4,'network failures have a five-minute backoff');
   let resolve;const pending=[],race=environmentService({getSettings:()=>s,now:()=>meta.capturedAt,storage:{getItem:()=>null,setItem:()=>{}},send:(kind,data)=>pending.push({kind,data}),getJSON:()=>new Promise(r=>{resolve=r;})});
-  // A lone weather request: tide marks off so the tide is not fetched alongside it.
-  s.footer.pages=['weather'];s.footer.home='weather';s.footer.weather.tideMarks=false;const work=race.refresh();s.places[0]={...s.places[1]};resolve(rawWeather);await work;
+  s.footer.pages=['weather'];s.footer.home='weather';const work=race.refresh();s.places[0]={...s.places[1]};resolve(rawWeather);await work;
   assert(!pending.some(m=>m.data.samples?.length),'an old location must never overwrite the new one');
 });
 test('native panels validate actual provider packets and reject accidental shake patterns',()=>{
@@ -54,13 +53,6 @@ test('native panels validate actual provider packets and reject accidental shake
   writeFileSync('test-results/footer.bin',encodeFooter(s));writeFileSync('test-results/weather.bin',encodeEnvironment(weather,'weather'));writeFileSync('test-results/tide.bin',encodeEnvironment(tide,'tide'));
   execFileSync('cc',['-std=c11','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/panels-test.c','watchface/src/c/panel_data.c','watchface/src/c/settings.c','-o','test-results/panels-test']);
   execFileSync('test-results/panels-test',['test-results/footer.bin','test-results/weather.bin','test-results/tide.bin']);
-  // High and low tides for the weather chart agree between browser and watch.
-  for(const t of [tide,sampleEnvironment(Date.UTC(2026,8,23,16,38)).tide]){
-    writeFileSync('test-results/extremes.bin',encodeEnvironment(t,'tide'));
-    const native=execFileSync('test-results/panels-test',['extremes','test-results/extremes.bin'],{encoding:'utf8'}).trim().split('\n');
-    const expected=tideExtremes(t).slice(0,16).map(e=>`${e.time} ${+e.high}`);
-    assert(expected.length>=6);assert.deepEqual(native,expected);
-  }
   for(const iso of ['2026-12-30','2027-01-01','2028-02-29','2026-03-08','2026-11-01','2027-06-19','2021-12-31'])for(const weekStart of [0,1,6])for(const weeks of ['current-next','previous-current']){
     const d=new Date(iso+'T12:00:00Z'),cfg={...s.footer.calendar,weekStart,weeks,holidays:'us'};
     const expected=calendarCells(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate(),cfg).map(c=>[c.year,c.month+1,c.day,c.weekday,+c.today,+c.holiday].join(','));

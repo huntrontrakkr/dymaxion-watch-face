@@ -36,9 +36,9 @@ try{
   await page.getByRole('button',{name:'Load live data',exact:true}).click();await page.waitForFunction(()=>!!localStorage.getItem('dymaxion-environment-weather'));
   await page.locator('#screen').screenshot({path:'test-results/panel-weather-live.png'});
   await page.getByText('NOAA tides',{exact:true}).click();await page.getByLabel('Tide station',{exact:true}).selectOption('8518750');
-  await page.waitForFunction(()=>!!localStorage.getItem('dymaxion-environment-tide'));
-  // The tide panel is optional: tide data already arrived for the weather chart's marks.
+  // The tide panel is optional; including it starts the NOAA download.
   await page.getByLabel('Include Tide',{exact:true}).check();
+  await page.waitForFunction(()=>!!localStorage.getItem('dymaxion-environment-tide'));
   await page.getByLabel('Starting panel',{exact:true}).selectOption('tide');await page.locator('#screen').screenshot({path:'test-results/panel-tide-live.png'});
   await page.getByLabel('Tide height units',{exact:true}).selectOption('ft');assert.equal(await page.getByLabel('Tide maximum',{exact:true}).inputValue(),'9.8');
   await page.getByLabel('Tide height units',{exact:true}).selectOption('m');
