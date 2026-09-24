@@ -42,7 +42,7 @@ export function chartLayout(upper,lower,count,rangeLabels=true,hourWidth=12){
   return {...CHART,left,step,count};
 }
 export const chartX=(layout,index)=>layout.left+Math.trunc(index*(layout.right-layout.left)/(layout.count-1));
-export const chartY=(value,lo,hi)=>CHART.bottom-Math.max(0,Math.min(CHART.bottom-CHART.top,Math.trunc((value-lo)*(CHART.bottom-CHART.top)/Math.max(1,hi-lo))));
+export const chartY=(value,lo,hi,top=CHART.top,bottom=CHART.bottom)=>bottom-Math.max(0,Math.min(bottom-top,Math.trunc((value-lo)*(bottom-top)/Math.max(1,hi-lo))));
 export function chartHourLabels(layout,hours,clock24,font){
   const labels=[];
   for(let index=0;index<layout.count;index+=layout.step){

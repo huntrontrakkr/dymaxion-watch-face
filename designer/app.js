@@ -249,7 +249,7 @@ function render(){
     paintText(two(time.h)+':'+two(time.m),x+2,y+31,16,pal.ink);if(!use24())paintText(time.ampm[0],x+53,y+30,11,pal.accent);
     if(animation&&i===activePlace)strokeLine(x,y+35,x+59,y+35,ink);
   });
-  drawFooter(ctx,settings,footerPage,{...(environmentMode==='sample'?sampleEnvironment(+now):liveData),palette:pal},+now,watchTypeface.text.small,use24());
+  drawFooter(ctx,settings,footerPage,{...(environmentMode==='sample'?sampleEnvironment(+now):liveData),palette:pal},+now,watchTypeface.lining.small,use24());
   $('panel-preview-label').textContent=settings.footer.enabled?PANEL_PAGES.find(([id])=>id===footerPage)[1]:'Time zones';
   $('data-state').textContent=environmentMode==='sample'?'Example curves for layout preview. Live data is available below.':`Live forecast for ${settings.places[settings.footer.weather.place].name}. ${liveData.weather?.error?'Weather update unavailable; cached data is marked OLD.':''} ${liveData.tide?.error?'NOAA update unavailable.':''}`;
   ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,18);

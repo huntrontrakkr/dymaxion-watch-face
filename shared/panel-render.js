@@ -40,17 +40,20 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       if(!right&&!tide&&!humidity&&w.precipitation!=='off')right=w.precipitation==='probability'?`RAIN ${Math.max(...samples.map(p=>p.probability))}%`:`MAX ${(Math.max(...samples.map(p=>p.rain))/10/(w.rainUnit==='in'?25.4:1)).toFixed(w.rainUnit==='in'?2:1)}${w.rainUnit.toUpperCase()}`;
       text(title,4,191);text(right,196,191,pal.accent,'right');
       const upper=axisValue(hi,tide),lower=axisValue(lo,tide),layout=chartLayout(upper,lower,samples.length,w.rangeLabels,textWidth(font,clock24?'23':'12A'));
-      const ink=tide?c.tide:humidity?c.humidity:c.temperature,plotHeight=layout.bottom-layout.top+1;
-      const x=i=>chartX(layout,i),y=n=>chartY(n,lo,hi);
+      const ink=tide?c.tide:humidity?c.humidity:c.temperature;
+      // Rain gets its own strip under the temperature line rather than a second,
+      // unlabelled scale inside the same plot.
+      const rainBand=!tide&&!humidity&&w.precipitation!=='off'?4:0,bottom=rainBand?layout.bottom-rainBand-1:layout.bottom;
+      const x=i=>chartX(layout,i),y=n=>chartY(n,lo,hi,layout.top,bottom);
       samples.forEach((p,i)=>{
         const end=x(Math.min(i+1,samples.length-1));
-        if(!tide&&w.daylight){line(x(i),layout.daylight,end,layout.daylight,p.day?pal.accent:pal.edge);if(!p.day)for(let xx=x(i);xx<end;xx++)if(xx%4===0)for(let yy=layout.top+2;yy<=layout.bottom;yy+=4)rect(xx,yy,1,1,pal.edge);}
-        if(!tide&&!humidity&&w.precipitation!=='off'){const rain=Math.min(plotHeight,Math.trunc(w.precipitation==='probability'?p.probability*plotHeight/100:p.rain*plotHeight/(w.rainMax*10)));if(rain)rect(x(i),layout.bottom+1-rain,Math.min(3,Math.max(1,end-x(i)-1),layout.right-x(i)+1),rain,c.rain);}
+        if(!tide&&w.daylight)line(x(i),layout.daylight,end,layout.daylight,p.day?pal.accent:pal.edge);
+        if(rainBand){const rain=Math.min(rainBand,Math.ceil(w.precipitation==='probability'?p.probability*rainBand/100:p.rain*rainBand/(w.rainMax*10)));if(rain)rect(x(i),layout.bottom+1-rain,Math.min(3,Math.max(1,end-x(i)-1),layout.right-x(i)+1),rain,c.rain);}
       });
-      if(w.grid)for(let xx=layout.left;xx<=layout.right;xx+=4)rect(xx,Math.trunc((layout.top+layout.bottom)/2),1,1,pal.edge);
+      if(w.grid)for(let xx=layout.left;xx<=layout.right;xx+=4)rect(xx,Math.trunc((layout.top+bottom)/2),1,1,pal.edge);
       if(tide&&f.tide.zeroLine&&lo<0&&hi>0)for(let xx=layout.left;xx<=layout.right;xx+=4)rect(xx,y(0),Math.min(2,layout.right-xx+1),1,pal.edge);
       for(let i=1;i<samples.length;i++)line(x(i-1),y(values[i-1]),x(i),y(values[i]),ink);
-      if(w.rangeLabels){drawAxisText(ctx,upper,layout.left-3,layout.top,ink,'right');drawAxisText(ctx,lower,layout.left-3,layout.bottom-6,ink,'right');}
+      if(w.rangeLabels){drawAxisText(ctx,upper,layout.left-3,layout.top,pal.ink,'right');drawAxisText(ctx,lower,layout.left-3,bottom-6,pal.ink,'right');}
       line(layout.left,layout.axis,layout.right,layout.axis,pal.edge);
       for(let i=0;i<samples.length;i++){const major=i%layout.step===0;line(x(i),layout.axis+1,x(i),layout.axis+(major?2:1),major?pal.ink:pal.edge);}
       for(const label of chartHourLabels(layout,samples.map(p=>p.hour),clock24,font))text(label.text,label.x,layout.labelBaseline);
