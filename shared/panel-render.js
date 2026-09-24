@@ -47,7 +47,7 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       const x=i=>chartX(layout,i),y=n=>chartY(n,lo,hi,layout.top,bottom);
       samples.forEach((p,i)=>{
         const end=x(Math.min(i+1,samples.length-1));
-        if(!tide&&w.daylight)line(x(i),layout.daylight,end,layout.daylight,p.day?pal.accent:pal.edge);
+        if(!tide&&w.daylight){line(x(i),layout.daylight,end,layout.daylight,p.day?pal.accent:pal.edge);if(!p.day)for(let xx=x(i);xx<end;xx++)if(xx%4===0)for(let yy=layout.top+2;yy<=bottom;yy+=4)rect(xx,yy,1,1,pal.edge);}
         if(rainBand){const rain=Math.min(rainBand,Math.ceil(w.precipitation==='probability'?p.probability*rainBand/100:p.rain*rainBand/(w.rainMax*10)));if(rain)rect(x(i),layout.bottom+1-rain,Math.min(3,Math.max(1,end-x(i)-1),layout.right-x(i)+1),rain,c.rain);}
       });
       if(w.grid)for(let xx=layout.left;xx<=layout.right;xx+=4)rect(xx,Math.trunc((layout.top+bottom)/2),1,1,pal.edge);

@@ -50,9 +50,11 @@ export function tideUrls(station,now=Date.now()){
 }
 // Clearly labelled workshop examples. These are never fetched or sent by the phone.
 export function sampleEnvironment(now=Date.now()){
-  const start=Math.floor(now/3600000)*HOUR;
-  const weather={kind:'weather',start,fetched:Math.floor(now/1000),label:'TEMP',rise:start+7*HOUR,set:start+19*HOUR,riseMinute:6*60+42,setMinute:18*60+48,demo:true,error:false,
-    samples:Array.from({length:SAMPLE_COUNT},(_,i)=>({temperature:Math.round(210+55*Math.sin((i-3)/24*Math.PI*2)),humidity:Math.round(64-18*Math.sin((i-3)/24*Math.PI*2)),probability:Math.round(70*Math.exp(-(((i-14)/5)**2))),rain:Math.round(24*Math.exp(-(((i-14)/3)**2))),day:i%24>=7&&i%24<19?1:0,hour:(new Date(start*1000).getHours()+i)%24}))};
+  const start=Math.floor(now/3600000)*HOUR,first=new Date(start*1000).getHours(),next=h=>start+((h-first+24)%24)*HOUR;
+  // Keyed to the local clock hour: daylight 07-19, warmest mid-afternoon.
+  const weather={kind:'weather',start,fetched:Math.floor(now/1000),label:'TEMP',rise:next(7),set:next(19),riseMinute:6*60+42,setMinute:18*60+48,demo:true,error:false,
+    samples:Array.from({length:SAMPLE_COUNT},(_,i)=>{const hour=(first+i)%24,wave=Math.sin((hour-9)/24*Math.PI*2);
+      return {temperature:Math.round(210+55*wave),humidity:Math.round(64-18*wave),probability:Math.round(70*Math.exp(-(((i-14)/5)**2))),rain:Math.round(24*Math.exp(-(((i-14)/3)**2))),day:hour>=7&&hour<19?1:0,hour};})};
   const tide={kind:'tide',start,fetched:Math.floor(now/1000),label:'TIDE',station:'',high:start+3*HOUR,low:start+9*HOUR,highHeight:170,lowHeight:12,highMinute:540,lowMinute:915,demo:true,error:false,
     samples:Array.from({length:SAMPLE_COUNT},(_,i)=>({height:Math.round(85+80*Math.cos((i-3)*Math.PI/6.2)),hour:weather.samples[i].hour}))};
   return {weather,tide};
