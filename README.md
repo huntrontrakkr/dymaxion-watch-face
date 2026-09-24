@@ -36,7 +36,8 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
 - An optional background behind the map, edge to edge and from the map's top
   to its bottom: the map's own triangle lattice split once, as **Triangle
   points** (a dot wherever the triangles meet), **Fine triangle points** (split
-  once more) or **Triangle lines** (every edge dotted). It is baked into spare bits of the map data, so it costs the watch no
+  once more), **Triangle lines** (every edge dotted) or **Fold tabs** (the
+  dashed glue tabs of the cut-out sheet the Dymaxion map was sold as). It is baked into spare bits of the map data, so it costs the watch no
   memory. **Composition → The planetary clock → Map background**.
 - The status line names the current city, using the phone's location at most
   hourly, or a manual name. The workshop labels Norfolk as an example until you

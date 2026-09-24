@@ -171,7 +171,7 @@ Bitham 42 Bold, Bitham 42 Light, Bitham 42 Medium Numbers) and 9 Leco Delta
 figures so the minute transition can run over them. Byte 2 bit 1 turns the leading zero off (the first digit slot stays blank for
 hours under ten). Bit 1 is clear in every older packet, so the zero stays on. Byte 3 selects the
 map background: 0 none, 1 triangle points, 2 triangle lines, 3 fine triangle
-points (the lattice split twice). Background *n* is
+points (the lattice split twice), 4 fold tabs. Background *n* is
 flag bit `4 << n` of each empty pixel in `map-0.bin` byte 3, drawn in the
 palette's edge colour.
 Stacked time always uses Draft. Every horizontal style uses a temporary 400 ms
