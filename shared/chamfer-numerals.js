@@ -72,6 +72,9 @@ export function straightenSeven(mask, {width: w = 6, foot = 6, top = 6, SS = 8} 
     }
     if (n * 2 >= SS * SS) out[y * W + x] = 1;
   }
+  // Round the foot as the other figures do: inset the last row a pixel each side.
+  const last = (H - 1) * W, inked = [...Array(W).keys()].filter(x => out[last + x]);
+  if (inked.length > 2) { out[last + inked[0]] = 0; out[last + inked.at(-1)] = 0; }
   return out;
 }
 export const CHAMFER_MASK_BYTES = Math.ceil(digitWidth * capHeight / 8);
