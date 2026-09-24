@@ -24,7 +24,7 @@ import {layoutMarkers,markerClearance,hullPixels} from '../shared/map-markers.js
 import {nameplateLayout,nameplateObstacle,NAMEPLATE_ROWS} from '../shared/nameplate.js';
 import {locationService} from '../tools/location-service.js';
 import {displayControls} from '../shared/display-controls.js';
-import {TRAY_MS,TRAY_Y,TRAY_H,FRAME_MS,traySlide,slideRow,besideProgress,besideShift,columnAlpha,mixColor} from '../shared/transitions.js';
+import {TRAY_MS,TRAY_Y,TRAY_H,traySlide,slideRow,besideProgress,besideShift,columnAlpha,mixColor} from '../shared/transitions.js';
 import {zoneColumn,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
 import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels} from '../shared/map-times.js';
 import {minuteFlipClock,drawFlipPixels,FLIP_FACES,flipOffset} from '../shared/minute-flip.js';
@@ -354,8 +354,10 @@ function render(){
 // next page, and the clock makes room before the place times fade in beside it.
 const motionOn=()=>settings.motion&&!reducedMotion.matches&&!document.hidden;
 let motionTimer=0,trayOld=null,trayStarted=0,besideState=null;
-// While the minute animation runs, its frames carry the transitions too.
-function scheduleMotion(){if(!motionTimer&&!minuteClock.active)motionTimer=setTimeout(()=>{motionTimer=0;render();},FRAME_MS);}
+// Display frames, like the minute animation, so the pace holds steady when one
+// hands over to the other; while the minute animation runs, its frames carry
+// the transitions too. (The watch paces both at TRANSITION_FRAME_MS.)
+function scheduleMotion(){if(!motionTimer&&!minuteClock.active)motionTimer=requestAnimationFrame(()=>{motionTimer=0;render();});}
 // The canvas still shows the page being left: keep its pixels to slide out.
 function trayStart(){trayOld=motionOn()&&settings.footer.enabled&&!$('quick-view').checked?ctx.getImageData(0,TRAY_Y,200,TRAY_H):null;trayStarted=performance.now();}
 function trayCompose(band){
