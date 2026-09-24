@@ -21,7 +21,7 @@ export const TIDE_STATIONS=[
 export function defaultFooter(){return {
   // Humidity rides on the weather chart, so its own panel is not in the default rotation.
   enabled:true,pages:PANEL_PAGES.map(([id])=>id).filter(id=>id!=='humidity'),home:'zones',rotationMinutes:0,shake:true,horizon:24,
-  weather:{enabled:true,place:0,temperatureUnit:'c',precipitation:'probability',rainUnit:'mm',rainMax:5,daylight:true,solarTimes:true,grid:false,rangeLabels:true,humidityLine:true,temperatureScale:'auto',temperatureMin:-10,temperatureMax:40,humidityScale:'percent',refreshMinutes:60},
+  weather:{enabled:true,place:0,temperatureUnit:'c',precipitation:'probability',rainUnit:'mm',rainMax:5,daylight:true,solarTimes:true,grid:false,rangeLabels:true,humidityLine:true,tideMarks:true,temperatureScale:'auto',temperatureMin:-10,temperatureMax:40,humidityScale:'percent',refreshMinutes:60},
   calendar:{weekStart:0,weeks:'current-next',weekends:'sat-sun',holidays:'none',todayStyle:'fill'},
   tide:{station:'',label:'TIDE',tz:'America/New_York',unit:'m',zeroLine:true,scale:'auto',min:-1,max:3},
   colorMode:'theme',colors:{...LEGACY_COLORS}
@@ -36,7 +36,7 @@ export function validateFooter(input,zoneExists,quantize){
   if(!Array.isArray(f.pages)||!f.pages.length||f.pages.length>5||new Set(f.pages).size!==f.pages.length||f.pages.some(p=>!PANEL_PAGES.some(([id])=>id===p)))throw new Error('Choose one to five different bottom panels.');
   choice(f,'home',f.pages);choice(f,'rotationMinutes',[0,1,2,5,10,15,30,60]);choice(f,'horizon',[12,24,48]);
   const w=f.weather,c=f.calendar,t=f.tide;
-  for(const k of ['enabled','daylight','solarTimes','grid','rangeLabels','humidityLine'])bool(w,k);
+  for(const k of ['enabled','daylight','solarTimes','grid','rangeLabels','humidityLine','tideMarks'])bool(w,k);
   choice(w,'place',[0,1,2]);choice(w,'temperatureUnit',['c','f']);choice(w,'precipitation',['off','probability','amount']);choice(w,'rainUnit',['mm','in']);
   choice(w,'temperatureScale',['auto','fixed']);choice(w,'humidityScale',['percent','auto']);choice(w,'refreshMinutes',[30,60,120,180]);
   if(!Number.isFinite(w.temperatureMin)||!Number.isFinite(w.temperatureMax)||w.temperatureMin< -150||w.temperatureMax>150||w.temperatureMax-w.temperatureMin<1)throw new Error('Temperature bounds need a minimum below the maximum, between −150 and 150.');

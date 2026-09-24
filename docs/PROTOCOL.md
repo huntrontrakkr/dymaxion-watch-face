@@ -104,7 +104,8 @@ Page IDs are zones 0, weather 1, calendar 2, humidity 3 and tide 4.
 | 46–49 | Two int16 tide bounds, hundredths of selected meters/feet |
 | 50 | Forecast place (0–2), the charts' daylight fallback without a position |
 | 51 | Humidity line on the weather chart (0/1) |
-| 52–63 | Reserved zero |
+| 52 | High/low tide marks on the weather chart (0/1) |
+| 53–63 | Reserved zero |
 
 The phone resolves `footer.colorMode` (`theme` or `custom`) to explicit colors
 before encoding bytes 21–28. There is no footer wire-version change. Legacy

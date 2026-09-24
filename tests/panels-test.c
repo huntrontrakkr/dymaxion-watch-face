@@ -6,6 +6,11 @@
 #include "settings.h"
 static void read_file(const char *path,uint8_t *p,size_t n){FILE *f=fopen(path,"rb");assert(f);assert(fread(p,1,n,f)==n);fclose(f);}
 int main(int argc,char **argv){
+  if(argc==3&&strcmp(argv[1],"extremes")==0){
+    uint8_t t[TIDE_SIZE];read_file(argv[2],t,sizeof(t));uint32_t times[16];bool high[16];
+    int n=tide_extremes(t,times,high,16);for(int i=0;i<n;i++)printf("%u %d\n",(unsigned)times[i],high[i]);
+    return 0;
+  }
   if(argc==5&&strcmp(argv[1],"holidays")==0){
     // Every holiday of a region from 1 January of the first year to the end of
     // the last, read through 14-day calendar windows that start on the day.
