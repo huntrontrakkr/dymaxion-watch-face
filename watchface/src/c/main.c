@@ -293,10 +293,19 @@ static void clock_caption(char *out,size_t size,const char *date,const char *amp
 }
 static void draw_meridiem(GContext *ctx,const char *ampm,int x,int baseline);
 static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int x,int y);
+// Where the clock goes, and the Dymaxion nameplate when it is on and fits
+// (a clock below the map moves down to make room for it).
+static int clock_layout(int visible,bool *plate,int *px,int *py){
+  int h=(s_settings[FLAGS]&STACKED)?84:s_display[1]>=4?40:46;bool shown;int x,y;
+  int top=nameplate_layout(s_settings[MAP_Y],s_settings[TIME_Y],h,s_settings[FLAGS]&STACKED,visible,&shown,&x,&y);
+  if(!(s_display[2]&DISPLAY_NAMEPLATE)){shown=false;top=clock_top_for_visible(s_settings[TIME_Y],h,visible);}
+  if(plate){*plate=shown;if(shown){*px=x;*py=y;}}
+  return top;
+}
 static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
   int x=s_settings[TIME_X],w=(s_settings[FLAGS]&STACKED)?72:200;
   int h=(s_settings[FLAGS]&STACKED)?84:s_display[1]>=4?40:46;
-  int y=clock_top_for_visible(s_settings[TIME_Y],h,visible);
+  int y=clock_layout(visible,NULL,NULL,NULL);
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(x,y,w,h),0,GCornerNone);
   char timebuf[8],datebuf[96];int hour=local->tm_hour;if(!is_24()){hour%=12;if(!hour)hour=12;}
   const char *ampm=is_24()?"":(local->tm_hour<12?"AM":"PM");
@@ -396,10 +405,6 @@ typedef struct {
   bool grouped[MAP_MARKERS_MAX];
   bool plate;int plate_x,plate_y; // the Dymaxion nameplate, when shown (screen coordinates)
 } MarkerSpots;
-static int clock_block_top(int visible){
-  int h=(s_settings[FLAGS]&STACKED)?84:s_display[1]>=4?40:46;
-  return clock_top_for_visible(s_settings[TIME_Y],h,visible);
-}
 static void marker_spots(time_t now,int visible,MarkerSpots *s){
   memset(s,0,sizeof(*s));s->you=-1;int hx,hy;
   for(int i=0;i<3;i++){s->index[i]=-1;if(s_settings[ENABLED]&(1<<i)){
@@ -408,7 +413,7 @@ static void marker_spots(time_t now,int visible,MarkerSpots *s){
   map_markers_layout(s->points,s->n,MAP_TIMES_W,MAP_TIMES_H,s->layout,s->group);
   s->hull_count=map_markers_hulls(s->points,s->layout,s->group,s->n,s->hulls);
   map_markers_own(s->points,s->layout,s->group,s->n,s->hulls,s->hull_count,s->own);
-  s->plate=(s_display[2]&DISPLAY_NAMEPLATE)&&nameplate_spot(s_settings[MAP_Y],clock_block_top(visible),s_settings[FLAGS]&STACKED,&s->plate_x,&s->plate_y);
+  clock_layout(visible,&s->plate,&s->plate_x,&s->plate_y);
   for(int i=0;i<s->n;i++){
     for(int j=0;j<s->n;j++)if(j!=i&&s->group[j]==s->group[i])s->grouped[i]=true;
     const MapRect *o=&s->own[i];

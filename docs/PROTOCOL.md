@@ -176,7 +176,8 @@ shows something else (another panel, or a Quick View card), 2 always. Bits 4–5
 say where: 0 left of the clock (the default), 1 right of it, 2 on the map. Bit 6
 lets map times turn 90° when that sits clearly closer. Bit 7 shows the Dymaxion
 nameplate (the original pixel script) between the clock and the map, when it
-clears both by a pixel. Beside the clock needs
+clears both by a pixel; a clock below the map moves down (six pixels in
+Horizon) to make room, if its figures still clear the bottom panel by six. Beside the clock needs
 Chamfer or a system font (styles 4–9); Broad and Span fill the strip. On the
 map, the watch places each time itself (`map_times.c`, mirrored by
 `shared/map-times.js`) whenever places, the clock format, turning or a place's

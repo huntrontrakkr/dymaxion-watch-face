@@ -39,8 +39,9 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
   once more) or **Triangle lines** (every edge dotted). It is baked into spare bits of the map data, so it costs the watch no
   memory. **Composition → The planetary clock → Map background**.
 - An optional **Dymaxion nameplate**: the original pixel script, in the accent
-  color, between the clock and the map when there is room (Meridian has it;
-  Horizon does not). **Character → Dymaxion nameplate**.
+  color, between the clock and the map: above the map in Meridian, under it in
+  Horizon, where the clock moves down six pixels to make room.
+  **Character → Dymaxion nameplate**.
 - Your own location, from the phone, is marked with a bullseye one size up from
   the place glyphs, in the clock's ink. Places too close to tell apart (London,
   Paris and Berlin) are drawn side by side, west to east, in one shared clearing.

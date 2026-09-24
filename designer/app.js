@@ -21,7 +21,7 @@ import {PANEL_PAGES} from '../shared/panel-settings.js';
 import {cityControls} from '../shared/city-controls.js';
 import {cityIsUsable,cityHasPosition,clockCaption,mapPixel} from '../shared/city.js';
 import {layoutMarkers,markerClearance,hullPixels} from '../shared/map-markers.js';
-import {nameplateSpot,nameplateObstacle,NAMEPLATE_ROWS} from '../shared/nameplate.js';
+import {nameplateLayout,nameplateObstacle,NAMEPLATE_ROWS} from '../shared/nameplate.js';
 import {locationService} from '../tools/location-service.js';
 import {displayControls} from '../shared/display-controls.js';
 import {zoneColumn,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
@@ -265,9 +265,10 @@ function render(){
   const panelZones=(!band||footerPage==='zones')&&settings.places.some((p,i)=>p.on&&settings.zones[i][1]+36<=visible);
   const beside=zonesBeside(settings,panelZones);
   const onMap=zonesOnMap(settings,panelZones);canvas.dataset.zonesOnMap=String(onMap);
-  const [tx,timeY]=settings.time,[tw,th]=blockSize(settings,'time'),ty=clockTopForVisible(timeY,th,visible);
-  // The Dymaxion nameplate, between the clock and the map when there is room.
-  const plate=settings.nameplate?nameplateSpot({mapY:my,clockTop:ty,stacked:settings.stacked}):null;
+  const [tx,timeY]=settings.time,[tw,th]=blockSize(settings,'time');
+  // The Dymaxion nameplate, between the clock and the map when there is room
+  // (a clock below the map moves down for it).
+  const {plate,clockTop:ty}=settings.nameplate?nameplateLayout({mapY:my,timeY,height:th,stacked:settings.stacked,visible}):{plate:null,clockTop:clockTopForVisible(timeY,th,visible)};
   const markers=markerSpots();if(plate)markers.obstacles=[...markers.obstacles,nameplateObstacle(plate,mx,my)];
   // Clearings (a group's hull ground) first, then map times, then hull outlines
   // (so a grouped leader starts at its hull), then glyphs.
