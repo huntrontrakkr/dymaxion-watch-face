@@ -257,9 +257,10 @@ static void clock_caption(char *out,size_t size,const char *date,const char *amp
     do{if(n)city[--n]=0;snprintf(out,size,"%s%s...%s",prefix,city,suffix);}while(n&&measure(out)>width);
   }
 }
-static void draw_time(GContext *ctx,struct tm *local,time_t now) {
-  int x=s_settings[TIME_X],y=s_settings[TIME_Y],w=(s_settings[FLAGS]&STACKED)?72:200;
+static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
+  int x=s_settings[TIME_X],w=(s_settings[FLAGS]&STACKED)?72:200;
   int h=(s_settings[FLAGS]&STACKED)?84:s_display[1]==4?40:46;
+  int y=clock_top_for_visible(s_settings[TIME_Y],h,visible);
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(x,y,w,h),0,GCornerNone);
   char timebuf[8],datebuf[96];int hour=local->tm_hour;if(!is_24()){hour%=12;if(!hour)hour=12;}
   const char *ampm=is_24()?"":(local->tm_hour<12?"AM":"PM");
@@ -275,11 +276,12 @@ static void draw_time(GContext *ctx,struct tm *local,time_t now) {
     else if(s_display[1]==1)draw_triangle_time(ctx,timebuf,x,y);else draw_span_time(ctx,timebuf,x,y);
   }
 }
-static void draw_zones(GContext *ctx,time_t now,struct tm *local) {
+static void draw_zones(GContext *ctx,time_t now,struct tm *local,int visible) {
   for(int i=0;i<3;i++) {
     if(!(s_settings[ENABLED]&(1<<i)))continue;
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;
     int x=s_settings[ZONE_X+2*i],y=s_settings[ZONE_Y+2*i];
+    if(y+36>visible)continue; // under the Quick View card
     graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(x,y,60,36),0,GCornerNone);
     time_t there=now+(int32_t)zone_offset(z,now)*60;struct tm zone=*gmtime(&there);
     int delta=ordinal(&zone)-ordinal(local),hour=zone.tm_hour;char label[8],hours[8],day[4];
@@ -334,14 +336,17 @@ static void update_proc(Layer *layer,GContext *ctx) {
     marker(ctx,pos,z[10],mark_color(i));
     if(i==s_selected&&s_frame<16)pixel_rows(ctx,PULSE_GLYPHS[s_frame/4],PULSE_SIZE,PULSE_SIZE,pos.x-8,pos.y-8,mark_color(i));
   }
-  draw_time(ctx,&local,now);
+  // Quick View (timeline peek) covers the bottom of the screen: the bottom band
+  // is skipped and the clock kept above the card.
+  int visible=layer_get_unobstructed_bounds(layer).size.h;
+  draw_time(ctx,&local,now,visible);
   // Chart daylight follows the wearer's position when the phone sent one,
   // otherwise the forecast place.
   static float daylight[3];int lat,lon;
   if(city_usable(s_city,now)&&city_position(s_city,&lat,&lon))solar_place(lat,lon,daylight);
   else solar_place_vector((const int8_t *)s_settings+HEADER_SIZE+panels_weather_place()*ZONE_SIZE+11,daylight);
-  bool zones=!panels_draw(ctx,now,&local,s_small,s_caps,palette(),is_24(),daylight);
-  if(zones)draw_zones(ctx,now,&local);
+  bool zones=visible>=228?!panels_draw(ctx,now,&local,s_small,s_caps,palette(),is_24(),daylight):true;
+  if(zones)draw_zones(ctx,now,&local,visible);
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(0,0,200,18),0,GCornerNone);
   char battery[8];snprintf(battery,sizeof(battery),"%d%%",s_battery.charge_percent);
   if(s_caps)draw_status_line(ctx,&local,now,battery);
@@ -386,6 +391,8 @@ static void tick(struct tm *local_time,TimeUnits changed) {
   int interval=panels_refresh_minutes();if(!(s_city[1]&1)&&interval>60)interval=60;
   if((now/60)%interval==0)request_sync();
 }
+static void obstruction_changed(AnimationProgress progress,void *context){layer_mark_dirty(s_layer);}
+static void obstruction_done(void *context){layer_mark_dirty(s_layer);}
 static void battery_changed(BatteryChargeState state) {
   s_battery=state;
   if(state.charge_percent<=20&&s_animation){app_timer_cancel(s_animation);s_animation=NULL;s_frame=16;}
@@ -455,6 +462,7 @@ static void init(void) {
   battery_state_service_subscribe(battery_changed);
   connection_service_subscribe((ConnectionHandlers){.pebble_app_connection_handler=connection_changed});
   tick_timer_service_subscribe(MINUTE_UNIT,tick);configure_shake();
+  unobstructed_area_service_subscribe((UnobstructedAreaHandlers){.change=obstruction_changed,.did_change=obstruction_done},NULL);
   app_focus_service_subscribe(focus_changed);
   app_message_register_inbox_received(received);app_message_open(1024,64);
   request_sync();pulse();
@@ -462,7 +470,7 @@ static void init(void) {
 static void deinit(void) {
   clock_stop();app_focus_service_unsubscribe();
   if(s_animation)app_timer_cancel(s_animation);
-  tick_timer_service_unsubscribe();if(s_accel_subscribed)accel_tap_service_unsubscribe();battery_state_service_unsubscribe();connection_service_unsubscribe();app_message_deregister_callbacks();
+  tick_timer_service_unsubscribe();unobstructed_area_service_unsubscribe();if(s_accel_subscribed)accel_tap_service_unsubscribe();battery_state_service_unsubscribe();connection_service_unsubscribe();app_message_deregister_callbacks();
   layer_destroy(s_layer);window_destroy(s_window);if(s_map)gbitmap_destroy(s_map);
   fonts_unload_custom_font(s_large);fonts_unload_custom_font(s_small);fonts_unload_custom_font(s_zone);
   clock_release();free(s_caps);

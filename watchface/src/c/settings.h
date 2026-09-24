@@ -10,5 +10,8 @@ enum { DAY_NIGHT=1, EDGES=2, LIGHTS=4, MOTION=8, SUN=16, STACKED=32 };
 int16_t read_i16(const uint8_t *p);
 uint32_t read_u32(const uint8_t *p);
 int32_t calendar_ordinal(int year, int month, int day);
+// Quick View: a clock the peek would cover moves up to sit just above it,
+// never into the status line (clockTopForVisible in shared/settings.js).
+int clock_top_for_visible(int top, int height, int visible);
 bool settings_valid(const uint8_t *s, unsigned length);
 int16_t zone_offset(const uint8_t *zone, uint32_t epoch);

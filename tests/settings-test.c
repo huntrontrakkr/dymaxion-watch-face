@@ -9,6 +9,15 @@ int main(int argc,char **argv) {
   assert(calendar_ordinal(2028,3,1)-calendar_ordinal(2028,2,29)==1);
   assert(calendar_ordinal(2028,3,1)-calendar_ordinal(2028,2,28)==2);
   assert(calendar_ordinal(2027,3,1)-calendar_ordinal(2027,2,28)==1);
+  // Quick View clock placement; the same table is asserted in tests/core.test.mjs.
+  assert(clock_top_for_visible(22,40,228)==22);
+  assert(clock_top_for_visible(22,40,177)==22);
+  assert(clock_top_for_visible(134,40,228)==134);
+  assert(clock_top_for_visible(134,40,177)==134);
+  assert(clock_top_for_visible(134,46,177)==129);
+  assert(clock_top_for_visible(20,84,177)==20);
+  assert(clock_top_for_visible(22,40,40)==18);
+  assert(clock_top_for_visible(134,46,150)==102);
   assert(argc==3);uint8_t bytes[SETTINGS_SIZE],bad[SETTINGS_SIZE];
   for(int i=1;i<argc;i++) {FILE *f=fopen(argv[i],"rb");assert(f);assert(fread(bytes,1,sizeof(bytes),f)==sizeof(bytes));fclose(f);assert(settings_valid(bytes,sizeof(bytes)));}
   assert(!settings_valid(bytes,231));assert(!settings_valid(bytes,233));

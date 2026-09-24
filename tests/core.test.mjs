@@ -170,6 +170,11 @@ test('old saved presets adopt the enlarged map; custom arrangements keep their p
   assert.equal(flattened.theme,2);
   assert.deepEqual(flattened.places,oldPortrait.places);
 });
+test('Quick View keeps the clock above the card and below the status line',async()=>{
+  const {clockTopForVisible}=await import('../shared/settings.js');
+  // The same table is asserted natively in tests/settings-test.c.
+  for(const [top,height,visible,expected] of [[22, 40, 228, 22], [22, 40, 177, 22], [134, 40, 228, 134], [134, 40, 177, 134], [134, 46, 177, 129], [20, 84, 177, 20], [22, 40, 40, 18], [134, 46, 150, 102]])assert.equal(clockTopForVisible(top,height,visible),expected,[top,height,visible].join(','));
+});
 test('native packet reader validates JS packets and rejects truncated or corrupt input',()=>{
   mkdirSync('test-results',{recursive:true});
   for(const [name,preset]of Object.entries(PRESETS)){const s={...defaults(),...preset};writeFileSync(`test-results/${name}.bin`,encodeSettings(s,at('2026-01-01T00:00:00Z')));}

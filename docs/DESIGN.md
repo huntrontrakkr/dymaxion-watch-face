@@ -168,6 +168,17 @@ layouts migrate to these proportions; the retired Atlas composition and saved
 portrait layouts open as Meridian
 while preserving palette, tracked cities, time zones, and display preferences.
 
+## Quick View
+
+When a timeline peek (Quick View) covers the bottom of the screen, the face
+redraws as the card slides in and out, using the system's unobstructed area.
+The bottom band (zone clocks or the current panel) is not drawn beneath the
+card, and a clock the card would cover moves up to sit two pixels above it,
+over the lower edge of the map but never into the status line
+(`clockTopForVisible`, `clock_top_for_visible`). Meridian's clock is already
+clear of it. The workshop's **Quick View** switch previews this with an
+approximate 51-pixel card; the watch uses the real card height.
+
 ## Motion and time
 
 The selected place gets a one-second expanding ring on launch/settings changes.

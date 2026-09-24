@@ -29,5 +29,11 @@ try{
   await study.getByLabel('Show unlit triangles',{exact:true}).uncheck();const initial=await study.locator('#geometry').screenshot();await study.getByLabel('Waist',{exact:true}).uncheck();assert.notDeepEqual(await study.locator('#geometry').screenshot(),initial);
   await study.getByLabel('Waist',{exact:true}).check();await study.getByLabel('Show unlit triangles',{exact:true}).check();await study.getByLabel('Pixel size',{exact:true}).selectOption('3');await study.screenshot({path:'test-results/triangular-display-study.png',fullPage:true});
   await study.setViewportSize({width:390,height:844});assert(await study.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'proof should scroll inside its container on a phone');
+  // Quick View: the bottom band hides under the card and the clock stays clear of it.
+  await page.getByRole('tab',{name:'Composition',exact:true}).click();await page.getByRole('button',{name:'Meridian',exact:true}).click();
+  const clockTop=()=>screen.getAttribute('data-clock-top');const before=await clockTop();
+  await page.locator('#quick-view').check();assert.equal(await screen.getAttribute('data-quick-view'),'true');assert.equal(await clockTop(),before,'Meridian\'s clock is already clear of the card');
+  const band=await screen.evaluate(c=>[...c.getContext('2d').getImageData(0,184,200,5).data]);await page.locator('#quick-view').uncheck();
+  assert.notDeepEqual(band,await screen.evaluate(c=>[...c.getContext('2d').getImageData(0,184,200,5).data]),'the card covers the bottom band');
   assert.deepEqual(errors,[]);console.log('PASS: actual and manual city captions, hourly lookup cache, 12-hour and stacked time, triangular/Span persistence, and integer-sized interactive electrode proof.');
 }finally{await browser.close();}

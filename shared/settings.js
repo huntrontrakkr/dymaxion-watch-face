@@ -59,6 +59,15 @@ export function defaults() {
   return {version:1,markerSet:2,theme:0,customPalettes:[],customPalette:null,format:1,dayNight:true,edges:false,lights:true,motion:true,sun:true,moonIndicator:true,
     ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',segmentGrid:true,location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
 }
+// Quick View: a clock the peek would cover moves up to sit just above it,
+// never into the status line (clock_top_for_visible in settings.c).
+export function clockTopForVisible(top,height,visible){
+  if(top+height>visible-2)top=visible-2-height;
+  return Math.max(18,top);
+}
+// Workshop approximation of the timeline-peek card; the watch uses the
+// system's actual unobstructed area.
+export const QUICK_VIEW_HEIGHT=51;
 export function blockSize(settings,key) {
   if(key==='map')return MAP_SIZE;
   if(key==='time'){

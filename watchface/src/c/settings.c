@@ -36,3 +36,8 @@ int16_t zone_offset(const uint8_t *z,uint32_t epoch) {
   for(int i=0;i<z[16];i++)if(epoch>=read_u32(z+22+6*i))offset=read_i16(z+26+6*i);
   return offset;
 }
+
+int clock_top_for_visible(int top,int height,int visible){
+  if(top+height>visible-2)top=visible-2-height;
+  return top<18?18:top;
+}

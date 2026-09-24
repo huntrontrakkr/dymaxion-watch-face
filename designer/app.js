@@ -4,7 +4,7 @@ import {paletteFor} from '../shared/palette-settings.js';
 import {paletteControls} from '../shared/palette-controls.js';
 import moment from 'moment-timezone';
 import {drawBitmapText,fitLabel,textWidth} from '../shared/type.js';
-import {defaults,THEMES,PLACES,PRESETS,activePreset,presetFor,withClockDisplay,validateSettings,clampPosition,blockSize,markColor,quantizeColor} from '../shared/settings.js';
+import {defaults,THEMES,PLACES,PRESETS,activePreset,presetFor,withClockDisplay,validateSettings,clampPosition,blockSize,markColor,quantizeColor,clockTopForVisible,QUICK_VIEW_HEIGHT} from '../shared/settings.js';
 import {MARKERS,drawMarkerPixels} from '../shared/markers.js';
 import {makeMap,direction,dot,MAP_SIZE} from '../shared/map.js';
 import {sunDirection} from '../shared/solar.js';
@@ -223,7 +223,9 @@ function render(){
   if(settings.lights&&settings.dayNight)for(const [lat,lon]of CITIES){if(dot(direction(lat,lon),sun)>=-.03)continue;const [x,y]=m.project(lat,lon);ctx.fillStyle=pal.accent;ctx.fillRect(mx+Math.round(x),my+Math.round(y),1,1);}
   if(settings.sun&&settings.dayNight)marker(mx+cached.sunPoint[0],my+cached.sunPoint[1],0,pal.accent,pal.bg);
   settings.places.forEach((p,i)=>{if(!p.on)return;const [x,y]=m.project(p.lat,p.lon).map(Math.round),ink=markColor(p,settings,i);marker(mx+x,my+y,p.icon,ink,pal.bg);if(animation&&i===activePlace){const frame=Math.floor((performance.now()-animation)/260);if(frame<4)drawPixelRows(ctx,PULSE_ROWS[frame],mx+x-8,my+y-8,ink);}});
-  const [tx,ty]=settings.time,[tw,th]=blockSize(settings,'time'),{h,m:minute,ampm}=clockParts(local);
+  // Quick View preview: the bottom band hides and the clock stays above the card.
+  const visible=$('quick-view').checked?228-QUICK_VIEW_HEIGHT:228;
+  const [tx,timeY]=settings.time,[tw,th]=blockSize(settings,'time'),ty=clockTopForVisible(timeY,th,visible),{h,m:minute,ampm}=clockParts(local);
   const city=settings.location.mode==='manual'?settings.location.name:currentCity.sample?currentCity.name:cityIsUsable(currentCity)?currentCity.name+(currentCity.stale||Date.now()/1000-currentCity.fetched>7200?'?':''):'';
   const caption=clockCaption(settings.stacked?'':local.format('ddd DD MMM'),city,use24()?'':ampm,tw-4,t=>textWidth(watchTypeface.text.small,t));
   // Status line: lining capitals, date and city at the top left.
@@ -244,9 +246,10 @@ function render(){
   canvas.dataset.clockAnimating=String(minuteClock.active);
   canvas.dataset.clockCaption=settings.stacked?caption:status;
   $('city-state').textContent=settings.location.mode==='manual'?'The clock uses your entered city name.':currentCity.sample?'Norfolk is an example city in this preview. The watch uses your phone’s location.':city?`Current city: ${currentCity.name}${currentCity.stale?' (last known location)':''}.`:'City unavailable. Allow location in the phone app, or enter a city name.';
-  if(settings.footer.enabled){ctx.fillStyle=pal.bg;ctx.fillRect(0,184,200,44);}
-  if(!settings.footer.enabled||footerPage==='zones')settings.places.forEach((p,i)=>{
-    if(!p.on)return;const [x,y]=settings.zones[i],there=moment(now).tz(p.tz),time=clockParts(there);
+  const band=visible>=228&&settings.footer.enabled;
+  if(band){ctx.fillStyle=pal.bg;ctx.fillRect(0,184,200,44);}
+  if(!band||footerPage==='zones')settings.places.forEach((p,i)=>{
+    if(!p.on||settings.zones[i][1]+36>visible)return;const [x,y]=settings.zones[i],there=moment(now).tz(p.tz),time=clockParts(there);
     const delta=Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000);
     const ink=markColor(p,settings,i);
     ctx.fillStyle=pal.bg;ctx.fillRect(x,y,60,36);drawPixelRows(ctx,DAY_NIGHT_ROWS[+(dot(direction(p.lat,p.lon),sun)>=0)],x+1,y+5,ink);
@@ -255,12 +258,14 @@ function render(){
     paintText(two(time.h)+':'+two(time.m),x+2,y+31,16,pal.ink);if(!use24())paintText(time.ampm[0],x+53,y+30,11,pal.accent);
     if(animation&&i===activePlace)strokeLine(x,y+35,x+59,y+35,ink);
   });
-  drawFooter(ctx,settings,footerPage,{...(environmentMode==='sample'?sampleEnvironment(+now):liveData),palette:pal,daylight:daylightPlace()},+now,watchTypeface.lining.small,use24());
+  if(band)drawFooter(ctx,settings,footerPage,{...(environmentMode==='sample'?sampleEnvironment(+now):liveData),palette:pal,daylight:daylightPlace()},+now,watchTypeface.lining.small,use24());
   $('panel-preview-label').textContent=settings.footer.enabled?PANEL_PAGES.find(([id])=>id===footerPage)[1]:'Time zones';
   $('data-state').textContent=environmentMode==='sample'?'Example curves for layout preview. Live data is available below.':`Live forecast for ${settings.places[settings.footer.weather.place].name}. ${liveData.weather?.error?'Weather update unavailable; cached data is marked OLD.':''} ${liveData.tide?.error?'NOAA update unavailable.':''}`;
   ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,18);
   drawBitmapText(ctx,watchTypeface.lining.small,status,4,12,pal.accent);drawBitmapText(ctx,watchTypeface.lining.small,'86%',195,12,pal.ink,'right');
   drawMoonIndicator(now);drawBluetoothIndicator();
+  if(visible<228){ctx.fillStyle=pal.ink;ctx.fillRect(0,visible,200,228-visible);ctx.fillStyle=pal.bg;ctx.fillRect(8,visible+10,110,7);ctx.fillRect(8,visible+24,160,5);ctx.fillRect(8,visible+34,130,5);}
+  canvas.dataset.quickView=String(visible<228);canvas.dataset.clockTop=String(ty);
   // All watch pixels already come from RGB222 colors and native bitmap masks.
   // Avoid a final quantization pass that would hide accidental antialiasing.
   if($('guides').checked){const [x,y]=getPosition(selected),[w,h]=blockSize(settings,selected);ctx.fillStyle='#FF5500';for(let i=0;i<w;i++)if(i%4<2){ctx.fillRect(x+i,y,1,1);ctx.fillRect(x+i,y+h-1,1,1);}for(let i=0;i<h;i++)if(i%4<2){ctx.fillRect(x,y+i,1,1);ctx.fillRect(x+w-1,y+i,1,1);}}
@@ -269,7 +274,7 @@ function render(){
   if(animation){if(performance.now()-animation>1040)animation=0;setTimeout(render,65);}
 }
 function pulse(){const enabled=settings.places.map((p,i)=>p.on?i:-1).filter(i=>i>=0);if(!enabled.length)return;activePlace=enabled[(enabled.indexOf(activePlace)+1)%enabled.length];if(settings.motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches)animation=performance.now();render();}
-$('pulse').onclick=pulse;$('guides').onchange=render;
+$('pulse').onclick=pulse;$('guides').onchange=render;$('quick-view').onchange=render;
 $('scale').onclick=()=>{const actual=$('scale').getAttribute('aria-pressed')!=='true';$('scale').setAttribute('aria-pressed',actual);$('scale').textContent=actual?'Enlarge preview':'Actual size';document.querySelector('.preview-stage').classList.toggle('actual',actual);};
 $('scrub').oninput=()=>{offset=+$('scrub').value;render();};$('live').onclick=()=>{offset=0;$('scrub').value=0;render();};
 function point(e){const b=canvas.getBoundingClientRect();return [(e.clientX-b.left)*200/b.width,(e.clientY-b.top)*228/b.height];}
