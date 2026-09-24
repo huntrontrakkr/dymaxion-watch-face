@@ -57,6 +57,24 @@ export function chamferMaster(rows, k = CHAMFER_SCALE, SS = 8) {
   return mask;
 }
 
+// Authoring only: the zone 7's leg is a pixel staircase that enlarges into a
+// wobble. Redraw it as one straight band from the bar's right end to the
+// baseline, 7 px wide across (about 6.3 px square to the slant, matching the
+// 6 px bar), sampled like the other cuts.
+export function straightenSeven(mask, {width: w = 7, foot = 5, top = 6, SS = 8} = {}) {
+  const out = mask.slice(), W = digitWidth, H = capHeight, right = W;
+  for (let y = top; y < H; y++) for (let x = 0; x < W; x++) out[y * W + x] = 0;
+  const left = y => right - w + (foot - (right - w)) * (y - top) / (H - top);
+  for (let y = top - 1; y < H; y++) for (let x = 0; x < W; x++) {
+    let n = 0;
+    for (let sy = 0; sy < SS; sy++) for (let sx = 0; sx < SS; sx++) {
+      const X = x + (sx + .5) / SS, Y = y + (sy + .5) / SS;
+      if (Y >= top && X >= left(Y) && X < left(Y) + w) n++;
+    }
+    if (n * 2 >= SS * SS) out[y * W + x] = 1;
+  }
+  return out;
+}
 export const CHAMFER_MASK_BYTES = Math.ceil(digitWidth * capHeight / 8);
 const glyphCache = new Map();
 function glyphMask(character) {

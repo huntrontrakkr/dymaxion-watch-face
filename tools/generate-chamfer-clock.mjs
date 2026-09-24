@@ -6,9 +6,9 @@ const source = readFileSync('tools/draft-lettering.py', 'utf8');
 const zoneBlock = source.slice(source.indexOf('ZONE = {'), source.indexOf('}', source.indexOf('ZONE = {')));
 const ZONE = Object.fromEntries([...zoneBlock.matchAll(/'(\d)': \[([^\]]*)\]/g)].map(([, d, rows]) => [d, [...rows.matchAll(/'([.#]+)'/g)].map(m => m[1])]));
 if (Object.keys(ZONE).length !== 10) throw new Error('Expected ten zone numerals in tools/draft-lettering.py.');
-const {chamferMaster, CHAMFER_MASK_BYTES} = await import('../shared/chamfer-numerals.js');
+const {chamferMaster, straightenSeven, CHAMFER_MASK_BYTES} = await import('../shared/chamfer-numerals.js');
 const data = {glyphs: Array.from({length: 10}, (_, digit) => {
-  const mask = chamferMaster(ZONE[digit]), bits = new Uint8Array(CHAMFER_MASK_BYTES);
+  const cut = chamferMaster(ZONE[digit]), mask = digit === 7 ? straightenSeven(cut) : cut, bits = new Uint8Array(CHAMFER_MASK_BYTES);
   for (let i = 0; i < mask.length; i++) if (mask[i]) bits[i >> 3] |= 1 << (i & 7);
   return [...bits];
 })};
