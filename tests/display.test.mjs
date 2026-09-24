@@ -20,6 +20,7 @@ test('display preferences migrate, validate, and travel separately from the stab
   assert.equal(defaults().mapBackground,'none','the map background is off by default');
   assert.deepEqual([...encodeDisplay({...defaults(),mapBackground:'points'})],[2,4,0,1]);
   assert.deepEqual([...encodeDisplay({...defaults(),mapBackground:'lines'})],[2,4,0,2]);
+  assert.deepEqual([...encodeDisplay({...defaults(),mapBackground:'fine-points'})],[2,4,0,3]);
   assert.equal(validateSettings({...s,mapBackground:'lines'},zoneExists).mapBackground,'lines');
   assert.equal(validateSettings(s,zoneExists).mapBackground,'none','older files have no background');
   assert.throws(()=>validateSettings({...s,mapBackground:'stars'},zoneExists));

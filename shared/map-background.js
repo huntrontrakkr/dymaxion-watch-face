@@ -4,8 +4,11 @@
 // (tools/generate-map.mjs), so the watch spends no extra memory.
 import {buildNetFuller} from './map.js';
 // Byte 3 of the display packet indexes this list.
-export const MAP_BACKGROUNDS = ['none', 'points', 'lines'];
-export const MAP_BACKGROUND_NAMES = Object.freeze({none: 'None', points: 'Triangle points', lines: 'Triangle lines'});
+export const MAP_BACKGROUNDS = ['none', 'points', 'lines', 'fine-points'];
+export const MAP_BACKGROUND_NAMES = Object.freeze({none: 'None', points: 'Triangle points', lines: 'Triangle lines', 'fine-points': 'Fine triangle points'});
+// Each pattern: how many times the map's faces are split into four, and whether
+// edges are dotted or only the vertices marked.
+export const GRID_PATTERNS = Object.freeze({points: {splits: 1, lines: false}, lines: {splits: 1, lines: true}, 'fine-points': {splits: 2, lines: false}});
 // Flag bit in map-0.bin byte 3 for each background (after kind 0-1 and edge 2):
 // background n uses bit 4 << n.
 export const BACKGROUND_BITS = Object.freeze(Object.fromEntries(MAP_BACKGROUNDS.map((id, n) => [id, n ? 4 << n : 0])));
@@ -21,13 +24,15 @@ export function netRows(map) {
   return [top, bottom];
 }
 // The net's faces are unit triangles on one equilateral lattice. Split each into
-// four through its edge midpoints (edge 1/2) and continue that finer lattice
-// across the strip. 'points' marks every vertex where its triangles meet;
-// 'lines' samples every edge as evenly spaced dots.
+// four through its edge midpoints (edge 1/2; twice for 'fine-points', edge 1/4)
+// and continue that finer lattice across the strip. The point patterns mark
+// every vertex where its triangles meet; 'lines' samples every edge as evenly
+// spaced dots.
 export function triangleGridMask(map, pattern = 'points', rows = netRows(map)) {
-  if (!['points', 'lines'].includes(pattern)) throw new Error('Unknown map background.');
+  const spec = GRID_PATTERNS[pattern];
+  if (!spec) throw new Error('Unknown map background.');
   const {width, height, toPixel} = map, mask = new Uint8Array(width * height), [top, bottom] = rows;
-  const origin = buildNetFuller()[0].p[0], edge = .5, row = edge * S3 / 2;
+  const origin = buildNetFuller()[0].p[0], edge = 2 ** -spec.splits, row = edge * S3 / 2;
   const lattice = ([x, y]) => { const j = (y - origin[1]) / row; return [(x - origin[0]) / edge - j / 2, j]; };
   // Every net vertex must sit on the finer lattice, so the grid meets the map's corners.
   for (const t of buildNetFuller()) for (const p of t.p) {
@@ -37,7 +42,7 @@ export function triangleGridMask(map, pattern = 'points', rows = netRows(map)) {
   const vertex = (i, j) => [origin[0] + (i + j / 2) * edge, origin[1] + j * row];
   const o = toPixel([0, 0]), ex = toPixel([1, 0])[0] - o[0], ey = toPixel([0, 1])[1] - o[1];
   const netOf = (x, y) => [(x - o[0]) / ex, (y - o[1]) / ey];
-  const steps = pattern === 'points' ? 0 : Math.max(1, Math.round(Math.abs(ex) * edge / GRID_DOT_SPACING));
+  const steps = !spec.lines ? 0 : Math.max(1, Math.round(Math.abs(ex) * edge / GRID_DOT_SPACING));
   const corners = [[0, 0], [width, 0], [0, height], [width, height]].map(([x, y]) => lattice(netOf(x, y)));
   const js = corners.map(c => c[1]), is = corners.map(c => c[0]);
   const j0 = Math.floor(Math.min(...js)) - 2, j1 = Math.ceil(Math.max(...js)) + 2;
