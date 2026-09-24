@@ -2,10 +2,12 @@
 #include <stdio.h>
 #include <string.h>
 bool zone_column_fits(uint8_t style){return style>=4&&style<=9;}
-bool zones_beside(uint8_t style,bool stacked,uint8_t zone_times,bool panel_shows_zones){
-  if(stacked||!zone_column_fits(style))return false;
-  return zone_times==ZONE_TIMES_BESIDE||(zone_times==ZONE_TIMES_BESIDE_HIDDEN&&!panel_shows_zones);
+static bool elsewhere(uint8_t zone_times,bool panel_shows_zones){return zone_times==ZONE_TIMES_ALWAYS||(zone_times==ZONE_TIMES_WHEN_HIDDEN&&!panel_shows_zones);}
+bool zones_beside(uint8_t style,bool stacked,uint8_t zone_times,uint8_t position,bool panel_shows_zones){
+  if(position==ZONE_POSITION_MAP||stacked||!zone_column_fits(style))return false;
+  return elsewhere(zone_times,panel_shows_zones);
 }
+bool zones_on_map(uint8_t zone_times,uint8_t position,bool panel_shows_zones){return position==ZONE_POSITION_MAP&&elsewhere(zone_times,panel_shows_zones);}
 // Rows 14 pixels apart, centred on the figures (y 2-37 of the strip).
 int zone_row_baseline(int index,int count){
   int block=7+14*(count-1);

@@ -2,9 +2,11 @@
 // three places stack in a 70-pixel column on the other side, in the
 // status-line capitals. The watch mirrors this layout in
 // watchface/src/c/zone_column.c.
-export const ZONE_TIMES = ['panel', 'beside-hidden', 'beside'];
-export const ZONE_TIMES_NAMES = Object.freeze({panel: 'In the bottom panel', 'beside-hidden': 'Beside the clock when the panel shows something else', beside: 'Always beside the clock'});
-export const ZONE_SIDES = ['left', 'right'];
+// When place times also show outside the bottom panel, and where.
+export const ZONE_TIMES = ['panel', 'when-hidden', 'always'];
+export const ZONE_TIMES_NAMES = Object.freeze({panel: 'Only in the bottom panel', 'when-hidden': 'Also whenever the panel shows something else', always: 'Always'});
+export const ZONE_POSITIONS = ['left', 'right', 'map'];
+export const ZONE_POSITION_NAMES = Object.freeze({left: 'Left of the clock', right: 'Right of the clock', map: 'On the map'});
 // Chamfer's figures and every system font's ink sit within x 37-162 of the
 // strip. Shifted 36 pixels right they start at x 73, clear of a left column
 // [4, 70); shifted left they end by x 126, clear of a right column [130, 196).
@@ -16,11 +18,14 @@ export const zoneColumn = side => side === 'right'
 const NARROW = ['chamfer', 'leco', 'bitham-bold', 'bitham-light', 'bitham-medium', 'leco-delta'];
 // Broad and Span fill the strip's width, so they keep place times in the panel.
 export const zoneColumnFits = style => NARROW.includes(style);
-// Whether place times go beside the clock for these settings and this frame.
+// Whether place times show outside the panel this frame, and so beside the
+// clock (which needs a narrow horizontal clock) or on the map.
+const elsewhere = (settings, panelShowsZones) => settings.zoneTimes === 'always' || (settings.zoneTimes === 'when-hidden' && !panelShowsZones);
 export function zonesBeside(settings, panelShowsZones) {
-  if (settings.stacked || !zoneColumnFits(settings.clockDisplay)) return false;
-  return settings.zoneTimes === 'beside' || (settings.zoneTimes === 'beside-hidden' && !panelShowsZones);
+  if (settings.zonePosition === 'map' || settings.stacked || !zoneColumnFits(settings.clockDisplay)) return false;
+  return elsewhere(settings, panelShowsZones);
 }
+export const zonesOnMap = (settings, panelShowsZones) => settings.zonePosition === 'map' && elsewhere(settings, panelShowsZones);
 // Baseline of row `index` of `count`, relative to the strip top: rows are
 // centred on the figures, which run from y 2 to 37.
 export function zoneRowBaseline(index, count) {

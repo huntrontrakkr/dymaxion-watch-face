@@ -65,31 +65,31 @@ try{
   }
   await page.getByLabel('Map background',{exact:true}).selectOption('none');await page.clock.runFor(3000);assert.deepEqual(await mapBlock(),plain);
   // Place times beside the clock: off by default, on while another panel shows
-  // (or Quick View covers the band) in beside-hidden, always in beside.
+  // (or Quick View covers the band) in when-hidden, always in always.
   await page.getByRole('tab',{name:'Composition',exact:true}).click();await page.getByRole('button',{name:'Meridian',exact:true}).click();
   await page.getByRole('tab',{name:'Character',exact:true}).click();await page.getByLabel('Numerical display',{exact:true}).selectOption('chamfer');
   const beside=()=>screen.getAttribute('data-zones-beside');
   assert.equal(await page.getByLabel('Place times',{exact:true}).inputValue(),'panel');assert.equal(await beside(),'false');
-  await page.getByLabel('Place times',{exact:true}).selectOption('beside-hidden');
+  await page.getByLabel('Place times',{exact:true}).selectOption('when-hidden');
   assert.equal(await page.locator('#panel-preview-label').textContent(),'Time zones');assert.equal(await beside(),'false','zones page: times stay in the panel');
   const column=(x=0)=>screen.evaluate((c,x)=>[...c.getContext('2d').getImageData(x,22,70,40).data],x);const empty=await column();
-  assert.equal(await page.getByLabel('Place times side',{exact:true}).inputValue(),'left');
+  assert.equal(await page.getByLabel('Place times position',{exact:true}).inputValue(),'left');
   await page.locator('#next-panel').click();assert.notEqual(await page.locator('#panel-preview-label').textContent(),'Time zones');
   assert.equal(await beside(),'true','another panel: times move beside the clock');assert.notDeepEqual(await column(),empty);
   assert.match(await screen.getAttribute('data-clock-caption'),/ PM$/,'12-hour AM/PM moves to the status line beside the place times');
   for(let n=0;n<6&&await page.locator('#panel-preview-label').textContent()!=='Time zones';n++)await page.locator('#next-panel').click();
   assert.equal(await beside(),'false');
   await page.locator('#quick-view').check();assert.equal(await beside(),'true','Quick View covers the panel');await page.locator('#quick-view').uncheck();
-  await page.getByLabel('Place times',{exact:true}).selectOption('beside');assert.equal(await beside(),'true');
+  await page.getByLabel('Place times',{exact:true}).selectOption('always');assert.equal(await beside(),'true');
   const leftColumn=await column(0),rightEmpty=await column(130);
-  await page.getByLabel('Place times side',{exact:true}).selectOption('right');
+  await page.getByLabel('Place times position',{exact:true}).selectOption('right');
   assert.notDeepEqual(await column(130),rightEmpty,'the column moves to the right');assert.notDeepEqual(await column(0),leftColumn);
   await screen.screenshot({path:'test-results/place-times-right.png'});
-  await page.getByLabel('Place times side',{exact:true}).selectOption('left');
-  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).zoneSide,'left');
-  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).zoneTimes,'beside');
+  await page.getByLabel('Place times position',{exact:true}).selectOption('left');
+  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).zonePosition,'left');
+  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).zoneTimes,'always');
   await screen.screenshot({path:'test-results/place-times-beside.png'});
-  await page.getByLabel('Numerical display',{exact:true}).selectOption('broad');assert.equal(await beside(),'false');assert(await page.getByLabel('Place times',{exact:true}).isDisabled(),'Broad fills the width');
+  await page.getByLabel('Numerical display',{exact:true}).selectOption('broad');assert.equal(await beside(),'false');assert.match(await page.locator('[data-zone-note]').first().textContent(),/On the map/,'Broad fills the width, so the note points to the map');
   await page.getByLabel('Numerical display',{exact:true}).selectOption('leco');assert.equal(await beside(),'true');
   await page.getByLabel('Numerical display',{exact:true}).selectOption('chamfer');await page.getByLabel('Place times',{exact:true}).selectOption('panel');
   assert.deepEqual(errors,[]);console.log('PASS: actual and manual city captions, hourly lookup cache, 12-hour and stacked time, Span persistence, retired triangular display, system fonts, the map background, and place times beside the clock.');

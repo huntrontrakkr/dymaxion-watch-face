@@ -8,6 +8,7 @@
 #include "minute_flip.h"
 #include "clock_styles.h"
 #include "zone_column.h"
+#include "map_times.h"
 #include "caps.h"
 #include "palette.h"
 #include "generated/defaults.h"
@@ -45,6 +46,10 @@ static TapState s_tap;
 static bool s_accel_subscribed;
 static int s_map_w,s_map_h;
 static bool s_beside; // place times beside the clock this frame
+static MapTimeSpot s_map_spots[3];
+static uint8_t s_map_key[16];
+static bool s_map_key_valid;
+static uint8_t zone_position(void){return (s_display[2]>>4)&3;}
 
 static float fsin(float r) { return (float)sin_lookup((int32_t)(r*TRIG_MAX_ANGLE/6.283185307f))/TRIG_MAX_RATIO; }
 static float fcos(float r) { return (float)cos_lookup((int32_t)(r*TRIG_MAX_ANGLE/6.283185307f))/TRIG_MAX_RATIO; }
@@ -297,7 +302,7 @@ static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
     if(hour<10&&!leading_zero())timebuf[0]=' ';
     uint8_t digits[4]={timebuf[0]==' '?10:timebuf[0]-'0',timebuf[1]-'0',timebuf[3]-'0',timebuf[4]-'0'};
     // Beside the place times, the figures shift left and the column fills the right.
-    int cx=s_beside?x+zone_clock_shift(s_display[2]&ZONE_SIDE_RIGHT):x;
+    int cx=s_beside?x+zone_clock_shift(zone_position()==ZONE_POSITION_RIGHT):x;
     if(s_clock_face)draw_flip_time(ctx,local,now,cx,y);
     else if(s_display[1]>=5)draw_system_time(ctx,timebuf,cx,y);
     else draw_span_time(ctx,digits,cx,y);
@@ -354,13 +359,64 @@ static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;int delta;bool stale;
     struct tm zone=zone_time(z,now,local,&delta,&stale);char label[8];
     snprintf(label,sizeof(label),"%.7s",(const char *)z);
-    ZoneRow r;zone_row(&r,label,zone.tm_hour,zone.tm_min,is_24(),delta,stale,s_display[2]&ZONE_SIDE_RIGHT,caps_measure,s_caps);
+    ZoneRow r;zone_row(&r,label,zone.tm_hour,zone.tm_min,is_24(),delta,stale,zone_position()==ZONE_POSITION_RIGHT,caps_measure,s_caps);
     int base=y+zone_row_baseline(row++,count);
     CapsPen mark={ctx,mark_color(i)},ink={ctx,color(6)},accent={ctx,color(7)};
     caps_draw(s_caps,r.label,x+r.label_x,base,false,caps_span,&mark);
     caps_draw(s_caps,r.time,x+r.time_x,base,false,caps_span,&ink);
     caps_draw(s_caps,r.suffix,x+r.suffix_x,base,false,caps_span,&accent);
     caps_draw(s_caps,r.day,x+r.day_x,base,false,caps_span,&accent);
+  }
+}
+// Place times on the map (map_times.c). Placement reruns only when the places,
+// the clock format, turning or a place's day-offset reservation change; it
+// reads the map's coverage from the resource into two short-lived bit masks.
+static int local_offset_minutes(time_t now){
+  struct tm l=*localtime(&now),g=*gmtime(&now);
+  return (ordinal(&l)-ordinal(&g))*1440+(l.tm_hour-g.tm_hour)*60+(l.tm_min-g.tm_min);
+}
+static void map_times_update(time_t now){
+  uint8_t key[16]={0};MapTimePlace places[3];bool clock24=is_24(),turn=s_display[2]&ZONE_TIMES_TURN;int here=local_offset_minutes(now);
+  for(int i=0;i<3;i++){
+    const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;bool present=s_settings[ENABLED]&(1<<i),reserve=present&&zone_offset(z,now)!=here;
+    places[i]=(MapTimePlace){present,z[8],z[9],{0}};map_time_template(places[i].template_text,clock24,reserve);
+    key[4*i]=present;key[4*i+1]=z[8];key[4*i+2]=z[9];key[4*i+3]=reserve;
+  }
+  key[12]=clock24;key[13]=turn;
+  if(s_map_key_valid&&!memcmp(key,s_map_key,sizeof(key)))return;
+  memcpy(s_map_key,key,sizeof(key));s_map_key_valid=true;memset(s_map_spots,0,sizeof(s_map_spots));
+  uint8_t *blocked=calloc(2,MAP_TIMES_MASK_BYTES);if(!blocked)return;
+  ResHandle resource=resource_get_handle(RESOURCE_ID_MAP_LANDSCAPE);uint8_t row[MAP_TIMES_W*4];
+  for(int y=0;y<MAP_TIMES_H;y++){
+    if(resource_load_byte_range(resource,y*MAP_TIMES_W*4,row,sizeof(row))!=sizeof(row)){free(blocked);return;}
+    for(int x=0;x<MAP_TIMES_W;x++)if(row[x*4+3]&3){int i=y*MAP_TIMES_W+x;blocked[i>>3]|=1u<<(i&7);}
+  }
+  map_times_place(blocked,places,turn,blocked+MAP_TIMES_MASK_BYTES,s_map_spots);
+  free(blocked);
+}
+typedef struct {GContext *ctx;int ox,oy,px,py;bool skip_halo;} MapPen;
+static void map_pixel(void *context,int x,int y){
+  MapPen *p=context;
+  if(p->skip_halo&&abs(x-p->px)<=3&&abs(y-p->py)<=3)return;
+  graphics_draw_pixel(p->ctx,GPoint(p->ox+x,p->oy+y));
+}
+static void map_outline(void *context,int x,int y){MapPen *p=context;graphics_fill_rect(p->ctx,GRect(p->ox+x-1,p->oy+y-1,3,3),0,GCornerNone);}
+// Outlined leaders first, then their lines and the tiny times, in each place's color.
+static void draw_map_times(GContext *ctx,time_t now,const struct tm *local,int mx,int my){
+  map_times_update(now);
+  graphics_context_set_fill_color(ctx,color(0));
+  for(int i=0;i<3;i++)if(s_map_spots[i].ok){
+    const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;MapPen pen={ctx,mx,my,z[8],z[9],false};
+    map_time_leader(z[8],z[9],s_map_spots[i].ax,s_map_spots[i].ay,s_map_spots[i].diagonal_first,map_outline,&pen);
+  }
+  for(int i=0;i<3;i++)if(s_map_spots[i].ok){
+    const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;const MapTimeSpot *s=&s_map_spots[i];
+    graphics_context_set_stroke_color(ctx,mark_color(i));
+    MapPen line={ctx,mx,my,z[8],z[9],true},label={ctx,mx,my,0,0,false};
+    map_time_leader(z[8],z[9],s->ax,s->ay,s->diagonal_first,map_pixel,&line);
+    int delta;bool stale;struct tm zone=zone_time(z,now,local,&delta,&stale);char text[MAP_TIME_TEXT];
+    map_time_text(text,zone.tm_hour,zone.tm_min,is_24(),delta,stale);
+    map_time_pixels(text,s->orientation,s->total,s->x,s->y,map_pixel,&label);
   }
 }
 // The bottom band shows the place times: the zones page (or no panels), with
@@ -402,15 +458,17 @@ static void update_proc(Layer *layer,GContext *ctx) {
     pixel_rows(ctx,SUN_HALO,SUN_SIZE+2,SUN_SIZE+2,sun.x-SUN_SIZE/2-1,sun.y-SUN_SIZE/2-1,color(0));
     pixel_rows(ctx,SUN_GLYPH,SUN_SIZE,SUN_SIZE,sun.x-SUN_SIZE/2,sun.y-SUN_SIZE/2,color(7));
   }
+  // Quick View (timeline peek) covers the bottom of the screen: the bottom band
+  // is skipped and the clock kept above the card.
+  int visible=layer_get_unobstructed_bounds(layer).size.h;bool panel_zones=zones_in_panel(visible);
+  uint8_t when=(s_display[2]>>2)&3;
+  if(s_map&&zones_on_map(when,zone_position(),panel_zones))draw_map_times(ctx,now,&local,mx,my);
   for(int i=0;i<3;i++)if(s_settings[ENABLED]&(1<<i)) {
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;GPoint pos=GPoint(mx+z[8],my+z[9]);
     marker(ctx,pos,z[10],mark_color(i));
     if(i==s_selected&&s_frame<16)pixel_rows(ctx,PULSE_GLYPHS[s_frame/4],PULSE_SIZE,PULSE_SIZE,pos.x-8,pos.y-8,mark_color(i));
   }
-  // Quick View (timeline peek) covers the bottom of the screen: the bottom band
-  // is skipped and the clock kept above the card.
-  int visible=layer_get_unobstructed_bounds(layer).size.h;
-  s_beside=s_caps&&zones_beside(s_display[1],s_settings[FLAGS]&STACKED,(s_display[2]>>2)&3,zones_in_panel(visible));
+  s_beside=s_caps&&zones_beside(s_display[1],s_settings[FLAGS]&STACKED,when,zone_position(),panel_zones);
   draw_time(ctx,&local,now,visible);
   // Chart daylight follows the wearer's position when the phone sent one,
   // otherwise the forecast place.

@@ -22,11 +22,11 @@ int main(void){
       assert(display_normalize(normalized,normalized,4));assert(!memcmp(normalized,expected,4));
     }
   }
-  // Version 2 byte 2: bit 1 leading zero, bits 2-3 place times (0-2), bit 4
-  // their side; bit 0 and bits 5-7 stay clear.
+  // Version 2 byte 2: bit 1 leading zero, bits 2-3 when place times show
+  // (0-2), bits 4-5 where (0-2), bit 6 map turning; bits 0 and 7 stay clear.
   for(int options=0;options<256;options++){
     uint8_t current[4]={2,4,options,0};
-    bool valid=!(options&~0x1e)&&((options>>2)&3)<3;
+    bool valid=!(options&~0x7e)&&((options>>2)&3)<3&&((options>>4)&3)<3;
     assert(display_valid(current,4)==valid);
     if(valid){assert(display_normalize(normalized,current,4));assert(!memcmp(normalized,current,4));}
   }

@@ -9,14 +9,17 @@
 #define ZONE_COLUMN_WIDTH 70
 #define ZONE_COLUMN_INSET 4
 #define ZONE_COLUMN_GAP 2
-// Display byte 2, bits 2-3; bit 4 puts the column on the right.
-enum {ZONE_TIMES_PANEL,ZONE_TIMES_BESIDE_HIDDEN,ZONE_TIMES_BESIDE,ZONE_TIMES_COUNT};
-#define ZONE_SIDE_RIGHT 16
+// Display byte 2: bits 2-3 when place times also show outside the panel,
+// bits 4-5 where, bit 6 lets map times turn 90 degrees.
+enum {ZONE_TIMES_PANEL,ZONE_TIMES_WHEN_HIDDEN,ZONE_TIMES_ALWAYS,ZONE_TIMES_COUNT};
+enum {ZONE_POSITION_LEFT,ZONE_POSITION_RIGHT,ZONE_POSITION_MAP,ZONE_POSITION_COUNT};
+#define ZONE_TIMES_TURN 64
 typedef struct {char label[8],time[6],suffix[2],day[4];int label_x,time_x,suffix_x,day_x;} ZoneRow;
 typedef int (*ZoneMeasure)(const char *text,const void *font);
 // Chamfer (4) and the system fonts (5-9) leave room; Broad and Span do not.
 bool zone_column_fits(uint8_t style);
-bool zones_beside(uint8_t style,bool stacked,uint8_t zone_times,bool panel_shows_zones);
+bool zones_beside(uint8_t style,bool stacked,uint8_t zone_times,uint8_t position,bool panel_shows_zones);
+bool zones_on_map(uint8_t zone_times,uint8_t position,bool panel_shows_zones);
 // How far the clock strip moves: right for a left column, left for a right one.
 static inline int zone_clock_shift(bool right){return right?-ZONE_COLUMN_SHIFT:ZONE_COLUMN_SHIFT;}
 int zone_row_baseline(int index,int count);

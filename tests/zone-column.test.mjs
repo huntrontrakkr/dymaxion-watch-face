@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {mkdirSync,readFileSync} from 'node:fs';
-import {ZONE_TIMES,ZONE_SIDES,zoneColumn,zoneColumnFits,zonesBeside,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
+import {ZONE_TIMES,ZONE_POSITIONS,zoneColumn,zoneColumnFits,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
 import {textWidth} from '../shared/type.js';
 import {SYSTEM_CLOCKS} from '../shared/system-clock.js';
 import fonts from '../assets/type/system-clock.json' with {type:'json'};
@@ -21,14 +21,14 @@ test('the watch lays out place times beside the clock exactly as the workshop do
   });
   assert.equal(native[rows.length].trim(),[1,2,3].flatMap(n=>Array.from({length:n},(_,i)=>zoneRowBaseline(i,n))).join(' '));
   let rules='';
-  for(let style=0;style<=9;style++)for(const stacked of [false,true])for(const mode of ZONE_TIMES)for(const shown of [false,true])
-    rules+=+zonesBeside({stacked,clockDisplay:STYLE_CODES[style]??'none',zoneTimes:mode},shown);
+  for(let style=0;style<=9;style++)for(const stacked of [false,true])for(const mode of ZONE_TIMES)for(const zonePosition of ZONE_POSITIONS)for(const shown of [false,true]){
+    const s={stacked,clockDisplay:STYLE_CODES[style]??'none',zoneTimes:mode,zonePosition};rules+=`${+zonesBeside(s,shown)}${+zonesOnMap(s,shown)}`;}
   assert.equal(native[rows.length+1],rules);
   assert.equal(native[rows.length+2],`${zoneColumn('left').shift} ${zoneColumn('right').shift}`);
 });
 test('rows fit the column on either side, clear of the shifted figures, on the figures\' rows',()=>{
-  assert.deepEqual(ZONE_SIDES,['left','right']);
-  for(const side of ZONE_SIDES){const {x,right,shift}=zoneColumn(side);
+  assert.deepEqual(ZONE_POSITIONS,['left','right','map']);
+  for(const side of ['left','right']){const {x,right,shift}=zoneColumn(side);
     for(const clock24 of [true,false])for(const delta of [-1,0,1])for(const label of ['NYC','LON','TYO','SYDNEY','W']){
       const r=zoneRow({label,hour:23,minute:59,clock24,delta,side},measure);
       assert.equal(r.labelX,x);assert(r.label.length>=Math.min(3,label.length),`${label}: at least three letters`);
