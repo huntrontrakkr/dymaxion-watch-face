@@ -18,10 +18,10 @@ int main(int argc,char **argv){
   fprintf(stderr,"%.2f ms per placement\n",(double)(clock()-t0)*1000/CLOCKS_PER_SEC/20);
   for(int i=0;i<3;i++){MapTimeSpot s=spots[i];
     if(!s.ok){printf("-\n");continue;}
-    printf("%d %d %d %d %d %d %d %d\n",s.orientation,s.x,s.y,s.ax,s.ay,s.diagonal_first,(int)s.cost,s.total);
+    printf("%d %d %d %d %d",s.orientation,s.x,s.y,(int)s.cost,s.total);for(int k=0;k<5;k++)printf(" %d,%d",s.points[k].x,s.points[k].y);printf("\n");
     char text[MAP_TIME_TEXT];map_time_text(text,i==2?1:13,i*7,clock24,i-1,false);printf("%s|",text);
     map_time_pixels(text,s.orientation,s.total,s.x,s.y,print_pixel,NULL);printf("|");
-    map_time_leader(places[i].x,places[i].y,s.ax,s.ay,s.diagonal_first,print_pixel,NULL);printf("\n");
+    map_time_route(s.points,print_pixel,NULL);printf("\n");
   }
   return 0;
 }

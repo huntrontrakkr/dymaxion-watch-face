@@ -22,7 +22,8 @@ import {cityControls} from '../shared/city-controls.js';
 import {cityIsUsable,cityHasPosition,clockCaption} from '../shared/city.js';
 import {locationService} from '../tools/location-service.js';
 import {displayControls} from '../shared/display-controls.js';
-import {zoneColumn,zonesBeside,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
+import {zoneColumn,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
+import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels} from '../shared/map-times.js';
 import {minuteFlipClock,drawFlipPixels,FLIP_FACES,flipOffset} from '../shared/minute-flip.js';
 
 const $=id=>document.getElementById(id),zoneExists=tz=>!!moment.tz.zone(tz);
@@ -205,6 +206,28 @@ function mapImage(now,pal,sun){
   }
   g.putImageData(img,0,0);cacheKey=key;mapCache={canvas:offscreen,sunPoint};return mapCache;
 }
+// Place times on the map: placed once per change of places, format or
+// turning (the watch does the same in map_times.c), drawn each frame.
+let mapTimesCache={key:'',spots:[]};
+function drawMapTimes(now,local,mx,my,pal){
+  const [w,h]=MAP_SIZE,m=makeMap(),clock24=use24();
+  const places=settings.places.map(p=>{
+    if(!p.on)return null;const [px,py]=m.project(p.lat,p.lon);
+    const x=Math.max(0,Math.min(w-1,Math.round(px))),y=Math.max(0,Math.min(h-1,Math.round(py)));
+    return {x,y,template:mapTimeTemplate(clock24,moment(now).tz(p.tz).utcOffset()!==local.utcOffset())};
+  });
+  const key=JSON.stringify([places,settings.mapTimesTurn]);
+  if(key!==mapTimesCache.key)mapTimesCache={key,spots:placeMapTimes(places,(x,y)=>!!(mapPixels[(y*w+x)*4+3]&3),w,h,{turn:settings.mapTimesTurn})};
+  const spots=mapTimesCache.spots,px=(x,y,c)=>{ctx.fillStyle=c;ctx.fillRect(mx+x,my+y,1,1);};
+  // Outlined leaders first, then their lines and the tiny times in each place's color.
+  spots.forEach(s=>{if(s){ctx.fillStyle=pal.bg;for(const [x,y] of routePixels(s.points))ctx.fillRect(mx+x-1,my+y-1,3,3);}});
+  spots.forEach((s,i)=>{
+    if(!s)return;const p=settings.places[i],ink=markColor(p,settings,i),[cx,cy]=s.points[0];
+    for(const [x,y] of routePixels(s.points))if(Math.max(Math.abs(x-cx),Math.abs(y-cy))>3)px(x,y,ink);
+    const there=moment(now).tz(p.tz),delta=Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000);
+    for(const [x,y] of tinyPixels(mapTimeText({hour:there.hours(),minute:there.minutes(),clock24,delta}),s.orientation,s.total))px(s.x+x,s.y+y,ink);
+  });
+}
 function statusWidth(){return settings.moonIndicator?126:140;}
 function use24(){return settings.format===1||(settings.format===0&&!new Intl.DateTimeFormat(undefined,{hour:'numeric'}).resolvedOptions().hour12);}
 const two=n=>String(n).padStart(2,'0');
@@ -225,14 +248,16 @@ function render(){
   ctx.drawImage(cached.canvas,mx,my);
   if(settings.lights&&settings.dayNight)for(const [lat,lon]of CITIES){if(dot(direction(lat,lon),sun)>=-.03)continue;const [x,y]=m.project(lat,lon);ctx.fillStyle=pal.accent;ctx.fillRect(mx+Math.round(x),my+Math.round(y),1,1);}
   if(settings.sun&&settings.dayNight){const [sx,sy]=[mx+cached.sunPoint[0],my+cached.sunPoint[1]];const h=SUN_HALO_ROWS.length>>1,s=SUN_ROWS.length>>1;drawPixelRows(ctx,SUN_HALO_ROWS,sx-h,sy-h,pal.bg);drawPixelRows(ctx,SUN_ROWS,sx-s,sy-s,pal.accent);}
-  settings.places.forEach((p,i)=>{if(!p.on)return;const [x,y]=m.project(p.lat,p.lon).map(Math.round),ink=markColor(p,settings,i);marker(mx+x,my+y,p.icon,ink,pal.bg);if(animation&&i===activePlace){const frame=Math.floor((performance.now()-animation)/260);if(frame<4)drawPixelRows(ctx,PULSE_ROWS[frame],mx+x-8,my+y-8,ink);}});
   // Quick View preview: the bottom band hides and the clock stays above the card.
   const visible=$('quick-view').checked?228-QUICK_VIEW_HEIGHT:228;
-  // Place times go beside the clock when chosen, or when the bottom band is
+  // Place times go beside the clock or onto the map when chosen, or when the bottom band is
   // not showing them (another panel, or Quick View covering it).
   const band=visible>=228&&settings.footer.enabled;
   const panelZones=(!band||footerPage==='zones')&&settings.places.some((p,i)=>p.on&&settings.zones[i][1]+36<=visible);
   const beside=zonesBeside(settings,panelZones);
+  const onMap=zonesOnMap(settings,panelZones);canvas.dataset.zonesOnMap=String(onMap);
+  if(onMap)drawMapTimes(now,local,mx,my,pal);
+  settings.places.forEach((p,i)=>{if(!p.on)return;const [x,y]=m.project(p.lat,p.lon).map(Math.round),ink=markColor(p,settings,i);marker(mx+x,my+y,p.icon,ink,pal.bg);if(animation&&i===activePlace){const frame=Math.floor((performance.now()-animation)/260);if(frame<4)drawPixelRows(ctx,PULSE_ROWS[frame],mx+x-8,my+y-8,ink);}});
   const [tx,timeY]=settings.time,[tw,th]=blockSize(settings,'time'),ty=clockTopForVisible(timeY,th,visible),{h,m:minute,ampm}=clockParts(local);
   const city=settings.location.mode==='manual'?settings.location.name:currentCity.sample?currentCity.name:cityIsUsable(currentCity)?currentCity.name+(currentCity.stale||Date.now()/1000-currentCity.fetched>7200?'?':''):'';
   const caption=clockCaption(settings.stacked?'':local.format('ddd DD MMM'),city,use24()?'':ampm,tw-4,t=>textWidth(watchTypeface.text.small,t));

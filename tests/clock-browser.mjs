@@ -92,5 +92,16 @@ try{
   await page.getByLabel('Numerical display',{exact:true}).selectOption('broad');assert.equal(await beside(),'false');assert.match(await page.locator('[data-zone-note]').first().textContent(),/On the map/,'Broad fills the width, so the note points to the map');
   await page.getByLabel('Numerical display',{exact:true}).selectOption('leco');assert.equal(await beside(),'true');
   await page.getByLabel('Numerical display',{exact:true}).selectOption('chamfer');await page.getByLabel('Place times',{exact:true}).selectOption('panel');
-  assert.deepEqual(errors,[]);console.log('PASS: actual and manual city captions, hourly lookup cache, 12-hour and stacked time, Span persistence, retired triangular display, system fonts, the map background, and place times beside the clock.');
+  // On the map: tiny times in the open gaps, joined to their places; any clock style.
+  const mapArea=()=>screen.evaluate(c=>[...c.getContext('2d').getImageData(0,73,200,104).data]);
+  await page.clock.runFor(3000);const bare=await mapArea();
+  await page.getByLabel('Place times',{exact:true}).selectOption('always');await page.getByLabel('Place times position',{exact:true}).selectOption('map');
+  assert.equal(await screen.getAttribute('data-zones-on-map'),'true');assert.equal(await screen.getAttribute('data-zones-beside'),'false');
+  await page.clock.runFor(3000);assert.notDeepEqual(await mapArea(),bare,'times drawn on the map');
+  assert(!await page.getByLabel('Turn map times to fit',{exact:true}).isDisabled());
+  await page.getByLabel('Numerical display',{exact:true}).selectOption('broad');assert.equal(await screen.getAttribute('data-zones-on-map'),'true','map times work with any clock');
+  await page.getByLabel('Numerical display',{exact:true}).selectOption('chamfer');
+  await screen.screenshot({path:'test-results/place-times-map.png'});
+  await page.getByLabel('Place times position',{exact:true}).selectOption('left');await page.getByLabel('Place times',{exact:true}).selectOption('panel');
+  assert.deepEqual(errors,[]);console.log('PASS: actual and manual city captions, hourly lookup cache, 12-hour and stacked time, Span persistence, retired triangular display, system fonts, the map background, and place times beside the clock and on the map.');
 }finally{await browser.close();}

@@ -38,12 +38,18 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
   points** (a dot wherever the triangles meet), **Fine triangle points** (split
   once more) or **Triangle lines** (every edge dotted). It is baked into spare bits of the map data, so it costs the watch no
   memory. **Composition → The planetary clock → Map background**.
-- Place times can sit beside the clock: the figures shift aside and up to three
-  places stack left of them (or right), in the status-line capitals, with any
-  day offset next to the place's label. Choose **Character → Place times**: in the bottom panel (default), beside the clock whenever the
-  panel shows weather, tides or the calendar (or Quick View covers it), or
-  always. Works with Chamfer and the Pebble system fonts; the minute transition
-  is unchanged.
+- Place times can also show outside the bottom panel, whenever it shows
+  weather, tides or the calendar (or Quick View covers it), or always.
+  **Character → Place times** and **Place times position**:
+  - Beside the clock, left (default) or right: the figures shift aside and up
+    to three places stack in the status-line capitals, with any day offset next
+    to the place's label. Works with Chamfer and the Pebble system fonts; the
+    minute transition is unchanged.
+  - On the map: each time, in a tiny 3×5 pixel figure set, sits in the nearest
+    open gap of the net, joined to its place by an outlined leader that leaves
+    the glyph straight out and arrives straight on, centred, with 45° bends.
+    Optionally turned 90° where that sits clearly closer. The watch places them
+    itself, only when places or format change.
 - The status line names the current city, using the phone's location at most
   hourly, or a manual name. The workshop labels Norfolk as an example until you
   request a location preview. City lookup uses Photon / OpenStreetMap.
@@ -186,6 +192,7 @@ Physical hardware and an actual phone webview have not been tested.
 | `shared/display.js` | Numeral styles and the display packet |
 | `shared/map-background.js` | Triangle points and lines behind the map |
 | `shared/zone-column.js` | Place times beside the clock (mirrored by `zone_column.c`) |
+| `shared/map-times.js` | Place times on the map: tiny figures, placement and leaders (mirrored by `map_times.c`) |
 | `shared/city.js`, `tools/location-service.js` | City naming, hourly reverse geocoding and offline cache |
 | `shared/panel-*`, `shared/calendar.js` | Panel controls, provider normalization, packet contract and preview |
 | `designer/` | Interactive preview, accessible controls, JSON import/export |

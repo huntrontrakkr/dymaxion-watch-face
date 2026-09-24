@@ -49,6 +49,7 @@ static bool s_beside; // place times beside the clock this frame
 static MapTimeSpot s_map_spots[3];
 static uint8_t s_map_key[16];
 static bool s_map_key_valid;
+static AppTimer *s_map_timer;
 static uint8_t zone_position(void){return (s_display[2]>>4)&3;}
 
 static float fsin(float r) { return (float)sin_lookup((int32_t)(r*TRIG_MAX_ANGLE/6.283185307f))/TRIG_MAX_RATIO; }
@@ -369,21 +370,26 @@ static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int
   }
 }
 // Place times on the map (map_times.c). Placement reruns only when the places,
-// the clock format, turning or a place's day-offset reservation change; it
-// reads the map's coverage from the resource into two short-lived bit masks.
+// the clock format, turning or a place's day-offset reservation change, and
+// never inside a redraw: the frame that notices a change draws the map without
+// times and schedules placement, which reads the map's coverage from the
+// resource into two short-lived bit masks and then redraws.
 static int local_offset_minutes(time_t now){
   struct tm l=*localtime(&now),g=*gmtime(&now);
   return (ordinal(&l)-ordinal(&g))*1440+(l.tm_hour-g.tm_hour)*60+(l.tm_min-g.tm_min);
 }
-static void map_times_update(time_t now){
-  uint8_t key[16]={0};MapTimePlace places[3];bool clock24=is_24(),turn=s_display[2]&ZONE_TIMES_TURN;int here=local_offset_minutes(now);
+static void map_times_inputs(time_t now,uint8_t key[16],MapTimePlace places[3]){
+  bool clock24=is_24(),turn=s_display[2]&ZONE_TIMES_TURN;int here=local_offset_minutes(now);memset(key,0,16);
   for(int i=0;i<3;i++){
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;bool present=s_settings[ENABLED]&(1<<i),reserve=present&&zone_offset(z,now)!=here;
     places[i]=(MapTimePlace){present,z[8],z[9],{0}};map_time_template(places[i].template_text,clock24,reserve);
     key[4*i]=present;key[4*i+1]=z[8];key[4*i+2]=z[9];key[4*i+3]=reserve;
   }
   key[12]=clock24;key[13]=turn;
-  if(s_map_key_valid&&!memcmp(key,s_map_key,sizeof(key)))return;
+}
+static void map_times_place_now(void *context){
+  (void)context;s_map_timer=NULL;
+  time_t now=time(NULL);uint8_t key[16];MapTimePlace places[3];map_times_inputs(now,key,places);
   memcpy(s_map_key,key,sizeof(key));s_map_key_valid=true;memset(s_map_spots,0,sizeof(s_map_spots));
   uint8_t *blocked=calloc(2,MAP_TIMES_MASK_BYTES);if(!blocked)return;
   ResHandle resource=resource_get_handle(RESOURCE_ID_MAP_LANDSCAPE);uint8_t row[MAP_TIMES_W*4];
@@ -391,8 +397,15 @@ static void map_times_update(time_t now){
     if(resource_load_byte_range(resource,y*MAP_TIMES_W*4,row,sizeof(row))!=sizeof(row)){free(blocked);return;}
     for(int x=0;x<MAP_TIMES_W;x++)if(row[x*4+3]&3){int i=y*MAP_TIMES_W+x;blocked[i>>3]|=1u<<(i&7);}
   }
-  map_times_place(blocked,places,turn,blocked+MAP_TIMES_MASK_BYTES,s_map_spots);
-  free(blocked);
+  map_times_place(blocked,places,s_display[2]&ZONE_TIMES_TURN,blocked+MAP_TIMES_MASK_BYTES,s_map_spots);
+  free(blocked);layer_mark_dirty(s_layer);
+}
+// Whether the cached placement matches the current inputs; if not, schedules it.
+static bool map_times_ready(time_t now){
+  uint8_t key[16];MapTimePlace places[3];map_times_inputs(now,key,places);
+  if(s_map_key_valid&&!memcmp(key,s_map_key,sizeof(key)))return true;
+  if(!s_map_timer)s_map_timer=app_timer_register(10,map_times_place_now,NULL);
+  return false;
 }
 typedef struct {GContext *ctx;int ox,oy,px,py;bool skip_halo;} MapPen;
 static void map_pixel(void *context,int x,int y){
@@ -403,17 +416,17 @@ static void map_pixel(void *context,int x,int y){
 static void map_outline(void *context,int x,int y){MapPen *p=context;graphics_fill_rect(p->ctx,GRect(p->ox+x-1,p->oy+y-1,3,3),0,GCornerNone);}
 // Outlined leaders first, then their lines and the tiny times, in each place's color.
 static void draw_map_times(GContext *ctx,time_t now,const struct tm *local,int mx,int my){
-  map_times_update(now);
+  if(!map_times_ready(now))return;
   graphics_context_set_fill_color(ctx,color(0));
   for(int i=0;i<3;i++)if(s_map_spots[i].ok){
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;MapPen pen={ctx,mx,my,z[8],z[9],false};
-    map_time_leader(z[8],z[9],s_map_spots[i].ax,s_map_spots[i].ay,s_map_spots[i].diagonal_first,map_outline,&pen);
+    map_time_route(s_map_spots[i].points,map_outline,&pen);
   }
   for(int i=0;i<3;i++)if(s_map_spots[i].ok){
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;const MapTimeSpot *s=&s_map_spots[i];
     graphics_context_set_stroke_color(ctx,mark_color(i));
     MapPen line={ctx,mx,my,z[8],z[9],true},label={ctx,mx,my,0,0,false};
-    map_time_leader(z[8],z[9],s->ax,s->ay,s->diagonal_first,map_pixel,&line);
+    map_time_route(s->points,map_pixel,&line);
     int delta;bool stale;struct tm zone=zone_time(z,now,local,&delta,&stale);char text[MAP_TIME_TEXT];
     map_time_text(text,zone.tm_hour,zone.tm_min,is_24(),delta,stale);
     map_time_pixels(text,s->orientation,s->total,s->x,s->y,map_pixel,&label);
@@ -606,7 +619,7 @@ static void init(void) {
   request_sync();pulse();
 }
 static void deinit(void) {
-  clock_stop();app_focus_service_unsubscribe();
+  clock_stop();app_focus_service_unsubscribe();if(s_map_timer)app_timer_cancel(s_map_timer);
   if(s_animation)app_timer_cancel(s_animation);
   tick_timer_service_unsubscribe();unobstructed_area_service_unsubscribe();if(s_accel_subscribed)accel_tap_service_unsubscribe();battery_state_service_unsubscribe();connection_service_unsubscribe();app_message_deregister_callbacks();
   layer_destroy(s_layer);window_destroy(s_window);if(s_map)gbitmap_destroy(s_map);

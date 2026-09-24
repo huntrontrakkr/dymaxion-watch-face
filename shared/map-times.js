@@ -45,15 +45,55 @@ export function tinyPixels(text, orientation, total = tinyWidth(text)) {
   }
   return out;
 }
-// Octilinear path from a to b: the 45° run first, then the flat one, or the
-// reverse. Pixels, inclusive of both ends.
-export function leaderPath([ax, ay], [bx, by], diagonalFirst = true) {
-  const dx = Math.sign(bx - ax), dy = Math.sign(by - ay), adx = Math.abs(bx - ax), ady = Math.abs(by - ay), diag = Math.min(adx, ady);
-  const pts = [[ax, ay]];let x = ax, y = ay;
-  const step = (sx, sy, n) => { for (let i = 0; i < n; i++) { x += sx; y += sy; pts.push([x, y]); } };
-  const flat = adx > ady ? [dx, 0, adx - diag] : [0, dy, ady - diag];
-  if (diagonalFirst) { step(dx, dy, diag); step(...flat); } else { step(...flat); step(dx, dy, diag); }
-  return pts;
+// Leaders meet square and centred. They leave the glyph straight out from
+// the middle of a side (4 pixels from its centre, just past the clearing) and
+// arrive straight on, one pixel short of the time, at a port: the middle row
+// of the label's first or last figure end, or the centre column of one of the
+// time's figures from above or below (turned labels rotate these). Between the
+// two ends the route runs straight, then 45°, then straight, with at least one
+// straight pixel leaving the glyph and two arriving.
+export const EXITS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+const EXIT_DISTANCE = HALO + 1;
+function ports(text, orientation, total, x, y) {
+  const glyphs = tinyLayout(text, orientation, total), out = [], timeOnly = text.length === TIME_GLYPHS;
+  const last = glyphs[TIME_GLYPHS - 1];
+  if (orientation === H) {
+    out.push({p: [x - 2, y + 2], d: [1, 0]});
+    if (timeOnly) out.push({p: [x + last.x + last.w + 1, y + 2], d: [-1, 0]});
+    glyphs.slice(0, TIME_GLYPHS).forEach(g => { if (g.c === ':') return; out.push({p: [x + g.x + 1, y - 2], d: [0, 1]}, {p: [x + g.x + 1, y + TINY_HEIGHT + 1], d: [0, -1]}); });
+  } else {
+    out.push({p: [x + 2, y + glyphs[0].y + glyphs[0].h + 1], d: [0, -1]});
+    if (timeOnly) out.push({p: [x + 2, y + last.y - 2], d: [0, 1]});
+    glyphs.slice(0, TIME_GLYPHS).forEach(g => { if (g.c === ':') return; out.push({p: [x - 2, y + g.y + 1], d: [1, 0]}, {p: [x + TINY_HEIGHT + 1, y + g.y + 1], d: [-1, 0]}); });
+  }
+  return out;
+}
+// The route's corner points from the glyph centre c through exit direction e
+// to port p arriving in direction d, or null when no such route exists.
+// Cost: 5 per straight pixel, 7 per diagonal one.
+export function leaderRoute([cx, cy], e, {p: [px, py], d}) {
+  const ex = cx + e[0] * EXIT_DISTANCE, ey = cy + e[1] * EXIT_DISTANCE, X = px - ex, Y = py - ey;
+  const dot = (v, w) => v[0] * w[0] + v[1] * w[1];
+  if (e[0] === d[0] && e[1] === d[1]) {
+    const along = dot([X, Y], e), perp = e[0] ? Y : X, n = Math.abs(perp);
+    if (along < n + 3) return null;
+    const s = Math.sign(perp), k1 = [ex + e[0], ey + e[1]], k2 = [k1[0] + (e[0] || s) * n, k1[1] + (e[1] || s) * n];
+    return {points: [[cx, cy], [ex, ey], k1, k2, [px, py]], cost: 5 * (EXIT_DISTANCE + along - n) + 7 * n};
+  }
+  if (e[0] === -d[0] && e[1] === -d[1]) return null;
+  const U = dot([X, Y], e), W = dot([X, Y], d);
+  if (U < 1 || W < 2) return null;
+  const n = Math.min(U - 1, W - 2), k1 = [ex + e[0] * (U - n), ey + e[1] * (U - n)], k2 = [k1[0] + (e[0] + d[0]) * n, k1[1] + (e[1] + d[1]) * n];
+  return {points: [[cx, cy], [ex, ey], k1, k2, [px, py]], cost: 5 * (EXIT_DISTANCE + U + W - 2 * n) + 7 * n};
+}
+// Pixels along a route's corner points, each once.
+export function routePixels(points) {
+  const out = [points[0].slice()];
+  for (let i = 1; i < points.length; i++) {
+    let [x, y] = points[i - 1];const [tx, ty] = points[i], sx = Math.sign(tx - x), sy = Math.sign(ty - y);
+    while (x !== tx || y !== ty) { x += sx; y += sy; out.push([x, y]); }
+  }
+  return out;
 }
 // Offsets tried outward from a centre: c, c-1, c+1, c-2, c+2, ... within [lo, hi].
 export function outward(c, lo, hi) {
@@ -70,45 +110,48 @@ export function outward(c, lo, hi) {
 function placeOne(p, taken, blocked, width, height, turn) {
   const mark = (x, y) => { if (x >= 0 && y >= 0 && x < width && y < height) taken[y * width + x] = 1; };
   const open = (x, y) => x >= 0 && y >= 0 && x < width && y < height && !taken[y * width + x] && !blocked(x, y);
-  const clear = (x, y) => x >= 0 && y >= 0 && x < width && y < height && !taken[y * width + x];
   let best = null;
   for (const orientation of turn ? [H, V] : [H]) {
-    const glyphs = tinyLayout(p.template, orientation), bw = Math.max(...glyphs.map(g => g.x + g.w)), bh = Math.max(...glyphs.map(g => g.y + g.h));
+    const total = tinyWidth(p.template), glyphs = tinyLayout(p.template, orientation, total);
+    const bw = Math.max(...glyphs.map(g => g.x + g.w)), bh = Math.max(...glyphs.map(g => g.y + g.h));
     const xs = outward(p.x - (bw >> 1), MARGIN, width - MARGIN - bw), ys = outward(p.y - (bh >> 1), MARGIN, height - MARGIN - bh);
     const penalty = orientation === V ? TURN_PENALTY : 0;
-    // No candidate can cost less than 5 × its distance on either axis.
+    // No route costs less than 5 per pixel of distance on either axis.
     const gap = (c, lo, hi) => c < lo ? lo - c : c > hi ? c - hi : 0;
     for (const y of ys) {
-      const dyMin = gap(p.y, y - MARGIN, y + bh + MARGIN - 1);
+      const dyMin = gap(p.y, y - 2, y + bh + 1);
       if (best && 5 * dyMin + penalty >= best.cost) continue;
       for (const x of xs) {
-      if (best && 5 * Math.max(dyMin, gap(p.x, x - MARGIN, x + bw + MARGIN - 1)) + penalty >= best.cost) continue;
-      let cost = Infinity, anchor = null;
-      for (let i = 0; i < Math.min(TIME_GLYPHS, glyphs.length); i++) {
-        const g = glyphs[i], bx = x + g.x - MARGIN, by = y + g.y - MARGIN;
-        const ax = Math.max(bx, Math.min(bx + g.w + 1, p.x)), ay = Math.max(by, Math.min(by + g.h + 1, p.y));
-        const dx = Math.abs(ax - p.x), dy = Math.abs(ay - p.y), c = 5 * Math.max(dx, dy) + 2 * Math.min(dx, dy);
-        if (c < cost) { cost = c; anchor = [ax, ay]; }
-      }
-      cost += penalty;
-      if (best && cost >= best.cost) continue;
-      let fits = true;
-      for (const g of glyphs) {
-        for (let yy = y + g.y - MARGIN; fits && yy < y + g.y + g.h + MARGIN; yy++) for (let xx = x + g.x - MARGIN; xx < x + g.x + g.w + MARGIN; xx++) if (!open(xx, yy)) { fits = false; break; }
-        if (!fits) break;
-      }
-      if (!fits) continue;
-      for (const diagonalFirst of [true, false]) {
-        const path = leaderPath([p.x, p.y], anchor, diagonalFirst);
-        if (path.every(([px, py]) => Math.max(Math.abs(px - p.x), Math.abs(py - p.y)) <= HALO || clear(px, py))) { best = {cost, orientation, x, y, anchor, diagonalFirst}; break; }
-      }
+        if (best && 5 * Math.max(dyMin, gap(p.x, x - 2, x + bw + 1)) + penalty >= best.cost) continue;
+        let fits = true;
+        for (const g of glyphs) {
+          for (let yy = y + g.y - MARGIN; fits && yy < y + g.y + g.h + MARGIN; yy++) for (let xx = x + g.x - MARGIN; xx < x + g.x + g.w + MARGIN; xx++) if (!open(xx, yy)) { fits = false; break; }
+          if (!fits) break;
+        }
+        if (!fits) continue;
+        // Candidate routes, cheapest first (exits, then ports, in order on ties).
+        const routes = [];
+        for (const e of EXITS) for (const port of ports(p.template, orientation, total, x, y)) {
+          const r = leaderRoute([p.x, p.y], e, port);
+          if (r) routes.push(r);
+        }
+        if (!routes.length) continue;
+        routes.sort((a, b) => a.cost - b.cost);
+        if (best && routes[0].cost + penalty >= best.cost) continue;
+        const own = (px, py) => glyphs.some(g => px >= x + g.x - MARGIN && px < x + g.x + g.w + MARGIN && py >= y + g.y - MARGIN && py < y + g.y + g.h + MARGIN);
+        for (const r of routes) {
+          if (best && r.cost + penalty >= best.cost) break;
+          const ok = routePixels(r.points).every(([px, py]) => Math.max(Math.abs(px - p.x), Math.abs(py - p.y)) <= HALO ||
+            (px >= 0 && py >= 0 && px < width && py < height && !taken[py * width + px] && !own(px, py)));
+          if (ok) { best = {cost: r.cost + penalty, orientation, x, y, points: r.points}; break; }
+        }
       }
     }
   }
   if (!best) return null;
   for (const g of tinyLayout(p.template, best.orientation))
     for (let yy = best.y + g.y - MARGIN; yy < best.y + g.y + g.h + MARGIN; yy++) for (let xx = best.x + g.x - MARGIN; xx < best.x + g.x + g.w + MARGIN; xx++) mark(xx, yy);
-  for (const [px, py] of leaderPath([p.x, p.y], best.anchor, best.diagonalFirst)) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) mark(px + dx, py + dy);
+  for (const [px, py] of routePixels(best.points)) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) mark(px + dx, py + dy);
   return {...best, template: p.template, total: tinyWidth(p.template)};
 }
 // Every order of the places is tried (at most six); the arrangement with the

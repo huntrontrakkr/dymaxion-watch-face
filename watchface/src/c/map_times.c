@@ -48,14 +48,49 @@ void map_time_pixels(const char *text,uint8_t orientation,int total,int x,int y,
 }
 static int sign(int v){return (v>0)-(v<0);}
 static int iabs(int v){return v<0?-v:v;}
-void map_time_leader(int ax,int ay,int bx,int by,bool diagonal_first,MapTimePixel pixel,void *context){
-  int dx=sign(bx-ax),dy=sign(by-ay),adx=iabs(bx-ax),ady=iabs(by-ay),diag=adx<ady?adx:ady,x=ax,y=ay;
-  int fx=adx>ady?dx:0,fy=adx>ady?0:dy,flat=(adx>ady?adx:ady)-diag;
-  pixel(context,x,y);
-  for(int phase=0;phase<2;phase++){
-    bool diagonal=(phase==0)==diagonal_first;int sx=diagonal?dx:fx,sy=diagonal?dy:fy,count=diagonal?diag:flat;
-    for(int i=0;i<count;i++){x+=sx;y+=sy;pixel(context,x,y);}
+void map_time_route(const MapPoint points[5],MapTimePixel pixel,void *context){
+  int x=points[0].x,y=points[0].y;pixel(context,x,y);
+  for(int i=1;i<5;i++){int sx=sign(points[i].x-x),sy=sign(points[i].y-y);while(x!=points[i].x||y!=points[i].y){x+=sx;y+=sy;pixel(context,x,y);}}
+}
+// Leaders leave the glyph straight out from the middle of a side and arrive
+// straight on at a port centred on the time (shared/map-times.js).
+#define EXIT_DISTANCE (HALO+1)
+static const int8_t EXITS[4][2]={{1,0},{-1,0},{0,1},{0,-1}};
+typedef struct {int16_t x,y;int8_t dx,dy;} Port;
+static int ports(const char *text,uint8_t orientation,int total,int x,int y,Port *out){
+  Box g[MAP_TIME_TEXT];int n=layout(text,orientation,total,g),count=0;bool time_only=n==TIME_GLYPHS;const Box *last=&g[TIME_GLYPHS-1];
+  if(orientation==MAP_TIME_H){
+    out[count++]=(Port){(int16_t)(x-2),(int16_t)(y+2),1,0};
+    if(time_only)out[count++]=(Port){(int16_t)(x+last->x+last->w+1),(int16_t)(y+2),-1,0};
+    for(int i=0;i<TIME_GLYPHS&&i<n;i++){if(text[i]==':')continue;
+      out[count++]=(Port){(int16_t)(x+g[i].x+1),(int16_t)(y-2),0,1};out[count++]=(Port){(int16_t)(x+g[i].x+1),(int16_t)(y+TINY_H+1),0,-1};}
+  }else{
+    out[count++]=(Port){(int16_t)(x+2),(int16_t)(y+g[0].y+g[0].h+1),0,-1};
+    if(time_only)out[count++]=(Port){(int16_t)(x+2),(int16_t)(y+last->y-2),0,1};
+    for(int i=0;i<TIME_GLYPHS&&i<n;i++){if(text[i]==':')continue;
+      out[count++]=(Port){(int16_t)(x-2),(int16_t)(y+g[i].y+1),1,0};out[count++]=(Port){(int16_t)(x+TINY_H+1),(int16_t)(y+g[i].y+1),-1,0};}
   }
+  return count;
+}
+typedef struct {int32_t cost;MapPoint points[5];} Route;
+static bool route(int cx,int cy,const int8_t e[2],const Port *p,Route *r){
+  int ex=cx+e[0]*EXIT_DISTANCE,ey=cy+e[1]*EXIT_DISTANCE,X=p->x-ex,Y=p->y-ey;
+  r->points[0]=(MapPoint){(int16_t)cx,(int16_t)cy};r->points[1]=(MapPoint){(int16_t)ex,(int16_t)ey};r->points[4]=(MapPoint){p->x,p->y};
+  if(e[0]==p->dx&&e[1]==p->dy){
+    int along=X*e[0]+Y*e[1],perp=e[0]?Y:X,n=iabs(perp),s=sign(perp);
+    if(along<n+3)return false;
+    int k1x=ex+e[0],k1y=ey+e[1];
+    r->points[2]=(MapPoint){(int16_t)k1x,(int16_t)k1y};
+    r->points[3]=(MapPoint){(int16_t)(k1x+(e[0]?e[0]:s)*n),(int16_t)(k1y+(e[1]?e[1]:s)*n)};
+    r->cost=5*(EXIT_DISTANCE+along-n)+7*n;return true;
+  }
+  if(e[0]==-p->dx&&e[1]==-p->dy)return false;
+  int U=X*e[0]+Y*e[1],W=X*p->dx+Y*p->dy;
+  if(U<1||W<2)return false;
+  int n=U-1<W-2?U-1:W-2,k1x=ex+e[0]*(U-n),k1y=ey+e[1]*(U-n);
+  r->points[2]=(MapPoint){(int16_t)k1x,(int16_t)k1y};
+  r->points[3]=(MapPoint){(int16_t)(k1x+(e[0]+p->dx)*n),(int16_t)(k1y+(e[1]+p->dy)*n)};
+  r->cost=5*(EXIT_DISTANCE+U+W-2*n)+7*n;return true;
 }
 static bool bit(const uint8_t *m,int x,int y){int i=y*MAP_TIMES_W+x;return (m[i>>3]>>(i&7))&1;}
 static void set_bit(uint8_t *m,int x,int y){if(x<0||y<0||x>=MAP_TIMES_W||y>=MAP_TIMES_H)return;int i=y*MAP_TIMES_W+x;m[i>>3]|=1u<<(i&7);}
@@ -66,45 +101,48 @@ static int outward(int c,int lo,int hi,int16_t *out){
   return n;
 }
 static int gap(int c,int lo,int hi){return c<lo?lo-c:c>hi?c-hi:0;}
-typedef struct {const uint8_t *taken;int px,py;bool ok;} LeaderCheck;
-static void check_leader(void *context,int x,int y){
-  LeaderCheck *c=context;
+typedef struct {const uint8_t *taken;const Box *g;int n,x,y,px,py;bool ok;} RouteCheck;
+static void check_route(void *context,int x,int y){
+  RouteCheck *c=context;
   if(iabs(x-c->px)<=HALO&&iabs(y-c->py)<=HALO)return;
-  if(x<0||y<0||x>=MAP_TIMES_W||y>=MAP_TIMES_H||bit(c->taken,x,y))c->ok=false;
+  if(x<0||y<0||x>=MAP_TIMES_W||y>=MAP_TIMES_H||bit(c->taken,x,y)){c->ok=false;return;}
+  for(int i=0;i<c->n;i++)if(x>=c->x+c->g[i].x-MARGIN&&x<c->x+c->g[i].x+c->g[i].w+MARGIN&&y>=c->y+c->g[i].y-MARGIN&&y<c->y+c->g[i].y+c->g[i].h+MARGIN){c->ok=false;return;}
 }
-static void mark_leader(void *context,int x,int y){for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++)set_bit(context,x+dx,y+dy);}
+static void mark_route(void *context,int x,int y){for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++)set_bit(context,x+dx,y+dy);}
+#define MAX_ROUTES 48
 static void place_one(const MapTimePlace *p,const uint8_t *blocked,uint8_t *taken,bool turn,MapTimeSpot *best){
   best->ok=false;
   for(uint8_t orientation=MAP_TIME_H;orientation<=(turn?MAP_TIME_V:MAP_TIME_H);orientation++){
     Box g[MAP_TIME_TEXT];int total=tiny_width(p->template_text),n=layout(p->template_text,orientation,total,g),bw=0,bh=0;
     for(int i=0;i<n;i++){if(g[i].x+g[i].w>bw)bw=g[i].x+g[i].w;if(g[i].y+g[i].h>bh)bh=g[i].y+g[i].h;}
     // Static: Pebble app stacks are small.
-    static int16_t xs[MAP_TIMES_W],ys[MAP_TIMES_H];
+    static int16_t xs[MAP_TIMES_W],ys[MAP_TIMES_H];static Route routes[MAX_ROUTES];static Port port[MAX_ROUTES];
     int nx=outward(p->x-(bw>>1),MARGIN,MAP_TIMES_W-MARGIN-bw,xs),ny=outward(p->y-(bh>>1),MARGIN,MAP_TIMES_H-MARGIN-bh,ys);
     int penalty=orientation==MAP_TIME_V?TURN_PENALTY:0;
     for(int j=0;j<ny;j++){
-      int y=ys[j],dy_min=gap(p->y,y-MARGIN,y+bh+MARGIN-1);
+      int y=ys[j],dy_min=gap(p->y,y-2,y+bh+1);
       if(best->ok&&5*dy_min+penalty>=best->cost)continue;
       for(int k=0;k<nx;k++){
-        int x=xs[k],dx_min=gap(p->x,x-MARGIN,x+bw+MARGIN-1);
+        int x=xs[k],dx_min=gap(p->x,x-2,x+bw+1);
         if(best->ok&&5*(dx_min>dy_min?dx_min:dy_min)+penalty>=best->cost)continue;
-        int32_t cost=INT32_MAX;int ax=0,ay=0;
-        for(int i=0;i<n&&i<TIME_GLYPHS;i++){
-          int bx=x+g[i].x-MARGIN,by=y+g[i].y-MARGIN;
-          int cx=p->x<bx?bx:p->x>bx+g[i].w+1?bx+g[i].w+1:p->x,cy=p->y<by?by:p->y>by+g[i].h+1?by+g[i].h+1:p->y;
-          int ddx=iabs(cx-p->x),ddy=iabs(cy-p->y),c=5*(ddx>ddy?ddx:ddy)+2*(ddx<ddy?ddx:ddy);
-          if(c<cost){cost=c;ax=cx;ay=cy;}
-        }
-        cost+=penalty;
-        if(best->ok&&cost>=best->cost)continue;
         bool fits=true;
         for(int i=0;i<n&&fits;i++)for(int yy=y+g[i].y-MARGIN;fits&&yy<y+g[i].y+g[i].h+MARGIN;yy++)
           for(int xx=x+g[i].x-MARGIN;xx<x+g[i].x+g[i].w+MARGIN;xx++)
             if(xx<0||yy<0||xx>=MAP_TIMES_W||yy>=MAP_TIMES_H||bit(taken,xx,yy)||bit(blocked,xx,yy)){fits=false;break;}
         if(!fits)continue;
-        for(int first=1;first>=0;first--){
-          LeaderCheck c={taken,p->x,p->y,true};map_time_leader(p->x,p->y,ax,ay,first,check_leader,&c);
-          if(c.ok){*best=(MapTimeSpot){true,first,orientation,(int16_t)x,(int16_t)y,(int16_t)ax,(int16_t)ay,cost,(uint8_t)total};break;}
+        // Candidate routes, cheapest first (exits, then ports, in order on ties).
+        int np=ports(p->template_text,orientation,total,x,y,port),nr=0;
+        for(int e=0;e<4;e++)for(int q=0;q<np&&nr<MAX_ROUTES;q++){
+          Route r;if(!route(p->x,p->y,EXITS[e],&port[q],&r))continue;
+          int at=nr++;while(at>0&&routes[at-1].cost>r.cost){routes[at]=routes[at-1];at--;}
+          routes[at]=r;
+        }
+        if(!nr||(best->ok&&routes[0].cost+penalty>=best->cost))continue;
+        for(int r=0;r<nr;r++){
+          if(best->ok&&routes[r].cost+penalty>=best->cost)break;
+          RouteCheck c={taken,g,n,x,y,p->x,p->y,true};map_time_route(routes[r].points,check_route,&c);
+          if(c.ok){best->ok=true;best->orientation=orientation;best->x=x;best->y=y;best->cost=routes[r].cost+penalty;best->total=total;
+            memcpy(best->points,routes[r].points,sizeof(best->points));break;}
         }
       }
     }
@@ -113,7 +151,7 @@ static void place_one(const MapTimePlace *p,const uint8_t *blocked,uint8_t *take
   Box g[MAP_TIME_TEXT];int n=layout(p->template_text,best->orientation,best->total,g);
   for(int i=0;i<n;i++)for(int yy=best->y+g[i].y-MARGIN;yy<best->y+g[i].y+g[i].h+MARGIN;yy++)
     for(int xx=best->x+g[i].x-MARGIN;xx<best->x+g[i].x+g[i].w+MARGIN;xx++)set_bit(taken,xx,yy);
-  map_time_leader(p->x,p->y,best->ax,best->ay,best->diagonal_first,mark_leader,taken);
+  map_time_route(best->points,mark_route,taken);
 }
 static const uint8_t ORDERS[6][3]={{0,1,2},{0,2,1},{1,0,2},{1,2,0},{2,0,1},{2,1,0}};
 void map_times_place(const uint8_t *blocked,const MapTimePlace places[3],bool turn,uint8_t *taken,MapTimeSpot out[3]){
