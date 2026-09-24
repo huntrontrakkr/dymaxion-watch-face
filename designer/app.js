@@ -64,7 +64,7 @@ const panelEditor=panelControls($('panel-controls'),()=>settings,footer=>{
   settings=validateSettings(candidate,zoneExists);if(previous!==settings.footer.home||!settings.footer.pages.includes(footerPage))footerPage=settings.footer.home;
   panelChanged=Date.now();save();if(environmentMode==='live')environment.refresh();
 });
-function nextPanel(){const pages=settings.footer.pages;footerPage=pages[(pages.indexOf(footerPage)+1)%pages.length];panelChanged=Date.now();render();}
+function nextPanel(){const pages=settings.footer.pages;footerPage=pages[(pages.indexOf(footerPage)+1)%pages.length];panelChanged=Date.now();if(footerPage==='zones')startPulse();render();}
 $('next-panel').onclick=nextPanel;
 $('sample-data').onclick=()=>{environmentMode='sample';render();};
 $('live-data').onclick=()=>{environmentMode='live';environment.refresh();render();};
@@ -86,7 +86,7 @@ const drawings={meridian:'M4 4H20M28 4H36M7 8H33V20H7ZM3 26 13 23 19 30 28 24 37
 for(const [id,name] of [['meridian','Meridian'],['horizon','Horizon']]){
   const button=document.createElement('button');button.type='button';button.dataset.preset=id;button.setAttribute('aria-pressed','false');
   button.innerHTML=`<svg viewBox="0 0 40 46" aria-hidden="true"><path d="${drawings[id]}"/></svg><span>${name}</span>`;
-  button.onclick=()=>{Object.assign(settings,presetFor(id,settings.clockDisplay));sync();save();pulse();};$('presets').append(button);
+  button.onclick=()=>{Object.assign(settings,presetFor(id,settings.clockDisplay));sync();save();};$('presets').append(button);
 }
 THEMES.forEach((t,i)=>{
   const button=document.createElement('button');button.type='button';button.dataset.theme=i;button.setAttribute('aria-pressed','false');
@@ -250,7 +250,7 @@ function daylightPlace(){
 function render(){
   if(!mapPixels.length||!watchTypeface||!watchSpan)return;
   if(!settings.footer.pages.includes(footerPage))footerPage=settings.footer.home;
-  if(settings.footer.enabled&&settings.footer.rotationMinutes&&Date.now()-panelChanged>=settings.footer.rotationMinutes*60000){footerPage=settings.footer.pages[(settings.footer.pages.indexOf(footerPage)+1)%settings.footer.pages.length];panelChanged=Date.now();}
+  if(settings.footer.enabled&&settings.footer.rotationMinutes&&Date.now()-panelChanged>=settings.footer.rotationMinutes*60000){footerPage=settings.footer.pages[(settings.footer.pages.indexOf(footerPage)+1)%settings.footer.pages.length];panelChanged=Date.now();if(footerPage==='zones')startPulse();}
   const now=new Date(Date.now()+offset*3600000),local=moment(now),sun=sunDirection(new Date(Math.floor(+now/300000)*300000)),pal=paletteFor(settings);
   ctx.clearRect(0,0,200,228);ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,228);
   const m=makeMap(),[mx,my]=settings.map,cached=mapImage(now,pal,sun);
@@ -343,7 +343,10 @@ function render(){
   const lunar=moonDescription(now);$('moon-state').textContent=settings.moonIndicator?`${lunar.name} · ${lunar.illumination}% lit. `:'';
   if(animation){if(performance.now()-animation>1040)animation=0;setTimeout(render,65);}
 }
-function pulse(){const enabled=settings.places.map((p,i)=>p.on?i:-1).filter(i=>i>=0);if(!enabled.length)return;activePlace=enabled[(enabled.indexOf(activePlace)+1)%enabled.length];if(settings.motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches)animation=performance.now();render();}
+// The marker pulse plays once when the watch face opens and when the bottom
+// panel comes back round to the time zones, as on the watch; never on a timer.
+function startPulse(){const enabled=settings.places.map((p,i)=>p.on?i:-1).filter(i=>i>=0);if(!enabled.length)return;activePlace=enabled[(enabled.indexOf(activePlace)+1)%enabled.length];if(settings.motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches)animation=performance.now();}
+function pulse(){startPulse();render();}
 $('pulse').onclick=pulse;$('guides').onchange=render;$('quick-view').onchange=render;
 $('scale').onclick=()=>{const actual=$('scale').getAttribute('aria-pressed')!=='true';$('scale').setAttribute('aria-pressed',actual);$('scale').textContent=actual?'Enlarge preview':'Actual size';document.querySelector('.preview-stage').classList.toggle('actual',actual);};
 $('scrub').oninput=()=>{offset=+$('scrub').value;render();};$('live').onclick=()=>{offset=0;$('scrub').value=0;render();};

@@ -57,7 +57,7 @@ marks are cartographic cues rather than miniature illustrations. The
 Each place has an independent color. A color can follow its theme's default or
 hold a custom choice, rounded to the nearest RGB222 shade so the browser and
 Pebble draw the same pixels. The chosen color runs through the map symbol,
-zone label, daylight dot and brief launch/settings pulse. The black or paper-colored
+zone label, daylight dot and one brief pulse on launch and on returning to the time-zone panel. The black or paper-colored
 halo keeps the 5×5-pixel mark separate from the map beneath it.
 
 ## Typography

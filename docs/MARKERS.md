@@ -47,7 +47,7 @@ rays, on the same 7×7 clearing as the place glyphs.
 Each tracked place can select any glyph and its own color. The color picker
 rounds to Pebble's 64-color RGB222 palette. “Use theme color” returns a place
 to the current theme default. The same color appears on the map glyph, zone
-label, daylight dot and short launch/settings pulse.
+label, daylight dot and one short pulse on launch and on returning to the time-zone panel.
 
 The six palettes starting with High Visibility also draw the chosen 5×5 glyph
 beside its city label, in addition to the day/night dot. Match glyph shapes

@@ -578,11 +578,20 @@ static void pulse(void) {
   if((s_settings[FLAGS]&MOTION)&&s_battery.charge_percent>20&&s_settings[ENABLED]) {s_frame=0;s_animation=app_timer_register(65,animation_step,NULL);}
   layer_mark_dirty(s_layer);
 }
+// The marker pulse plays once when the face opens and again only when the
+// bottom panel comes back round to the time zones, never on a timer or a
+// settings change, so the animation costs next to nothing.
+static bool s_zones_shown;
+static void pulse_on_zones(void){
+  bool shown=panels_showing_zones();
+  if(shown&&!s_zones_shown)pulse();
+  s_zones_shown=shown;
+}
 // A wrist flick changes panels. Pebble's tap service is a hardware interrupt,
 // so nothing samples the accelerometer or wakes the watch between flicks.
 static void tapped(AccelAxisType axis,int32_t direction) {
   time_t seconds;uint16_t ms;time_ms(&seconds,&ms);
-  if(panel_tap(&s_tap,(uint64_t)seconds*1000+ms,panels_flicks())&&panels_cycle(time(NULL)))layer_mark_dirty(s_layer);
+  if(panel_tap(&s_tap,(uint64_t)seconds*1000+ms,panels_flicks())&&panels_cycle(time(NULL))){layer_mark_dirty(s_layer);pulse_on_zones();}
 }
 static void configure_shake(void) {
   bool wanted=panels_shake_enabled();
@@ -600,7 +609,7 @@ static void tick(struct tm *local_time,TimeUnits changed) {
   // five minutes instead of reading and shading all 20,800 pixels each minute.
   if(local_time->tm_min%5==0)s_map_dirty=true;
   layer_mark_dirty(s_layer);
-  time_t now=time(NULL);panels_tick(now);
+  time_t now=time(NULL);panels_tick(now);pulse_on_zones();
   if(s_clock_face)clock_prepare(local_time,now,true);
   int interval=panels_refresh_minutes();if(!(s_city[1]&1)&&interval>60)interval=60;
   if((now/60)%interval==0)request_sync();
@@ -656,7 +665,8 @@ static void received(DictionaryIterator *iter,void *context) {
     clock_stop();s_clock_ready=false;
   }
   if(changed)window_set_background_color(s_window,color(0));
-  if(changed){configure_shake();pulse();}else layer_mark_dirty(s_layer);
+  if(changed)configure_shake();
+  layer_mark_dirty(s_layer);pulse_on_zones();
 }
 static void init(void) {
   panels_init();
@@ -687,7 +697,7 @@ static void init(void) {
   unobstructed_area_service_subscribe((UnobstructedAreaHandlers){.change=obstruction_changed,.did_change=obstruction_done},NULL);
   app_focus_service_subscribe(focus_changed);
   app_message_register_inbox_received(received);app_message_open(1024,64);
-  request_sync();pulse();
+  request_sync();s_zones_shown=panels_showing_zones();pulse();
 }
 static void deinit(void) {
   clock_stop();app_focus_service_unsubscribe();if(s_map_timer)app_timer_cancel(s_map_timer);
