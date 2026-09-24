@@ -37,7 +37,7 @@ int map_markers_hulls(const MapMarker *p,const MapMarker *l,const uint8_t *group
     int members=0,cy=0,x0=1000,x1=-1000,ox0=1000,oy0=1000,ox1=-1000,oy1=-1000;
     for(int i=0;i<n;i++)if(group[i]==root){
       if(!members++)cy=l[i].y;
-      int lo=l[i].x-p[i].half,hi=l[i].x+p[i].half;x0=lo<x0?lo:x0;x1=hi>x1?hi:x1;
+      int lo=l[i].x-p[i].half-1,hi=l[i].x+p[i].half+1;x0=lo<x0?lo:x0;x1=hi>x1?hi:x1;
       int a=l[i].x-p[i].half-1,b=l[i].y-p[i].half-1,c=l[i].x+p[i].half+1,d=l[i].y+p[i].half+1;
       ox0=a<ox0?a:ox0;oy0=b<oy0?b:oy0;ox1=c>ox1?c:ox1;oy1=d>oy1?d:oy1;
     }

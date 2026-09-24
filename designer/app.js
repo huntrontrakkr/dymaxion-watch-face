@@ -272,8 +272,8 @@ function render(){
   if(markers.you)drawPixelRows(ctx,HERE_HALO_ROWS,mx+markers.you.x-4,my+markers.you.y-4,pal.bg);
   ctx.fillStyle=pal.bg;for(const h of markers.hulls)for(const [x,y] of hullPixels(h).ground)ctx.fillRect(mx+x,my+y,1,1);
   if(onMap)drawMapTimes(now,local,mx,my,pal,markers);
-  // Hull outlines in the edge color: quiet, like the map's own edges.
-  ctx.fillStyle=pal.edge;for(const h of markers.hulls)for(const [x,y] of hullPixels(h).outline)ctx.fillRect(mx+x,my+y,1,1);
+  // Hull outlines in the ground color, like each glyph's clearing ring.
+  ctx.fillStyle=pal.bg;for(const h of markers.hulls)for(const [x,y] of hullPixels(h).outline)ctx.fillRect(mx+x,my+y,1,1);
   settings.places.forEach((p,i)=>{const s=markers.places[i];if(!s)return;const ink=markColor(p,settings,i);drawMarkerPixels(ctx,p.icon,mx+s.x,my+s.y,ink);if(animation&&i===activePlace){const frame=Math.floor((performance.now()-animation)/260);if(frame<4)drawPixelRows(ctx,PULSE_ROWS[frame],mx+s.x-8,my+s.y-8,ink);}});
   // You: a bullseye one size up, in the clock's ink.
   if(markers.you)drawPixelRows(ctx,HERE_ROWS,mx+markers.you.x-3,my+markers.you.y-3,pal.ink);

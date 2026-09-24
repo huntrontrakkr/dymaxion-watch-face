@@ -39,16 +39,16 @@ test('close markers sit side by side, west to east, clearings never covering a g
   // Grouped places run west to east.
   const eu=layoutMarkers(cases[0]);assert(eu[2].x<eu[1].x&&eu[1].x<eu[0].x,'Berlin, Paris, London by true longitude');
 });
-test('a hull is exactly the place glyphs\' 5 pixels tall, corners cut; your marker stands proud of it',()=>{
+test('a hull is 7 pixels tall, its outline where each glyph\'s clearing ring would be, corners cut',()=>{
   const pts=cases[0],l=layoutMarkers(pts),[h]=markerHulls(pts,l);
   assert.deepEqual(h.members.sort(),[0,1,2]);
   const {ground,outline}=hullPixels(h),key=([x,y])=>x+','+y,out=new Set(outline.map(key));
   const {x0,y0,x1,y1}=h.glyphs,ys=[...outline,...ground].map(p=>p[1]);
-  assert.equal(Math.max(...ys)-Math.min(...ys)+1,5,'5 pixels tall, outline included: no padding');
-  assert.equal(x0,Math.min(...l.map((p,i)=>p.x-pts[i].half)));assert.equal(x1,Math.max(...l.map((p,i)=>p.x+pts[i].half)));
+  assert.equal(Math.max(...ys)-Math.min(...ys)+1,7,'7 pixels tall, outline included: the clearing ring, no padding');
+  assert.equal(x0,Math.min(...l.map((p,i)=>p.x-pts[i].half-1)));assert.equal(x1,Math.max(...l.map((p,i)=>p.x+pts[i].half+1)));
+  for(const [i,p] of l.entries())for(let dy=-pts[i].half;dy<=pts[i].half;dy++)for(let dx=-pts[i].half;dx<=pts[i].half;dx++)assert(!out.has(key([p.x+dx,p.y+dy])),'outline never on a place glyph');
   for(const c of [[x0,y0],[x1,y0],[x0,y1],[x1,y1]])assert(!out.has(key(c)),'corners cut');
-  assert(out.has(key([x0+1,y0]))&&out.has(key([x0,y0+1])),'outline runs along the band');
   const mixed=cases[6],ml=layoutMarkers(mixed),mh=markerHulls(mixed,ml).find(h=>h.members.includes(3)),you=ml[3];
-  assert.equal(mh.glyphs.y1-mh.glyphs.y0+1,5,'still 5 with your marker in the group');
-  assert(you.y-3<mh.glyphs.y0&&you.y+3>mh.glyphs.y1,'your 7-pixel marker stands a pixel proud above and below');
+  assert.equal(mh.glyphs.y1-mh.glyphs.y0+1,7,'7 with your marker in the group too');
+  assert(you.y-3===mh.glyphs.y0&&you.y+3===mh.glyphs.y1,'your 7-pixel marker spans the hull\'s height');
 });

@@ -40,7 +40,7 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
   memory. **Composition → The planetary clock → Map background**.
 - Your own location, from the phone, is marked with a bullseye one size up from
   the place glyphs, in the clock's ink. Places too close to tell apart (London,
-  Paris and Berlin) are drawn side by side, west to east, on a slim hull.
+  Paris and Berlin) are drawn side by side, west to east, in one shared clearing.
 - Place times can also show outside the bottom panel, whenever it shows
   weather, tides or the calendar (or Quick View covers it), or always.
   **Character → Place times** and **Place times position**:

@@ -522,8 +522,8 @@ static void update_proc(Layer *layer,GContext *ctx) {
   HullPen ground={ctx,mx,my};graphics_context_set_stroke_color(ctx,color(0));
   for(int k=0;k<spots.hull_count;k++)map_hull_ground(&spots.hulls[k],hull_pixel,&ground);
   if(s_map&&zones_on_map(when,zone_position(),panel_zones))draw_map_times(ctx,now,&local,mx,my,&spots);
-  // Hull outlines in the edge color: quiet, like the map's own edges.
-  graphics_context_set_stroke_color(ctx,color(5));
+  // Hull outlines in the ground color, like each glyph's clearing ring.
+  graphics_context_set_stroke_color(ctx,color(0));
   for(int k=0;k<spots.hull_count;k++)map_hull_outline(&spots.hulls[k],hull_pixel,&ground);
   for(int i=0;i<3;i++)if(spots.index[i]>=0) {
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;const MapMarker *m=&spots.layout[spots.index[i]];GPoint pos=GPoint(mx+m->x,my+m->y);

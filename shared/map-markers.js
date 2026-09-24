@@ -33,20 +33,20 @@ export function layoutMarkers(points, width = 200, height = 104) {
   }
   return pos.map((p, i) => ({...p, group: find(i)}));
 }
-// Groups of two or more sit on a hull: a 5-pixel-tall band, exactly the height
-// of the place glyphs, from the first glyph's left edge to the last one's
-// right, outlined with its corners cut and cleared inside. No padding: the
-// glyphs sit on it, and your 7-pixel marker stands a pixel proud of it.
+// Groups of two or more sit on a hull: a 7-pixel-tall band whose outline runs
+// exactly where each glyph's 1-pixel clearing ring would be, from the first
+// glyph's ring to the last one's, corners cut and cleared inside. No padding:
+// the hull takes the place of the rings, in the same ground color.
 // `glyphs` is the band; `inner` where a leader's line hides (the band); `outer`
 // every member's clearing, which the rest of the map keeps out of.
-export const HULL_HALF = 2;
+export const HULL_HALF = 3;
 export function markerHulls(points, layout) {
   const hulls = [];
   for (const g of new Set(layout.map(p => p.group))) {
     const members = layout.map((p, i) => i).filter(i => layout[i].group === g);
     if (members.length < 2) continue;
-    const cy = layout[members[0]].y, band = {x0: Math.min(...members.map(i => layout[i].x - points[i].half)), y0: cy - HULL_HALF,
-      x1: Math.max(...members.map(i => layout[i].x + points[i].half)), y1: cy + HULL_HALF};
+    const cy = layout[members[0]].y, band = {x0: Math.min(...members.map(i => layout[i].x - points[i].half - 1)), y0: cy - HULL_HALF,
+      x1: Math.max(...members.map(i => layout[i].x + points[i].half + 1)), y1: cy + HULL_HALF};
     const outer = {x0: Math.min(...members.map(i => layout[i].x - points[i].half - 1)), y0: Math.min(...members.map(i => layout[i].y - points[i].half - 1)),
       x1: Math.max(...members.map(i => layout[i].x + points[i].half + 1)), y1: Math.max(...members.map(i => layout[i].y + points[i].half + 1))};
     hulls.push({members, glyphs: band, inner: band, outer});

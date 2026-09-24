@@ -7,11 +7,11 @@
 typedef struct {int16_t x,y;uint8_t half;} MapMarker; // half: 2 for places, 3 for you
 // `group` (may be NULL) receives each marker's group: the lowest index in it.
 void map_markers_layout(const MapMarker *points,int count,int width,int height,MapMarker *out,uint8_t *group);
-// A group of two or more sits on a hull: a 5-pixel band, exactly the height of
-// the place glyphs, from the first glyph's left edge to the last one's right,
-// outlined (corners cut) and cleared inside. Your 7-pixel marker stands a
-// pixel proud of it. `glyphs`/`inner`: the band; `outer`: every member's clearing.
-#define HULL_HALF 2
+// A group of two or more sits on a hull: a 7-pixel band whose outline runs
+// where each glyph's 1-pixel clearing ring would be, from the first glyph's
+// ring to the last one's, corners cut and cleared inside: it takes the place
+// of the rings. `glyphs`/`inner`: the band; `outer`: every member's clearing.
+#define HULL_HALF 3
 typedef struct {int16_t x0,y0,x1,y1;} MapRect;
 typedef struct {uint8_t members;MapRect glyphs,inner,outer;} MapHull;
 int map_markers_hulls(const MapMarker *points,const MapMarker *layout,const uint8_t *group,int count,MapHull *hulls);
