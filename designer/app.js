@@ -24,6 +24,8 @@ import {layoutMarkers,markerClearance,hullPixels} from '../shared/map-markers.js
 import {nameplateLayout,nameplateObstacle,NAMEPLATE_ROWS} from '../shared/nameplate.js';
 import {locationService} from '../tools/location-service.js';
 import {displayControls} from '../shared/display-controls.js';
+import {powerControls} from '../shared/power-controls.js';
+import {sinceRelight,minuteAnimationOn,flourishesOn} from '../shared/power.js';
 import {TRAY_MS,TRAY_Y,TRAY_H,traySlide,slideRow,besideProgress,besideShift,columnAlpha,mixColor} from '../shared/transitions.js';
 import {zoneColumn,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
 import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels} from '../shared/map-times.js';
@@ -57,6 +59,7 @@ let footerPage=settings.footer.home,panelChanged=Date.now(),environmentMode='sam
 let currentCity={name:'Norfolk',sample:true,lat:36.9,lon:-76.3};
 const cityLocation=locationService({getSettings:()=>settings,storage:localStorage,send:city=>{currentCity=city;render();}});
 const cityEditor=cityControls($('city-controls'),()=>settings,value=>{settings=validateSettings({...settings,location:value},zoneExists);save();},()=>cityLocation.refresh());
+const powerEditor=powerControls($('power-controls'),()=>settings,power=>{settings={...settings,power};sync();save();});
 const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,nameplate:value.nameplate};sync();save();});
 const paletteEditor=paletteControls($('palette-controls'),()=>settings,patch=>{settings=validateSettings({...settings,...patch},zoneExists);sync();save();});
 const environment=environmentService({getSettings:()=>settings,storage:localStorage,send:(kind,data)=>{liveData[kind]=data;render();}});
@@ -156,9 +159,9 @@ function sync(){
   $('format').value=settings.format;$('connectionBuzz').value=settings.connectionBuzz;$('mapBackground').value=settings.mapBackground;
   document.querySelectorAll('[data-theme]').forEach(b=>b.setAttribute('aria-pressed',String(settings.customPalette===null&&+b.dataset.theme===settings.theme)));
   const current=activePreset(settings);document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.preset===current)));
-  positionFields();placesUI();panelEditor.refresh();cityEditor.refresh();displayEditor.refresh();paletteEditor.refresh();
+  positionFields();placesUI();panelEditor.refresh();cityEditor.refresh();displayEditor.refresh();powerEditor.refresh();paletteEditor.refresh();
 }
-for(const key of ['dayNight','edges','lights','sun','motion','stacked','moonIndicator'])$(key).onchange=()=>{settings[key]=$(key).checked;move('time',settings.time);positionFields();displayEditor.refresh();save();};
+for(const key of ['dayNight','edges','lights','sun','motion','stacked','moonIndicator'])$(key).onchange=()=>{settings[key]=$(key).checked;move('time',settings.time);positionFields();displayEditor.refresh();powerEditor.refresh();save();};
 $('format').onchange=()=>{settings.format=+$('format').value;save();};
 $('connectionBuzz').onchange=()=>{settings.connectionBuzz=$('connectionBuzz').value;save();};
 $('mapBackground').onchange=()=>{settings.mapBackground=$('mapBackground').value;save();};
@@ -186,7 +189,7 @@ function drawBluetoothIndicator(){
   drawPixelRows(ctx,BLUETOOTH_ROWS,148,2,paletteFor(settings).ink);
 }
 function mapImage(now,pal,sun){
-  const key=[pal.bg,pal.ocean,pal.land,pal.nightOcean,pal.nightLand,pal.edge,settings.dayNight,settings.edges,settings.mapBackground,Math.floor(now/300000)].join('/');
+  const key=[pal.bg,pal.ocean,pal.land,pal.nightOcean,pal.nightLand,pal.edge,settings.dayNight,settings.edges,settings.mapBackground,sun.join(',')].join('/');
   if(key===cacheKey&&mapCache)return mapCache;
   const [w,h]=MAP_SIZE,data=mapPixels;
   const offscreen=document.createElement('canvas');offscreen.width=w;offscreen.height=h;
@@ -252,7 +255,7 @@ function render(){
   if(!mapPixels.length||!watchTypeface||!watchSpan)return;
   if(!settings.footer.pages.includes(footerPage))footerPage=settings.footer.home;
   if(settings.footer.enabled&&settings.footer.rotationMinutes&&Date.now()-panelChanged>=settings.footer.rotationMinutes*60000){trayStart();footerPage=settings.footer.pages[(settings.footer.pages.indexOf(footerPage)+1)%settings.footer.pages.length];panelChanged=Date.now();if(footerPage==='zones')startPulse();}
-  const now=new Date(Date.now()+offset*3600000),local=moment(now),sun=sunDirection(new Date(Math.floor(+now/300000)*300000)),pal=paletteFor(settings);
+  const now=new Date(Date.now()+offset*3600000),local=moment(now),sun=sunDirection(new Date(Math.floor(+now/60000)*60000-sinceRelight(settings.power,moment(now).hours(),moment(now).minutes())*60000)),pal=paletteFor(settings);
   ctx.clearRect(0,0,200,228);ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,228);
   const m=makeMap(),[mx,my]=settings.map,cached=mapImage(now,pal,sun);
   ctx.drawImage(cached.canvas,mx,my);
@@ -302,7 +305,7 @@ function render(){
     // The glide beside the place times moves the figures, not the animation, so a
     // minute change during the glide still animates (as on the watch).
     const style=settings.clockDisplay;
-    minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset].join('/'),settings.motion&&!reducedMotion.matches&&!document.hidden,style);
+    minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset].join('/'),minuteAnimationOn(settings.power,settings.motion,local.hours())&&!reducedMotion.matches&&!document.hidden,style);
     // Beside the place times, the figures shift left and the column fills the
     // right: the clock glides over first, then the column fades in.
     drawFlipPixels(ctx,minuteClock.frame(),tx+besideShift(besideP,zoneColumn(settings.zonePosition).shift),ty+flipOffset(style),{ink:pal.ink,background:pal.bg});
@@ -352,7 +355,8 @@ function render(){
 }
 // Transitions (shared/transitions.js), as on the watch: the tray swipes to its
 // next page, and the clock makes room before the place times fade in beside it.
-const motionOn=()=>settings.motion&&!reducedMotion.matches&&!document.hidden;
+const previewHour=()=>moment(new Date(Date.now()+offset*3600000)).hours();
+const motionOn=()=>flourishesOn(settings.power,settings.motion,previewHour())&&!reducedMotion.matches&&!document.hidden;
 let motionTimer=0,trayOld=null,trayStarted=0,besideState=null;
 // Display frames, like the minute animation, so the pace holds steady when one
 // hands over to the other; while the minute animation runs, its frames carry
@@ -382,7 +386,7 @@ function fadeHex(ground,ink,alpha){return alpha>=1000?ink:argbToHex(mixColor(hex
 // Each enabled place pulses in turn: four rings, 120 ms each, so three
 // places take under a second and a half.
 const PULSE_RING_MS=120,PULSE_MS=4*PULSE_RING_MS;
-function startPulse(){pulseOrder=settings.places.map((p,i)=>p.on?i:-1).filter(i=>i>=0);if(pulseOrder.length&&settings.motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches)animation=performance.now();}
+function startPulse(){pulseOrder=settings.places.map((p,i)=>p.on?i:-1).filter(i=>i>=0);if(pulseOrder.length&&motionOn())animation=performance.now();}
 function pulseNow(){if(!animation)return null;const t=performance.now()-animation,k=Math.floor(t/PULSE_MS);return k<pulseOrder.length?{place:pulseOrder[k],frame:Math.floor(t%PULSE_MS/PULSE_RING_MS)}:null;}
 function pulse(){startPulse();render();}
 $('pulse').onclick=pulse;$('guides').onchange=render;$('quick-view').onchange=render;

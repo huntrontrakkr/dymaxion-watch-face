@@ -7,19 +7,20 @@ int main(void){
   for(int style=0;style<=10;style++){p[1]=style;assert(display_valid(p,4)==(style<=9));}
   p[1]=4;p[2]=3;assert(display_valid(p,4));p[2]=4;assert(!display_valid(p,4));p[2]=1;
   p[3]=1;assert(display_valid(p,4));p[3]=3;assert(!display_valid(p,4));p[3]=64;assert(!display_valid(p,4));p[3]=4;assert(!display_valid(p,4));
-  uint8_t normalized[4]={9,9,9,9};
-  assert(!display_normalize(normalized,p,4));assert(!memcmp(normalized,(uint8_t[]){9,9,9,9},4));
+  uint8_t normalized[8]={9,9,9,9,9,9,9,9};
+  assert(!display_normalize(normalized,p,4));assert(!memcmp(normalized,(uint8_t[]){9,9,9,9,9,9,9,9},8));
   assert(!display_normalize(normalized,NULL,4));assert(!display_normalize(NULL,p,4));
-  // Version 1 packets become version 2: retired styles migrate (1 triangles to
-  // Chamfer, 3 LCD to broad), the unlit-grid bit and legacy byte 3 are dropped.
+  // Version 1 packets become version 3: retired styles migrate (1 triangles to
+  // Chamfer, 3 LCD to broad), the unlit-grid bit and legacy byte 3 are dropped,
+  // and power and motion take their defaults.
   for(int style=0;style<=9;style++)for(int grid=0;grid<=3;grid++)for(int flags=0;flags<64;flags++){
     uint8_t legacy[4]={1,style,grid,flags};
     bool valid=!flags||(flags&3)==1||(flags&3)==2;
     assert(display_normalize(normalized,legacy,4)==valid);
     if(valid){
-      uint8_t expected[4]={2,style==1?4:style==3?2:style,grid&2,0};
-      assert(!memcmp(normalized,expected,4));
-      assert(display_normalize(normalized,normalized,4));assert(!memcmp(normalized,expected,4));
+      uint8_t expected[8]={3,style==1?4:style==3?2:style,grid&2,0,0,22,7,0};
+      assert(!memcmp(normalized,expected,8));
+      assert(display_normalize(normalized,normalized,8));assert(!memcmp(normalized,expected,8));
     }
   }
   // Version 2 byte 2: bit 1 leading zero, bits 2-3 when place times show
@@ -28,13 +29,20 @@ int main(void){
     uint8_t current[4]={2,4,options,0};
     bool valid=!(options&~0xfe)&&((options>>2)&3)<3&&((options>>4)&3)<3;
     assert(display_valid(current,4)==valid);
-    if(valid){assert(display_normalize(normalized,current,4));assert(!memcmp(normalized,current,4));}
+    if(valid){assert(display_normalize(normalized,current,4));assert(!memcmp(normalized,(uint8_t[]){3,4,options,0,0,22,7,0},8));}
   }
   // Version 2 carries the map background in byte 3.
   for(int background=0;background<8;background++){
     uint8_t current[4]={2,4,2,background};
     assert(display_normalize(normalized,current,4)==(background<MAP_BACKGROUND_COUNT));
-    if(background<MAP_BACKGROUND_COUNT)assert(!memcmp(normalized,current,4));
+    if(background<MAP_BACKGROUND_COUNT)assert(!memcmp(normalized,(uint8_t[]){3,4,2,background,0,22,7,0},8));
   }
+  // Version 3: power and motion in bytes 4-6, byte 7 reserved; 8 bytes only.
+  uint8_t v3[8]={3,4,2,1,0x3f,23,0,0};assert(display_valid(v3,8));assert(!display_valid(v3,4));
+  assert(display_normalize(normalized,v3,8));assert(!memcmp(normalized,v3,8));
+  v3[4]=0x40;assert(!display_valid(v3,8));v3[4]=0;
+  v3[5]=24;assert(!display_valid(v3,8));v3[5]=22;v3[6]=24;assert(!display_valid(v3,8));v3[6]=7;
+  v3[7]=1;assert(!display_valid(v3,8));v3[7]=0;v3[0]=2;assert(!display_valid(v3,8));v3[0]=3;
+  v3[2]=1;assert(!display_valid(v3,8));
   return 0;
 }

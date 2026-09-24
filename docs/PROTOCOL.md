@@ -165,7 +165,8 @@ panel charts use it for sunrise and sunset. Without it they must be zero, and a
 manual name never carries a position. An older 48-byte packet is rejected, so
 the watch shows no city until the phone's next update.
 
-`DISPLAY` (10006) is four bytes, persisted under key 3: `[2, style, options, background]`.
+`DISPLAY` (10006) is eight bytes, persisted under key 3:
+`[3, style, options, background, power, night start, night end, 0]`.
 Style 0 selects Span, 2 selects
 rounded broad numerals, 4 Chamfer figures, and 5–8 Pebble system fonts (Leco 42,
 Bitham 42 Bold, Bitham 42 Light, Bitham 42 Medium Numbers) and 9 Leco Delta
@@ -189,10 +190,24 @@ flag bit `4 << n` of each empty pixel in `map-0.bin` byte 3, drawn in the
 palette's edge colour.
 Stacked time always uses Draft. Every horizontal style uses a temporary 400 ms
 minute-transition timer when the existing MOTION flag is enabled and battery is
-above 20%; it adds no sensor. The default is `[2, 4, 0, 0]`.
+above 20%; it adds no sensor.
 
-For compatibility with the retired LCD/framing experiment, valid version 1
-packets are normalized to version 2 before use and persistence (background none): style 1 (the retired triangular
+Bytes 4–6 are power and motion (`shared/power.js`, mirrored by `power.c`).
+Byte 4 bits 0–1 pick how often the map is reshaded for the moving sun: every 5,
+10, 15 or 30 minutes (never while day and night is off, when the map does not
+change with time). Bit 2 turns the minute animation off and bit 3 the marker
+pulse, tray swipe and clock glide; MOTION still turns them all off. Bit 4 is
+the night saver: from the hour in byte 5 until the hour in byte 6 (wrapping
+past midnight; the same hour means all day) the map is reshaded every other
+hour, on even hours, and nothing animates. Bit 5, with the night saver, pauses
+redraws at night: the minute tick no longer redraws, and a wrist tap (the
+flick that turns on the backlight, which apps cannot read directly) brings the
+face up to date. Byte 7 is reserved and zero. The default is
+`[3, 4, 0, 0, 0, 22, 7, 0]`.
+
+Four-byte version 2 packets load with default power and motion. For
+compatibility with the retired LCD/framing experiment, valid version 1
+packets are normalized to version 3 before use and persistence (background none): style 1 (the retired triangular
 seven-segment display) becomes style 4, style 3 becomes style 2, byte 2 bit 0
 (its unlit-grid switch) and byte 3 are cleared. Legacy byte 3 accepts zero, or a style of 1 or 2 in bits 0–1 with
 optional flags in bits 2–5. Unknown styles, bits, lengths and flags are rejected.

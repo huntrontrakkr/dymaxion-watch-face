@@ -111,8 +111,10 @@ flick can register on several axes); each further flick must follow within
 0.9 s, and a page change is followed by a one-second rest (`panel_tap`). The tap service unsubscribes when flicks are
 disabled, when there is only one page or when panels are disabled.
 
-Other periodic work is kept small. The map is relit every five minutes, not
-every minute (the terminator moves about a pixel in that time), and the weather
+Other periodic work is kept small. The map is relit every five minutes by
+default, not every minute (the terminator moves about a pixel in that time);
+**Daylight updates** stretches that to 10, 15 or 30 minutes, the night saver to
+every other hour, and it stops entirely with day and night off. And the weather
 chart's sunrise/sunset shading and header time are cached until the chart
 window or the next event moves.
 

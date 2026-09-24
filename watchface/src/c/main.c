@@ -19,6 +19,7 @@
 #include "generated/status_glyphs.h"
 #include "generated/markers.h"
 #include "transitions.h"
+#include "power.h"
 
 static Window *s_window;
 static Layer *s_layer;
@@ -67,6 +68,9 @@ static MapTimeSpot s_map_spots[3];
 static uint8_t s_map_key[18];
 static bool s_map_key_valid;
 static AppTimer *s_map_timer;
+// Power and motion (power.c): DISPLAY bytes 4-6.
+static const uint8_t *power(void){return s_display+4;}
+static int local_hour(void){time_t t=time(NULL);return localtime(&t)->tm_hour;}
 static uint8_t zone_position(void){return (s_display[2]>>4)&3;}
 
 static float fsin(float r) { return (float)sin_lookup((int32_t)(r*TRIG_MAX_ANGLE/6.283185307f))/TRIG_MAX_RATIO; }
@@ -168,7 +172,7 @@ static void clock_prepare(struct tm *local,time_t now,bool animate){
   time_t minute=now/60;
   if(s_clock_ready&&minute==s_clock_minute&&format==s_clock_24&&!memcmp(digits,s_clock_digits,4))return;
   bool smooth=animate&&s_clock_ready&&minute==s_clock_minute+1&&format==s_clock_24
-    &&s_focused&&(s_settings[FLAGS]&MOTION)&&s_battery.charge_percent>20;
+    &&s_focused&&power_minute_animation(power(),s_settings[FLAGS]&MOTION,local->tm_hour)&&s_battery.charge_percent>20;
   clock_stop();clock_flip_prepare(&s_clock_flip,s_clock_ready?s_clock_digits:digits,digits);
   memcpy(s_clock_digits,digits,4);s_clock_ready=true;s_clock_minute=minute;s_clock_24=format;s_clock_frame=UINT16_MAX;
   if(smooth&&s_clock_flip.changed_cells){
@@ -317,7 +321,7 @@ static int clock_layout(int visible,bool *plate,int *px,int *py){
   if(plate){*plate=shown;if(shown){*px=x;*py=y;}}
   return top;
 }
-static bool motion_allowed(void){return (s_settings[FLAGS]&MOTION)&&s_battery.charge_percent>20&&s_focused;}
+static bool motion_allowed(void){return power_flourishes(power(),s_settings[FLAGS]&MOTION,local_hour())&&s_battery.charge_percent>20&&s_focused;}
 static void motion_step(void *context){(void)context;s_motion_timer=NULL;layer_mark_dirty(s_layer);}
 // While the minute animation runs, its redraws carry the transitions too:
 // one frame timer at a time, however many animations overlap.
@@ -644,7 +648,7 @@ static void animation_step(void *context) {
 static void pulse(void) {
   if(s_animation){app_timer_cancel(s_animation);s_animation=NULL;}
   s_frame=s_frames=0;
-  if((s_settings[FLAGS]&MOTION)&&s_battery.charge_percent>20&&s_settings[ENABLED]) {
+  if(power_flourishes(power(),s_settings[FLAGS]&MOTION,local_hour())&&s_battery.charge_percent>20&&s_settings[ENABLED]) {
     for(int i=0;i<3;i++)if(s_settings[ENABLED]&(1<<i))s_frames+=4;
     s_animation=app_timer_register(PULSE_RING_MS,animation_step,NULL);}
   layer_mark_dirty(s_layer);
@@ -662,11 +666,14 @@ static void pulse_on_zones(void){
 // so nothing samples the accelerometer or wakes the watch between flicks.
 static void tapped(AccelAxisType axis,int32_t direction) {
   time_t seconds;uint16_t ms;time_ms(&seconds,&ms);
+  // Paused in the dark: a flick brings the face up to date as the light comes on.
+  if(power_dark_paused(power(),local_hour()))layer_mark_dirty(s_layer);
+  if(!panels_shake_enabled())return;
   int page=panels_page();
   if(panel_tap(&s_tap,(uint64_t)seconds*1000+ms,panels_flicks())&&panels_cycle(time(NULL))){tray_start(page);layer_mark_dirty(s_layer);pulse_on_zones();}
 }
 static void configure_shake(void) {
-  bool wanted=panels_shake_enabled();
+  bool wanted=panels_shake_enabled()||((power()[0]&POWER_NIGHT)&&(power()[0]&POWER_DARK_PAUSE));
   if(wanted==s_accel_subscribed)return;
   memset(&s_tap,0,sizeof(s_tap));
   if(wanted)accel_tap_service_subscribe(tapped);else accel_tap_service_unsubscribe();
@@ -677,11 +684,18 @@ static void request_sync(void) {
   if(app_message_outbox_begin(&iter)==APP_MSG_OK){dict_write_uint8(iter,MESSAGE_KEY_REQUEST,1);app_message_outbox_send();}
 }
 static void tick(struct tm *local_time,TimeUnits changed) {
-  // The terminator moves about a pixel every few minutes: relight the map every
-  // five minutes instead of reading and shading all 20,800 pixels each minute.
-  if(local_time->tm_min%5==0)s_map_dirty=true;
-  layer_mark_dirty(s_layer);
-  time_t now=time(NULL);int page=panels_page();if(panels_tick(now))tray_start(page);pulse_on_zones();
+  // The terminator moves about a pixel every few minutes: relight the map on the
+  // chosen interval (every other hour in the night saver) instead of reading
+  // and shading all 20,800 pixels each minute, and never while day and night
+  // is off, when the map does not change with time. The place times' daylight
+  // dots still follow the sun every five minutes then.
+  time_t now=time(NULL);
+  if(power_relight(power(),s_settings[FLAGS]&DAY_NIGHT,local_time->tm_hour,local_time->tm_min))s_map_dirty=true;
+  else if(!(s_settings[FLAGS]&DAY_NIGHT)&&local_time->tm_min%5==0)sun_update(now-now%300);
+  // Paused in the dark (night saver): the screen keeps its last frame until a
+  // wrist flick, which also lights the backlight, redraws it.
+  if(!power_dark_paused(power(),local_time->tm_hour))layer_mark_dirty(s_layer);
+  int page=panels_page();if(panels_tick(now))tray_start(page);pulse_on_zones();
   if(s_clock_face)clock_prepare(local_time,now,true);
   int interval=panels_refresh_minutes();if(!(s_city[1]&1)&&interval>60)interval=60;
   if((now/60)%interval==0)request_sync();
@@ -737,7 +751,7 @@ static void received(DictionaryIterator *iter,void *context) {
     clock_stop();s_clock_ready=false;
   }
   if(changed)window_set_background_color(s_window,color(0));
-  if(changed)configure_shake();
+  configure_shake();
   layer_mark_dirty(s_layer);pulse_on_zones();
 }
 static void init(void) {

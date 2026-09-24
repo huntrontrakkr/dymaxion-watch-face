@@ -3,6 +3,7 @@ import {MARKERS} from '../shared/markers.js';
 import {panelControls} from '../shared/panel-controls.js';
 import {cityControls} from '../shared/city-controls.js';
 import {displayControls} from '../shared/display-controls.js';
+import {powerControls} from '../shared/power-controls.js';
 import {paletteControls} from '../shared/palette-controls.js';
 import {paletteFor} from '../shared/palette-settings.js';
 const $=id=>document.getElementById(id),data=window.DYMAXION_CONFIG;
@@ -11,6 +12,7 @@ let s=validateSettings(data.settings||defaults(),exists);
 const panelEditor=panelControls($('panel-controls'),()=>s,footer=>{s.footer=validateSettings({...s,footer},exists).footer;});
 const cityEditor=cityControls($('city-controls'),()=>s,location=>{s.location=validateSettings({...s,location},exists).location;});
 const displayEditor=displayControls($('display-controls'),()=>s,value=>{s={...withClockDisplay(s,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,nameplate:value.nameplate};refresh();});
+const powerEditor=powerControls($('power-controls'),()=>s,power=>{s=validateSettings({...s,power},exists);refresh();});
 const paletteEditor=paletteControls($('palette-controls'),()=>s,patch=>{s=validateSettings({...s,...patch},exists);refresh();});
 function options(select,entries){select.replaceChildren();entries.forEach(([label,value])=>select.add(new Option(label,value)));}
 options($('theme'),THEMES.map((t,i)=>[t.name,i]));
@@ -21,6 +23,7 @@ function refresh(){
   panelEditor.refresh();
   cityEditor.refresh();
   displayEditor.refresh();
+  powerEditor.refresh();
   paletteEditor.refresh();
   $('theme').value=s.theme;$('format').value=s.format;$('connectionBuzz').value=s.connectionBuzz;$('mapBackground').value=s.mapBackground;
   for(const k of ['moonIndicator','dayNight','lights','sun','edges','motion','stacked'])$(k).checked=s[k];
@@ -46,7 +49,7 @@ $('preset').onchange=()=>{const preset=$('preset').value;if(preset!=='custom')Ob
 $('connectionBuzz').onchange=()=>{s.connectionBuzz=$('connectionBuzz').value;};
 $('mapBackground').onchange=()=>{s.mapBackground=$('mapBackground').value;};
 for(const key of ['theme','format'])$(key).onchange=()=>{s[key]=Number($(key).value);if(key==='theme'){s.customPalette=null;refresh();}};
-for(const key of ['moonIndicator','dayNight','lights','sun','edges','motion','stacked'])$(key).onchange=()=>{s[key]=$(key).checked;if(key==='stacked'){s.time=clampPosition(s,'time',s.time);refresh();}};
+for(const key of ['moonIndicator','dayNight','lights','sun','edges','motion','stacked'])$(key).onchange=()=>{s[key]=$(key).checked;powerEditor.refresh();if(key==='stacked'){s.time=clampPosition(s,'time',s.time);refresh();}};
 function importText(text){try{s=validateSettings(JSON.parse(text),exists);$('error').textContent='Composition loaded.';$('preset').value='custom';refresh();}catch(e){$('error').textContent=e.message;}}
 $('file').onchange=async()=>{const file=$('file').files[0];if(!file)return;if(file.size>50000){$('error').textContent='Settings file is too large.';return;}importText(await file.text());};
 $('import').onclick=()=>importText($('json').value);

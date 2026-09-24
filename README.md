@@ -81,6 +81,11 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
 - The bottom tray swipes to its next page (300 ms). When the place times move
   beside the clock, the clock glides over and then the times fade in (500 ms),
   and the reverse on the way back (`shared/transitions.js`, `transitions.c`).
+- **Power & motion** (Character): separate switches for the minute change and
+  for the pulse and swipes; **Daylight updates** every 5, 10, 15 or 30 minutes;
+  and a **Night saver** for the hours you choose, which reshades the map every
+  other hour, stops animations and can **pause in the dark**: no redraws until
+  you flick your wrist, the flick that turns on the backlight.
 - A brief marker pulse, each place in turn, on launch and when the bottom panel returns to the time zones; real battery and a pixel
   Bluetooth connection indicator.
 - Persistent configuration and an **offline phone settings page** included in
@@ -202,6 +207,7 @@ Physical hardware and an actual phone webview have not been tested.
 | `shared/display.js` | Numeral styles and the display packet |
 | `shared/map-background.js` | Triangle points and lines behind the map |
 | `shared/zone-column.js` | Place times beside the clock (mirrored by `zone_column.c`) |
+| `shared/power.js` | Daylight update interval, animation switches and night saver (mirrored by `power.c`) |
 | `shared/transitions.js` | Tray swipe and beside-the-clock transitions (mirrored by `transitions.c`) |
 | `shared/nameplate.js` | The optional Dymaxion nameplate (mirrored by `nameplate.c`) |
 | `shared/map-markers.js` | Close markers side by side (mirrored by `map_markers.c`) |
