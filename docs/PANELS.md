@@ -80,7 +80,7 @@ NOAA station. Calendar dates follow the watch's own local date. Temperature and
 humidity headings show the current hourly forecast sample, not a live sensor.
 
 Custom layouts should leave the bottom band free when panels are enabled. The
-Atlas and Horizon presets already do. Disabling panels restores the place
+Meridian and Horizon presets already do. Disabling panels restores the place
 clocks without reserving that band.
 
 ## Changing pages and battery use

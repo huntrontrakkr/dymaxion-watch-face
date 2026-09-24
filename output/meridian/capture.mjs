@@ -1,12 +1,11 @@
 // Captures the Meridian redesign from the running workshop (npm run dev) at
-// native 1x, beside the previous Atlas default for comparison.
+// native 1x. previous-atlas-*.png record the old default and are not recaptured.
 // node output/meridian/capture.mjs  [PREVIEW_URL=http://127.0.0.1:5173]
 import {chromium} from '@playwright/test';
 import {writeFileSync} from 'node:fs';
 import {defaults, presetFor} from '../../shared/settings.js';
 const base = process.env.PREVIEW_URL || 'http://127.0.0.1:5173';
 const d = defaults();
-const previous = theme => ({...d, ...presetFor('atlas'), clockDisplay: 'broad', theme});
 const shots = {
   'meridian-airocean': [d],
   'meridian-paper': [{...d, theme: 2}],
@@ -15,10 +14,7 @@ const shots = {
   'meridian-12h': [{...d, format: 2}],
   'meridian-late': [d, '2026-09-24T03:59:30Z'],
   'meridian-weather': [{...d, footer: {...d.footer, enabled: true, home: 'weather'}}],
-  'horizon-chamfer': [{...d, ...presetFor('horizon')}],
-  'atlas-chamfer': [{...d, ...presetFor('atlas')}],
-  'previous-atlas-airocean': [previous(0)],
-  'previous-atlas-paper': [previous(2)]
+  'horizon-chamfer': [{...d, ...presetFor('horizon')}]
 };
 const browser = await chromium.launch();
 try {

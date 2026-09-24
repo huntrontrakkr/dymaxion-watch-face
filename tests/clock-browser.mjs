@@ -14,10 +14,10 @@ try{
   await page.getByRole('button',{name:'Preview my current city'}).click();await page.waitForFunction(()=>document.querySelector('#city-state').textContent==='Current city: Norfolk.');
   assert.equal(await screen.getAttribute('data-clock-caption'),'WED 23 SEP  NORFOLK','Meridian names the city in its status line');
   await page.getByRole('button',{name:'Preview my current city'}).click();assert.equal(lookups,1,'cached city should not trigger another lookup');
-  await screen.screenshot({path:'test-results/clock-triangles-atlas.png'});
+  await screen.screenshot({path:'test-results/clock-triangles-meridian.png'});
   await page.getByRole('button',{name:'Horizon',exact:true}).click();await screen.screenshot({path:'test-results/clock-triangles-horizon.png'});
-  await page.getByLabel('Clock location',{exact:true}).selectOption('manual');await page.getByLabel('Clock city name',{exact:true}).fill('São José');await page.getByLabel('Clock city name',{exact:true}).press('Tab');assert.match(await screen.getAttribute('data-clock-caption'),/Sao Jose/);
-  await page.getByRole('tab',{name:'Character',exact:true}).click();await page.locator('#format').selectOption('2');assert.match(await screen.getAttribute('data-clock-caption'),/Sao Jose PM$/);
+  await page.getByLabel('Clock location',{exact:true}).selectOption('manual');await page.getByLabel('Clock city name',{exact:true}).fill('São José');await page.getByLabel('Clock city name',{exact:true}).press('Tab');assert.match(await screen.getAttribute('data-clock-caption'),/SAO JOSE/);
+  await page.getByRole('tab',{name:'Character',exact:true}).click();await page.locator('#format').selectOption('2');assert.match(await screen.getAttribute('data-clock-caption'),/^WED 23 SEP  SAO JO.* PM$/);
   await page.getByLabel('Show unlit triangles',{exact:true}).uncheck();const noGrid=await screen.screenshot();
   await page.getByLabel('Numerical display',{exact:true}).selectOption('span');assert.equal(await screen.getAttribute('data-clock-display'),'span');assert(await page.getByLabel('Show unlit triangles',{exact:true}).isDisabled());assert.notDeepEqual(await screen.screenshot(),noGrid);
   await page.getByLabel('Numerical display',{exact:true}).selectOption('triangles');await page.reload();await page.waitForFunction(()=>document.querySelector('#preview-time').textContent.includes('LIVE'));assert.equal(await screen.getAttribute('data-clock-display'),'triangles');

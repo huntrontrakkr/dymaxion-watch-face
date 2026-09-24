@@ -15,13 +15,12 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
   glyphs. Every place can have its own color, snapped to Pebble's 64-color grid.
   The local clock follows the watch; no location is guessed from an offset.
 - **Meridian**, the default composition: a quiet status line (date, city,
-  Moon, Bluetooth, battery) replaces the nameplate, 36-pixel **Chamfer**
+  Moon, Bluetooth, battery) heads the face, 36-pixel **Chamfer**
   figures sit over the map, and the zones close the face. Chamfer is the Draft
   zone numerals at three times the size, every corner cut at 45°, so the big
   clock and the zone clocks are one design. See [Meridian](docs/MERIDIAN.md).
-- Atlas and Horizon remain available in their original positions with any
-  numerals. The map and places stay independently movable, and the
-  status line can be switched on or off in any composition.
+- Horizon puts the map on top and the clock beneath it. Every composition uses
+  the status line; the map and places stay independently movable.
   Optional stacked hours/minutes retain the earlier display cut.
 - A 400 ms minute transition for Chamfer and rounded broad numerals: only
   the map-scale triangles over changed figures shrink away to reveal the new time.
@@ -31,7 +30,7 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
   experiment remain available. The segment display has six hexagonal
   edges and a raised waist, assembled from whole equilateral cells. Switch styles in
   **Character → Numerical display**. `/segment-study.html` lets you toggle each electrode.
-- The clock caption names the current city, using the phone's location at most
+- The status line names the current city, using the phone's location at most
   hourly, or a manual name. The workshop labels Norfolk as an example until you
   request a location preview. City lookup uses Photon / OpenStreetMap.
 - A small optional 9×9-pixel lunar glyph in the top bar, with eight familiar phases.
@@ -107,7 +106,7 @@ The installable file is `watchface/build/watchface.pbw`. Target: Emery only,
 adds about 22 KB of heap. Meridian adds 3,952 bytes of raw resources (Chamfer
 masters and transition lattice, status-line capitals), which load into the heap only
 when used, and moves the minute-transition buffers from static memory to the heap. An
-ARM cross-compile of the app sources measures 17,167 fewer static bytes than
+ARM cross-compile of the app sources measures 19,635 fewer static bytes than
 before; the SDK's own report for this revision is still to be taken.
 
 The project also remains compatible with opening the `watchface` folder in the
@@ -129,7 +128,7 @@ npm run dev                   # keep running in another terminal
 npm run test:browser          # desktop/mobile UI and simulated Pebble bridge
 ```
 
-Typography preparation is separate. The Draft and Span generator verifies every glyph against its pixel master; the reference tool prepares the comparison families, and the wordmark has its own pixel drawing:
+Typography preparation is separate. The Draft and Span generator verifies every glyph against its pixel master; the reference tool prepares the comparison families, and the workshop's wordmark has its own pixel drawing:
 
 ```sh
 uv run --with fonttools==4.60.0 --with freetype-py==2.5.1 --with pillow==11.3.0 --with cairosvg==2.8.2 tools/generate-draft.py
@@ -159,7 +158,7 @@ Physical hardware and an actual phone webview have not been tested.
 | --- | --- |
 | `shared/map.js` | Preserved original Gray net and gnomonic coordinate mapping |
 | `shared/markers.js` | Five original 5×5 map-glyph pixel masters and legacy-ID migration |
-| `shared/settings.js` | Themes, presets (Meridian, Atlas, Horizon), locations, bounds, validation |
+| `shared/settings.js` | Themes, presets (Meridian, Horizon), locations, bounds, validation |
 | `shared/chamfer-numerals.js` | Chamfer figure masters (zone numerals ×3, 45° cuts) and clock strip |
 | `shared/protocol.js` | Named time zones → compact native packet |
 | `shared/solar.js` | Solar direction model used by the workshop |

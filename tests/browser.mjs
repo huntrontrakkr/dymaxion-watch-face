@@ -32,9 +32,9 @@ try{
   await page.locator('#moonIndicator').uncheck();assert.equal((await saved()).moonIndicator,false);
   await page.getByRole('button',{name:'Horizon',exact:true}).click();
   // Chamfer figures fit every composition's original positions; changing numerals keeps it.
-  assert.deepEqual([(await saved()).time[1],(await saved()).map[1],(await saved()).statusLine],[134,24,false]);
+  assert.deepEqual([(await saved()).time[1],(await saved()).map[1]],[134,24]);
   await page.getByRole('tab',{name:'Character',exact:true}).click();await page.getByLabel('Numerical display',{exact:true}).selectOption('broad');
-  assert.deepEqual([(await saved()).time[1],(await saved()).map[1],(await saved()).statusLine],[134,24,false]);
+  assert.deepEqual([(await saved()).time[1],(await saved()).map[1]],[134,24]);
   assert.equal(await page.locator('[data-preset="horizon"]').getAttribute('aria-pressed'),'true');
   await page.getByLabel('Numerical display',{exact:true}).selectOption('chamfer');assert.equal((await saved()).time[1],134);
   await page.getByRole('tab',{name:'Composition',exact:true}).click();
@@ -69,8 +69,8 @@ try{
   for(let i=0;i<4;i++){await page.waitForTimeout(260);await checkPixels();}
   await page.waitForTimeout(160);
   await page.screenshot({path:'test-results/workshop.png',fullPage:true});
-  for(const preset of ['Meridian','Atlas','Horizon']){await page.getByRole('button',{name:preset,exact:true}).click();await page.locator('#screen').screenshot({path:`test-results/preview-${preset}.png`});}
-  await page.getByRole('button',{name:'Atlas',exact:true}).click();await page.getByRole('tab',{name:'Character',exact:true}).click();await page.screenshot({path:'test-results/type-specimen.png',fullPage:true});
+  for(const preset of ['Meridian','Horizon']){await page.getByRole('button',{name:preset,exact:true}).click();await page.locator('#screen').screenshot({path:`test-results/preview-${preset}.png`});}
+  await page.getByRole('button',{name:'Meridian',exact:true}).click();await page.getByRole('tab',{name:'Character',exact:true}).click();await page.screenshot({path:'test-results/type-specimen.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});await page.getByRole('tab',{name:'Composition',exact:true}).click();
   await page.waitForFunction(()=>{const r=document.querySelector('#screen').getBoundingClientRect(),d=devicePixelRatio;return Math.abs((r.left+scrollX)*d-Math.round((r.left+scrollX)*d))<.005&&Math.abs((r.top+scrollY)*d-Math.round((r.top+scrollY)*d))<.005;});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'mobile overflow');await page.screenshot({path:'test-results/mobile.png',fullPage:true});

@@ -8,7 +8,6 @@
 #include "palette.h"
 #include "generated/defaults.h"
 #include "generated/cities.h"
-#include "generated/identity.h"
 #include "generated/moon_palette.h"
 #include "generated/status_glyphs.h"
 #include "generated/span_font.h"
@@ -91,12 +90,6 @@ static void rebuild_map(void) {
 static void text(GContext *ctx,const char *str,GFont font,GRect rect,GTextAlignment align,GColor ink) {
   graphics_context_set_text_color(ctx,ink);
   graphics_draw_text(ctx,str,font,rect,GTextOverflowModeFill,align,NULL);
-}
-static void draw_identity(GContext *ctx) {
-  graphics_context_set_stroke_color(ctx,color(6));
-  for(int y=0;y<IDENTITY_HEIGHT;y++)for(int x=0;x<IDENTITY_WIDTH;x++) {
-    if(IDENTITY_ALPHA[y*IDENTITY_WIDTH+x])graphics_draw_pixel(ctx,GPoint(4+x,y));
-  }
 }
 static void line(GContext *ctx,int x1,int y1,int x2,int y2,GColor c) {
   graphics_context_set_stroke_color(ctx,c);graphics_draw_line(ctx,GPoint(x1,y1),GPoint(x2,y2));
@@ -265,8 +258,7 @@ static void clock_caption(char *out,size_t size,const char *date,const char *amp
 }
 static void draw_time(GContext *ctx,struct tm *local,time_t now) {
   int x=s_settings[TIME_X],y=s_settings[TIME_Y],w=(s_settings[FLAGS]&STACKED)?72:200;
-  bool chamfer=s_display[1]==4,status=s_settings[FLAGS]&STATUS_LINE;
-  int h=(s_settings[FLAGS]&STACKED)?84:chamfer?(status?40:52):46;
+  int h=(s_settings[FLAGS]&STACKED)?84:s_display[1]==4?40:46;
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(x,y,w,h),0,GCornerNone);
   char timebuf[8],datebuf[96];int hour=local->tm_hour;if(!is_24()){hour%=12;if(!hour)hour=12;}
   const char *ampm=is_24()?"":(local->tm_hour<12?"AM":"PM");
@@ -280,10 +272,6 @@ static void draw_time(GContext *ctx,struct tm *local,time_t now) {
     snprintf(timebuf,sizeof(timebuf),"%02d:%02d",hour,local->tm_min);
     if(s_clock_face)draw_flip_time(ctx,local,now,x,y);
     else if(s_display[1]==1)draw_triangle_time(ctx,timebuf,x,y);else draw_span_time(ctx,timebuf,x,y);
-    if(status)return;
-    char date[24];snprintf(date,sizeof(date),"%s %02d %s",(const char *[]) {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"}[local->tm_wday],local->tm_mday,(const char *[]) {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"}[local->tm_mon]);
-    clock_caption(datebuf,sizeof(datebuf),date,ampm,w-4,now," / ",caption_width);
-    text(ctx,datebuf,s_small,GRect(x,chamfer?y+38:y+31,w,15),GTextAlignmentCenter,color(7));
   }
 }
 static void draw_zones(GContext *ctx,time_t now,struct tm *local) {
@@ -314,7 +302,7 @@ static void draw_zones(GContext *ctx,time_t now,struct tm *local) {
 }
 typedef struct {GContext *ctx;GColor color;} CapsPen;
 static void caps_span(void *context,int x,int y,int length){CapsPen *pen=context;line(pen->ctx,x,y,x+length-1,y,pen->color);}
-// Status line: lining capitals for date and city in place of the nameplate.
+// Status line: lining capitals for date and city at the top of the face.
 static void draw_status_line(GContext *ctx,struct tm *local,time_t now,const char *battery){
   char date[24],status[96];const char *ampm=is_24()?"":(local->tm_hour<12?"AM":"PM");
   snprintf(date,sizeof(date),"%s %02d %s",(const char *[]){"Sun","Mon","Tue","Wed","Thu","Fri","Sat"}[local->tm_wday],local->tm_mday,
@@ -350,11 +338,8 @@ static void update_proc(Layer *layer,GContext *ctx) {
   if(zones)draw_zones(ctx,now,&local);
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(0,0,200,18),0,GCornerNone);
   char battery[8];snprintf(battery,sizeof(battery),"%d%%",s_battery.charge_percent);
-  if((s_settings[FLAGS]&STATUS_LINE)&&s_caps)draw_status_line(ctx,&local,now,battery);
-  else {
-    draw_identity(ctx);
-    text(ctx,battery,s_small,GRect(160,0,35,15),GTextAlignmentRight,color(6));
-  }
+  if(s_caps)draw_status_line(ctx,&local,now,battery);
+  else text(ctx,battery,s_small,GRect(160,0,35,15),GTextAlignmentRight,color(6));
   draw_moon_indicator(ctx,now);
   draw_bluetooth_indicator(ctx);
 }

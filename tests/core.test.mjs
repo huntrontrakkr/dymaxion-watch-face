@@ -46,7 +46,7 @@ test('invalid imports fail before replacing settings; placements are constrained
   s.places[0].tz='Invented/Zone';assert.throws(()=>validateSettings(s,zoneExists));
   s.places[0].tz='Europe/London';s.places[0].lat=91;assert.throws(()=>validateSettings(s,zoneExists));
   s.places[0].lat=51;s.time=[-100,900];assert.deepEqual(validateSettings(s,zoneExists).time,[0,188],'the 40-pixel Chamfer strip stays on screen');
-  assert.deepEqual(validateSettings({...s,clockDisplay:'broad',statusLine:false},zoneExists).time,[0,182]);
+  assert.deepEqual(validateSettings({...s,clockDisplay:'broad'},zoneExists).time,[0,182]);
   assert.throws(()=>validateSettings({...s,time:[NaN,4]},zoneExists));
   for(const theme of THEMES)for(const v of Object.values(theme).flat())if(typeof v==='string'&&v.startsWith('#'))assert.match(v,/^#(?:00|55|AA|FF){3}$/i);
   for(const palette of MOON_COLORS)for(const color of palette)assert.match(color,/^#(?:00|55|AA|FF){3}$/i);
@@ -139,23 +139,25 @@ test('lunar phase selects the eight familiar glyphs near published primary phase
 });
 test('full-width clock and top-bar moon migrate old widget settings',()=>{
   const s=defaults();assert.deepEqual(s.time,PRESETS.meridian.time);assert.equal(s.moonIndicator,true);
-  assert.equal(s.statusLine,true);assert.equal(s.clockDisplay,'chamfer');
-  assert.equal(encodeSettings(s)[2]&64,64,'the status line travels as flag 64');assert.equal(encodeSettings({...s,statusLine:false})[2]&64,0);
+  assert.equal('statusLine' in s,false,'the status line is the only header');assert.equal(s.clockDisplay,'chamfer');
+  assert.equal(encodeSettings(s)[2]&64,0,'flag 64 is retired');
   const packet=encodeSettings(s);assert.equal(packet[0],7);assert.equal(packet[16+17],1);
   assert.equal(packet[16+72+17],0);assert.equal(packet[16+71],0);assert.ok(packet[16+70]>=0xc0);
   const disabled=encodeSettings({...s,moonIndicator:false});assert.equal(disabled[16+17],0);
   const old={...s,time:[28,20],widgets:[{type:4,pos:[2,29]},{type:2,pos:[174,29]}]};delete old.moonIndicator;delete old.statusLine;
   const migrated=validateSettings(old,zoneExists);
-  assert.deepEqual(migrated.time,PRESETS.atlas.time);assert.equal(migrated.moonIndicator,true);
-  assert.equal(migrated.statusLine,false,'saved faces keep their nameplate');
+  assert.deepEqual(migrated.time,PRESETS.meridian.time);assert.equal(migrated.moonIndicator,true);
+  assert.equal('statusLine' in validateSettings({...s,statusLine:false},zoneExists),false,'a saved nameplate choice is dropped');
+  assert.equal('atlas' in PRESETS,false,'Atlas retired with the nameplate');
+  assert.deepEqual(validateSettings({...s,time:[0,20],map:[0,73]},zoneExists).time,PRESETS.meridian.time,'saved Atlas faces become Meridian');
   assert.equal('widgets' in migrated,false);
   assert.throws(()=>validateSettings({...s,moonIndicator:3},zoneExists));
 });
 test('old saved presets adopt the enlarged map; custom arrangements keep their positions',()=>{
   const saved={...defaults(),time:[20,18],map:[4,73]};
   const migrated=validateSettings(saved,zoneExists);
-  assert.deepEqual(migrated.time,PRESETS.atlas.time);
-  assert.deepEqual(migrated.map,PRESETS.atlas.map);
+  assert.deepEqual(migrated.time,PRESETS.meridian.time);
+  assert.deepEqual(migrated.map,PRESETS.meridian.map);
   const custom=validateSettings({...saved,time:[31,28],zones:[[8,187],[71,180],[132,188]]},zoneExists);
   assert.deepEqual(custom.time,[0,28]);
   assert.deepEqual(custom.zones,[[8,187],[71,180],[132,188]]);
@@ -163,8 +165,8 @@ test('old saved presets adopt the enlarged map; custom arrangements keep their p
   const oldPortrait={...defaults(),orientation:1,stacked:true,time:[0,76],map:[48,20],zones:[[139,23],[139,96],[139,169]],theme:2};
   const flattened=validateSettings(oldPortrait,zoneExists);
   assert.equal(flattened.orientation,0);
-  assert.deepEqual(flattened.time,PRESETS.atlas.time);
-  assert.deepEqual(flattened.map,PRESETS.atlas.map);
+  assert.deepEqual(flattened.time,PRESETS.meridian.time);
+  assert.deepEqual(flattened.map,PRESETS.meridian.map);
   assert.equal(flattened.theme,2);
   assert.deepEqual(flattened.places,oldPortrait.places);
 });
@@ -172,5 +174,5 @@ test('native packet reader validates JS packets and rejects truncated or corrupt
   mkdirSync('test-results',{recursive:true});
   for(const [name,preset]of Object.entries(PRESETS)){const s={...defaults(),...preset};writeFileSync(`test-results/${name}.bin`,encodeSettings(s,at('2026-01-01T00:00:00Z')));}
   execFileSync('cc',['-std=c11','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/settings-test.c','watchface/src/c/settings.c','-o','test-results/settings-test']);
-  execFileSync('test-results/settings-test',['test-results/atlas.bin','test-results/horizon.bin']);
+  execFileSync('test-results/settings-test',['test-results/meridian.bin','test-results/horizon.bin']);
 });

@@ -3,7 +3,7 @@ import '../shared/palette-controls.css';
 import {paletteFor} from '../shared/palette-settings.js';
 import {paletteControls} from '../shared/palette-controls.js';
 import moment from 'moment-timezone';
-import {drawBitmapText,drawIdentity,fitLabel,textWidth} from '../shared/type.js';
+import {drawBitmapText,fitLabel,textWidth} from '../shared/type.js';
 import {defaults,THEMES,PLACES,PRESETS,activePreset,presetFor,withClockDisplay,validateSettings,clampPosition,blockSize,markColor,quantizeColor} from '../shared/settings.js';
 import {MARKERS,drawMarkerPixels} from '../shared/markers.js';
 import {makeMap,direction,dot,MAP_SIZE} from '../shared/map.js';
@@ -27,7 +27,7 @@ import {minuteFlipClock,drawFlipPixels} from '../shared/minute-flip.js';
 const $=id=>document.getElementById(id),zoneExists=tz=>!!moment.tz.zone(tz);
 const clone=x=>JSON.parse(JSON.stringify(x));
 let settings=defaults(),offset=0,selected='time',drag=null,animation=0,activePlace=0;
-let mapCache=null,cacheKey='',mapPixels=[],watchTypeface=null,watchSpan=null,watchIdentity=null;
+let mapCache=null,cacheKey='',mapPixels=[],watchTypeface=null,watchSpan=null;
 const canvas=$('screen'),ctx=canvas.getContext('2d',{willReadFrequently:true});
 ctx.imageSmoothingEnabled=false;
 // Centering the bezel can put its screen between physical browser pixels.
@@ -78,8 +78,8 @@ function positionFields(){
   $('element').value=selected;$('pos-x').value=pos[0];$('pos-y').value=pos[1];
   $('pos-x').max=200-w;$('pos-y').max=228-h;$('pos-y').min=selected==='map'?0:16;
 }
-const drawings={meridian:'M4 4H20M28 4H36M7 8H33V20H7ZM3 26 13 23 19 30 28 24 37 31 26 38 15 33 6 37ZM4 43H11M16 43H23M28 43H35',atlas:'M5 5H35V12H5ZM3 19 13 16 19 24 28 17 37 25 26 34 15 28 6 33ZM4 38H11M16 38H23M28 38H35',horizon:'M3 7 13 4 19 12 28 5 37 13 26 22 15 16 6 21ZM5 28H35V34H5ZM4 40H11M16 40H23M28 40H35'};
-for(const [id,name] of [['meridian','Meridian'],['atlas','Atlas'],['horizon','Horizon']]){
+const drawings={meridian:'M4 4H20M28 4H36M7 8H33V20H7ZM3 26 13 23 19 30 28 24 37 31 26 38 15 33 6 37ZM4 43H11M16 43H23M28 43H35',horizon:'M3 7 13 4 19 12 28 5 37 13 26 22 15 16 6 21ZM5 28H35V34H5ZM4 40H11M16 40H23M28 40H35'};
+for(const [id,name] of [['meridian','Meridian'],['horizon','Horizon']]){
   const button=document.createElement('button');button.type='button';button.dataset.preset=id;button.setAttribute('aria-pressed','false');
   button.innerHTML=`<svg viewBox="0 0 40 46" aria-hidden="true"><path d="${drawings[id]}"/></svg><span>${name}</span>`;
   button.onclick=()=>{Object.assign(settings,presetFor(id,settings.clockDisplay));sync();save();pulse();};$('presets').append(button);
@@ -147,13 +147,13 @@ function placesUI(){
 }
 markerGallery();
 function sync(){
-  for(const key of ['dayNight','edges','lights','sun','motion','stacked','statusLine','moonIndicator'])$(key).checked=settings[key];
+  for(const key of ['dayNight','edges','lights','sun','motion','stacked','moonIndicator'])$(key).checked=settings[key];
   $('format').value=settings.format;
   document.querySelectorAll('[data-theme]').forEach(b=>b.setAttribute('aria-pressed',String(settings.customPalette===null&&+b.dataset.theme===settings.theme)));
   const current=activePreset(settings);document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.preset===current)));
   positionFields();placesUI();panelEditor.refresh();cityEditor.refresh();displayEditor.refresh();paletteEditor.refresh();
 }
-for(const key of ['dayNight','edges','lights','sun','motion','stacked','statusLine','moonIndicator'])$(key).onchange=()=>{settings[key]=$(key).checked;move('time',settings.time);positionFields();displayEditor.refresh();save();};
+for(const key of ['dayNight','edges','lights','sun','motion','stacked','moonIndicator'])$(key).onchange=()=>{settings[key]=$(key).checked;move('time',settings.time);positionFields();displayEditor.refresh();save();};
 $('format').onchange=()=>{settings.format=+$('format').value;save();};
 $('element').onchange=()=>{selected=$('element').value;positionFields();$('guides').checked=true;render();};
 for(const axis of ['x','y'])$('pos-'+axis).onchange=()=>{const value=Number($('pos-'+axis).value);if(!Number.isFinite(value))return;const p=getPosition(selected).slice();p[axis==='x'?0:1]=value;move(selected,p);positionFields();save();};
@@ -207,7 +207,7 @@ function use24(){return settings.format===1||(settings.format===0&&!new Intl.Dat
 const two=n=>String(n).padStart(2,'0');
 function clockParts(date){let h=date.hours();return {h:use24()?h:h%12||12,m:date.minutes(),ampm:h<12?'AM':'PM'};}
 function render(){
-  if(!mapPixels.length||!watchTypeface||!watchSpan||!watchIdentity)return;
+  if(!mapPixels.length||!watchTypeface||!watchSpan)return;
   if(!settings.footer.pages.includes(footerPage))footerPage=settings.footer.home;
   if(settings.footer.enabled&&settings.footer.rotationMinutes&&Date.now()-panelChanged>=settings.footer.rotationMinutes*60000){footerPage=settings.footer.pages[(settings.footer.pages.indexOf(footerPage)+1)%settings.footer.pages.length];panelChanged=Date.now();}
   const now=new Date(Date.now()+offset*3600000),local=moment(now),sun=sunDirection(now),pal=paletteFor(settings);
@@ -220,8 +220,8 @@ function render(){
   const [tx,ty]=settings.time,[tw,th]=blockSize(settings,'time'),{h,m:minute,ampm}=clockParts(local);
   const city=settings.location.mode==='manual'?settings.location.name:currentCity.sample?currentCity.name:cityIsUsable(currentCity)?currentCity.name+(currentCity.stale||Date.now()/1000-currentCity.fetched>7200?'?':''):'';
   const caption=clockCaption(settings.stacked?'':local.format('ddd DD MMM'),city,use24()?'':ampm,tw-4,t=>textWidth(watchTypeface.text.small,t));
-  // Status line: lining capitals, date and city at the top left instead of the nameplate.
-  const status=settings.statusLine?clockCaption(local.format('ddd DD MMM').toUpperCase(),city.toUpperCase(),use24()?'':ampm,statusWidth(),t=>textWidth(watchTypeface.lining.small,t),'  '):'';
+  // Status line: lining capitals, date and city at the top left.
+  const status=clockCaption(local.format('ddd DD MMM').toUpperCase(),city.toUpperCase(),use24()?'':ampm,statusWidth(),t=>textWidth(watchTypeface.lining.small,t),'  ');
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
   if(settings.stacked||!['broad','chamfer'].includes(settings.clockDisplay))minuteClock.reset();
   if(settings.stacked){paintText(two(h),tx+tw/2,ty+30,48,pal.ink,'center');paintText(two(minute),tx+tw/2,ty+65,48,pal.ink,'center');strokeLine(tx+25,ty+35,tx+47,ty+35,pal.accent);paintText(caption,tx+tw/2,ty+81,11,pal.accent,'center');}
@@ -233,11 +233,10 @@ function render(){
       drawFlipPixels(ctx,minuteClock.frame(),tx,chamfer?ty:ty-2,{ink:pal.ink,background:pal.bg});
     }else if(settings.clockDisplay==='triangles')drawTriangleTime(ctx,value,tx,ty-1,pal.ink,pal.inactive,settings.segmentGrid);
     else paintText(value,tx+tw/2,ty+30,50,pal.ink,'center');
-    if(!settings.statusLine)paintText(caption,tx+tw/2,settings.clockDisplay==='chamfer'?ty+50:ty+43,11,pal.accent,'center');
   }
   canvas.dataset.clockDisplay=settings.stacked?'draft':settings.clockDisplay;
   canvas.dataset.clockAnimating=String(minuteClock.active);
-  canvas.dataset.clockCaption=settings.statusLine?status:caption;
+  canvas.dataset.clockCaption=settings.stacked?caption:status;
   $('city-state').textContent=settings.location.mode==='manual'?'The clock uses your entered city name.':currentCity.sample?'Norfolk is an example city in this preview. The watch uses your phone’s location.':city?`Current city: ${currentCity.name}${currentCity.stale?' (last known location)':''}.`:'City unavailable. Allow location in the phone app, or enter a city name.';
   if(settings.footer.enabled){ctx.fillStyle=pal.bg;ctx.fillRect(0,184,200,44);}
   if(!settings.footer.enabled||footerPage==='zones')settings.places.forEach((p,i)=>{
@@ -254,8 +253,7 @@ function render(){
   $('panel-preview-label').textContent=settings.footer.enabled?PANEL_PAGES.find(([id])=>id===footerPage)[1]:'Time zones';
   $('data-state').textContent=environmentMode==='sample'?'Example curves for layout preview. Live data is available below.':`Live forecast for ${settings.places[settings.footer.weather.place].name}. ${liveData.weather?.error?'Weather update unavailable; cached data is marked OLD.':''} ${liveData.tide?.error?'NOAA update unavailable.':''}`;
   ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,18);
-  if(settings.statusLine){drawBitmapText(ctx,watchTypeface.lining.small,status,4,12,pal.accent);drawBitmapText(ctx,watchTypeface.lining.small,'86%',195,12,pal.ink,'right');}
-  else{drawIdentity(ctx,watchIdentity,4,0,pal.ink,pal.bg);paintText('86%',195,12,11,pal.ink,'right');}
+  drawBitmapText(ctx,watchTypeface.lining.small,status,4,12,pal.accent);drawBitmapText(ctx,watchTypeface.lining.small,'86%',195,12,pal.ink,'right');
   drawMoonIndicator(now);drawBluetoothIndicator();
   // All watch pixels already come from RGB222 colors and native bitmap masks.
   // Avoid a final quantization pass that would hide accidental antialiasing.
@@ -279,5 +277,5 @@ $('reset').onclick=()=>{settings=defaults();footerPage=settings.footer.home;offs
 
 sync();
 function nextMinute(){setTimeout(()=>{if(!document.hidden)render();nextMinute();},60000-Date.now()%60000+1);}
-try{const response=await fetch(`${import.meta.env.BASE_URL}maps/map-0.bin`);if(!response.ok)throw new Error('Map data could not be loaded.');mapPixels=new Uint8Array(await response.arrayBuffer());if(mapPixels.length!==MAP_SIZE[0]*MAP_SIZE[1]*4)throw new Error('Map data is incomplete.');const [type,identity]=await Promise.all(['proofs','identity'].map(async name=>{const response=await fetch(`${import.meta.env.BASE_URL}type/${name}.json`);if(!response.ok)throw new Error('Watch typography could not be loaded.');return response.json();}));watchTypeface=type.draft;watchSpan=type.span;watchIdentity=identity;render();nextMinute();}
+try{const response=await fetch(`${import.meta.env.BASE_URL}maps/map-0.bin`);if(!response.ok)throw new Error('Map data could not be loaded.');mapPixels=new Uint8Array(await response.arrayBuffer());if(mapPixels.length!==MAP_SIZE[0]*MAP_SIZE[1]*4)throw new Error('Map data is incomplete.');const typeResponse=await fetch(`${import.meta.env.BASE_URL}type/proofs.json`);if(!typeResponse.ok)throw new Error('Watch typography could not be loaded.');const type=await typeResponse.json();watchTypeface=type.draft;watchSpan=type.span;render();nextMinute();}
 catch(e){notice(e.message,true);}

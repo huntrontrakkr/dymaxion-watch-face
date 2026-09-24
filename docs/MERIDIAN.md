@@ -33,17 +33,19 @@ clocks are now one design at two sizes.
 
 **Smaller on purpose.** The figures are 36 pixels tall and 27 wide, set in
 fixed tabular cells across 134 pixels of the 200-pixel width. The map is the
-largest thing on the face again, and it stays where Atlas has always put it.
+largest thing on the face again, and it stays where the old Atlas default put it.
 
 **A status line instead of a nameplate.** The watch does not need to say its
 own name. Date and city move to the top line in Draft Micro's lining capitals,
 beside the Moon, Bluetooth and battery marks that were already there. The
-caption row under the clock disappears.
+caption row under the clock disappears. The script nameplate is retired from the
+watch entirely, and with it the Atlas composition, which without a nameplate was
+Meridian by another name; saved Atlas faces open as Meridian.
 
 **Still the same instrument.** The same map, palettes, places, panels,
-settings and 400 ms minute transition (now a shrink of map-scale triangles). Chamfer fits the original Atlas and Horizon
-positions, with the caption 12 pixels below the figures when the nameplate is
-shown; switching numerals keeps whichever composition you are in.
+settings and 400 ms minute transition (now a shrink of map-scale triangles).
+Horizon keeps its original positions; switching numerals keeps whichever
+composition you are in.
 
 ## Engineering notes
 
@@ -58,14 +60,14 @@ shown; switching numerals keeps whichever composition you are in.
   62.8 KB. Chamfer's resource and the status-line capitals (1,602 bytes) load
   into the heap only when used; the transition buffers (4,068 bytes for Chamfer) moved
   from static memory to the heap for both faces. An ARM cross-compile of the app
-  sources measures 17,167 bytes *less* static memory than before.
+  sources measures 19,635 bytes *less* static memory than before.
 - The watch finds lattice cells by binary search over per-row runs instead of
   a lookup table. Host tests compare native frames, read from the packed
   resource, with the browser at every sampled stage of seven transitions, and
   the status-line capitals pixel for pixel.
 - Display code 4 is Chamfer; code 3 remains the retired LCD style, which the
-  watch still migrates to broad. Flag 64 in the settings packet is the status
-  line.
+  watch still migrates to broad. Flag 64 in the settings packet briefly
+  switched the status line and is now unused: the status line is always on.
 
 ## Reproduce
 

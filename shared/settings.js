@@ -30,12 +30,11 @@ export const PLACES = [
   ['UTC','Greenwich','Etc/UTC',51.4769,0]
 ].map(([label,name,tz,lat,lon])=>({label,name,tz,lat,lon}));
 export const PRESETS = {
-  // Meridian: a status line replaces the nameplate; the figures sit small over the map.
-  meridian:{orientation:0,stacked:false,statusLine:true,time:[0,22],map:[0,73],zones:[[4,189],[70,189],[136,189]]},
-  atlas:{orientation:0,stacked:false,statusLine:false,time:[0,20],map:[0,73],zones:[[4,189],[70,189],[136,189]]},
-  horizon:{orientation:0,stacked:false,statusLine:false,time:[0,134],map:[0,24],zones:[[4,189],[70,189],[136,189]]}
+  // Meridian: status line, small figures over the map, zones below.
+  meridian:{orientation:0,stacked:false,time:[0,22],map:[0,73],zones:[[4,189],[70,189],[136,189]]},
+  horizon:{orientation:0,stacked:false,time:[0,134],map:[0,24],zones:[[4,189],[70,189],[136,189]]}
 };
-export const PRESET_KEYS = ['orientation','stacked','statusLine','time','map','zones'];
+export const PRESET_KEYS = ['orientation','stacked','time','map','zones'];
 export function presetFor(name){return JSON.parse(JSON.stringify(PRESETS[name]));}
 export function activePreset(settings){
   return Object.keys(PRESETS).find(name=>{const p=presetFor(name,settings.clockDisplay);return PRESET_KEYS.every(k=>JSON.stringify(settings[k])===JSON.stringify(p[k]));})??null;
@@ -48,6 +47,8 @@ export function withClockDisplay(settings,clockDisplay,segmentGrid=settings.segm
   return next;
 }
 const LEGACY_PRESETS=[{
+  atlas:{orientation:0,stacked:false,time:[0,20],map:[0,73],zones:[[4,189],[70,189],[136,189]]}
+},{
   atlas:{orientation:0,stacked:false,time:[28,20],map:[0,73],zones:[[4,189],[70,189],[136,189]]},
   horizon:{orientation:0,stacked:false,time:[28,134],map:[0,24],zones:[[4,189],[70,189],[136,189]]}
 },{
@@ -62,8 +63,7 @@ export function blockSize(settings,key) {
   if(key==='map')return MAP_SIZE;
   if(key==='time'){
     if(settings.stacked)return [72,84];
-    // Chamfer: a 40-pixel figure strip, plus the caption when there is no status line.
-    if(settings.clockDisplay==='chamfer')return [200,settings.statusLine?40:52];
+    if(settings.clockDisplay==='chamfer')return [200,40];
     return [200,46];
   }
   return [60,36];
@@ -76,12 +76,13 @@ export function validateSettings(input,zoneExists) {
   if(!input||input.version!==1)throw new Error('Choose a Dymaxion version 1 settings file.');
   if(input.markerSet!==undefined&&input.markerSet!==1&&input.markerSet!==2)throw new Error('Unknown map glyph set.');
   const legacyMarkers=input.markerSet!==2;
-  // Previously saved vertical arrangements return to the Atlas composition.
+  // Previously saved vertical arrangements return to the Meridian composition.
   // Keep the user's palette, places, clock format and display preferences.
-  if(input.orientation===1)input={...input,...PRESETS.atlas};
+  if(input.orientation===1)input={...input,...PRESETS.meridian};
   // Migrate only exact old presets; custom positions are merely constrained.
   const preset=LEGACY_PRESETS.flatMap(group=>Object.entries(group)).find(([,p])=>Object.keys(p).every(k=>JSON.stringify(input[k])===JSON.stringify(p[k])));
-  if(preset)input={...input,...PRESETS[preset[0]]};
+  // Atlas retired with the nameplate; its faces become Meridian.
+  if(preset)input={...input,...PRESETS[preset[0]==='atlas'?'meridian':preset[0]]};
   const out=defaults();
   Object.assign(out,validatePalettes(input,quantizeColor));
   for(const [key,max] of [['theme',THEMES.length-1],['format',2],['orientation',0]]) {
@@ -92,8 +93,6 @@ export function validateSettings(input,zoneExists) {
     if(typeof input[key]!=='boolean')throw new Error('Invalid '+key+'.');out[key]=input[key];
   }
   if(input.moonIndicator!==undefined&&typeof input.moonIndicator!=='boolean')throw new Error('Invalid moon indicator.');
-  if(input.statusLine!==undefined&&typeof input.statusLine!=='boolean')throw new Error('Invalid status line.');
-  out.statusLine=input.statusLine??false;
   out.moonIndicator=input.moonIndicator??true;
   out.footer=validateFooter(input.footer,zoneExists,quantizeColor);
   out.location=validateLocation(input.location);

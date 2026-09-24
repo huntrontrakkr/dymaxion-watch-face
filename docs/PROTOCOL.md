@@ -52,9 +52,9 @@ reader rejects older packets and persisted records; the companion regenerates
 v7 packets from saved JSON on connection. Exported layout JSON remains version
 1 with `markerSet: 2`. Imports without `markerSet` migrate the former 21 icon
 IDs to geometric glyphs while keeping places and colors. Earlier widget
-selections are discarded, while old Atlas and Horizon positions adopt the
-full-width clock. Existing portrait
-layouts migrate to Atlas, preserving places and display preferences. Packets
+selections are discarded, while old Atlas positions become Meridian and old
+Horizon positions adopt the full-width clock. Existing portrait
+layouts migrate to Meridian, preserving places and display preferences. Packets
 with orientation 1 are rejected.
 
 The Moon uses eight 9×9 pixel glyphs packed into native row masks. The watch

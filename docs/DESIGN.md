@@ -10,7 +10,7 @@ of a historical artifact or an endorsed Buckminster Fuller Institute product.
 `shared/map.js` preserves the original supplied designer's twelve normalized
 vertices, twenty face definitions, all twenty-two `GPLACE` placements, and the
 LCD partitioning of split triangles 9 and 16. Its forward and inverse mappings
-use the same gnomonic barycentric method. Atlas and Horizon place the same net
+use the same gnomonic barycentric method. Meridian and Horizon place the same net
 above or below a readable clock and three zone displays.
 
 The coastlines are regenerated from Natural Earth 1:110m land data at the same
@@ -61,8 +61,9 @@ halo keeps the 5×5-pixel mark separate from the map beneath it.
 
 ## Typography
 
-The watch name is an **original pixel nameplate script**, drawn specifically as a
-wordmark. Its low, extended lowercase and long horizontal joins draw on the
+The workshop's masthead is an **original pixel nameplate script**, drawn
+specifically as a wordmark. It used to head the watch face too; the face now
+opens with the status line instead. Its low, extended lowercase and long horizontal joins draw on the
 appliance nameplates of the 1950s. A wide swept D, shallow angular shoulders
 and a compact y descender give it a deliberately streamlined rhythm.
 It uses a 124×17 master with solid one-pixel strokes: no antialiasing,
@@ -71,17 +72,16 @@ font conversion, scaled outlines or compression artifacts.
 The wordmark was drawn from scratch in `tools/generate-wordmark.py`; it does not
 use glyphs from DymaxionScript or another font. It takes the broad idea of a
 mid-century script nameplate as its brief. The sphere has been removed, leaving more
-space for the name. The SVG website artwork, browser pixels and native watch
-mask are generated from exactly the same original drawing.
+space for the name. The SVG website artwork and the type study's pixels are
+generated from exactly the same original drawing.
 
 The default clock is **Chamfer**: the Draft zone numerals enlarged three times,
 to a 36-pixel cap height, with every exposed pixel corner cut on a 45° line and
 every inside step filled on the same diagonal. The big clock and the zone clocks
 are one drawing at two sizes. It is deliberately smaller than the map. Figures
 sit in 27-pixel tabular cells so the readout never shifts and the minute transition
-moves only what changes. In Meridian,
-a status line of Draft Micro lining capitals carries the date and city in place
-of the nameplate. The reasoning, and a comparison with the previous default,
+moves only what changes. A status line of Draft Micro lining capitals carries
+the date and city at the top of every composition. The reasoning, and a comparison with the previous default,
 are in [Meridian](MERIDIAN.md).
 
 The **Dymaxion Span** option is an original 28-pixel-high cut drawn for
@@ -152,20 +152,20 @@ These are visual research references, not source outlines or bundled artwork.
 
 ## Proportion
 
-Meridian stacks a status line, the 200×40 Chamfer strip (figures from y=24 to
-60), the map at Atlas's position and the zones from 189. Atlas and Horizon keep
-their original positions with Chamfer; the caption sits 12 pixels below the
-figures.
+Meridian stacks the status line, the 200×40 Chamfer strip (figures from y=24
+to 60), the map from y=73 and the zones from 189. Horizon swaps clock and map:
+map from y=24, clock from 134.
 
 With broad, Span or segment numerals, the clock occupies the same 200×46 area. Span spans 190
 pixels with 28-pixel-tall numerals. The triangular construction occupies a
-196×37 envelope, with inset ink leaving room for the city/date caption. The
+196×37 envelope. The
 map's bounds now follow the *visible pieces* of the split faces, removing unused
 space without changing the projection, proportions or coastline geometry.
 Landscape scale grows from 31.33 to 35.64 pixels per net edge, about 14 percent.
 The 200×104 raster gives the planetary view more of the watch's width.
-Atlas and Horizon balance the full-width clock against it. Earlier horizontal
-layouts migrate to these proportions; saved portrait layouts open as Atlas
+Meridian and Horizon balance the full-width clock against it. Earlier horizontal
+layouts migrate to these proportions; the retired Atlas composition and saved
+portrait layouts open as Meridian
 while preserving palette, tracked cities, time zones, and display preferences.
 
 ## Motion and time
@@ -187,7 +187,7 @@ government rule changes require an updated bundled IANA database. No city is
 inferred from the local UTC offset. The primary clock follows the watch's local
 time; markers belong only to explicitly configured places.
 
-The caption replaces “local” with the actual city, following the location-label
+The status line replaces “local” with the actual city, following the location-label
 idea in ForecasWatch 2. The phone requests a low-accuracy location at most once
 an hour, rounds coordinates to three decimals and sends them to
 [Photon's reverse endpoint](https://github.com/komoot/photon/blob/master/docs/api-v1.md).
@@ -213,7 +213,7 @@ twilight boundary. It does not predict sunrise events or atmospheric refraction.
 ## Lunar indicator
 
 The larger interchangeable widgets have been removed so the local time can
-span the face. A 9×9-pixel Moon glyph sits between the nameplate and Bluetooth
+span the face. A 9×9-pixel Moon glyph sits between the status line and Bluetooth
 status in the top bar. It can be disabled in settings.
 
 Eight simple phase drawings show new, crescent, quarter, gibbous and full Moon
