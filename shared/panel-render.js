@@ -3,6 +3,7 @@ import {dataWindow} from './panel-data.js';
 import {drawBitmapText,textWidth} from './type.js';
 import {panelColors} from './panel-settings.js';
 import {drawPixelLine} from './pixels.js';
+import {sunUp,nextSunEvent} from './solar.js';
 import {drawAxisText,axisTextWidth,axisValue,chartLayout,chartX,chartY,chartHourLabels} from './chart-axis.js';
 // One RGB222 step (85) per channel toward the ground: a dimmer version of a color.
 export function dimColor(color,ground){
@@ -40,7 +41,10 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       const n=values[0],title=tide?`${series.label} ${(n/100).toFixed(1)}${f.tide.unit.toUpperCase()}`:humidity?`RH ${Math.round(n/10)}%`:`${series.label} ${Math.round(n/10)}${w.temperatureUnit.toUpperCase()}`;
       const first=tide?series.high:series.rise,second=tide?series.low:series.set,usefirst=first>=now/1000&&(second<now/1000||first<second),event=usefirst?first:second;
       const stale=series.error||now/1000-series.fetched>(tide?12*3600:w.refreshMinutes*120);
-      let right=series.demo?'DEMO':stale?'OLD':event>=now/1000&&(tide||w.solarTimes)?`${tide?usefirst?'H':'L':usefirst?'RISE':'SET'} ${timeLabel(tide?usefirst?series.highMinute:series.lowMinute:usefirst?series.riseMinute:series.setMinute)}`:'';
+      // Sunrise and sunset come from the daylight place (the wearer's location,
+      // else the forecast place), the same source as the chart's night shading.
+      const sun=!tide&&data.daylight?nextSunEvent(Math.floor(now/1000),data.daylight):null,local=t=>{const d=new Date(t*1000);return d.getHours()*60+d.getMinutes();};
+      let right=series.demo?'DEMO':stale?'OLD':tide?(event>=now/1000?`${usefirst?'H':'L'} ${timeLabel(usefirst?series.highMinute:series.lowMinute)}`:''):w.solarTimes&&sun?`${sun.rise?'RISE':'SET'} ${timeLabel(local(sun.time))}`:'';
       if(!right&&!tide&&!humidity&&w.precipitation!=='off')right=w.precipitation==='probability'?`RAIN ${Math.max(...samples.map(p=>p.probability))}%`:`MAX ${(Math.max(...samples.map(p=>p.rain))/10/(w.rainUnit==='in'?25.4:1)).toFixed(w.rainUnit==='in'?2:1)}${w.rainUnit.toUpperCase()}`;
       text(title,4,191);text(right,196,191,pal.accent,'right');
       const upper=axisValue(hi,tide),lower=axisValue(lo,tide),layout=chartLayout(upper,lower,samples.length,w.rangeLabels,axisTextWidth(clock24?'23':'12A'));
@@ -49,9 +53,14 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       // headline series leads; its peak is named in the header.
       const rain=!tide&&!humidity&&w.precipitation!=='off',rainInk=dimColor(c.rain,pal.bg),bottom=layout.bottom,plotHeight=bottom-layout.top+1;
       const x=i=>chartX(layout,i),y=n=>chartY(n,lo,hi,layout.top,bottom);
+      // Daylight per pixel column: the sun's altitude at that moment and place.
+      if(!tide&&w.daylight&&data.daylight)for(let xx=layout.left;xx<=layout.right;xx++){
+        const t=series.start+window.start*3600+Math.trunc((xx-layout.left)*(samples.length-1)*3600/(layout.right-layout.left)),day=sunUp(t,data.daylight);
+        rect(xx,layout.daylight,1,1,day?pal.accent:pal.edge);
+        if(!day&&xx%4===0)for(let yy=layout.top+2;yy<=bottom;yy+=4)rect(xx,yy,1,1,pal.edge);
+      }
       samples.forEach((p,i)=>{
         const end=x(Math.min(i+1,samples.length-1));
-        if(!tide&&w.daylight){line(x(i),layout.daylight,end,layout.daylight,p.day?pal.accent:pal.edge);if(!p.day)for(let xx=x(i);xx<end;xx++)if(xx%4===0)for(let yy=layout.top+2;yy<=bottom;yy+=4)rect(xx,yy,1,1,pal.edge);}
         if(rain){const height=Math.min(plotHeight,Math.trunc(w.precipitation==='probability'?p.probability*plotHeight/100:p.rain*plotHeight/(w.rainMax*10)));if(height)rect(x(i),bottom+1-height,Math.min(3,Math.max(1,end-x(i)-1),layout.right-x(i)+1),height,rainInk);}
       });
       if(w.grid)for(let xx=layout.left;xx<=layout.right;xx+=4)rect(xx,Math.trunc((layout.top+bottom)/2),1,1,pal.edge);

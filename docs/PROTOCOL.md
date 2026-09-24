@@ -102,7 +102,8 @@ Page IDs are zones 0, weather 1, calendar 2, humidity 3 and tide 4.
 | 43–44 | Rain scale maximum, uint16 tenths of mm/hour |
 | 45 | Fixed tide range |
 | 46–49 | Two int16 tide bounds, hundredths of selected meters/feet |
-| 50–63 | Reserved zero |
+| 50 | Forecast place (0–2), the charts' daylight fallback without a position |
+| 51–63 | Reserved zero |
 
 The phone resolves `footer.colorMode` (`theme` or `custom`) to explicit colors
 before encoding bytes 21–28. There is no footer wire-version change. Legacy
@@ -145,15 +146,20 @@ version 1 and adds `footer`; older settings receive the default panel settings.
 
 # City and numerical-display packets v1
 
-`CITY` (10005) is 48 bytes, persisted under key 2. Byte 0 is version 1; byte 1
-has manual-name flag 1 and failed-refresh flag 2; bytes 2–3 are reserved zero.
+`CITY` (10005) is 52 bytes, persisted under key 2. Byte 0 is version 1; byte 1
+has manual-name flag 1, failed-refresh flag 2 and position flag 4; bytes 2–3
+are reserved zero.
 Bytes 4–7 are fetched Unix UTC seconds (uint32). Bytes 8–47 contain up to 39
 ASCII letters, digits, spaces, periods, commas or hyphens, followed by NUL and
 zero padding. An empty name clears the caption city. A nonempty automatic name
 requires a timestamp. Unknown flags, corrupt names, padding and lengths are
 rejected. Automatic names expire after six hours; names over two hours old or
 with a failed refresh show `?`. Manual names do not expire. The watch tolerates
-up to five minutes of future timestamp skew. Coordinates are never sent to it.
+up to five minutes of future timestamp skew. With flag 4, bytes 48–51 hold the
+wearer's latitude and longitude as int16 tenths of a degree (±900, ±1800); the
+panel charts use it for sunrise and sunset. Without it they must be zero, and a
+manual name never carries a position. An older 48-byte packet is rejected, so
+the watch shows no city until the phone's next update.
 
 `DISPLAY` (10006) is four bytes, persisted under key 3: `[1, style, grid, 0]`.
 Style 0 selects Span, 1 selects triangular seven-segment numerals, 2 selects

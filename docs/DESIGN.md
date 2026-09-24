@@ -192,7 +192,10 @@ idea in ForecasWatch 2. The phone requests a low-accuracy location at most once
 an hour, rounds coordinates to three decimals and sends them to
 [Photon's reverse endpoint](https://github.com/komoot/photon/blob/master/docs/api-v1.md).
 It chooses city/town/village rather than a street or nearby business. Only the
-returned name and timestamp are cached; coordinates are not persisted. Network
+returned name, timestamp and the position rounded to 0.1° (about 11 km) are
+cached on the phone; that rounded position also goes to the watch, and nowhere
+else, so the panel charts can shade night from the wearer's actual sunrise and
+sunset. Network
 or permission failures back off for 15 minutes. A failed refresh or a name more
 than two hours old is marked `?`; automatic names expire after six hours. An
 expired or missing name leaves the date rather than claiming a current city.
@@ -237,7 +240,7 @@ city-light points are retained from the supplied concept, rendered as individual
 pixels. The bottom band adds weather, humidity and NOAA tides through a phone
 companion with cached requests, plus a local two-week calendar. Weather coordinates
 come from configured places; the separate clock-city lookup uses the phone's
-location capability. There is no health metric integration.
+location capability, and its rounded position sets the charts' day and night. There is no health metric integration.
 
 The browser is an interactive layout preview, not a firmware emulator. Its
 custom font pixel masters match the SDK FreeType output; surrounding layout

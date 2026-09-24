@@ -28,7 +28,9 @@ export function locationService({getSettings,send,storage,getPosition=devicePosi
         const url='https://photon.komoot.io/reverse?lat='+c.latitude.toFixed(3)+'&lon='+c.longitude.toFixed(3)+'&lang=en&limit=1&radius=5';
         const name=reverseCity(await getJSON(url));
         if(token!==generation||getSettings().location.mode!=='auto')return;
-        cached={name,fetched:Math.floor(now()/1000)};retryAfter=0;
+        // Coordinates to 0.1 degree (about 11 km) are ample for sunrise and
+        // sunset (well under a minute) and go only to the watch.
+        cached={name,fetched:Math.floor(now()/1000),lat:Math.round(c.latitude*10)/10,lon:Math.round(c.longitude*10)/10};retryAfter=0;
         try{storage.setItem(key,JSON.stringify(cached));}catch{}
         return emit();
       }catch{

@@ -131,7 +131,7 @@ try{
   await study.screenshot({path:'test-results/type-study.png',fullPage:true});
   handlers.webviewclosed({response:encodeURIComponent(JSON.stringify({...defaults(),theme:3,clockDisplay:'span',location:{mode:'manual',name:'Norfolk'}}))});assert.equal(messages.findLast(m=>m.SETTINGS).SETTINGS[1],3);
   assert.deepEqual(Array.from(messages.findLast(m=>m.DISPLAY).DISPLAY),[1,0,1,0]);
-  const city=Array.from(messages.findLast(m=>m.CITY).CITY);assert.equal(city.length,48);assert.equal(city[1],1);assert.equal(String.fromCharCode(...city.slice(8,15)),'Norfolk');
+  const city=Array.from(messages.findLast(m=>m.CITY).CITY);assert.equal(city.length,52);assert.equal(city[1],1,'a manual city carries no position');assert.deepEqual(city.slice(48),[0,0,0,0]);assert.equal(String.fromCharCode(...city.slice(8,15)),'Norfolk');
   const count=messages.filter(m=>m.SETTINGS).length;handlers.webviewclosed({response:'CANCELLED'});handlers.webviewclosed({response:'%broken'});assert.equal(messages.filter(m=>m.SETTINGS).length,count);
   assert.equal(JSON.parse(store.get('dymaxion-settings-v1')).theme,3);
   assert.deepEqual(errors,[]);console.log('PASS: two layouts, desktop/mobile controls, persistence, import/export, offline configuration and companion bridge.');

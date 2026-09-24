@@ -27,6 +27,10 @@ test('city lookups are cached, back off on denial, expire offline, and ignore a 
   let s=defaults(),now=epoch,positions=0,requests=0,deny=false;const messages=[],cache=new Map();
   const service=locationService({getSettings:()=>s,now:()=>now,send:c=>messages.push(c),storage:{getItem:k=>cache.get(k),setItem:(k,v)=>cache.set(k,v)},getPosition:async()=>{positions++;if(deny)throw new Error('Denied');return position;},getJSON:async url=>{requests++;assert(url.includes('lat=36.851&lon=-76.286'));return fixture;}});
   await Promise.all([service.refresh(),service.refresh()]);assert.equal(positions,1);assert.equal(requests,1);assert.equal(messages.at(-1).name,'Norfolk');
+  // The position reaches the watch rounded to 0.1 degree, for chart daylight.
+  assert.equal(messages.at(-1).lat,36.9);assert.equal(messages.at(-1).lon,-76.3);
+  {const packet=encodeCity(messages.at(-1)),v=new DataView(packet.buffer);assert.equal(packet[1]&4,4);assert.equal(v.getInt16(48,true),369);assert.equal(v.getInt16(50,true),-763);}
+  {const manual=encodeCity({name:'London',manual:true,lat:51.5,lon:-0.1});assert.equal(manual[1]&4,0);assert.deepEqual([...manual.slice(48)],[0,0,0,0]);}
   now+=59*60000;await service.refresh();assert.equal(positions,1);
   now+=2*60000;deny=true;await service.refresh();assert.equal(positions,2);assert(messages.at(-1).stale);assert.equal(messages.at(-1).name,'Norfolk');
   await service.refresh();assert.equal(positions,2);assert(![...cache.values()][0].includes('latitude'));
@@ -39,7 +43,7 @@ test('city lookups are cached, back off on denial, expire offline, and ignore a 
 });
 test('the watch accepts the city packet and expires automatic names without expiring manual names',()=>{
   mkdirSync('test-results',{recursive:true});
-  for(const manual of [false,true])writeFileSync(`test-results/city-${manual?'manual':'auto'}.bin`,encodeCity({name:'Norfolk',manual,fetched:epoch/1000}));
+  for(const manual of [false,true])writeFileSync(`test-results/city-${manual?'manual':'auto'}.bin`,encodeCity({name:'Norfolk',manual,fetched:epoch/1000,lat:36.85,lon:-76.29}));
   execFileSync('cc',['-std=c11','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/city-test.c','watchface/src/c/city.c','watchface/src/c/settings.c','-o','test-results/city-test']);
   execFileSync('test-results/city-test',['test-results/city-auto.bin','test-results/city-manual.bin']);
 });

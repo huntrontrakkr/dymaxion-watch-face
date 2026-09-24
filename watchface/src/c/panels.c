@@ -2,6 +2,7 @@
 #include "settings.h"
 #include "chart_axis.h"
 #include "caps.h"
+#include "solar.h"
 #include "generated/footer_defaults.h"
 #define MIN(a,b) ((a)<(b)?(a):(b))
 #define MAX(a,b) ((a)>(b)?(a):(b))
@@ -9,6 +10,7 @@ static uint8_t s_footer[FOOTER_SIZE],s_weather[WEATHER_SIZE],s_tide[TIDE_SIZE],s
 static time_t s_changed;
 static GFont s_font;
 static const uint8_t *s_caps;
+static const float *s_daylight;
 static const uint8_t *s_palette;
 static bool s_clock24;
 static GColor color(int i){return (GColor){.argb=s_palette[i]};}
@@ -66,6 +68,7 @@ bool panels_cycle(time_t now){
   s_page=s_footer[F_ORDER+(index+1)%s_footer[F_COUNT]];s_changed=now;return true;
 }
 bool panels_tick(time_t now){return s_footer[F_ROTATE]&&now-s_changed>=s_footer[F_ROTATE]*60?panels_cycle(now):false;}
+int panels_weather_place(void){return s_footer[F_WEATHER_PLACE];}
 bool panels_shake_enabled(void){return s_footer[F_ENABLED]&&s_footer[F_SHAKE]&&s_footer[F_COUNT]>1;}
 int panels_refresh_minutes(void){
   if(s_footer[F_ENABLED]&&s_footer[F_WEATHER_ON])for(int i=0;i<s_footer[F_COUNT];i++)
@@ -121,9 +124,13 @@ static void graph_draw(GContext *ctx,time_t now){
   bool stale=(p[2]&2)||((uint32_t)now>read_u32(p+4)+(tide?12*3600:s_footer[F_REFRESH]*120));
   if(p[2]&1)snprintf(right,sizeof(right),"DEMO");
   else if(stale)snprintf(right,sizeof(right),"OLD");
-  else if(event>=(uint32_t)now&&(tide||s_footer[F_SOLAR])){
-    char timebuf[9];clock_label(timebuf,sizeof(timebuf),(uint16_t)read_i16(p+(tide?24:20)+(usefirst?0:2)));
-    snprintf(right,sizeof(right),"%s %s",tide?(usefirst?"H":"L"):(usefirst?"RISE":"SET"),timebuf);
+  else if(tide&&event>=(uint32_t)now){
+    char timebuf[16];clock_label(timebuf,sizeof(timebuf),(uint16_t)read_i16(p+24+(usefirst?0:2)));
+    snprintf(right,sizeof(right),"%s %s",usefirst?"H":"L",timebuf);
+  }else if(!tide&&s_footer[F_SOLAR]&&s_daylight){
+    // Sunrise and sunset at the daylight place, the same source as the shading.
+    bool rise;time_t sun=solar_next_event((uint32_t)now,s_daylight,48,&rise);
+    if(sun){struct tm *t=localtime(&sun);char timebuf[16];clock_label(timebuf,sizeof(timebuf),t->tm_hour*60+t->tm_min);snprintf(right,sizeof(right),"%s %s",rise?"RISE":"SET",timebuf);}
   }
   if(!right[0]&&!tide&&!humidity&&s_footer[F_RAIN]){
     int peak=0;for(int i=0;i<count;i++){const uint8_t *sample=p+32+(start+i)*8;int rain=s_footer[F_RAIN]==1?sample[3]:(uint16_t)read_i16(sample+4);peak=MAX(peak,rain);}
@@ -136,13 +143,18 @@ static void graph_draw(GContext *ctx,time_t now){
   ChartLayout layout=chart_layout(upper,lower,count,s_footer[F_RANGE_LABELS],chart_text_width(s_clock24?"23":"12A"));
   int plot_height=layout.bottom-layout.top+1;
   GColor ink=custom(tide?F_TIDE_COLOR:humidity?F_HUMID_COLOR:F_TEMP_COLOR),rain_ink=dim(custom(F_RAIN_COLOR),color(0));
+  // Daylight per pixel column: the sun's altitude at that moment and place.
+  if(!tide&&s_footer[F_DAYLIGHT]&&s_daylight){
+    uint32_t t0=read_u32(p+8)+(uint32_t)start*3600;
+    for(int xx=layout.left;xx<=layout.right;xx++){
+      bool day=solar_up(t0+(uint32_t)((xx-layout.left)*(count-1)*3600/(layout.right-layout.left)),s_daylight);
+      rect(ctx,xx,layout.daylight,1,1,day?color(7):color(5));
+      if(!day&&xx%4==0)for(int y=layout.top+2;y<=layout.bottom;y+=4)rect(ctx,xx,y,1,1,color(5));
+    }
+  }
   for(int i=0;i<count;i++){
     int x=chart_x(layout,i);const uint8_t *sample=p+(tide?48+(start+i)*4:32+(start+i)*8);
     int end=chart_x(layout,MIN(i+1,count-1));
-    if(!tide&&s_footer[F_DAYLIGHT]){
-      line(ctx,x,layout.daylight,end,layout.daylight,sample[6]?color(7):color(5));
-      if(!sample[6])for(int xx=x;xx<end;xx++)if(xx%4==0)for(int y=layout.top+2;y<=layout.bottom;y+=4)rect(ctx,xx,y,1,1,color(5));
-    }
     if(!tide&&!humidity&&s_footer[F_RAIN]){
       int rain=s_footer[F_RAIN]==1?sample[3]*plot_height/100:MIN(plot_height,(uint16_t)read_i16(sample+4)*plot_height/(uint16_t)read_i16(s_footer+F_RAIN_MAX));
       if(rain)rect(ctx,x,layout.bottom+1-rain,MIN(MIN(3,MAX(1,end-x-1)),layout.right-x+1),rain,rain_ink);
@@ -165,9 +177,9 @@ static void graph_draw(GContext *ctx,time_t now){
     }
   }
 }
-bool panels_draw(GContext *ctx,time_t now,const struct tm *local,GFont font,const uint8_t *caps,const uint8_t *palette,bool clock24){
+bool panels_draw(GContext *ctx,time_t now,const struct tm *local,GFont font,const uint8_t *caps,const uint8_t *palette,bool clock24,const float *daylight){
   if(!s_footer[F_ENABLED])return false;
-  s_font=font;s_caps=caps;s_palette=palette;s_clock24=clock24;
+  s_font=font;s_caps=caps;s_daylight=daylight;s_palette=palette;s_clock24=clock24;
   rect(ctx,0,184,200,44,color(0));
   if(s_page==PANEL_CALENDAR)calendar_draw(ctx,local);else if(s_page!=PANEL_ZONES)graph_draw(ctx,now);
   page_dots(ctx);return s_page!=PANEL_ZONES;

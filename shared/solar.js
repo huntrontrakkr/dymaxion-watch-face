@@ -10,3 +10,25 @@ export function sunDirection(date) {
   const lon=(720-minutes-eq)*Math.PI/720;
   return [Math.cos(dec)*Math.cos(lon),Math.cos(dec)*Math.sin(lon),Math.sin(dec)];
 }
+
+// Daylight at one place, for the panel charts. A place is a unit vector (see
+// direction() in map.js). Sunrise and sunset are the moments the sun's centre
+// crosses -0.833 degrees (refraction plus the solar radius), as in almanacs.
+// Mirrored in watchface/src/c/solar.c.
+export const SUNRISE_SINE=Math.sin(-0.833*Math.PI/180);
+export function sunUp(epoch,place){
+  const s=sunDirection(new Date(epoch*1000));
+  return s[0]*place[0]+s[1]*place[1]+s[2]*place[2]>=SUNRISE_SINE*Math.hypot(...place);
+}
+// Next sunrise or sunset after `now` within `hours`, to the minute:
+// {rise:true|false,time} or null (polar day or night).
+export function nextSunEvent(now,place,hours=48){
+  const up=sunUp(now,place);
+  for(let t=now+600;t<=now+hours*3600;t+=600){
+    if(sunUp(t,place)===up)continue;
+    let lo=t-600,hi=t;
+    while(hi-lo>30){const mid=lo+Math.floor((hi-lo)/2);if(sunUp(mid,place)===up)lo=mid;else hi=mid;}
+    return {rise:!up,time:hi};
+  }
+  return null;
+}

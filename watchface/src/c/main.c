@@ -2,6 +2,7 @@
 #include "settings.h"
 #include "panels.h"
 #include "city.h"
+#include "solar.h"
 #include "display.h"
 #include "minute_flip.h"
 #include "caps.h"
@@ -246,7 +247,7 @@ static int caption_width(const char *caption){return graphics_text_layout_get_co
 static int status_width(const char *caption){return s_caps?caps_width(s_caps,caption):0;}
 static void clock_caption(char *out,size_t size,const char *date,const char *ampm,int width,time_t now,const char *separator,int (*measure)(const char *)){
   char city[44]={0},prefix[24]={0},suffix[8]={0};
-  if(city_usable(s_city,now))snprintf(city,sizeof(city),"%s%s",(const char *)s_city+8,city_stale(s_city,now)?"?":"");
+  if(city_usable(s_city,now))snprintf(city,sizeof(city),"%.39s%s",(const char *)s_city+8,city_stale(s_city,now)?"?":"");
   if(!city[0]){snprintf(out,size,"%s%s%s",date,date[0]&&ampm[0]?separator:"",ampm);return;}
   if(date[0])snprintf(prefix,sizeof(prefix),"%s%s",date,separator);
   if(ampm[0])snprintf(suffix,sizeof(suffix)," %s",ampm);
@@ -334,7 +335,12 @@ static void update_proc(Layer *layer,GContext *ctx) {
     if(i==s_selected&&s_frame<16)pixel_rows(ctx,PULSE_GLYPHS[s_frame/4],PULSE_SIZE,PULSE_SIZE,pos.x-8,pos.y-8,mark_color(i));
   }
   draw_time(ctx,&local,now);
-  bool zones=!panels_draw(ctx,now,&local,s_small,s_caps,palette(),is_24());
+  // Chart daylight follows the wearer's position when the phone sent one,
+  // otherwise the forecast place.
+  static float daylight[3];int lat,lon;
+  if(city_usable(s_city,now)&&city_position(s_city,&lat,&lon))solar_place(lat,lon,daylight);
+  else solar_place_vector((const int8_t *)s_settings+HEADER_SIZE+panels_weather_place()*ZONE_SIZE+11,daylight);
+  bool zones=!panels_draw(ctx,now,&local,s_small,s_caps,palette(),is_24(),daylight);
   if(zones)draw_zones(ctx,now,&local);
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(0,0,200,18),0,GCornerNone);
   char battery[8];snprintf(battery,sizeof(battery),"%d%%",s_battery.charge_percent);

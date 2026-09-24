@@ -21,7 +21,7 @@ export const TIDE_STATIONS=[
 export function defaultFooter(){return {
   enabled:true,pages:PANEL_PAGES.map(([id])=>id),home:'zones',rotationMinutes:0,shake:true,horizon:24,
   weather:{enabled:true,place:0,temperatureUnit:'c',precipitation:'probability',rainUnit:'mm',rainMax:5,daylight:true,solarTimes:true,grid:false,rangeLabels:true,temperatureScale:'auto',temperatureMin:-10,temperatureMax:40,humidityScale:'percent',refreshMinutes:60},
-  calendar:{weekStart:6,weeks:'current-next',weekends:'sat-sun',holidays:'none',todayStyle:'fill'},
+  calendar:{weekStart:0,weeks:'current-next',weekends:'sat-sun',holidays:'none',todayStyle:'fill'},
   tide:{station:'',label:'TIDE',tz:'America/New_York',unit:'m',zeroLine:true,scale:'auto',min:-1,max:3},
   colorMode:'theme',colors:{...LEGACY_COLORS}
 };}

@@ -18,7 +18,7 @@ import {sampleEnvironment} from '../shared/panel-data.js';
 import {environmentService} from '../tools/environment-service.js';
 import {PANEL_PAGES} from '../shared/panel-settings.js';
 import {cityControls} from '../shared/city-controls.js';
-import {cityIsUsable,clockCaption} from '../shared/city.js';
+import {cityIsUsable,cityHasPosition,clockCaption} from '../shared/city.js';
 import {locationService} from '../tools/location-service.js';
 import {displayControls} from '../shared/display-controls.js';
 import {drawTriangleTime} from '../shared/triangle-display.js';
@@ -49,7 +49,7 @@ reducedMotion.addEventListener('change',()=>{minuteClock.reset();render();});
 const STORAGE='dymaxion-workshop-v1';
 try {const saved=localStorage.getItem(STORAGE);if(saved)settings=validateSettings(JSON.parse(saved),zoneExists);}catch{notice('Saved settings could not be read. The default composition is loaded.');}
 let footerPage=settings.footer.home,panelChanged=Date.now(),environmentMode='sample',liveData={};
-let currentCity={name:'Norfolk',sample:true};
+let currentCity={name:'Norfolk',sample:true,lat:36.9,lon:-76.3};
 const cityLocation=locationService({getSettings:()=>settings,storage:localStorage,send:city=>{currentCity=city;render();}});
 const cityEditor=cityControls($('city-controls'),()=>settings,value=>{settings=validateSettings({...settings,location:value},zoneExists);save();},()=>cityLocation.refresh());
 const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings=withClockDisplay(settings,value.clockDisplay,value.segmentGrid);sync();save();});
@@ -206,6 +206,12 @@ function statusWidth(){return settings.moonIndicator?126:140;}
 function use24(){return settings.format===1||(settings.format===0&&!new Intl.DateTimeFormat(undefined,{hour:'numeric'}).resolvedOptions().hour12);}
 const two=n=>String(n).padStart(2,'0');
 function clockParts(date){let h=date.hours();return {h:use24()?h:h%12||12,m:date.minutes(),ampm:h<12?'AM':'PM'};}
+// Chart day/night follows the wearer's location when the phone knows it,
+// otherwise the forecast place.
+function daylightPlace(){
+  if(settings.location.mode==='auto'&&cityHasPosition(currentCity))return direction(currentCity.lat,currentCity.lon);
+  const place=settings.places[settings.footer.weather.place];return direction(place.lat,place.lon);
+}
 function render(){
   if(!mapPixels.length||!watchTypeface||!watchSpan)return;
   if(!settings.footer.pages.includes(footerPage))footerPage=settings.footer.home;
@@ -249,7 +255,7 @@ function render(){
     paintText(two(time.h)+':'+two(time.m),x+2,y+31,16,pal.ink);if(!use24())paintText(time.ampm[0],x+53,y+30,11,pal.accent);
     if(animation&&i===activePlace)strokeLine(x,y+35,x+59,y+35,ink);
   });
-  drawFooter(ctx,settings,footerPage,{...(environmentMode==='sample'?sampleEnvironment(+now):liveData),palette:pal},+now,watchTypeface.lining.small,use24());
+  drawFooter(ctx,settings,footerPage,{...(environmentMode==='sample'?sampleEnvironment(+now):liveData),palette:pal,daylight:daylightPlace()},+now,watchTypeface.lining.small,use24());
   $('panel-preview-label').textContent=settings.footer.enabled?PANEL_PAGES.find(([id])=>id===footerPage)[1]:'Time zones';
   $('data-state').textContent=environmentMode==='sample'?'Example curves for layout preview. Live data is available below.':`Live forecast for ${settings.places[settings.footer.weather.place].name}. ${liveData.weather?.error?'Weather update unavailable; cached data is marked OLD.':''} ${liveData.tide?.error?'NOAA update unavailable.':''}`;
   ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,18);
