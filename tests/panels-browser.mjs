@@ -10,7 +10,7 @@ try{
   await page.route('https://api.open-meteo.com/**',route=>route.fulfill({json:fixture('weather'),headers:{'access-control-allow-origin':'*'}}));
   await page.route('https://api.tidesandcurrents.noaa.gov/**',route=>route.fulfill({json:fixture(route.request().url().includes('interval=hilo')?'tide-extrema':'tide-hourly'),headers:{'access-control-allow-origin':'*'}}));
   await page.goto(base);await page.waitForFunction(()=>document.querySelector('#preview-time').textContent.includes('LIVE'));await page.locator('#reset').click();
-  for(const [id,label]of [['zones','Time zones'],['weather','Weather'],['calendar','Two-week calendar'],['tide','Tide']]){
+  for(const [id,label]of [['zones','Time zones'],['weather','Weather'],['calendar','Two-week calendar']]){
     assert.equal(await page.locator('#panel-preview-label').textContent(),label);
     await page.locator('#screen').screenshot({path:`test-results/panel-${id}.png`});await page.locator('#next-panel').click();
   }
@@ -37,6 +37,8 @@ try{
   await page.locator('#screen').screenshot({path:'test-results/panel-weather-live.png'});
   await page.getByText('NOAA tides',{exact:true}).click();await page.getByLabel('Tide station',{exact:true}).selectOption('8518750');
   await page.waitForFunction(()=>!!localStorage.getItem('dymaxion-environment-tide'));
+  // The tide panel is optional: tide data already arrived for the weather chart's marks.
+  await page.getByLabel('Include Tide',{exact:true}).check();
   await page.getByLabel('Starting panel',{exact:true}).selectOption('tide');await page.locator('#screen').screenshot({path:'test-results/panel-tide-live.png'});
   await page.getByLabel('Tide height units',{exact:true}).selectOption('ft');assert.equal(await page.getByLabel('Tide maximum',{exact:true}).inputValue(),'9.8');
   await page.getByLabel('Tide height units',{exact:true}).selectOption('m');

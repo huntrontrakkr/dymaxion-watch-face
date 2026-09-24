@@ -19,8 +19,9 @@ export const TIDE_STATIONS=[
   ['9755371','San Juan, Puerto Rico','SANJUAN','America/Puerto_Rico']
 ].map(([id,name,label,tz])=>({id,name,label,tz}));
 export function defaultFooter(){return {
-  // Humidity rides on the weather chart, so its own panel is not in the default rotation.
-  enabled:true,pages:PANEL_PAGES.map(([id])=>id).filter(id=>id!=='humidity'),home:'zones',rotationMinutes:0,shake:true,horizon:24,
+  // Humidity and tide ride on the weather chart, so their own panels are optional,
+  // outside the default rotation.
+  enabled:true,pages:PANEL_PAGES.map(([id])=>id).filter(id=>id!=='humidity'&&id!=='tide'),home:'zones',rotationMinutes:0,shake:true,horizon:24,
   weather:{enabled:true,place:0,temperatureUnit:'c',precipitation:'probability',rainUnit:'mm',rainMax:5,daylight:true,solarTimes:true,grid:false,rangeLabels:true,humidityLine:true,tideMarks:true,temperatureScale:'auto',temperatureMin:-10,temperatureMax:40,humidityScale:'percent',refreshMinutes:60},
   calendar:{weekStart:0,weeks:'current-next',weekends:'sat-sun',holidays:'none',todayStyle:'fill'},
   tide:{station:'',label:'TIDE',tz:'America/New_York',unit:'m',zeroLine:true,scale:'auto',min:-1,max:3},

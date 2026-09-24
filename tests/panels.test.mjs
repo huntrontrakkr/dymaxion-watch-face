@@ -36,6 +36,8 @@ test('environment refresh caches, rate limits failures and discards responses fo
   let s=defaults(),now=meta.capturedAt,calls=0,fail=false;const messages=[],store=new Map();
   s.footer.tide={...s.footer.tide,...meta.station};
   const service=environmentService({getSettings:()=>s,now:()=>now,storage:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v)},send:(kind,data)=>messages.push({kind,data}),getJSON:async url=>{calls++;if(fail)throw new Error('Offline');return url.includes('open-meteo')?rawWeather:url.includes('interval=hilo')?extrema:hourly;}});
+  // The default rotation has no tide panel; the weather chart's tide marks still need NOAA data.
+  assert.equal(s.footer.pages.includes('tide'),false);
   await service.refresh();assert.equal(calls,3);assert(messages.some(m=>m.kind==='tide'&&m.data.samples.length===49));
   await service.refresh();assert.equal(calls,3,'fresh data must not cause more requests');
   s.footer.tide.unit='ft';s.footer.tide.scale='fixed';s.footer.horizon=12;
@@ -43,7 +45,8 @@ test('environment refresh caches, rate limits failures and discards responses fo
   now+=61*60000;fail=true;await service.refresh();assert.equal(calls,4);assert(messages.some(m=>m.kind==='weather'&&m.data.error&&m.data.samples.length===49));
   await service.refresh();assert.equal(calls,4,'network failures have a five-minute backoff');
   let resolve;const pending=[],race=environmentService({getSettings:()=>s,now:()=>meta.capturedAt,storage:{getItem:()=>null,setItem:()=>{}},send:(kind,data)=>pending.push({kind,data}),getJSON:()=>new Promise(r=>{resolve=r;})});
-  s.footer.pages=['weather'];s.footer.home='weather';const work=race.refresh();s.places[0]={...s.places[1]};resolve(rawWeather);await work;
+  // A lone weather request: tide marks off so the tide is not fetched alongside it.
+  s.footer.pages=['weather'];s.footer.home='weather';s.footer.weather.tideMarks=false;const work=race.refresh();s.places[0]={...s.places[1]};resolve(rawWeather);await work;
   assert(!pending.some(m=>m.data.samples?.length),'an old location must never overwrite the new one');
 });
 test('native panels validate actual provider packets and reject accidental shake patterns',()=>{

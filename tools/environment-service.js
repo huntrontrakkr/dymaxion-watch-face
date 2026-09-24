@@ -9,7 +9,7 @@ export function environmentService({getSettings,send,storage,getJSON=requestJSON
   const memory={},inflight={},retryAfter={};
   function descriptor(kind){
     const s=getSettings(),f=s.footer,weather=kind==='weather',place=s.places[f.weather.place];
-    const enabled=f.enabled&&(weather?f.weather.enabled&&f.pages.some(p=>p==='weather'||p==='humidity'):!!f.tide.station&&f.pages.includes('tide'));
+    const enabled=f.enabled&&(weather?f.weather.enabled&&f.pages.some(p=>p==='weather'||p==='humidity'):!!f.tide.station&&(f.pages.includes('tide')||f.weather.enabled&&f.weather.tideMarks&&f.pages.includes('weather')));
     return {enabled,key:JSON.stringify(weather?[place.lat,place.lon,place.tz,place.label]:[f.tide.station,f.tide.label,f.tide.tz]),label:weather?place.label:f.tide.label,place,tide:f.tide,interval:weather?f.weather.refreshMinutes*60000:6*3600000};
   }
   function read(kind,key){
