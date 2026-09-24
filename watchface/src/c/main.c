@@ -31,11 +31,13 @@ static bool s_map_dirty=true,s_connected=true;
 static BatteryChargeState s_battery;
 static int16_t s_sun[3];
 static GPoint s_sun_point;
-// The marker pulse: 16 frames for each enabled place in turn.
+// The marker pulse: four rings, 120 ms each, for each enabled place in turn
+// (one redraw per ring; under a second and a half for three places).
+#define PULSE_RING_MS 120
 static uint8_t s_frame,s_frames;
 static int pulsing_place(void){
   if(s_frame>=s_frames)return -1;
-  for(int i=0,k=s_frame/16;i<3;i++)if((s_settings[ENABLED]&(1<<i))&&!k--)return i;
+  for(int i=0,k=s_frame/4;i<3;i++)if((s_settings[ENABLED]&(1<<i))&&!k--)return i;
   return -1;
 }
 static AppTimer *s_animation;
@@ -552,7 +554,7 @@ static void update_proc(Layer *layer,GContext *ctx) {
   for(int i=0;i<3;i++)if(spots.index[i]>=0) {
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;const MapMarker *m=&spots.layout[spots.index[i]];GPoint pos=GPoint(mx+m->x,my+m->y);
     marker_glyph(ctx,pos,z[10],mark_color(i));
-    if(i==pulsing_place())pixel_rows(ctx,PULSE_GLYPHS[s_frame%16/4],PULSE_SIZE,PULSE_SIZE,pos.x-8,pos.y-8,mark_color(i));
+    if(i==pulsing_place())pixel_rows(ctx,PULSE_GLYPHS[s_frame%4],PULSE_SIZE,PULSE_SIZE,pos.x-8,pos.y-8,mark_color(i));
   }
   // You: a bullseye one size up, in the clock's ink.
   // The Dymaxion nameplate, in the accent color, when there is room.
@@ -576,14 +578,14 @@ static void update_proc(Layer *layer,GContext *ctx) {
 }
 static void animation_step(void *context) {
   s_animation=NULL;s_frame++;layer_mark_dirty(s_layer);
-  if(s_frame<s_frames)s_animation=app_timer_register(65,animation_step,NULL);
+  if(s_frame<s_frames)s_animation=app_timer_register(PULSE_RING_MS,animation_step,NULL);
 }
 static void pulse(void) {
   if(s_animation){app_timer_cancel(s_animation);s_animation=NULL;}
   s_frame=s_frames=0;
   if((s_settings[FLAGS]&MOTION)&&s_battery.charge_percent>20&&s_settings[ENABLED]) {
-    for(int i=0;i<3;i++)if(s_settings[ENABLED]&(1<<i))s_frames+=16;
-    s_animation=app_timer_register(65,animation_step,NULL);}
+    for(int i=0;i<3;i++)if(s_settings[ENABLED]&(1<<i))s_frames+=4;
+    s_animation=app_timer_register(PULSE_RING_MS,animation_step,NULL);}
   layer_mark_dirty(s_layer);
 }
 // The marker pulse plays once when the face opens and again only when the

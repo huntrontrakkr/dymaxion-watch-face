@@ -345,10 +345,11 @@ function render(){
 }
 // The marker pulse plays once when the watch face opens and when the bottom
 // panel comes back round to the time zones, as on the watch; never on a timer.
-// Each enabled place pulses in turn, about a second apiece.
-const PULSE_MS=1040;
+// Each enabled place pulses in turn: four rings, 120 ms each, so three
+// places take under a second and a half.
+const PULSE_RING_MS=120,PULSE_MS=4*PULSE_RING_MS;
 function startPulse(){pulseOrder=settings.places.map((p,i)=>p.on?i:-1).filter(i=>i>=0);if(pulseOrder.length&&settings.motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches)animation=performance.now();}
-function pulseNow(){if(!animation)return null;const t=performance.now()-animation,k=Math.floor(t/PULSE_MS);return k<pulseOrder.length?{place:pulseOrder[k],frame:Math.floor(t%PULSE_MS/260)}:null;}
+function pulseNow(){if(!animation)return null;const t=performance.now()-animation,k=Math.floor(t/PULSE_MS);return k<pulseOrder.length?{place:pulseOrder[k],frame:Math.floor(t%PULSE_MS/PULSE_RING_MS)}:null;}
 function pulse(){startPulse();render();}
 $('pulse').onclick=pulse;$('guides').onchange=render;$('quick-view').onchange=render;
 $('scale').onclick=()=>{const actual=$('scale').getAttribute('aria-pressed')!=='true';$('scale').setAttribute('aria-pressed',actual);$('scale').textContent=actual?'Enlarge preview':'Actual size';document.querySelector('.preview-stage').classList.toggle('actual',actual);};

@@ -31,7 +31,7 @@ export const HERE_SIZE=7;
 export const HERE_ROWS=['..###..','.#...#.','#.###.#','#.###.#','#.###.#','.#...#.','..###..'];
 export const HERE_HALO_ROWS=['..#####..','.#######.','#########','#########','#########','#########','#########','.#######.','..#####..'];
 
-// Four centered pixel rings. The pulse advances a full pixel every 260 ms,
+// Four centered pixel rings. The pulse advances a full pixel every 120 ms,
 // sharing these exact masks with the watch instead of resampling an arc.
 export const PULSE_SIZE=17;
 export const PULSE_ROWS=[5,6,7,8].map(radius=>{
