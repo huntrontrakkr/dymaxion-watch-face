@@ -25,9 +25,9 @@ The small scale gives the map room to remain the subject.
 The section sign §, reference mark ※, asterism ⁂ and therefore sign ∴ were
 tried and left out: at five pixels they read as an S, a blur or stray dots.
 
-The subsolar point has its own 7×7 glyph (`SUN_ROWS` in
-`shared/status-glyphs.js`): a small sun, an orb with eight short rays, on a
-9×9 clearing.
+The subsolar point has its own 5×5 glyph (`SUN_ROWS` in
+`shared/status-glyphs.js`): a small sun, a 3×3 orb with eight single-pixel
+rays, on the same 7×7 clearing as the place glyphs.
 
 Each tracked place can select any glyph and its own color. The color picker
 rounds to Pebble's 64-color RGB222 palette. “Use theme color” returns a place

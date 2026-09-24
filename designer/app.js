@@ -223,7 +223,7 @@ function render(){
   const m=makeMap(),[mx,my]=settings.map,cached=mapImage(now,pal,sun);
   ctx.drawImage(cached.canvas,mx,my);
   if(settings.lights&&settings.dayNight)for(const [lat,lon]of CITIES){if(dot(direction(lat,lon),sun)>=-.03)continue;const [x,y]=m.project(lat,lon);ctx.fillStyle=pal.accent;ctx.fillRect(mx+Math.round(x),my+Math.round(y),1,1);}
-  if(settings.sun&&settings.dayNight){const [sx,sy]=[mx+cached.sunPoint[0],my+cached.sunPoint[1]];drawPixelRows(ctx,SUN_HALO_ROWS,sx-4,sy-4,pal.bg);drawPixelRows(ctx,SUN_ROWS,sx-3,sy-3,pal.accent);}
+  if(settings.sun&&settings.dayNight){const [sx,sy]=[mx+cached.sunPoint[0],my+cached.sunPoint[1]];const h=SUN_HALO_ROWS.length>>1,s=SUN_ROWS.length>>1;drawPixelRows(ctx,SUN_HALO_ROWS,sx-h,sy-h,pal.bg);drawPixelRows(ctx,SUN_ROWS,sx-s,sy-s,pal.accent);}
   settings.places.forEach((p,i)=>{if(!p.on)return;const [x,y]=m.project(p.lat,p.lon).map(Math.round),ink=markColor(p,settings,i);marker(mx+x,my+y,p.icon,ink,pal.bg);if(animation&&i===activePlace){const frame=Math.floor((performance.now()-animation)/260);if(frame<4)drawPixelRows(ctx,PULSE_ROWS[frame],mx+x-8,my+y-8,ink);}});
   // Quick View preview: the bottom band hides and the clock stays above the card.
   const visible=$('quick-view').checked?228-QUICK_VIEW_HEIGHT:228;
