@@ -102,16 +102,21 @@ static int outward(int c,int lo,int hi,int16_t *out){
   return n;
 }
 static int gap(int c,int lo,int hi){return c<lo?lo-c:c>hi?c-hi:0;}
-typedef struct {const uint8_t *taken;const Box *g;int n,x,y,px,py;bool ok;} RouteCheck;
+typedef struct {const uint8_t *taken;const Box *g;int n,x,y,px,py;const MapRect *own;const MapMarker *markers;int marker_count;bool ok;} RouteCheck;
 static void check_route(void *context,int x,int y){
   RouteCheck *c=context;
-  if(iabs(x-c->px)<=HALO&&iabs(y-c->py)<=HALO)return;
+  // Inside its own clearing or hull, a leader only has to miss the other glyphs.
+  if(x>=c->own->x0&&x<=c->own->x1&&y>=c->own->y0&&y<=c->own->y1){
+    for(int k=0;k<c->marker_count;k++){const MapMarker *m=&c->markers[k];
+      if((m->x!=c->px||m->y!=c->py)&&iabs(x-m->x)<=m->half+1&&iabs(y-m->y)<=m->half+1){c->ok=false;return;}}
+    return;
+  }
   if(x<0||y<0||x>=MAP_TIMES_W||y>=MAP_TIMES_H||bit(c->taken,x,y)){c->ok=false;return;}
   for(int i=0;i<c->n;i++)if(x>=c->x+c->g[i].x-MARGIN&&x<c->x+c->g[i].x+c->g[i].w+MARGIN&&y>=c->y+c->g[i].y-MARGIN&&y<c->y+c->g[i].y+c->g[i].h+MARGIN){c->ok=false;return;}
 }
 static void mark_route(void *context,int x,int y){for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++)set_bit(context,x+dx,y+dy);}
 #define MAX_ROUTES 48
-static void place_one(const MapTimePlace *p,const uint8_t *blocked,uint8_t *taken,bool turn,MapTimeSpot *best){
+static void place_one(const MapTimePlace *p,const uint8_t *blocked,uint8_t *taken,bool turn,const MapMarker *markers,int marker_count,MapTimeSpot *best){
   best->ok=false;
   for(uint8_t orientation=MAP_TIME_H;orientation<=(turn?MAP_TIME_V:MAP_TIME_H);orientation++){
     Box g[MAP_TIME_TEXT];int total=tiny_width(p->template_text),n=layout(p->template_text,orientation,total,g),bw=0,bh=0;
@@ -141,7 +146,7 @@ static void place_one(const MapTimePlace *p,const uint8_t *blocked,uint8_t *take
         if(!nr||(best->ok&&routes[0].cost+penalty>=best->cost))continue;
         for(int r=0;r<nr;r++){
           if(best->ok&&routes[r].cost+penalty>=best->cost)break;
-          RouteCheck c={taken,g,n,x,y,p->x,p->y,true};map_time_route(routes[r].points,check_route,&c);
+          RouteCheck c={taken,g,n,x,y,p->x,p->y,&p->own,markers,marker_count,true};map_time_route(routes[r].points,check_route,&c);
           if(c.ok){best->ok=true;best->orientation=orientation;best->x=x;best->y=y;best->cost=routes[r].cost+penalty;best->total=total;
             memcpy(best->points,routes[r].points,sizeof(best->points));break;}
         }
@@ -155,16 +160,17 @@ static void place_one(const MapTimePlace *p,const uint8_t *blocked,uint8_t *take
   map_time_route(best->points,mark_route,taken);
 }
 static const uint8_t ORDERS[6][3]={{0,1,2},{0,2,1},{1,0,2},{1,2,0},{2,0,1},{2,1,0}};
-void map_times_place(const uint8_t *blocked,const MapTimePlace places[3],const MapObstacle *obstacles,int obstacle_count,bool turn,uint8_t *taken,MapTimeSpot out[3]){
+void map_times_place(const uint8_t *blocked,const MapTimePlace places[3],const MapRect *obstacles,int obstacle_count,
+  const MapMarker *markers,int marker_count,bool turn,uint8_t *taken,MapTimeSpot out[3]){
   int32_t best_total=INT32_MAX;
   for(int o=0;o<6;o++){
     memset(taken,0,MAP_TIMES_MASK_BYTES);
     for(int i=0;i<3;i++)if(places[i].present)for(int dy=-HALO;dy<=HALO;dy++)for(int dx=-HALO;dx<=HALO;dx++)set_bit(taken,places[i].x+dx,places[i].y+dy);
-    for(int k=0;k<obstacle_count;k++)for(int dy=-obstacles[k].r;dy<=obstacles[k].r;dy++)for(int dx=-obstacles[k].r;dx<=obstacles[k].r;dx++)set_bit(taken,obstacles[k].x+dx,obstacles[k].y+dy);
+    for(int k=0;k<obstacle_count;k++)for(int y=obstacles[k].y0;y<=obstacles[k].y1;y++)for(int x=obstacles[k].x0;x<=obstacles[k].x1;x++)set_bit(taken,x,y);
     MapTimeSpot result[3]={{0}};int32_t total=0;
     // An order already costing at least the best so far cannot win.
     for(int k=0;k<3&&total<best_total;k++){int i=ORDERS[o][k];if(!places[i].present)continue;
-      place_one(&places[i],blocked,taken,turn,&result[i]);total+=result[i].ok?result[i].cost:10000;}
+      place_one(&places[i],blocked,taken,turn,markers,marker_count,&result[i]);total+=result[i].ok?result[i].cost:10000;}
     if(total<best_total){best_total=total;memcpy(out,result,sizeof(result));}
   }
 }

@@ -386,35 +386,45 @@ static int local_offset_minutes(time_t now){
   return (ordinal(&l)-ordinal(&g))*1440+(l.tm_hour-g.tm_hour)*60+(l.tm_min-g.tm_min);
 }
 // Where each place's glyph and yours are drawn (map_markers.c): true
-// positions, except close ones side by side. You show only when the phone
-// sent your map pixel with a current city.
-typedef struct {GPoint places[3];bool here;GPoint you;} MarkerSpots;
-static MarkerSpots marker_spots(time_t now){
-  MapMarker in[MAP_MARKERS_MAX],out[MAP_MARKERS_MAX];int n=0,index[3]={-1,-1,-1},you=-1,hx,hy;
-  for(int i=0;i<3;i++)if(s_settings[ENABLED]&(1<<i)){
-    const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;index[i]=n;in[n++]=(MapMarker){z[8],z[9],2};
+// positions, except close ones side by side inside a hull. You show only when
+// the phone sent your map pixel with a current city.
+typedef struct {
+  int n,you,index[3];MapMarker points[MAP_MARKERS_MAX],layout[MAP_MARKERS_MAX];uint8_t group[MAP_MARKERS_MAX];
+  MapHull hulls[MAP_MARKERS_MAX];int hull_count;
+  MapRect own[MAP_MARKERS_MAX],inner[MAP_MARKERS_MAX]; // own: leaders cross freely; inner: their lines hidden
+  bool grouped[MAP_MARKERS_MAX];
+} MarkerSpots;
+static void marker_spots(time_t now,MarkerSpots *s){
+  memset(s,0,sizeof(*s));s->you=-1;int hx,hy;
+  for(int i=0;i<3;i++){s->index[i]=-1;if(s_settings[ENABLED]&(1<<i)){
+    const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;s->index[i]=s->n;s->points[s->n++]=(MapMarker){z[8],z[9],2};}}
+  if(city_usable(s_city,now)&&city_map_pixel(s_city,&hx,&hy)){s->you=s->n;s->points[s->n++]=(MapMarker){(int16_t)hx,(int16_t)hy,3};}
+  map_markers_layout(s->points,s->n,MAP_TIMES_W,MAP_TIMES_H,s->layout,s->group);
+  s->hull_count=map_markers_hulls(s->points,s->layout,s->group,s->n,s->hulls);
+  map_markers_own(s->points,s->layout,s->group,s->n,s->hulls,s->hull_count,s->own);
+  for(int i=0;i<s->n;i++){
+    for(int j=0;j<s->n;j++)if(j!=i&&s->group[j]==s->group[i])s->grouped[i]=true;
+    const MapRect *o=&s->own[i];
+    // Grouped: the hull band; alone: the clearing.
+    s->inner[i]=(MapRect){(int16_t)(s->layout[i].x-3),(int16_t)(s->layout[i].y-3),(int16_t)(s->layout[i].x+3),(int16_t)(s->layout[i].y+3)};
+    for(int k=0;k<s->hull_count;k++)if(s->grouped[i]&&!memcmp(&s->hulls[k].outer,o,sizeof(*o)))s->inner[i]=s->hulls[k].inner;
   }
-  if(city_usable(s_city,now)&&city_map_pixel(s_city,&hx,&hy)){you=n;in[n++]=(MapMarker){(int16_t)hx,(int16_t)hy,3};}
-  map_markers_layout(in,n,MAP_TIMES_W,MAP_TIMES_H,out);
-  MarkerSpots s={{{0,0}},false,{0,0}};
-  for(int i=0;i<3;i++)if(index[i]>=0)s.places[i]=GPoint(out[index[i]].x,out[index[i]].y);
-  if(you>=0){s.here=true;s.you=GPoint(out[you].x,out[you].y);}
-  return s;
 }
-static void map_times_inputs(time_t now,uint8_t key[16],MapTimePlace places[3],MapObstacle *you,int *yours){
+static void map_times_inputs(time_t now,uint8_t key[16],MapTimePlace places[3],MarkerSpots *spots){
   bool clock24=is_24(),turn=s_display[2]&ZONE_TIMES_TURN;int here=local_offset_minutes(now);memset(key,0,16);
-  MarkerSpots spots=marker_spots(now);
+  marker_spots(now,spots);
   for(int i=0;i<3;i++){
-    const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;bool present=s_settings[ENABLED]&(1<<i),reserve=present&&zone_offset(z,now)!=here;
-    places[i]=(MapTimePlace){present,(int16_t)spots.places[i].x,(int16_t)spots.places[i].y,{0}};map_time_template(places[i].template_text,clock24,reserve);
-    key[4*i]=present;key[4*i+1]=spots.places[i].x;key[4*i+2]=spots.places[i].y;key[4*i+3]=reserve;
+    const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;int k=spots->index[i];bool present=k>=0,reserve=present&&zone_offset(z,now)!=here;
+    places[i]=(MapTimePlace){present,present?spots->layout[k].x:0,present?spots->layout[k].y:0,{0},present?spots->own[k]:(MapRect){0,0,0,0}};
+    map_time_template(places[i].template_text,clock24,reserve);
+    key[4*i]=present;key[4*i+1]=places[i].x;key[4*i+2]=places[i].y;key[4*i+3]=reserve;
   }
-  *yours=spots.here;*you=(MapObstacle){(int16_t)spots.you.x,(int16_t)spots.you.y,HERE_SIZE/2+1};
-  key[12]=clock24;key[13]=turn;key[14]=spots.here?spots.you.x:0xff;key[15]=spots.here?spots.you.y:0xff;
+  const MapMarker *you=spots->you>=0?&spots->layout[spots->you]:NULL;
+  key[12]=clock24;key[13]=turn;key[14]=you?you->x:0xff;key[15]=you?you->y:0xff;
 }
 static void map_times_place_now(void *context){
   (void)context;s_map_timer=NULL;
-  time_t now=time(NULL);uint8_t key[16];MapTimePlace places[3];MapObstacle you;int yours;map_times_inputs(now,key,places,&you,&yours);
+  time_t now=time(NULL);uint8_t key[16];MapTimePlace places[3];static MarkerSpots spots;map_times_inputs(now,key,places,&spots);
   memcpy(s_map_key,key,sizeof(key));s_map_key_valid=true;memset(s_map_spots,0,sizeof(s_map_spots));
   uint8_t *blocked=calloc(2,MAP_TIMES_MASK_BYTES);if(!blocked)return;
   ResHandle resource=resource_get_handle(RESOURCE_ID_MAP_LANDSCAPE);uint8_t row[MAP_TIMES_W*4];
@@ -422,35 +432,38 @@ static void map_times_place_now(void *context){
     if(resource_load_byte_range(resource,y*MAP_TIMES_W*4,row,sizeof(row))!=sizeof(row)){free(blocked);return;}
     for(int x=0;x<MAP_TIMES_W;x++)if(row[x*4+3]&3){int i=y*MAP_TIMES_W+x;blocked[i>>3]|=1u<<(i&7);}
   }
-  map_times_place(blocked,places,&you,yours,s_display[2]&ZONE_TIMES_TURN,blocked+MAP_TIMES_MASK_BYTES,s_map_spots);
+  map_times_place(blocked,places,spots.own,spots.n,spots.layout,spots.n,s_display[2]&ZONE_TIMES_TURN,blocked+MAP_TIMES_MASK_BYTES,s_map_spots);
   free(blocked);layer_mark_dirty(s_layer);
 }
 // Whether the cached placement matches the current inputs; if not, schedules it.
 static bool map_times_ready(time_t now){
-  uint8_t key[16];MapTimePlace places[3];MapObstacle you;int yours;map_times_inputs(now,key,places,&you,&yours);
+  uint8_t key[16];MapTimePlace places[3];static MarkerSpots spots;map_times_inputs(now,key,places,&spots);
   if(s_map_key_valid&&!memcmp(key,s_map_key,sizeof(key)))return true;
   if(!s_map_timer)s_map_timer=app_timer_register(10,map_times_place_now,NULL);
   return false;
 }
-typedef struct {GContext *ctx;int ox,oy,px,py;bool skip_halo;} MapPen;
+typedef struct {GContext *ctx;int ox,oy;} HullPen;
+static void hull_pixel(void *context,int x,int y){HullPen *p=context;graphics_draw_pixel(p->ctx,GPoint(p->ox+x,p->oy+y));}
+// `hide`: where a leader's line stays hidden (inside its clearing or hull outline).
+typedef struct {GContext *ctx;int ox,oy;const MapRect *hide;} MapPen;
 static void map_pixel(void *context,int x,int y){
   MapPen *p=context;
-  if(p->skip_halo&&abs(x-p->px)<=3&&abs(y-p->py)<=3)return;
+  if(p->hide&&x>=p->hide->x0&&x<=p->hide->x1&&y>=p->hide->y0&&y<=p->hide->y1)return;
   graphics_draw_pixel(p->ctx,GPoint(p->ox+x,p->oy+y));
 }
 static void map_outline(void *context,int x,int y){MapPen *p=context;graphics_fill_rect(p->ctx,GRect(p->ox+x-1,p->oy+y-1,3,3),0,GCornerNone);}
 // Outlined leaders first, then their lines and the tiny times, in each place's color.
-static void draw_map_times(GContext *ctx,time_t now,const struct tm *local,int mx,int my){
+static void draw_map_times(GContext *ctx,time_t now,const struct tm *local,int mx,int my,const MarkerSpots *spots){
   if(!map_times_ready(now))return;
   graphics_context_set_fill_color(ctx,color(0));
   for(int i=0;i<3;i++)if(s_map_spots[i].ok){
-    MapPen pen={ctx,mx,my,s_map_spots[i].points[0].x,s_map_spots[i].points[0].y,false};
+    MapPen pen={ctx,mx,my,NULL};
     map_time_route(s_map_spots[i].points,map_outline,&pen);
   }
   for(int i=0;i<3;i++)if(s_map_spots[i].ok){
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;const MapTimeSpot *s=&s_map_spots[i];
     graphics_context_set_stroke_color(ctx,mark_color(i));
-    MapPen line={ctx,mx,my,s->points[0].x,s->points[0].y,true},label={ctx,mx,my,0,0,false};
+    MapPen line={ctx,mx,my,&spots->inner[spots->index[i]]},label={ctx,mx,my,NULL};
     map_time_route(s->points,map_pixel,&line);
     int delta;bool stale;struct tm zone=zone_time(z,now,local,&delta,&stale);char text[MAP_TIME_TEXT];
     map_time_text(text,zone.tm_hour,zone.tm_min,is_24(),delta,stale);
@@ -500,18 +513,25 @@ static void update_proc(Layer *layer,GContext *ctx) {
   // is skipped and the clock kept above the card.
   int visible=layer_get_unobstructed_bounds(layer).size.h;bool panel_zones=zones_in_panel(visible);
   uint8_t when=(s_display[2]>>2)&3;
-  if(s_map&&zones_on_map(when,zone_position(),panel_zones))draw_map_times(ctx,now,&local,mx,my);
-  // Clearings first, then glyphs, so a neighbour's clearing never cuts a glyph.
-  MarkerSpots spots=marker_spots(now);
-  for(int i=0;i<3;i++)if(s_settings[ENABLED]&(1<<i))pixel_rows(ctx,MARKER_HALO,7,7,mx+spots.places[i].x-3,my+spots.places[i].y-3,color(0));
-  if(spots.here)pixel_rows(ctx,HERE_HALO,HERE_SIZE+2,HERE_SIZE+2,mx+spots.you.x-HERE_SIZE/2-1,my+spots.you.y-HERE_SIZE/2-1,color(0));
-  for(int i=0;i<3;i++)if(s_settings[ENABLED]&(1<<i)) {
-    const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;GPoint pos=GPoint(mx+spots.places[i].x,my+spots.places[i].y);
+  // Clearings (a group's hull inside) first, then map times, then hull outlines
+  // (so a grouped leader starts at its hull), then glyphs.
+  static MarkerSpots spots;marker_spots(now,&spots);
+  for(int i=0;i<3;i++){int k=spots.index[i];if(k>=0&&!spots.grouped[k])pixel_rows(ctx,MARKER_HALO,7,7,mx+spots.layout[k].x-3,my+spots.layout[k].y-3,color(0));}
+  // Your bullseye keeps its clearing even in a group: it stands proud of the hull.
+  if(spots.you>=0)pixel_rows(ctx,HERE_HALO,HERE_SIZE+2,HERE_SIZE+2,mx+spots.layout[spots.you].x-HERE_SIZE/2-1,my+spots.layout[spots.you].y-HERE_SIZE/2-1,color(0));
+  HullPen ground={ctx,mx,my};graphics_context_set_stroke_color(ctx,color(0));
+  for(int k=0;k<spots.hull_count;k++)map_hull_ground(&spots.hulls[k],hull_pixel,&ground);
+  if(s_map&&zones_on_map(when,zone_position(),panel_zones))draw_map_times(ctx,now,&local,mx,my,&spots);
+  // Hull outlines in the edge color: quiet, like the map's own edges.
+  graphics_context_set_stroke_color(ctx,color(5));
+  for(int k=0;k<spots.hull_count;k++)map_hull_outline(&spots.hulls[k],hull_pixel,&ground);
+  for(int i=0;i<3;i++)if(spots.index[i]>=0) {
+    const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;const MapMarker *m=&spots.layout[spots.index[i]];GPoint pos=GPoint(mx+m->x,my+m->y);
     marker_glyph(ctx,pos,z[10],mark_color(i));
     if(i==s_selected&&s_frame<16)pixel_rows(ctx,PULSE_GLYPHS[s_frame/4],PULSE_SIZE,PULSE_SIZE,pos.x-8,pos.y-8,mark_color(i));
   }
   // You: a bullseye one size up, in the clock's ink.
-  if(spots.here)pixel_rows(ctx,HERE_GLYPH,HERE_SIZE,HERE_SIZE,mx+spots.you.x-HERE_SIZE/2,my+spots.you.y-HERE_SIZE/2,color(6));
+  if(spots.you>=0)pixel_rows(ctx,HERE_GLYPH,HERE_SIZE,HERE_SIZE,mx+spots.layout[spots.you].x-HERE_SIZE/2,my+spots.layout[spots.you].y-HERE_SIZE/2,color(6));
   s_beside=s_caps&&zones_beside(s_display[1],s_settings[FLAGS]&STACKED,when,zone_position(),panel_zones);
   draw_time(ctx,&local,now,visible);
   // Chart daylight follows the wearer's position when the phone sent one,

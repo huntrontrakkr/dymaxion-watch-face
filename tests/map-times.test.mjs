@@ -4,19 +4,31 @@ import {execFileSync} from 'node:child_process';
 import {mkdirSync,readFileSync} from 'node:fs';
 import {makeMap} from '../shared/map.js';
 import {PLACES} from '../shared/settings.js';
+import {layoutMarkers,markerClearance} from '../shared/map-markers.js';
 import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,tinyWidth,TINY_GLYPHS,TINY_CHARS} from '../shared/map-times.js';
 const m=makeMap(),bytes=readFileSync('watchface/resources/maps/map-0.bin'),blocked=(x,y)=>!!(bytes[(y*200+x)*4+3]&3);
 const pos=label=>m.project(...(({lat,lon})=>[lat,lon])(PLACES.find(p=>p.label===label))).map(Math.round);
-const SETS=[['NYC','LON','TYO'],['LAX','PAR','SIN'],['SYD','DXB','BER'],['NYC',null,'SYD'],['DEL','KTM',null],['IST','BER','PAR']];
+// Placement inputs as the watch and workshop build them: grouped marker
+// positions, each place's own area, everyone's areas as obstacles.
+function inputs(set,you,clock24,reserve){
+  const points=set.filter(Boolean).map(l=>{const [x,y]=pos(l);return {x,y,half:2};});
+  if(you)points.push({...you,half:3});
+  const layout=layoutMarkers(points),{own,markers}=markerClearance(points,layout);let k=0;
+  const places=set.map(l=>{if(!l)return null;const i=k++;return {x:layout[i].x,y:layout[i].y,own:own[i],template:mapTimeTemplate(clock24,reserve)};});
+  return {places,obstacles:own,markers};
+}
+const SETS=[['LON','PAR','BER'],['NYC','CHI','TYO'],['NYC','LON','TYO'],['LAX','PAR','SIN'],['SYD','DXB','BER'],['NYC',null,'SYD'],['DEL','KTM',null],['IST','BER','PAR']];
 test('the watch places, draws and leads map times exactly as the workshop does',()=>{
   mkdirSync('test-results',{recursive:true});
   execFileSync('cc',['-std=c11','-O2','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/map-times-test.c','watchface/src/c/map_times.c','-o','test-results/map-times-test']);
-  // Your location as an obstacle: once beside New York, once in Europe.
-  const OBSTACLES=[null,{x:124,y:48,r:4},{x:92,y:34,r:4}];
-  for(const set of SETS)for(const turn of [0,1])for(const [clock24,reserve] of [[1,0],[0,1]])for(const obstacle of OBSTACLES){
-    const pts=set.map(l=>l?pos(l):null),places=pts.map(p=>p&&{x:p[0],y:p[1],template:mapTimeTemplate(!!clock24,!!reserve)});
-    const native=execFileSync('test-results/map-times-test',['watchface/resources/maps/map-0.bin',turn,clock24,reserve,...pts.flatMap(p=>p??[-1,-1]),...(obstacle?[obstacle.x,obstacle.y,obstacle.r]:[])].map(String),{stdio:['ignore','pipe','ignore']}).toString().trim().split('\n');
-    const spots=placeMapTimes(places,blocked,200,104,{turn:!!turn,obstacles:obstacle?[obstacle]:[]});let line=0;
+  // Markers laid out as drawn (grouped where close), with and without you.
+  const YOU=[null,{x:124,y:48},{x:92,y:34}];
+  for(const set of SETS)for(const turn of [0,1])for(const [clock24,reserve] of [[1,0],[0,1]])for(const you of YOU){
+    const {places,obstacles,markers}=inputs(set,you,!!clock24,!!reserve);
+    const args=[turn,clock24,reserve,...places.flatMap(p=>p?[p.x,p.y,p.own.x0,p.own.y0,p.own.x1,p.own.y1]:[-1,-1,0,0,0,0]),
+      obstacles.length,...obstacles.flatMap(r=>[r.x0,r.y0,r.x1,r.y1]),markers.length,...markers.flatMap(m=>[m.x,m.y,m.half])];
+    const native=execFileSync('test-results/map-times-test',['watchface/resources/maps/map-0.bin',...args].map(String),{stdio:['ignore','pipe','ignore']}).toString().trim().split('\n');
+    const spots=placeMapTimes(places,blocked,200,104,{turn:!!turn,obstacles,markers});let line=0;
     spots.forEach((s,i)=>{
       const label=`${set.join(' ')} turn=${turn} 24h=${clock24} place ${i}`;
       if(!s){assert.equal(native[line++],'-',label);return;}
@@ -31,8 +43,8 @@ test('the watch places, draws and leads map times exactly as the workshop does',
 });
 test('labels sit in open ground, clear of each other, near their places',()=>{
   for(const set of SETS)for(const turn of [false,true]){
-    const places=set.map(l=>l&&(([x,y])=>({x,y,template:mapTimeTemplate(false,true)}))(pos(l)));
-    const spots=placeMapTimes(places,blocked,200,104,{turn}),seen=new Set();
+    const {places,obstacles,markers}=inputs(set,null,false,true);
+    const spots=placeMapTimes(places,blocked,200,104,{turn,obstacles,markers}),seen=new Set();
     spots.forEach((s,i)=>{
       if(!places[i])return assert.equal(s,null);
       assert(s,`${set[i]} finds a gap`);
@@ -48,8 +60,8 @@ test('labels sit in open ground, clear of each other, near their places',()=>{
 });
 test('leaders meet square and centred: straight out of the glyph, straight into the time',()=>{
   for(const set of SETS)for(const turn of [false,true]){
-    const places=set.map(l=>l&&(([x,y])=>({x,y,template:mapTimeTemplate(false,true)}))(pos(l)));
-    placeMapTimes(places,blocked,200,104,{turn}).forEach((s,i)=>{
+    const {places,obstacles,markers}=inputs(set,null,false,true);
+    placeMapTimes(places,blocked,200,104,{turn,obstacles,markers}).forEach((s,i)=>{
       if(!s)return;const [c,e,k1,k2,port]=s.points,p=places[i];
       assert.deepEqual(c,[p.x,p.y]);
       const out=[Math.sign(e[0]-c[0]),Math.sign(e[1]-c[1])];assert(!out[0]!==!out[1],'leaves along a row or column through the centre');

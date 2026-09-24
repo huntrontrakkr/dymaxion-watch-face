@@ -108,7 +108,7 @@ export function outward(c, lo, hi) {
 // rows then columns outward from the glyph; the cheapest (5 × the longer
 // leader leg plus 2 × the shorter, plus 20 for a turned label) wins, first
 // found on ties. Returns the placement or null, and marks it taken.
-function placeOne(p, taken, blocked, width, height, turn) {
+function placeOne(p, taken, blocked, width, height, turn, markers) {
   const mark = (x, y) => { if (x >= 0 && y >= 0 && x < width && y < height) taken[y * width + x] = 1; };
   const open = (x, y) => x >= 0 && y >= 0 && x < width && y < height && !taken[y * width + x] && !blocked(x, y);
   let best = null;
@@ -140,9 +140,13 @@ function placeOne(p, taken, blocked, width, height, turn) {
         routes.sort((a, b) => a.cost - b.cost);
         if (best && routes[0].cost + penalty >= best.cost) continue;
         const own = (px, py) => glyphs.some(g => px >= x + g.x - MARGIN && px < x + g.x + g.w + MARGIN && py >= y + g.y - MARGIN && py < y + g.y + g.h + MARGIN);
+        // Inside its own clearing (or group hull) a leader only has to miss the
+        // other glyphs and the pixel around them; beyond it, anything taken.
+        const {x0, y0, x1, y1} = p.own ?? {x0: p.x - HALO, y0: p.y - HALO, x1: p.x + HALO, y1: p.y + HALO};
+        const sibling = (px, py) => markers.some(m => (m.x !== p.x || m.y !== p.y) && Math.max(Math.abs(px - m.x), Math.abs(py - m.y)) <= m.half + 1);
         for (const r of routes) {
           if (best && r.cost + penalty >= best.cost) break;
-          const ok = routePixels(r.points).every(([px, py]) => Math.max(Math.abs(px - p.x), Math.abs(py - p.y)) <= HALO ||
+          const ok = routePixels(r.points).every(([px, py]) => px >= x0 && px <= x1 && py >= y0 && py <= y1 ? !sibling(px, py) :
             (px >= 0 && py >= 0 && px < width && py < height && !taken[py * width + px] && !own(px, py)));
           if (ok) { best = {cost: r.cost + penalty, orientation, x, y, points: r.points}; break; }
         }
@@ -158,21 +162,22 @@ function placeOne(p, taken, blocked, width, height, turn) {
 // Every order of the places is tried (at most six); the arrangement with the
 // lowest total cost wins, a missing label costing 10000, first order on ties.
 // `blocked(x, y)` is true where the map covers the block; `places` are
-// {x, y, template} or null; `obstacles` are other glyphs to keep clear of,
-// {x, y, r}: a square of radius r (your location's clearing).
+// {x, y, template, own?} or null, where `own` is the rectangle a place's
+// leader may cross freely (its clearing, or its group's hull; default the
+// clearing). `obstacles` are rectangles {x0, y0, x1, y1} to keep clear of (your
+// location's clearing, group hulls) and `markers` every glyph {x, y, half},
+// which leaders crossing a hull must miss.
 export const MAP_TIME_ORDERS = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
-export function placeMapTimes(places, blocked, width, height, {turn = false, obstacles = []} = {}) {
+export function placeMapTimes(places, blocked, width, height, {turn = false, obstacles = [], markers = []} = {}) {
   let best = null;
   for (const order of MAP_TIME_ORDERS) {
     const taken = new Uint8Array(width * height), result = [null, null, null];
-    const clear = ({x: cx, y: cy}, r) => { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-      const x = cx + dx, y = cy + dy;if (x >= 0 && y >= 0 && x < width && y < height) taken[y * width + x] = 1;
-    } };
-    for (const p of places) if (p) clear(p, HALO);
-    for (const o of obstacles) clear(o, o.r);
+    const clear = ({x0, y0, x1, y1}) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (x >= 0 && y >= 0 && x < width && y < height) taken[y * width + x] = 1; };
+    for (const p of places) if (p) clear({x0: p.x - HALO, y0: p.y - HALO, x1: p.x + HALO, y1: p.y + HALO});
+    for (const o of obstacles) clear(o);
     let total = 0;
     // An order already costing at least the best so far cannot win.
-    for (const i of order) if (places[i] && (!best || total < best.total)) { result[i] = placeOne(places[i], taken, blocked, width, height, turn); total += result[i] ? result[i].cost : 10000; }
+    for (const i of order) if (places[i] && (!best || total < best.total)) { result[i] = placeOne(places[i], taken, blocked, width, height, turn, markers); total += result[i] ? result[i].cost : 10000; }
     if (!best || total < best.total) best = {total, result};
   }
   return best.result.slice(0, places.length);

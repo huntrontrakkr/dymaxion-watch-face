@@ -20,7 +20,7 @@ import {environmentService} from '../tools/environment-service.js';
 import {PANEL_PAGES} from '../shared/panel-settings.js';
 import {cityControls} from '../shared/city-controls.js';
 import {cityIsUsable,cityHasPosition,clockCaption,mapPixel} from '../shared/city.js';
-import {layoutMarkers} from '../shared/map-markers.js';
+import {layoutMarkers,markerClearance,hullPixels} from '../shared/map-markers.js';
 import {locationService} from '../tools/location-service.js';
 import {displayControls} from '../shared/display-controls.js';
 import {zoneColumn,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
@@ -215,21 +215,23 @@ function markerSpots(){
     points.push({x:Math.max(0,Math.min(w-1,Math.round(px))),y:Math.max(0,Math.min(h-1,Math.round(py))),half:2});});
   const here=settings.location.mode==='auto'&&cityHasPosition(currentCity)&&(currentCity.sample||cityIsUsable(currentCity));
   let you=-1;if(here){const [x,y]=mapPixel(currentCity.lat,currentCity.lon);you=points.length;points.push({x,y,half:3});}
-  const out=layoutMarkers(points,w,h);
-  return {places:settings.places.map((p,i)=>index[i]===undefined?null:out[index[i]]),you:you<0?null:out[you]};
+  const out=layoutMarkers(points,w,h),{hulls,own,markers}=markerClearance(points,out);
+  // Where a leader's line is hidden: inside its clearing, or inside its hull's outline.
+  const inner=points.map((p,i)=>{const hull=hulls.find(h=>h.members.includes(i));return hull?hull.inner:{x0:out[i].x-3,y0:out[i].y-3,x1:out[i].x+3,y1:out[i].y+3};});
+  const at=i=>i===undefined||i<0?null:{...out[i],own:own[i],inner:inner[i],grouped:hulls.some(h=>h.members.includes(i))};
+  return {places:settings.places.map((p,i)=>at(index[i])),you:at(you),hulls,obstacles:own,markers};
 }
 function drawMapTimes(now,local,mx,my,pal,markers){
   const [w,h]=MAP_SIZE,clock24=use24();
-  const places=settings.places.map((p,i)=>markers.places[i]&&{...markers.places[i],template:mapTimeTemplate(clock24,moment(now).tz(p.tz).utcOffset()!==local.utcOffset())});
-  const obstacles=markers.you?[{...markers.you,r:(HERE_ROWS.length>>1)+1}]:[];
-  const key=JSON.stringify([places,obstacles,settings.mapTimesTurn]);
-  if(key!==mapTimesCache.key)mapTimesCache={key,spots:placeMapTimes(places,(x,y)=>!!(mapPixels[(y*w+x)*4+3]&3),w,h,{turn:settings.mapTimesTurn,obstacles})};
+  const places=settings.places.map((p,i)=>{const m=markers.places[i];return m&&{x:m.x,y:m.y,own:m.own,template:mapTimeTemplate(clock24,moment(now).tz(p.tz).utcOffset()!==local.utcOffset())};});
+  const {obstacles}=markers,key=JSON.stringify([places,obstacles,markers.markers,settings.mapTimesTurn]);
+  if(key!==mapTimesCache.key)mapTimesCache={key,spots:placeMapTimes(places,(x,y)=>!!(mapPixels[(y*w+x)*4+3]&3),w,h,{turn:settings.mapTimesTurn,obstacles,markers:markers.markers})};
   const spots=mapTimesCache.spots,px=(x,y,c)=>{ctx.fillStyle=c;ctx.fillRect(mx+x,my+y,1,1);};
   // Outlined leaders first, then their lines and the tiny times in each place's color.
   spots.forEach(s=>{if(s){ctx.fillStyle=pal.bg;for(const [x,y] of routePixels(s.points))ctx.fillRect(mx+x-1,my+y-1,3,3);}});
   spots.forEach((s,i)=>{
-    if(!s)return;const p=settings.places[i],ink=markColor(p,settings,i),[cx,cy]=s.points[0];
-    for(const [x,y] of routePixels(s.points))if(Math.max(Math.abs(x-cx),Math.abs(y-cy))>3)px(x,y,ink);
+    if(!s)return;const p=settings.places[i],ink=markColor(p,settings,i),{x0,y0,x1,y1}=markers.places[i].inner;
+    for(const [x,y] of routePixels(s.points))if(x<x0||x>x1||y<y0||y>y1)px(x,y,ink);
     const there=moment(now).tz(p.tz),delta=Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000);
     for(const [x,y] of tinyPixels(mapTimeText({hour:there.hours(),minute:there.minutes(),clock24,delta}),s.orientation,s.total))px(s.x+x,s.y+y,ink);
   });
@@ -263,10 +265,15 @@ function render(){
   const beside=zonesBeside(settings,panelZones);
   const onMap=zonesOnMap(settings,panelZones);canvas.dataset.zonesOnMap=String(onMap);
   const markers=markerSpots();
-  if(onMap)drawMapTimes(now,local,mx,my,pal,markers);
-  // Clearings first, then glyphs, so a neighbour's clearing never cuts a glyph.
-  markers.places.forEach(s=>{if(s)drawPixelRows(ctx,MARKER_HALO_ROWS,mx+s.x-3,my+s.y-3,pal.bg);});
+  // Clearings (a group's hull ground) first, then map times, then hull outlines
+  // (so a grouped leader starts at its hull), then glyphs.
+  markers.places.forEach(s=>{if(s&&!s.grouped)drawPixelRows(ctx,MARKER_HALO_ROWS,mx+s.x-3,my+s.y-3,pal.bg);});
+  // Your bullseye keeps its clearing even in a group: it stands proud of the hull.
   if(markers.you)drawPixelRows(ctx,HERE_HALO_ROWS,mx+markers.you.x-4,my+markers.you.y-4,pal.bg);
+  ctx.fillStyle=pal.bg;for(const h of markers.hulls)for(const [x,y] of hullPixels(h).ground)ctx.fillRect(mx+x,my+y,1,1);
+  if(onMap)drawMapTimes(now,local,mx,my,pal,markers);
+  // Hull outlines in the edge color: quiet, like the map's own edges.
+  ctx.fillStyle=pal.edge;for(const h of markers.hulls)for(const [x,y] of hullPixels(h).outline)ctx.fillRect(mx+x,my+y,1,1);
   settings.places.forEach((p,i)=>{const s=markers.places[i];if(!s)return;const ink=markColor(p,settings,i);drawMarkerPixels(ctx,p.icon,mx+s.x,my+s.y,ink);if(animation&&i===activePlace){const frame=Math.floor((performance.now()-animation)/260);if(frame<4)drawPixelRows(ctx,PULSE_ROWS[frame],mx+s.x-8,my+s.y-8,ink);}});
   // You: a bullseye one size up, in the clock's ink.
   if(markers.you)drawPixelRows(ctx,HERE_ROWS,mx+markers.you.x-3,my+markers.you.y-3,pal.ink);

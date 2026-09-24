@@ -31,5 +31,44 @@ export function layoutMarkers(points, width = 200, height = 104) {
       if (find(i) !== find(j) && cheb(pos[i], pos[j]) <= clearing(points[i]) + clearing(points[j])) merged = join(i, j) || merged;
     if (!merged) break;
   }
-  return pos;
+  return pos.map((p, i) => ({...p, group: find(i)}));
+}
+// Groups of two or more sit on a hull: a 5-pixel-tall band, exactly the height
+// of the place glyphs, from the first glyph's left edge to the last one's
+// right, outlined with its corners cut and cleared inside. No padding: the
+// glyphs sit on it, and your 7-pixel marker stands a pixel proud of it.
+// `glyphs` is the band; `inner` where a leader's line hides (the band); `outer`
+// every member's clearing, which the rest of the map keeps out of.
+export const HULL_HALF = 2;
+export function markerHulls(points, layout) {
+  const hulls = [];
+  for (const g of new Set(layout.map(p => p.group))) {
+    const members = layout.map((p, i) => i).filter(i => layout[i].group === g);
+    if (members.length < 2) continue;
+    const cy = layout[members[0]].y, band = {x0: Math.min(...members.map(i => layout[i].x - points[i].half)), y0: cy - HULL_HALF,
+      x1: Math.max(...members.map(i => layout[i].x + points[i].half)), y1: cy + HULL_HALF};
+    const outer = {x0: Math.min(...members.map(i => layout[i].x - points[i].half - 1)), y0: Math.min(...members.map(i => layout[i].y - points[i].half - 1)),
+      x1: Math.max(...members.map(i => layout[i].x + points[i].half + 1)), y1: Math.max(...members.map(i => layout[i].y + points[i].half + 1))};
+    hulls.push({members, glyphs: band, inner: band, outer});
+  }
+  return hulls;
+}
+// The hull's pixels: its cleared inside, then the outline (corners cut).
+export function hullPixels({glyphs: {x0, y0, x1, y1}}) {
+  const ground = [], outline = [];
+  for (let y = y0 + 1; y < y1; y++) for (let x = x0 + 1; x < x1; x++) ground.push([x, y]);
+  for (let x = x0 + 1; x < x1; x++) outline.push([x, y0], [x, y1]);
+  for (let y = y0 + 1; y < y1; y++) outline.push([x0, y], [x1, y]);
+  return {ground, outline};
+}
+// What map times must respect: each marker's own area (its clearing, or its
+// group's hull with the ring around it), which its leader may cross, and
+// which everyone else's labels and leaders keep out of.
+export function markerClearance(points, layout) {
+  const hulls = markerHulls(points, layout);
+  const own = points.map((p, i) => {
+    const h = hulls.find(h => h.members.includes(i)), {x, y} = layout[i], r = p.half + 1;
+    return h ? h.outer : {x0: x - r, y0: y - r, x1: x + r, y1: y + r};
+  });
+  return {hulls, own, markers: layout.map(({x, y}, i) => ({x, y, half: points[i].half}))};
 }

@@ -33,7 +33,12 @@ Markers whose clearings would overlap (London, Paris and Berlin sit two to
 four pixels apart) are drawn side by side, west to east, a pixel apart, around
 their average position (`shared/map-markers.js`, `map_markers.c`); a spread
 group that touches another marker merges with it. All clearings are drawn
-before any glyph, so a neighbour's clearing never cuts into one.
+before any glyph, so a neighbour's clearing never cuts into one. A group sits on a
+hull: a band exactly as tall as the place glyphs (5 pixels, outline included,
+no padding), from the first glyph's left edge to the last one's right, its
+corners cut and its outline in the edge color. Your bullseye stands a pixel
+proud of it and keeps its own clearing. With map times on, a grouped place's
+leader leaves from the hull's edge and never crosses a neighbour's glyph.
 
 The subsolar point has its own 5×5 glyph (`SUN_ROWS` in
 `shared/status-glyphs.js`): a small sun, a 3×3 orb with eight single-pixel

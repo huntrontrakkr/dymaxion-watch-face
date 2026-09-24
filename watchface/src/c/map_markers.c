@@ -3,7 +3,7 @@ static int cheb(int ax,int ay,int bx,int by){int dx=ax>bx?ax-bx:bx-ax,dy=ay>by?a
 static int find(int *g,int i){while(g[i]!=i)i=g[i]=g[g[i]];return i;}
 static int join(int *g,int a,int b){a=find(g,a);b=find(g,b);if(a==b)return 0;if(a<b)g[b]=a;else g[a]=b;return 1;}
 static int round_mean(int sum,int n){int v=2*sum+n,d=2*n;return v>=0?v/d:-((-v+d-1)/d);}
-void map_markers_layout(const MapMarker *p,int n,int width,int height,MapMarker *out){
+void map_markers_layout(const MapMarker *p,int n,int width,int height,MapMarker *out,uint8_t *group){
   int g[MAP_MARKERS_MAX];
   for(int i=0;i<n;i++){g[i]=i;out[i]=p[i];}
   for(int i=0;i<n;i++)for(int j=i+1;j<n;j++)if(cheb(p[i].x,p[i].y,p[j].x,p[j].y)<=p[i].half+p[j].half+2)join(g,i,j);
@@ -28,5 +28,40 @@ void map_markers_layout(const MapMarker *p,int n,int width,int height,MapMarker 
     for(int i=0;i<n;i++)for(int j=i+1;j<n;j++)
       if(find(g,i)!=find(g,j)&&cheb(out[i].x,out[i].y,out[j].x,out[j].y)<=p[i].half+p[j].half+2)merged|=join(g,i,j);
     if(!merged)break;
+  }
+  if(group)for(int i=0;i<n;i++)group[i]=(uint8_t)find(g,i);
+}
+int map_markers_hulls(const MapMarker *p,const MapMarker *l,const uint8_t *group,int n,MapHull *hulls){
+  int count=0;
+  for(int root=0;root<n;root++){
+    int members=0,cy=0,x0=1000,x1=-1000,ox0=1000,oy0=1000,ox1=-1000,oy1=-1000;
+    for(int i=0;i<n;i++)if(group[i]==root){
+      if(!members++)cy=l[i].y;
+      int lo=l[i].x-p[i].half,hi=l[i].x+p[i].half;x0=lo<x0?lo:x0;x1=hi>x1?hi:x1;
+      int a=l[i].x-p[i].half-1,b=l[i].y-p[i].half-1,c=l[i].x+p[i].half+1,d=l[i].y+p[i].half+1;
+      ox0=a<ox0?a:ox0;oy0=b<oy0?b:oy0;ox1=c>ox1?c:ox1;oy1=d>oy1?d:oy1;
+    }
+    if(members<2)continue;
+    MapRect band={(int16_t)x0,(int16_t)(cy-HULL_HALF),(int16_t)x1,(int16_t)(cy+HULL_HALF)};
+    hulls[count++]=(MapHull){(uint8_t)members,band,band,{(int16_t)ox0,(int16_t)oy0,(int16_t)ox1,(int16_t)oy1}};
+  }
+  return count;
+}
+void map_hull_ground(const MapHull *h,MapHullPixel pixel,void *context){
+  const MapRect *g=&h->glyphs;
+  for(int y=g->y0+1;y<g->y1;y++)for(int x=g->x0+1;x<g->x1;x++)pixel(context,x,y);
+}
+void map_hull_outline(const MapHull *h,MapHullPixel pixel,void *context){
+  const MapRect *g=&h->glyphs;
+  for(int x=g->x0+1;x<g->x1;x++){pixel(context,x,g->y0);pixel(context,x,g->y1);}
+  for(int y=g->y0+1;y<g->y1;y++){pixel(context,g->x0,y);pixel(context,g->x1,y);}
+}
+void map_markers_own(const MapMarker *p,const MapMarker *l,const uint8_t *group,int n,const MapHull *hulls,int hull_count,MapRect *own){
+  for(int i=0;i<n;i++){
+    int r=p[i].half+1;own[i]=(MapRect){(int16_t)(l[i].x-r),(int16_t)(l[i].y-r),(int16_t)(l[i].x+r),(int16_t)(l[i].y+r)};
+    // A grouped marker's hull: the one whose glyph box holds it.
+    for(int k=0;k<hull_count;k++){const MapRect *g=&hulls[k].glyphs;
+      int members=0;for(int j=0;j<n;j++)if(group[j]==group[i])members++;
+      if(members>1&&l[i].x>=g->x0&&l[i].x<=g->x1&&l[i].y>=g->y0&&l[i].y<=g->y1){own[i]=hulls[k].outer;break;}}
   }
 }
