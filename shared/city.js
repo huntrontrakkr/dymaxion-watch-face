@@ -1,3 +1,4 @@
+import {makeMap,MAP_SIZE} from './map.js';
 export const CITY_SIZE=52,CITY_MAX_AGE=6*3600,CITY_REFRESH=3600000;
 // The watch's Micro face has Latin letters. Request English place names and
 // fold accented Latin forms to supported glyphs instead of displaying boxes.
@@ -27,11 +28,20 @@ export function cityIsUsable(city,now=Date.now()){
 export function encodeCity(city={}){
   const b=new Uint8Array(CITY_SIZE),v=new DataView(b.buffer),name=cityText(city.name);
   // Flag 4: bytes 48-51 hold latitude and longitude in tenths of a degree.
+  // Flag 8 (with 4): bytes 2-3 hold that position's pixel on the map, where
+  // the watch marks you (the projection lives on the phone).
   const position=!city.manual&&cityHasPosition(city);
-  b[0]=1;b[1]=(city.manual?1:0)|(city.stale?2:0)|(position?4:0);v.setUint32(4,city.fetched||0,true);
+  b[0]=1;b[1]=(city.manual?1:0)|(city.stale?2:0)|(position?12:0);v.setUint32(4,city.fetched||0,true);
+  if(position){const [x,y]=mapPixel(city.lat,city.lon);b[2]=x;b[3]=y;}
   [...name].forEach((ch,i)=>b[8+i]=ch.charCodeAt(0));
   if(position){v.setInt16(48,Math.round(city.lat*10),true);v.setInt16(50,Math.round(city.lon*10),true);}
   return b;
+}
+let projection=null;
+// The same rounding and clamping as the places' map positions (protocol.js).
+export function mapPixel(lat,lon){
+  projection??=makeMap();const [x,y]=projection.project(lat,lon);
+  return [Math.max(0,Math.min(MAP_SIZE[0]-1,Math.round(x))),Math.max(0,Math.min(MAP_SIZE[1]-1,Math.round(y)))];
 }
 export function cityHasPosition(city){return Number.isFinite(city?.lat)&&Math.abs(city.lat)<=90&&Number.isFinite(city?.lon)&&Math.abs(city.lon)<=180;}
 export function clockCaption(date,city,ampm,width,measure,separator=' / '){

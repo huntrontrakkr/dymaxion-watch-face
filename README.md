@@ -38,6 +38,9 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
   points** (a dot wherever the triangles meet), **Fine triangle points** (split
   once more) or **Triangle lines** (every edge dotted). It is baked into spare bits of the map data, so it costs the watch no
   memory. **Composition → The planetary clock → Map background**.
+- Your own location, from the phone, is marked with a bullseye one size up from
+  the place glyphs, in the clock's ink. Places too close to tell apart (London,
+  Paris and Berlin) are drawn side by side, west to east.
 - Place times can also show outside the bottom panel, whenever it shows
   weather, tides or the calendar (or Quick View covers it), or always.
   **Character → Place times** and **Place times position**:
@@ -192,6 +195,7 @@ Physical hardware and an actual phone webview have not been tested.
 | `shared/display.js` | Numeral styles and the display packet |
 | `shared/map-background.js` | Triangle points and lines behind the map |
 | `shared/zone-column.js` | Place times beside the clock (mirrored by `zone_column.c`) |
+| `shared/map-markers.js` | Close markers side by side (mirrored by `map_markers.c`) |
 | `shared/map-times.js` | Place times on the map: tiny figures, placement and leaders (mirrored by `map_times.c`) |
 | `shared/city.js`, `tools/location-service.js` | City naming, hourly reverse geocoding and offline cache |
 | `shared/panel-*`, `shared/calendar.js` | Panel controls, provider normalization, packet contract and preview |

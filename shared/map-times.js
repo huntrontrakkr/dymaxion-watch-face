@@ -51,19 +51,20 @@ export function tinyPixels(text, orientation, total = tinyWidth(text)) {
 // of the label's first or last figure end, or the centre column of one of the
 // time's figures from above or below (turned labels rotate these). Between the
 // two ends the route runs straight, then 45°, then straight, with at least one
-// straight pixel leaving the glyph and two arriving.
+// straight pixel leaving the glyph and two arriving (five into an end, where
+// a shorter run would read as a minus sign).
 export const EXITS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const EXIT_DISTANCE = HALO + 1;
 function ports(text, orientation, total, x, y) {
   const glyphs = tinyLayout(text, orientation, total), out = [], timeOnly = text.length === TIME_GLYPHS;
   const last = glyphs[TIME_GLYPHS - 1];
   if (orientation === H) {
-    out.push({p: [x - 2, y + 2], d: [1, 0]});
-    if (timeOnly) out.push({p: [x + last.x + last.w + 1, y + 2], d: [-1, 0]});
+    out.push({p: [x - 2, y + 2], d: [1, 0], end: true});
+    if (timeOnly) out.push({p: [x + last.x + last.w + 1, y + 2], d: [-1, 0], end: true});
     glyphs.slice(0, TIME_GLYPHS).forEach(g => { if (g.c === ':') return; out.push({p: [x + g.x + 1, y - 2], d: [0, 1]}, {p: [x + g.x + 1, y + TINY_HEIGHT + 1], d: [0, -1]}); });
   } else {
-    out.push({p: [x + 2, y + glyphs[0].y + glyphs[0].h + 1], d: [0, -1]});
-    if (timeOnly) out.push({p: [x + 2, y + last.y - 2], d: [0, 1]});
+    out.push({p: [x + 2, y + glyphs[0].y + glyphs[0].h + 1], d: [0, -1], end: true});
+    if (timeOnly) out.push({p: [x + 2, y + last.y - 2], d: [0, 1], end: true});
     glyphs.slice(0, TIME_GLYPHS).forEach(g => { if (g.c === ':') return; out.push({p: [x - 2, y + g.y + 1], d: [1, 0]}, {p: [x + TINY_HEIGHT + 1, y + g.y + 1], d: [-1, 0]}); });
   }
   return out;
@@ -71,19 +72,19 @@ function ports(text, orientation, total, x, y) {
 // The route's corner points from the glyph centre c through exit direction e
 // to port p arriving in direction d, or null when no such route exists.
 // Cost: 5 per straight pixel, 7 per diagonal one.
-export function leaderRoute([cx, cy], e, {p: [px, py], d}) {
-  const ex = cx + e[0] * EXIT_DISTANCE, ey = cy + e[1] * EXIT_DISTANCE, X = px - ex, Y = py - ey;
+export function leaderRoute([cx, cy], e, {p: [px, py], d, end = false}) {
+  const ex = cx + e[0] * EXIT_DISTANCE, ey = cy + e[1] * EXIT_DISTANCE, X = px - ex, Y = py - ey, arrive = end ? 5 : 2;
   const dot = (v, w) => v[0] * w[0] + v[1] * w[1];
   if (e[0] === d[0] && e[1] === d[1]) {
     const along = dot([X, Y], e), perp = e[0] ? Y : X, n = Math.abs(perp);
-    if (along < n + 3) return null;
+    if (along < n + 1 + arrive) return null;
     const s = Math.sign(perp), k1 = [ex + e[0], ey + e[1]], k2 = [k1[0] + (e[0] || s) * n, k1[1] + (e[1] || s) * n];
     return {points: [[cx, cy], [ex, ey], k1, k2, [px, py]], cost: 5 * (EXIT_DISTANCE + along - n) + 7 * n};
   }
   if (e[0] === -d[0] && e[1] === -d[1]) return null;
   const U = dot([X, Y], e), W = dot([X, Y], d);
-  if (U < 1 || W < 2) return null;
-  const n = Math.min(U - 1, W - 2), k1 = [ex + e[0] * (U - n), ey + e[1] * (U - n)], k2 = [k1[0] + (e[0] + d[0]) * n, k1[1] + (e[1] + d[1]) * n];
+  if (U < 1 || W < arrive) return null;
+  const n = Math.min(U - 1, W - arrive), k1 = [ex + e[0] * (U - n), ey + e[1] * (U - n)], k2 = [k1[0] + (e[0] + d[0]) * n, k1[1] + (e[1] + d[1]) * n];
   return {points: [[cx, cy], [ex, ey], k1, k2, [px, py]], cost: 5 * (EXIT_DISTANCE + U + W - 2 * n) + 7 * n};
 }
 // Pixels along a route's corner points, each once.
@@ -157,15 +158,18 @@ function placeOne(p, taken, blocked, width, height, turn) {
 // Every order of the places is tried (at most six); the arrangement with the
 // lowest total cost wins, a missing label costing 10000, first order on ties.
 // `blocked(x, y)` is true where the map covers the block; `places` are
-// {x, y, template} or null.
+// {x, y, template} or null; `obstacles` are other glyphs to keep clear of,
+// {x, y, r}: a square of radius r (your location's clearing).
 export const MAP_TIME_ORDERS = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
-export function placeMapTimes(places, blocked, width, height, {turn = false} = {}) {
+export function placeMapTimes(places, blocked, width, height, {turn = false, obstacles = []} = {}) {
   let best = null;
   for (const order of MAP_TIME_ORDERS) {
     const taken = new Uint8Array(width * height), result = [null, null, null];
-    for (const p of places) if (p) for (let dy = -HALO; dy <= HALO; dy++) for (let dx = -HALO; dx <= HALO; dx++) {
-      const x = p.x + dx, y = p.y + dy;if (x >= 0 && y >= 0 && x < width && y < height) taken[y * width + x] = 1;
-    }
+    const clear = ({x: cx, y: cy}, r) => { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      const x = cx + dx, y = cy + dy;if (x >= 0 && y >= 0 && x < width && y < height) taken[y * width + x] = 1;
+    } };
+    for (const p of places) if (p) clear(p, HALO);
+    for (const o of obstacles) clear(o, o.r);
     let total = 0;
     // An order already costing at least the best so far cannot win.
     for (const i of order) if (places[i] && (!best || total < best.total)) { result[i] = placeOne(places[i], taken, blocked, width, height, turn); total += result[i] ? result[i].cost : 10000; }

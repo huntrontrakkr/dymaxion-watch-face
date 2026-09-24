@@ -149,8 +149,10 @@ version 1 and adds `footer`; older settings receive the default panel settings.
 # City and numerical-display packets v1
 
 `CITY` (10005) is 52 bytes, persisted under key 2. Byte 0 is version 1; byte 1
-has manual-name flag 1, failed-refresh flag 2 and position flag 4; bytes 2–3
-are reserved zero.
+has manual-name flag 1, failed-refresh flag 2, position flag 4 and map-pixel
+flag 8 (only with 4). With flag 8, bytes 2–3 hold the wearer's map pixel (x
+below 200, y below 104; the projection lives on the phone), where the watch
+draws your location; otherwise they are zero.
 Bytes 4–7 are fetched Unix UTC seconds (uint32). Bytes 8–47 contain up to 39
 ASCII letters, digits, spaces, periods, commas or hyphens, followed by NUL and
 zero padding. An empty name clears the caption city. A nonempty automatic name

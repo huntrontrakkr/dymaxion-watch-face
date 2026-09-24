@@ -22,5 +22,7 @@ void map_time_template(char out[MAP_TIME_TEXT],bool clock24,bool reserve_day);
 // Calls `pixel` for each lit pixel of `text` laid out at (x, y).
 void map_time_pixels(const char *text,uint8_t orientation,int total,int x,int y,MapTimePixel pixel,void *context);
 void map_time_route(const MapPoint points[5],MapTimePixel pixel,void *context);
+// Another glyph to keep clear of: a square of radius r (your location's clearing).
+typedef struct {int16_t x,y;uint8_t r;} MapObstacle;
 // `blocked` marks map pixels; `taken` is scratch of MAP_TIMES_MASK_BYTES.
-void map_times_place(const uint8_t *blocked,const MapTimePlace places[3],bool turn,uint8_t *taken,MapTimeSpot out[3]);
+void map_times_place(const uint8_t *blocked,const MapTimePlace places[3],const MapObstacle *obstacles,int obstacle_count,bool turn,uint8_t *taken,MapTimeSpot out[3]);

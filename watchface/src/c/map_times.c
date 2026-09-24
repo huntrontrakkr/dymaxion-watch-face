@@ -56,29 +56,30 @@ void map_time_route(const MapPoint points[5],MapTimePixel pixel,void *context){
 // straight on at a port centred on the time (shared/map-times.js).
 #define EXIT_DISTANCE (HALO+1)
 static const int8_t EXITS[4][2]={{1,0},{-1,0},{0,1},{0,-1}};
-typedef struct {int16_t x,y;int8_t dx,dy;} Port;
+// `end`: a port at a label's end, which needs five straight pixels arriving.
+typedef struct {int16_t x,y;int8_t dx,dy;bool end;} Port;
 static int ports(const char *text,uint8_t orientation,int total,int x,int y,Port *out){
   Box g[MAP_TIME_TEXT];int n=layout(text,orientation,total,g),count=0;bool time_only=n==TIME_GLYPHS;const Box *last=&g[TIME_GLYPHS-1];
   if(orientation==MAP_TIME_H){
-    out[count++]=(Port){(int16_t)(x-2),(int16_t)(y+2),1,0};
-    if(time_only)out[count++]=(Port){(int16_t)(x+last->x+last->w+1),(int16_t)(y+2),-1,0};
+    out[count++]=(Port){(int16_t)(x-2),(int16_t)(y+2),1,0,true};
+    if(time_only)out[count++]=(Port){(int16_t)(x+last->x+last->w+1),(int16_t)(y+2),-1,0,true};
     for(int i=0;i<TIME_GLYPHS&&i<n;i++){if(text[i]==':')continue;
-      out[count++]=(Port){(int16_t)(x+g[i].x+1),(int16_t)(y-2),0,1};out[count++]=(Port){(int16_t)(x+g[i].x+1),(int16_t)(y+TINY_H+1),0,-1};}
+      out[count++]=(Port){(int16_t)(x+g[i].x+1),(int16_t)(y-2),0,1,false};out[count++]=(Port){(int16_t)(x+g[i].x+1),(int16_t)(y+TINY_H+1),0,-1,false};}
   }else{
-    out[count++]=(Port){(int16_t)(x+2),(int16_t)(y+g[0].y+g[0].h+1),0,-1};
-    if(time_only)out[count++]=(Port){(int16_t)(x+2),(int16_t)(y+last->y-2),0,1};
+    out[count++]=(Port){(int16_t)(x+2),(int16_t)(y+g[0].y+g[0].h+1),0,-1,true};
+    if(time_only)out[count++]=(Port){(int16_t)(x+2),(int16_t)(y+last->y-2),0,1,true};
     for(int i=0;i<TIME_GLYPHS&&i<n;i++){if(text[i]==':')continue;
-      out[count++]=(Port){(int16_t)(x-2),(int16_t)(y+g[i].y+1),1,0};out[count++]=(Port){(int16_t)(x+TINY_H+1),(int16_t)(y+g[i].y+1),-1,0};}
+      out[count++]=(Port){(int16_t)(x-2),(int16_t)(y+g[i].y+1),1,0,false};out[count++]=(Port){(int16_t)(x+TINY_H+1),(int16_t)(y+g[i].y+1),-1,0,false};}
   }
   return count;
 }
 typedef struct {int32_t cost;MapPoint points[5];} Route;
 static bool route(int cx,int cy,const int8_t e[2],const Port *p,Route *r){
-  int ex=cx+e[0]*EXIT_DISTANCE,ey=cy+e[1]*EXIT_DISTANCE,X=p->x-ex,Y=p->y-ey;
+  int ex=cx+e[0]*EXIT_DISTANCE,ey=cy+e[1]*EXIT_DISTANCE,X=p->x-ex,Y=p->y-ey,arrive=p->end?5:2;
   r->points[0]=(MapPoint){(int16_t)cx,(int16_t)cy};r->points[1]=(MapPoint){(int16_t)ex,(int16_t)ey};r->points[4]=(MapPoint){p->x,p->y};
   if(e[0]==p->dx&&e[1]==p->dy){
     int along=X*e[0]+Y*e[1],perp=e[0]?Y:X,n=iabs(perp),s=sign(perp);
-    if(along<n+3)return false;
+    if(along<n+1+arrive)return false;
     int k1x=ex+e[0],k1y=ey+e[1];
     r->points[2]=(MapPoint){(int16_t)k1x,(int16_t)k1y};
     r->points[3]=(MapPoint){(int16_t)(k1x+(e[0]?e[0]:s)*n),(int16_t)(k1y+(e[1]?e[1]:s)*n)};
@@ -86,8 +87,8 @@ static bool route(int cx,int cy,const int8_t e[2],const Port *p,Route *r){
   }
   if(e[0]==-p->dx&&e[1]==-p->dy)return false;
   int U=X*e[0]+Y*e[1],W=X*p->dx+Y*p->dy;
-  if(U<1||W<2)return false;
-  int n=U-1<W-2?U-1:W-2,k1x=ex+e[0]*(U-n),k1y=ey+e[1]*(U-n);
+  if(U<1||W<arrive)return false;
+  int n=U-1<W-arrive?U-1:W-arrive,k1x=ex+e[0]*(U-n),k1y=ey+e[1]*(U-n);
   r->points[2]=(MapPoint){(int16_t)k1x,(int16_t)k1y};
   r->points[3]=(MapPoint){(int16_t)(k1x+(e[0]+p->dx)*n),(int16_t)(k1y+(e[1]+p->dy)*n)};
   r->cost=5*(EXIT_DISTANCE+U+W-2*n)+7*n;return true;
@@ -154,11 +155,12 @@ static void place_one(const MapTimePlace *p,const uint8_t *blocked,uint8_t *take
   map_time_route(best->points,mark_route,taken);
 }
 static const uint8_t ORDERS[6][3]={{0,1,2},{0,2,1},{1,0,2},{1,2,0},{2,0,1},{2,1,0}};
-void map_times_place(const uint8_t *blocked,const MapTimePlace places[3],bool turn,uint8_t *taken,MapTimeSpot out[3]){
+void map_times_place(const uint8_t *blocked,const MapTimePlace places[3],const MapObstacle *obstacles,int obstacle_count,bool turn,uint8_t *taken,MapTimeSpot out[3]){
   int32_t best_total=INT32_MAX;
   for(int o=0;o<6;o++){
     memset(taken,0,MAP_TIMES_MASK_BYTES);
     for(int i=0;i<3;i++)if(places[i].present)for(int dy=-HALO;dy<=HALO;dy++)for(int dx=-HALO;dx<=HALO;dx++)set_bit(taken,places[i].x+dx,places[i].y+dy);
+    for(int k=0;k<obstacle_count;k++)for(int dy=-obstacles[k].r;dy<=obstacles[k].r;dy++)for(int dx=-obstacles[k].r;dx<=obstacles[k].r;dx++)set_bit(taken,obstacles[k].x+dx,obstacles[k].y+dy);
     MapTimeSpot result[3]={{0}};int32_t total=0;
     // An order already costing at least the best so far cannot win.
     for(int k=0;k<3&&total<best_total;k++){int i=ORDERS[o][k];if(!places[i].present)continue;

@@ -10,7 +10,7 @@ import {makeMap,direction,dot,MAP_SIZE} from '../shared/map.js';
 import {BACKGROUND_BITS} from '../shared/map-background.js';
 import {sunDirection} from '../shared/solar.js';
 import {moonFrame,moonDescription,MOON_GLYPHS,MOON_SIZE} from '../shared/moon.js';
-import {BLUETOOTH_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS,SUN_ROWS,SUN_HALO_ROWS,PULSE_ROWS} from '../shared/status-glyphs.js';
+import {BLUETOOTH_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS,SUN_ROWS,SUN_HALO_ROWS,HERE_ROWS,HERE_HALO_ROWS,PULSE_ROWS} from '../shared/status-glyphs.js';
 import {drawPixelRows,drawPixelLine} from '../shared/pixels.js';
 import {CITIES} from '../shared/cities.js';
 import {panelControls} from '../shared/panel-controls.js';
@@ -19,7 +19,8 @@ import {sampleEnvironment} from '../shared/panel-data.js';
 import {environmentService} from '../tools/environment-service.js';
 import {PANEL_PAGES} from '../shared/panel-settings.js';
 import {cityControls} from '../shared/city-controls.js';
-import {cityIsUsable,cityHasPosition,clockCaption} from '../shared/city.js';
+import {cityIsUsable,cityHasPosition,clockCaption,mapPixel} from '../shared/city.js';
+import {layoutMarkers} from '../shared/map-markers.js';
 import {locationService} from '../tools/location-service.js';
 import {displayControls} from '../shared/display-controls.js';
 import {zoneColumn,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
@@ -182,10 +183,6 @@ function drawMoonIndicator(now){
 function drawBluetoothIndicator(){
   drawPixelRows(ctx,BLUETOOTH_ROWS,148,2,paletteFor(settings).ink);
 }
-function marker(x,y,icon,color,bg){
-  drawPixelRows(ctx,MARKER_HALO_ROWS,x-3,y-3,bg);
-  drawMarkerPixels(ctx,icon,x,y,color);
-}
 function mapImage(now,pal,sun){
   const key=[pal.bg,pal.ocean,pal.land,pal.nightOcean,pal.nightLand,pal.edge,settings.dayNight,settings.edges,settings.mapBackground,Math.floor(now/300000)].join('/');
   if(key===cacheKey&&mapCache)return mapCache;
@@ -209,15 +206,24 @@ function mapImage(now,pal,sun){
 // Place times on the map: placed once per change of places, format or
 // turning (the watch does the same in map_times.c), drawn each frame.
 let mapTimesCache={key:'',spots:[]};
-function drawMapTimes(now,local,mx,my,pal){
-  const [w,h]=MAP_SIZE,m=makeMap(),clock24=use24();
-  const places=settings.places.map(p=>{
-    if(!p.on)return null;const [px,py]=m.project(p.lat,p.lon);
-    const x=Math.max(0,Math.min(w-1,Math.round(px))),y=Math.max(0,Math.min(h-1,Math.round(py)));
-    return {x,y,template:mapTimeTemplate(clock24,moment(now).tz(p.tz).utcOffset()!==local.utcOffset())};
-  });
-  const key=JSON.stringify([places,settings.mapTimesTurn]);
-  if(key!==mapTimesCache.key)mapTimesCache={key,spots:placeMapTimes(places,(x,y)=>!!(mapPixels[(y*w+x)*4+3]&3),w,h,{turn:settings.mapTimesTurn})};
+// Where each place's glyph and yours are drawn (the watch: map_markers.c):
+// true positions, except close ones side by side. You show when the city
+// comes from the phone's location with a position, as the watch receives it.
+function markerSpots(){
+  const [w,h]=MAP_SIZE,m=makeMap(),points=[],index=[];
+  settings.places.forEach((p,i)=>{if(!p.on)return;const [px,py]=m.project(p.lat,p.lon);index[i]=points.length;
+    points.push({x:Math.max(0,Math.min(w-1,Math.round(px))),y:Math.max(0,Math.min(h-1,Math.round(py))),half:2});});
+  const here=settings.location.mode==='auto'&&cityHasPosition(currentCity)&&(currentCity.sample||cityIsUsable(currentCity));
+  let you=-1;if(here){const [x,y]=mapPixel(currentCity.lat,currentCity.lon);you=points.length;points.push({x,y,half:3});}
+  const out=layoutMarkers(points,w,h);
+  return {places:settings.places.map((p,i)=>index[i]===undefined?null:out[index[i]]),you:you<0?null:out[you]};
+}
+function drawMapTimes(now,local,mx,my,pal,markers){
+  const [w,h]=MAP_SIZE,clock24=use24();
+  const places=settings.places.map((p,i)=>markers.places[i]&&{...markers.places[i],template:mapTimeTemplate(clock24,moment(now).tz(p.tz).utcOffset()!==local.utcOffset())});
+  const obstacles=markers.you?[{...markers.you,r:(HERE_ROWS.length>>1)+1}]:[];
+  const key=JSON.stringify([places,obstacles,settings.mapTimesTurn]);
+  if(key!==mapTimesCache.key)mapTimesCache={key,spots:placeMapTimes(places,(x,y)=>!!(mapPixels[(y*w+x)*4+3]&3),w,h,{turn:settings.mapTimesTurn,obstacles})};
   const spots=mapTimesCache.spots,px=(x,y,c)=>{ctx.fillStyle=c;ctx.fillRect(mx+x,my+y,1,1);};
   // Outlined leaders first, then their lines and the tiny times in each place's color.
   spots.forEach(s=>{if(s){ctx.fillStyle=pal.bg;for(const [x,y] of routePixels(s.points))ctx.fillRect(mx+x-1,my+y-1,3,3);}});
@@ -256,8 +262,15 @@ function render(){
   const panelZones=(!band||footerPage==='zones')&&settings.places.some((p,i)=>p.on&&settings.zones[i][1]+36<=visible);
   const beside=zonesBeside(settings,panelZones);
   const onMap=zonesOnMap(settings,panelZones);canvas.dataset.zonesOnMap=String(onMap);
-  if(onMap)drawMapTimes(now,local,mx,my,pal);
-  settings.places.forEach((p,i)=>{if(!p.on)return;const [x,y]=m.project(p.lat,p.lon).map(Math.round),ink=markColor(p,settings,i);marker(mx+x,my+y,p.icon,ink,pal.bg);if(animation&&i===activePlace){const frame=Math.floor((performance.now()-animation)/260);if(frame<4)drawPixelRows(ctx,PULSE_ROWS[frame],mx+x-8,my+y-8,ink);}});
+  const markers=markerSpots();
+  if(onMap)drawMapTimes(now,local,mx,my,pal,markers);
+  // Clearings first, then glyphs, so a neighbour's clearing never cuts a glyph.
+  markers.places.forEach(s=>{if(s)drawPixelRows(ctx,MARKER_HALO_ROWS,mx+s.x-3,my+s.y-3,pal.bg);});
+  if(markers.you)drawPixelRows(ctx,HERE_HALO_ROWS,mx+markers.you.x-4,my+markers.you.y-4,pal.bg);
+  settings.places.forEach((p,i)=>{const s=markers.places[i];if(!s)return;const ink=markColor(p,settings,i);drawMarkerPixels(ctx,p.icon,mx+s.x,my+s.y,ink);if(animation&&i===activePlace){const frame=Math.floor((performance.now()-animation)/260);if(frame<4)drawPixelRows(ctx,PULSE_ROWS[frame],mx+s.x-8,my+s.y-8,ink);}});
+  // You: a bullseye one size up, in the clock's ink.
+  if(markers.you)drawPixelRows(ctx,HERE_ROWS,mx+markers.you.x-3,my+markers.you.y-3,pal.ink);
+  canvas.dataset.here=markers.you?markers.you.x+','+markers.you.y:'';
   const [tx,timeY]=settings.time,[tw,th]=blockSize(settings,'time'),ty=clockTopForVisible(timeY,th,visible),{h,m:minute,ampm}=clockParts(local);
   const city=settings.location.mode==='manual'?settings.location.name:currentCity.sample?currentCity.name:cityIsUsable(currentCity)?currentCity.name+(currentCity.stale||Date.now()/1000-currentCity.fetched>7200?'?':''):'';
   const caption=clockCaption(settings.stacked?'':local.format('ddd DD MMM'),city,use24()?'':ampm,tw-4,t=>textWidth(watchTypeface.text.small,t));

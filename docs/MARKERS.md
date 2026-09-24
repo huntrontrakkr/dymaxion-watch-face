@@ -25,6 +25,16 @@ The small scale gives the map room to remain the subject.
 The section sign §, reference mark ※, asterism ⁂ and therefore sign ∴ were
 tried and left out: at five pixels they read as an S, a blur or stray dots.
 
+Your own location, when the phone sends it, is a 7×7 bullseye one size up
+from the place glyphs (`HERE_ROWS`), in the clock's ink: the big clock is its
+time. It clears a 9×9 square around it.
+
+Markers whose clearings would overlap (London, Paris and Berlin sit two to
+four pixels apart) are drawn side by side, west to east, a pixel apart, around
+their average position (`shared/map-markers.js`, `map_markers.c`); a spread
+group that touches another marker merges with it. All clearings are drawn
+before any glyph, so a neighbour's clearing never cuts into one.
+
 The subsolar point has its own 5×5 glyph (`SUN_ROWS` in
 `shared/status-glyphs.js`): a small sun, a 3×3 orb with eight single-pixel
 rays, on the same 7×7 clearing as the place glyphs.

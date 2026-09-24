@@ -4,7 +4,7 @@ import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {defaults,validateSettings} from '../shared/settings.js';
 import {zoneExists} from '../shared/protocol.js';
-import {cityText,reverseCity,encodeCity,clockCaption} from '../shared/city.js';
+import {cityText,reverseCity,encodeCity,clockCaption,mapPixel} from '../shared/city.js';
 import {textWidth} from '../shared/type.js';
 import {locationService} from '../tools/location-service.js';
 const fixture=JSON.parse(readFileSync('tests/fixtures/city-norfolk.json'));
@@ -29,8 +29,9 @@ test('city lookups are cached, back off on denial, expire offline, and ignore a 
   await Promise.all([service.refresh(),service.refresh()]);assert.equal(positions,1);assert.equal(requests,1);assert.equal(messages.at(-1).name,'Norfolk');
   // The position reaches the watch rounded to 0.1 degree, for chart daylight.
   assert.equal(messages.at(-1).lat,36.9);assert.equal(messages.at(-1).lon,-76.3);
-  {const packet=encodeCity(messages.at(-1)),v=new DataView(packet.buffer);assert.equal(packet[1]&4,4);assert.equal(v.getInt16(48,true),369);assert.equal(v.getInt16(50,true),-763);}
-  {const manual=encodeCity({name:'London',manual:true,lat:51.5,lon:-0.1});assert.equal(manual[1]&4,0);assert.deepEqual([...manual.slice(48)],[0,0,0,0]);}
+  {const packet=encodeCity(messages.at(-1)),v=new DataView(packet.buffer);assert.equal(packet[1]&12,12);assert.equal(v.getInt16(48,true),369);assert.equal(v.getInt16(50,true),-763);
+    assert.deepEqual([packet[2],packet[3]],mapPixel(36.9,-76.3),'flag 8: the wearer\'s map pixel');}
+  {const manual=encodeCity({name:'London',manual:true,lat:51.5,lon:-0.1});assert.equal(manual[1]&12,0);assert.deepEqual([manual[2],manual[3]],[0,0]);assert.deepEqual([...manual.slice(48)],[0,0,0,0]);}
   now+=59*60000;await service.refresh();assert.equal(positions,1);
   now+=2*60000;deny=true;await service.refresh();assert.equal(positions,2);assert(messages.at(-1).stale);assert.equal(messages.at(-1).name,'Norfolk');
   await service.refresh();assert.equal(positions,2);assert(![...cache.values()][0].includes('latitude'));

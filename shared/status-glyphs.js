@@ -25,6 +25,11 @@ export const MARKER_HALO_ROWS=['..###..','.#####.','#######','#######','#######'
 export const SUN_SIZE=5;
 export const SUN_ROWS=['#.#.#','.###.','#####','.###.','#.#.#'];
 export const SUN_HALO_ROWS=MARKER_HALO_ROWS;
+// You: a bullseye one size up from the place glyphs, in the clock's ink, since
+// the big clock is this place's time. Its clearing is one size up too.
+export const HERE_SIZE=7;
+export const HERE_ROWS=['..###..','.#...#.','#.###.#','#.###.#','#.###.#','.#...#.','..###..'];
+export const HERE_HALO_ROWS=['..#####..','.#######.','#########','#########','#########','#########','#########','.#######.','..#####..'];
 
 // Four centered pixel rings. The pulse advances a full pixel every 260 ms,
 // sharing these exact masks with the watch instead of resampling an arc.

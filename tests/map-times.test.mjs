@@ -11,10 +11,12 @@ const SETS=[['NYC','LON','TYO'],['LAX','PAR','SIN'],['SYD','DXB','BER'],['NYC',n
 test('the watch places, draws and leads map times exactly as the workshop does',()=>{
   mkdirSync('test-results',{recursive:true});
   execFileSync('cc',['-std=c11','-O2','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/map-times-test.c','watchface/src/c/map_times.c','-o','test-results/map-times-test']);
-  for(const set of SETS)for(const turn of [0,1])for(const [clock24,reserve] of [[1,0],[0,1]]){
+  // Your location as an obstacle: once beside New York, once in Europe.
+  const OBSTACLES=[null,{x:124,y:48,r:4},{x:92,y:34,r:4}];
+  for(const set of SETS)for(const turn of [0,1])for(const [clock24,reserve] of [[1,0],[0,1]])for(const obstacle of OBSTACLES){
     const pts=set.map(l=>l?pos(l):null),places=pts.map(p=>p&&{x:p[0],y:p[1],template:mapTimeTemplate(!!clock24,!!reserve)});
-    const native=execFileSync('test-results/map-times-test',['watchface/resources/maps/map-0.bin',turn,clock24,reserve,...pts.flatMap(p=>p??[-1,-1])].map(String),{stdio:['ignore','pipe','ignore']}).toString().trim().split('\n');
-    const spots=placeMapTimes(places,blocked,200,104,{turn:!!turn});let line=0;
+    const native=execFileSync('test-results/map-times-test',['watchface/resources/maps/map-0.bin',turn,clock24,reserve,...pts.flatMap(p=>p??[-1,-1]),...(obstacle?[obstacle.x,obstacle.y,obstacle.r]:[])].map(String),{stdio:['ignore','pipe','ignore']}).toString().trim().split('\n');
+    const spots=placeMapTimes(places,blocked,200,104,{turn:!!turn,obstacles:obstacle?[obstacle]:[]});let line=0;
     spots.forEach((s,i)=>{
       const label=`${set.join(' ')} turn=${turn} 24h=${clock24} place ${i}`;
       if(!s){assert.equal(native[line++],'-',label);return;}
@@ -53,7 +55,11 @@ test('leaders meet square and centred: straight out of the glyph, straight into 
       const out=[Math.sign(e[0]-c[0]),Math.sign(e[1]-c[1])];assert(!out[0]!==!out[1],'leaves along a row or column through the centre');
       assert.equal(Math.abs(e[0]-c[0])+Math.abs(e[1]-c[1]),4,'exits just past the clearing');
       assert(Math.abs(k1[0]-e[0])+Math.abs(k1[1]-e[1])>=1,'at least one straight pixel leaving');
-      assert(Math.max(Math.abs(port[0]-k2[0]),Math.abs(port[1]-k2[1]))>=2&&(port[0]===k2[0]||port[1]===k2[1]),'at least two straight pixels arriving');
+      const arriving=Math.max(Math.abs(port[0]-k2[0]),Math.abs(port[1]-k2[1]));
+      assert(arriving>=2&&(port[0]===k2[0]||port[1]===k2[1]),'at least two straight pixels arriving');
+      // Into an end (along the text's centre line), at least five: never a minus sign.
+      const alongText=s.orientation===0?port[1]===k2[1]:port[0]===k2[0];
+      if(alongText)assert(arriving>=5,`${set[i]}: ${arriving} pixels into the end would read as a minus`);
       assert(Math.abs(k2[0]-k1[0])===Math.abs(k2[1]-k1[1]),'the middle run is 45°');
       // The port sits one pixel from a figure, at its centre row or column.
       const lit=new Set(tinyPixels(s.template.slice(0,5),s.orientation,s.total).map(([x,y])=>(s.x+x)+','+(s.y+y)));
