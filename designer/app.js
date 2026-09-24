@@ -24,6 +24,7 @@ import {layoutMarkers,markerClearance,hullPixels} from '../shared/map-markers.js
 import {nameplateLayout,nameplateObstacle,NAMEPLATE_ROWS} from '../shared/nameplate.js';
 import {locationService} from '../tools/location-service.js';
 import {displayControls} from '../shared/display-controls.js';
+import {TRAY_MS,TRAY_Y,TRAY_H,FRAME_MS,traySlide,slideRow,besideProgress,besideShift,columnAlpha,mixColor} from '../shared/transitions.js';
 import {zoneColumn,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
 import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels} from '../shared/map-times.js';
 import {minuteFlipClock,drawFlipPixels,FLIP_FACES,flipOffset} from '../shared/minute-flip.js';
@@ -64,7 +65,7 @@ const panelEditor=panelControls($('panel-controls'),()=>settings,footer=>{
   settings=validateSettings(candidate,zoneExists);if(previous!==settings.footer.home||!settings.footer.pages.includes(footerPage))footerPage=settings.footer.home;
   panelChanged=Date.now();save();if(environmentMode==='live')environment.refresh();
 });
-function nextPanel(){const pages=settings.footer.pages;footerPage=pages[(pages.indexOf(footerPage)+1)%pages.length];panelChanged=Date.now();if(footerPage==='zones')startPulse();render();}
+function nextPanel(){const pages=settings.footer.pages;trayStart();footerPage=pages[(pages.indexOf(footerPage)+1)%pages.length];panelChanged=Date.now();if(footerPage==='zones')startPulse();render();}
 $('next-panel').onclick=nextPanel;
 $('sample-data').onclick=()=>{environmentMode='sample';render();};
 $('live-data').onclick=()=>{environmentMode='live';environment.refresh();render();};
@@ -250,7 +251,7 @@ function daylightPlace(){
 function render(){
   if(!mapPixels.length||!watchTypeface||!watchSpan)return;
   if(!settings.footer.pages.includes(footerPage))footerPage=settings.footer.home;
-  if(settings.footer.enabled&&settings.footer.rotationMinutes&&Date.now()-panelChanged>=settings.footer.rotationMinutes*60000){footerPage=settings.footer.pages[(settings.footer.pages.indexOf(footerPage)+1)%settings.footer.pages.length];panelChanged=Date.now();if(footerPage==='zones')startPulse();}
+  if(settings.footer.enabled&&settings.footer.rotationMinutes&&Date.now()-panelChanged>=settings.footer.rotationMinutes*60000){trayStart();footerPage=settings.footer.pages[(settings.footer.pages.indexOf(footerPage)+1)%settings.footer.pages.length];panelChanged=Date.now();if(footerPage==='zones')startPulse();}
   const now=new Date(Date.now()+offset*3600000),local=moment(now),sun=sunDirection(new Date(Math.floor(+now/300000)*300000)),pal=paletteFor(settings);
   ctx.clearRect(0,0,200,228);ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,228);
   const m=makeMap(),[mx,my]=settings.map,cached=mapImage(now,pal,sun);
@@ -263,7 +264,7 @@ function render(){
   // not showing them (another panel, or Quick View covering it).
   const band=visible>=228&&settings.footer.enabled;
   const panelZones=(!band||footerPage==='zones')&&settings.places.some((p,i)=>p.on&&settings.zones[i][1]+36<=visible);
-  const beside=zonesBeside(settings,panelZones);
+  const beside=zonesBeside(settings,panelZones),besideP=besideUpdate(beside),besideOn=besideP>0,alpha=columnAlpha(besideP);
   const onMap=zonesOnMap(settings,panelZones);canvas.dataset.zonesOnMap=String(onMap);
   const [tx,timeY]=settings.time,[tw,th]=blockSize(settings,'time');
   // The Dymaxion nameplate, between the clock and the map when there is room
@@ -290,7 +291,7 @@ function render(){
   const caption=clockCaption(settings.stacked?'':local.format('ddd DD MMM'),city,use24()?'':ampm,tw-4,t=>textWidth(watchTypeface.text.small,t));
   // Status line: lining capitals, date and city at the top left.
   // AM/PM belongs to the clock when it can show it (Chamfer or stacked).
-  const clockAmpm=settings.stacked||(settings.clockDisplay==='chamfer'&&!beside);
+  const clockAmpm=settings.stacked||(settings.clockDisplay==='chamfer'&&!besideOn);
   const status=clockCaption(local.format('ddd DD MMM').toUpperCase(),city.toUpperCase(),use24()||clockAmpm?'':ampm,statusWidth(),t=>textWidth(watchTypeface.lining.small,t),'  ');
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
   if(settings.stacked||!FLIP_FACES[settings.clockDisplay])minuteClock.reset();
@@ -300,17 +301,18 @@ function render(){
     // Every horizontal style animates its minute change through the same shrink.
     const style=settings.clockDisplay;
     minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset,beside,settings.zonePosition].join('/'),settings.motion&&!reducedMotion.matches&&!document.hidden,style);
-    // Beside the place times, the figures shift left and the column fills the right.
-    drawFlipPixels(ctx,minuteClock.frame(),tx+(beside?zoneColumn(settings.zonePosition).shift:0),ty+flipOffset(style),{ink:pal.ink,background:pal.bg});
-    if(beside){
+    // Beside the place times, the figures shift left and the column fills the
+    // right: the clock glides over first, then the column fades in.
+    drawFlipPixels(ctx,minuteClock.frame(),tx+besideShift(besideP,zoneColumn(settings.zonePosition).shift),ty+flipOffset(style),{ink:pal.ink,background:pal.bg});
+    if(alpha){const fade=c=>fadeHex(pal.bg,c,alpha);
       const font=watchTypeface.lining.small,shown=settings.places.map((p,i)=>[p,i]).filter(([p])=>p.on);
       shown.forEach(([p,i],row)=>{
         const there=moment(now).tz(p.tz),delta=Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000);
         const r=zoneRow({label:p.label,hour:there.hours(),minute:there.minutes(),clock24:use24(),delta,side:settings.zonePosition},t=>textWidth(font,t)),base=ty+zoneRowBaseline(row,shown.length);
-        drawBitmapText(ctx,font,r.label,tx+r.labelX,base,markColor(p,settings,i));drawBitmapText(ctx,font,r.time,tx+r.timeX,base,pal.ink);
-        drawBitmapText(ctx,font,r.suffix,tx+r.suffixX,base,pal.accent);drawBitmapText(ctx,font,r.day,tx+r.dayX,base,pal.accent);
+        drawBitmapText(ctx,font,r.label,tx+r.labelX,base,fade(markColor(p,settings,i)));drawBitmapText(ctx,font,r.time,tx+r.timeX,base,fade(pal.ink));
+        drawBitmapText(ctx,font,r.suffix,tx+r.suffixX,base,fade(pal.accent));drawBitmapText(ctx,font,r.day,tx+r.dayX,base,fade(pal.accent));
       });
-    }else if(style==='chamfer'&&!use24())drawBitmapText(ctx,watchTypeface.lining.small,ampm,tx+167,ty+9,pal.accent);
+    }else if(!besideOn&&style==='chamfer'&&!use24())drawBitmapText(ctx,watchTypeface.lining.small,ampm,tx+167,ty+9,pal.accent);
   }
   canvas.dataset.clockDisplay=settings.stacked?'draft':settings.clockDisplay;
   canvas.dataset.zonesBeside=String(beside);
@@ -329,6 +331,7 @@ function render(){
     if(pulseNow()?.place===i)strokeLine(x,y+35,x+59,y+35,ink);
   });
   if(band)drawFooter(ctx,settings,footerPage,{...(environmentMode==='sample'?sampleEnvironment(+now):liveData),palette:pal,daylight:daylightPlace()},+now,watchTypeface.lining.small,use24());
+  trayCompose(band);
   $('panel-preview-label').textContent=settings.footer.enabled?PANEL_PAGES.find(([id])=>id===footerPage)[1]:'Time zones';
   $('data-state').textContent=environmentMode==='sample'?'Example curves for layout preview. Live data is available below.':`Live forecast for ${settings.places[settings.footer.weather.place].name}. ${liveData.weather?.error?'Weather update unavailable; cached data is marked OLD.':''} ${liveData.tide?.error?'NOAA update unavailable.':''}`;
   ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,18);
@@ -342,7 +345,33 @@ function render(){
   $('preview-time').textContent=local.format('ddd HH:mm')+(offset?' / PREVIEW':' / LIVE');
   const lunar=moonDescription(now);$('moon-state').textContent=settings.moonIndicator?`${lunar.name} · ${lunar.illumination}% lit. `:'';
   if(animation){if(performance.now()-animation>PULSE_MS*pulseOrder.length)animation=0;setTimeout(render,65);}
+  canvas.dataset.besideProgress=String(besideP);canvas.dataset.traySliding=String(!!trayOld);
+  if(trayOld||besideP!==(beside?1000:0))scheduleMotion();
 }
+// Transitions (shared/transitions.js), as on the watch: the tray swipes to its
+// next page, and the clock makes room before the place times fade in beside it.
+const motionOn=()=>settings.motion&&!reducedMotion.matches&&!document.hidden;
+let motionTimer=0,trayOld=null,trayStarted=0,besideState=null;
+function scheduleMotion(){if(!motionTimer)motionTimer=setTimeout(()=>{motionTimer=0;render();},FRAME_MS);}
+// The canvas still shows the page being left: keep its pixels to slide out.
+function trayStart(){trayOld=motionOn()&&settings.footer.enabled&&!$('quick-view').checked?ctx.getImageData(0,TRAY_Y,200,TRAY_H):null;trayStarted=performance.now();}
+function trayCompose(band){
+  if(!trayOld)return;const elapsed=performance.now()-trayStarted;
+  if(!band||elapsed>=TRAY_MS||!motionOn()){trayOld=null;return;}
+  const fresh=ctx.getImageData(0,TRAY_Y,200,TRAY_H),a=new Uint32Array(trayOld.data.buffer),b=new Uint32Array(fresh.data.buffer),slide=traySlide(elapsed);
+  for(let r=0;r<TRAY_H;r++){const row=slideRow(a.subarray(r*200,r*200+200),b.subarray(r*200,r*200+200),slide);b.set(row,r*200);}
+  ctx.putImageData(fresh,0,TRAY_Y);
+}
+function besideUpdate(target){
+  const now=performance.now();
+  if(!besideState||!motionOn())besideState={to:target,from:target?1000:0,started:now};
+  else if(target!==besideState.to){const p=besideProgress(besideState.from,besideState.to,now-besideState.started);besideState={to:target,from:p,started:now};}
+  return besideProgress(besideState.from,besideState.to,now-besideState.started);
+}
+// A color part way from the ground toward the ink, in RGB222.
+const hexToArgb=hex=>{const v=parseInt(hex.slice(1),16);return 0xc0|(Math.round((v>>16&255)/85)<<4)|(Math.round((v>>8&255)/85)<<2)|Math.round((v&255)/85);};
+const argbToHex=c=>'#'+[(c>>4)&3,(c>>2)&3,c&3].map(v=>(v*85).toString(16).padStart(2,'0')).join('').toUpperCase();
+function fadeHex(ground,ink,alpha){return alpha>=1000?ink:argbToHex(mixColor(hexToArgb(ground),hexToArgb(ink),alpha));}
 // The marker pulse plays once when the watch face opens and when the bottom
 // panel comes back round to the time zones, as on the watch; never on a timer.
 // Each enabled place pulses in turn: four rings, 120 ms each, so three

@@ -18,6 +18,7 @@
 #include "generated/moon_palette.h"
 #include "generated/status_glyphs.h"
 #include "generated/markers.h"
+#include "transitions.h"
 
 static Window *s_window;
 static Layer *s_layer;
@@ -55,7 +56,13 @@ static uint16_t s_clock_frame=UINT16_MAX;
 static TapState s_tap;
 static bool s_accel_subscribed;
 static int s_map_w,s_map_h;
-static bool s_beside; // place times beside the clock this frame
+static bool s_beside; // place times beside the clock this frame (or on their way)
+// Transitions (transitions.c): the tray swiping to its next page, and the
+// clock making room for the place times beside it. One timer drives both
+// while either runs; none runs at rest.
+static AppTimer *s_motion_timer;
+static bool s_tray_active;static int s_tray_from;static uint32_t s_tray_started;static uint8_t *s_tray_old;
+static bool s_beside_known,s_beside_to;static int s_beside_from,s_beside_p;static uint32_t s_beside_started;
 static MapTimeSpot s_map_spots[3];
 static uint8_t s_map_key[18];
 static bool s_map_key_valid;
@@ -300,7 +307,7 @@ static void clock_caption(char *out,size_t size,const char *date,const char *amp
   }
 }
 static void draw_meridiem(GContext *ctx,const char *ampm,int x,int baseline);
-static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int x,int y);
+static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int x,int y,int alpha);
 // Where the clock goes, and the Dymaxion nameplate when it is on and fits
 // (a clock below the map moves down to make room for it).
 static int clock_layout(int visible,bool *plate,int *px,int *py){
@@ -310,6 +317,28 @@ static int clock_layout(int visible,bool *plate,int *px,int *py){
   if(plate){*plate=shown;if(shown){*px=x;*py=y;}}
   return top;
 }
+static bool motion_allowed(void){return (s_settings[FLAGS]&MOTION)&&s_battery.charge_percent>20&&s_focused;}
+static void motion_step(void *context){(void)context;s_motion_timer=NULL;layer_mark_dirty(s_layer);}
+static void motion_continue(void){
+  bool tray=s_tray_active&&clock_milliseconds()-s_tray_started<TRAY_MS,beside=s_beside_p!=(s_beside_to?1000:0);
+  if((tray||beside)&&!s_motion_timer)s_motion_timer=app_timer_register(TRANSITION_FRAME_MS,motion_step,NULL);
+}
+static void tray_end(void){s_tray_active=false;if(s_tray_old){free(s_tray_old);s_tray_old=NULL;}}
+static void tray_start(int from){
+  tray_end();if(!motion_allowed())return;
+  s_tray_active=true;s_tray_from=from;s_tray_started=clock_milliseconds();motion_continue();
+}
+// Where the place times stand between the tray (0) and beside the clock (1000).
+static void beside_update(bool target){
+  uint32_t now=clock_milliseconds();
+  if(!s_beside_known||!motion_allowed()){s_beside_known=true;s_beside_to=target;s_beside_p=s_beside_from=target?1000:0;}
+  else{
+    if(target!=s_beside_to){s_beside_from=s_beside_p;s_beside_to=target;s_beside_started=now;}
+    s_beside_p=beside_progress(s_beside_from,s_beside_to,(int32_t)(now-s_beside_started));
+  }
+  s_beside=s_beside_p>0;
+}
+static GColor faded(GColor c,int alpha){return alpha>=1000?c:(GColor){.argb=mix_color(color(0).argb,c.argb,alpha)};}
 static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
   int x=s_settings[TIME_X],w=(s_settings[FLAGS]&STACKED)?72:200;
   int h=(s_settings[FLAGS]&STACKED)?84:s_display[1]>=4?40:46;
@@ -328,13 +357,14 @@ static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
     if(hour<10&&!leading_zero())timebuf[0]=' ';
     uint8_t digits[4]={timebuf[0]==' '?10:timebuf[0]-'0',timebuf[1]-'0',timebuf[3]-'0',timebuf[4]-'0'};
     // Beside the place times, the figures shift left and the column fills the right.
-    int cx=s_beside?x+zone_clock_shift(zone_position()==ZONE_POSITION_RIGHT):x;
+    // It glides over first; then the column fades in (the reverse on the way back).
+    int cx=x+beside_shift(s_beside_p,zone_clock_shift(zone_position()==ZONE_POSITION_RIGHT)),alpha=column_alpha(s_beside_p);
     if(s_clock_face)draw_flip_time(ctx,local,now,cx,y);
     else if(s_display[1]>=5)draw_system_time(ctx,timebuf,cx,y);
     else draw_span_time(ctx,digits,cx,y);
-    if(s_beside)draw_zone_column(ctx,now,local,x,y);
+    if(alpha)draw_zone_column(ctx,now,local,x,y,alpha);
     // 12-hour Chamfer time carries AM/PM beside the figures, top-aligned with them.
-    else if(s_clock_face==&s_chamfer&&*ampm)draw_meridiem(ctx,ampm,x+167,y+9);
+    else if(!s_beside&&s_clock_face==&s_chamfer&&*ampm)draw_meridiem(ctx,ampm,x+167,y+9);
   }
 }
 static struct tm zone_time(const uint8_t *z,time_t now,const struct tm *local,int *delta,bool *stale){
@@ -369,6 +399,34 @@ static void draw_zones(GContext *ctx,time_t now,struct tm *local,int visible) {
     if(i==pulsing_place())line(ctx,x,y+35,x+59,y+35,mark_color(i));
   }
 }
+static void draw_tray_page(GContext *ctx,time_t now,struct tm *local,int visible,const float *daylight){
+  bool zones=visible>=228?!panels_draw(ctx,now,local,s_small,s_caps,palette(),is_24(),daylight):true;
+  if(zones)draw_zones(ctx,now,local,visible);
+}
+// Saves the tray's rows, or slides the saved (old) page out over the new one.
+static void tray_rows(GContext *ctx,bool save,int slide){
+  GBitmap *fb=graphics_capture_frame_buffer(ctx);if(!fb)return;
+  for(int r=0;r<TRAY_H;r++){
+    GBitmapDataRowInfo info=gbitmap_get_data_row_info(fb,TRAY_Y+r);
+    if(info.min_x>0||info.max_x<199)continue;
+    if(save)memcpy(s_tray_old+r*200,info.data,200);else tray_slide_row(s_tray_old+r*200,info.data,slide);
+  }
+  graphics_release_frame_buffer(ctx,fb);
+}
+// The bottom tray. Just after a page change the old page leaves to the left
+// as the new one arrives: the first frame draws the old page once and keeps
+// its pixels (8.8 KB, freed when the swipe ends).
+static void draw_tray(GContext *ctx,time_t now,struct tm *local,int visible,const float *daylight){
+  uint32_t elapsed=clock_milliseconds()-s_tray_started;
+  if(!s_tray_active||visible<228||elapsed>=TRAY_MS||!motion_allowed()){tray_end();draw_tray_page(ctx,now,local,visible,daylight);return;}
+  if(!s_tray_old&&(s_tray_old=malloc(200*TRAY_H))){
+    int page=panels_page();panels_set_page(s_tray_from);
+    draw_tray_page(ctx,now,local,visible,daylight);tray_rows(ctx,true,0);
+    panels_set_page(page);
+  }
+  draw_tray_page(ctx,now,local,visible,daylight);
+  if(s_tray_old)tray_rows(ctx,false,tray_slide((int32_t)elapsed));
+}
 typedef struct {GContext *ctx;GColor color;} CapsPen;
 static void caps_span(void *context,int x,int y,int length){CapsPen *pen=context;line(pen->ctx,x,y,x+length-1,y,pen->color);}
 // Status line: lining capitals for date and city at the top of the face.
@@ -377,7 +435,7 @@ static int caps_measure(const char *text,const void *font){return caps_width(fon
 // Up to three places stacked beside the clock: label in the place's color with
 // its day offset, time in ink, A/P and day offset in the accent
 // (shared/zone-column.js).
-static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int x,int y){
+static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int x,int y,int alpha){
   int count=0,row=0;
   for(int i=0;i<3;i++)if(s_settings[ENABLED]&(1<<i))count++;
   for(int i=0;i<3;i++){
@@ -387,7 +445,7 @@ static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int
     snprintf(label,sizeof(label),"%.7s",(const char *)z);
     ZoneRow r;zone_row(&r,label,zone.tm_hour,zone.tm_min,is_24(),delta,stale,zone_position()==ZONE_POSITION_RIGHT,caps_measure,s_caps);
     int base=y+zone_row_baseline(row++,count);
-    CapsPen mark={ctx,mark_color(i)},ink={ctx,color(6)},accent={ctx,color(7)};
+    CapsPen mark={ctx,faded(mark_color(i),alpha)},ink={ctx,faded(color(6),alpha)},accent={ctx,faded(color(7),alpha)};
     caps_draw(s_caps,r.label,x+r.label_x,base,false,caps_span,&mark);
     caps_draw(s_caps,r.time,x+r.time_x,base,false,caps_span,&ink);
     caps_draw(s_caps,r.suffix,x+r.suffix_x,base,false,caps_span,&accent);
@@ -560,21 +618,21 @@ static void update_proc(Layer *layer,GContext *ctx) {
   // The Dymaxion nameplate, in the accent color, when there is room.
   if(spots.plate){graphics_context_set_stroke_color(ctx,color(7));HullPen plate={ctx,0,0};nameplate_pixels(spots.plate_x,spots.plate_y,hull_pixel,&plate);}
   if(spots.you>=0)pixel_rows(ctx,HERE_GLYPH,HERE_SIZE,HERE_SIZE,mx+spots.layout[spots.you].x-HERE_SIZE/2,my+spots.layout[spots.you].y-HERE_SIZE/2,color(6));
-  s_beside=s_caps&&zones_beside(s_display[1],s_settings[FLAGS]&STACKED,when,zone_position(),panel_zones);
+  beside_update(s_caps&&zones_beside(s_display[1],s_settings[FLAGS]&STACKED,when,zone_position(),panel_zones));
   draw_time(ctx,&local,now,visible);
   // Chart daylight follows the wearer's position when the phone sent one,
   // otherwise the forecast place.
   static float daylight[3];int lat,lon;
   if(city_usable(s_city,now)&&city_position(s_city,&lat,&lon))solar_place(lat,lon,daylight);
   else solar_place_vector((const int8_t *)s_settings+HEADER_SIZE+panels_weather_place()*ZONE_SIZE+11,daylight);
-  bool zones=visible>=228?!panels_draw(ctx,now,&local,s_small,s_caps,palette(),is_24(),daylight):true;
-  if(zones)draw_zones(ctx,now,&local,visible);
+  draw_tray(ctx,now,&local,visible,daylight);
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(0,0,200,18),0,GCornerNone);
   char battery[8];snprintf(battery,sizeof(battery),"%d%%",s_battery.charge_percent);
   if(s_caps)draw_status_line(ctx,&local,now,battery);
   else text(ctx,battery,s_small,GRect(160,0,35,15),GTextAlignmentRight,color(6));
   draw_moon_indicator(ctx,now);
   draw_bluetooth_indicator(ctx);
+  motion_continue();
 }
 static void animation_step(void *context) {
   s_animation=NULL;s_frame++;layer_mark_dirty(s_layer);
@@ -601,7 +659,8 @@ static void pulse_on_zones(void){
 // so nothing samples the accelerometer or wakes the watch between flicks.
 static void tapped(AccelAxisType axis,int32_t direction) {
   time_t seconds;uint16_t ms;time_ms(&seconds,&ms);
-  if(panel_tap(&s_tap,(uint64_t)seconds*1000+ms,panels_flicks())&&panels_cycle(time(NULL))){layer_mark_dirty(s_layer);pulse_on_zones();}
+  int page=panels_page();
+  if(panel_tap(&s_tap,(uint64_t)seconds*1000+ms,panels_flicks())&&panels_cycle(time(NULL))){tray_start(page);layer_mark_dirty(s_layer);pulse_on_zones();}
 }
 static void configure_shake(void) {
   bool wanted=panels_shake_enabled();
@@ -619,7 +678,7 @@ static void tick(struct tm *local_time,TimeUnits changed) {
   // five minutes instead of reading and shading all 20,800 pixels each minute.
   if(local_time->tm_min%5==0)s_map_dirty=true;
   layer_mark_dirty(s_layer);
-  time_t now=time(NULL);panels_tick(now);pulse_on_zones();
+  time_t now=time(NULL);int page=panels_page();if(panels_tick(now))tray_start(page);pulse_on_zones();
   if(s_clock_face)clock_prepare(local_time,now,true);
   int interval=panels_refresh_minutes();if(!(s_city[1]&1)&&interval>60)interval=60;
   if((now/60)%interval==0)request_sync();
@@ -712,6 +771,8 @@ static void init(void) {
 static void deinit(void) {
   clock_stop();app_focus_service_unsubscribe();if(s_map_timer)app_timer_cancel(s_map_timer);
   if(s_animation)app_timer_cancel(s_animation);
+  if(s_motion_timer)app_timer_cancel(s_motion_timer);
+  tray_end();
   tick_timer_service_unsubscribe();unobstructed_area_service_unsubscribe();if(s_accel_subscribed)accel_tap_service_unsubscribe();battery_state_service_unsubscribe();connection_service_unsubscribe();app_message_deregister_callbacks();
   layer_destroy(s_layer);window_destroy(s_window);if(s_map)gbitmap_destroy(s_map);
   fonts_unload_custom_font(s_large);fonts_unload_custom_font(s_small);fonts_unload_custom_font(s_zone);

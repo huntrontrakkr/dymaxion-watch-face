@@ -39,7 +39,8 @@ settings; existing explicit Span/triangle choices are preserved.
   only during the 400 ms transition and is cancelled on completion, settings
   changes, focus loss, or teardown. Late callbacks use elapsed time and settle
   immediately when the deadline has passed.
-- `Brief animations` controls both minute flips and the earlier marker pulses.
+- `Brief animations` controls the minute flips, the marker pulses, the tray
+  swipe and the clock's glide beside the place times.
   Native motion is suppressed at 20% battery or below; crossing that threshold
   cancels an in-progress flip. The browser also honors reduced motion and settles
   immediately when its page is hidden.

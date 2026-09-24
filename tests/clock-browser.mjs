@@ -75,7 +75,13 @@ try{
   const column=(x=0)=>screen.evaluate((c,x)=>[...c.getContext('2d').getImageData(x,22,70,40).data],x);const empty=await column();
   assert.equal(await page.getByLabel('Place times position',{exact:true}).inputValue(),'left');
   await page.locator('#next-panel').click();assert.notEqual(await page.locator('#panel-preview-label').textContent(),'Time zones');
-  assert.equal(await beside(),'true','another panel: times move beside the clock');assert.notDeepEqual(await column(),empty);
+  assert.equal(await beside(),'true','another panel: times move beside the clock');
+  // Transitions: the tray swipes over and the clock glides aside before the times fade in.
+  assert.equal(await screen.getAttribute('data-tray-sliding'),'true');assert.equal(await screen.getAttribute('data-beside-progress'),'0');
+  await page.clock.runFor(150);const glide=Number(await screen.getAttribute('data-beside-progress'));assert(glide>0&&glide<1000,`mid-way: ${glide}`);
+  await screen.screenshot({path:'test-results/transition-mid.png'});
+  await page.clock.runFor(600);assert.equal(await screen.getAttribute('data-beside-progress'),'1000');assert.equal(await screen.getAttribute('data-tray-sliding'),'false');
+  assert.notDeepEqual(await column(),empty);
   assert.match(await screen.getAttribute('data-clock-caption'),/ PM$/,'12-hour AM/PM moves to the status line beside the place times');
   for(let n=0;n<6&&await page.locator('#panel-preview-label').textContent()!=='Time zones';n++)await page.locator('#next-panel').click();
   assert.equal(await beside(),'false');
