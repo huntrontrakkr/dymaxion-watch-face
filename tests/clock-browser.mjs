@@ -50,7 +50,7 @@ try{
   // Map backgrounds (triangle points, lines, fine points) fill only the empty map pixels, in the edge colour.
   const mapBlock=()=>screen.evaluate(c=>[...c.getContext('2d').getImageData(0,73,200,104).data]);
   assert.equal(await page.getByLabel('Map background',{exact:true}).inputValue(),'none');
-  await page.clock.runFor(3000);const plain=await mapBlock(); // let any marker pulse finish
+  await page.clock.runFor(3500);const plain=await mapBlock(); // let any marker pulse finish
   const settingsNow=JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))),{paletteFor}=await import('../shared/palette-settings.js'),pal=paletteFor(settingsNow);
   const rgb=hex=>[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
   for(const [id,low,high] of [['points',20,40],['lines',300,494],['fine-points',90,130]]){

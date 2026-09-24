@@ -31,7 +31,13 @@ static bool s_map_dirty=true,s_connected=true;
 static BatteryChargeState s_battery;
 static int16_t s_sun[3];
 static GPoint s_sun_point;
-static uint8_t s_selected=0,s_frame=16;
+// The marker pulse: 16 frames for each enabled place in turn.
+static uint8_t s_frame,s_frames;
+static int pulsing_place(void){
+  if(s_frame>=s_frames)return -1;
+  for(int i=0,k=s_frame/16;i<3;i++)if((s_settings[ENABLED]&(1<<i))&&!k--)return i;
+  return -1;
+}
 static AppTimer *s_animation;
 static AppTimer *s_clock_timer;
 static ClockFlip s_clock_flip;
@@ -358,7 +364,7 @@ static void draw_zones(GContext *ctx,time_t now,struct tm *local,int visible) {
     snprintf(hours,sizeof(hours),"%02d:%02d",hour,zone.tm_min);
     text(ctx,hours,s_zone,GRect(x+2,y+13,52,22),GTextAlignmentLeft,color(6));
     if(!is_24())text(ctx,zone.tm_hour<12?"A":"P",s_small,GRect(x+53,y+16,7,15),GTextAlignmentLeft,color(7));
-    if(i==s_selected&&s_frame<16)line(ctx,x,y+35,x+59,y+35,mark_color(i));
+    if(i==pulsing_place())line(ctx,x,y+35,x+59,y+35,mark_color(i));
   }
 }
 typedef struct {GContext *ctx;GColor color;} CapsPen;
@@ -546,7 +552,7 @@ static void update_proc(Layer *layer,GContext *ctx) {
   for(int i=0;i<3;i++)if(spots.index[i]>=0) {
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;const MapMarker *m=&spots.layout[spots.index[i]];GPoint pos=GPoint(mx+m->x,my+m->y);
     marker_glyph(ctx,pos,z[10],mark_color(i));
-    if(i==s_selected&&s_frame<16)pixel_rows(ctx,PULSE_GLYPHS[s_frame/4],PULSE_SIZE,PULSE_SIZE,pos.x-8,pos.y-8,mark_color(i));
+    if(i==pulsing_place())pixel_rows(ctx,PULSE_GLYPHS[s_frame%16/4],PULSE_SIZE,PULSE_SIZE,pos.x-8,pos.y-8,mark_color(i));
   }
   // You: a bullseye one size up, in the clock's ink.
   // The Dymaxion nameplate, in the accent color, when there is room.
@@ -570,12 +576,14 @@ static void update_proc(Layer *layer,GContext *ctx) {
 }
 static void animation_step(void *context) {
   s_animation=NULL;s_frame++;layer_mark_dirty(s_layer);
-  if(s_frame<16)s_animation=app_timer_register(65,animation_step,NULL);
+  if(s_frame<s_frames)s_animation=app_timer_register(65,animation_step,NULL);
 }
 static void pulse(void) {
   if(s_animation){app_timer_cancel(s_animation);s_animation=NULL;}
-  s_frame=16;
-  if((s_settings[FLAGS]&MOTION)&&s_battery.charge_percent>20&&s_settings[ENABLED]) {s_frame=0;s_animation=app_timer_register(65,animation_step,NULL);}
+  s_frame=s_frames=0;
+  if((s_settings[FLAGS]&MOTION)&&s_battery.charge_percent>20&&s_settings[ENABLED]) {
+    for(int i=0;i<3;i++)if(s_settings[ENABLED]&(1<<i))s_frames+=16;
+    s_animation=app_timer_register(65,animation_step,NULL);}
   layer_mark_dirty(s_layer);
 }
 // The marker pulse plays once when the face opens and again only when the
@@ -618,7 +626,7 @@ static void obstruction_changed(AnimationProgress progress,void *context){layer_
 static void obstruction_done(void *context){layer_mark_dirty(s_layer);}
 static void battery_changed(BatteryChargeState state) {
   s_battery=state;
-  if(state.charge_percent<=20&&s_animation){app_timer_cancel(s_animation);s_animation=NULL;s_frame=16;}
+  if(state.charge_percent<=20&&s_animation){app_timer_cancel(s_animation);s_animation=NULL;s_frame=s_frames=0;}
   if(state.charge_percent<=20)clock_stop();
   configure_shake();
   layer_mark_dirty(s_layer);

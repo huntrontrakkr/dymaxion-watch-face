@@ -30,7 +30,7 @@ import {minuteFlipClock,drawFlipPixels,FLIP_FACES,flipOffset} from '../shared/mi
 
 const $=id=>document.getElementById(id),zoneExists=tz=>!!moment.tz.zone(tz);
 const clone=x=>JSON.parse(JSON.stringify(x));
-let settings=defaults(),offset=0,selected='time',drag=null,animation=0,activePlace=0;
+let settings=defaults(),offset=0,selected='time',drag=null,animation=0,pulseOrder=[];
 let mapCache=null,cacheKey='',mapPixels=[],watchTypeface=null,watchSpan=null;
 const canvas=$('screen'),ctx=canvas.getContext('2d',{willReadFrequently:true});
 ctx.imageSmoothingEnabled=false;
@@ -279,7 +279,7 @@ function render(){
   if(onMap)drawMapTimes(now,local,mx,my,pal,markers);
   // Hull outlines in the ground color, like each glyph's clearing ring.
   ctx.fillStyle=pal.bg;for(const h of markers.hulls)for(const [x,y] of hullPixels(h).outline)ctx.fillRect(mx+x,my+y,1,1);
-  settings.places.forEach((p,i)=>{const s=markers.places[i];if(!s)return;const ink=markColor(p,settings,i);drawMarkerPixels(ctx,p.icon,mx+s.x,my+s.y,ink);if(animation&&i===activePlace){const frame=Math.floor((performance.now()-animation)/260);if(frame<4)drawPixelRows(ctx,PULSE_ROWS[frame],mx+s.x-8,my+s.y-8,ink);}});
+  settings.places.forEach((p,i)=>{const s=markers.places[i];if(!s)return;const ink=markColor(p,settings,i);drawMarkerPixels(ctx,p.icon,mx+s.x,my+s.y,ink);const pulsing=pulseNow();if(pulsing&&pulsing.place===i)drawPixelRows(ctx,PULSE_ROWS[pulsing.frame],mx+s.x-8,my+s.y-8,ink);});
   // You: a bullseye one size up, in the clock's ink.
   if(markers.you)drawPixelRows(ctx,HERE_ROWS,mx+markers.you.x-3,my+markers.you.y-3,pal.ink);
   canvas.dataset.here=markers.you?markers.you.x+','+markers.you.y:'';
@@ -326,7 +326,7 @@ function render(){
     if(pal.zoneGlyphs)drawMarkerPixels(ctx,p.icon,x+10,y+7,ink);
     paintText(fitLabel(watchTypeface.text.small,p.label,pal.zoneGlyphs?28:34),x+(pal.zoneGlyphs?16:9),y+12,11,ink);if(delta)paintText((delta>0?'+':'')+delta,x+60,y+12,11,pal.accent,'right');
     paintText(two(time.h)+':'+two(time.m),x+2,y+31,16,pal.ink);if(!use24())paintText(time.ampm[0],x+53,y+30,11,pal.accent);
-    if(animation&&i===activePlace)strokeLine(x,y+35,x+59,y+35,ink);
+    if(pulseNow()?.place===i)strokeLine(x,y+35,x+59,y+35,ink);
   });
   if(band)drawFooter(ctx,settings,footerPage,{...(environmentMode==='sample'?sampleEnvironment(+now):liveData),palette:pal,daylight:daylightPlace()},+now,watchTypeface.lining.small,use24());
   $('panel-preview-label').textContent=settings.footer.enabled?PANEL_PAGES.find(([id])=>id===footerPage)[1]:'Time zones';
@@ -341,11 +341,14 @@ function render(){
   if($('guides').checked){const [x,y]=getPosition(selected),[w,h]=blockSize(settings,selected);ctx.fillStyle='#FF5500';for(let i=0;i<w;i++)if(i%4<2){ctx.fillRect(x+i,y,1,1);ctx.fillRect(x+i,y+h-1,1,1);}for(let i=0;i<h;i++)if(i%4<2){ctx.fillRect(x,y+i,1,1);ctx.fillRect(x+w-1,y+i,1,1);}}
   $('preview-time').textContent=local.format('ddd HH:mm')+(offset?' / PREVIEW':' / LIVE');
   const lunar=moonDescription(now);$('moon-state').textContent=settings.moonIndicator?`${lunar.name} · ${lunar.illumination}% lit. `:'';
-  if(animation){if(performance.now()-animation>1040)animation=0;setTimeout(render,65);}
+  if(animation){if(performance.now()-animation>PULSE_MS*pulseOrder.length)animation=0;setTimeout(render,65);}
 }
 // The marker pulse plays once when the watch face opens and when the bottom
 // panel comes back round to the time zones, as on the watch; never on a timer.
-function startPulse(){const enabled=settings.places.map((p,i)=>p.on?i:-1).filter(i=>i>=0);if(!enabled.length)return;activePlace=enabled[(enabled.indexOf(activePlace)+1)%enabled.length];if(settings.motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches)animation=performance.now();}
+// Each enabled place pulses in turn, about a second apiece.
+const PULSE_MS=1040;
+function startPulse(){pulseOrder=settings.places.map((p,i)=>p.on?i:-1).filter(i=>i>=0);if(pulseOrder.length&&settings.motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches)animation=performance.now();}
+function pulseNow(){if(!animation)return null;const t=performance.now()-animation,k=Math.floor(t/PULSE_MS);return k<pulseOrder.length?{place:pulseOrder[k],frame:Math.floor(t%PULSE_MS/260)}:null;}
 function pulse(){startPulse();render();}
 $('pulse').onclick=pulse;$('guides').onchange=render;$('quick-view').onchange=render;
 $('scale').onclick=()=>{const actual=$('scale').getAttribute('aria-pressed')!=='true';$('scale').setAttribute('aria-pressed',actual);$('scale').textContent=actual?'Enlarge preview':'Actual size';document.querySelector('.preview-stage').classList.toggle('actual',actual);};

@@ -78,7 +78,7 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
   flick alone does not), using Pebble's hardware tap detection (no
   accelerometer sampling). Disable it for a fixed page or timed rotation
   using the existing minute tick.
-- One brief marker pulse on launch and when the bottom panel returns to the time zones; real battery and a pixel
+- A brief marker pulse, each place in turn, on launch and when the bottom panel returns to the time zones; real battery and a pixel
   Bluetooth connection indicator.
 - Persistent configuration and an **offline phone settings page** included in
   the PBW. Hosting a website is not required to configure the watch.
