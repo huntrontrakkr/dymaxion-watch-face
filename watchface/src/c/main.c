@@ -10,6 +10,7 @@
 #include "zone_column.h"
 #include "map_times.h"
 #include "map_markers.h"
+#include "nameplate.h"
 #include "caps.h"
 #include "palette.h"
 #include "generated/defaults.h"
@@ -48,7 +49,7 @@ static bool s_accel_subscribed;
 static int s_map_w,s_map_h;
 static bool s_beside; // place times beside the clock this frame
 static MapTimeSpot s_map_spots[3];
-static uint8_t s_map_key[16];
+static uint8_t s_map_key[18];
 static bool s_map_key_valid;
 static AppTimer *s_map_timer;
 static uint8_t zone_position(void){return (s_display[2]>>4)&3;}
@@ -393,8 +394,13 @@ typedef struct {
   MapHull hulls[MAP_MARKERS_MAX];int hull_count;
   MapRect own[MAP_MARKERS_MAX],inner[MAP_MARKERS_MAX]; // own: leaders cross freely; inner: their lines hidden
   bool grouped[MAP_MARKERS_MAX];
+  bool plate;int plate_x,plate_y; // the Dymaxion nameplate, when shown (screen coordinates)
 } MarkerSpots;
-static void marker_spots(time_t now,MarkerSpots *s){
+static int clock_block_top(int visible){
+  int h=(s_settings[FLAGS]&STACKED)?84:s_display[1]>=4?40:46;
+  return clock_top_for_visible(s_settings[TIME_Y],h,visible);
+}
+static void marker_spots(time_t now,int visible,MarkerSpots *s){
   memset(s,0,sizeof(*s));s->you=-1;int hx,hy;
   for(int i=0;i<3;i++){s->index[i]=-1;if(s_settings[ENABLED]&(1<<i)){
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;s->index[i]=s->n;s->points[s->n++]=(MapMarker){z[8],z[9],2};}}
@@ -402,6 +408,7 @@ static void marker_spots(time_t now,MarkerSpots *s){
   map_markers_layout(s->points,s->n,MAP_TIMES_W,MAP_TIMES_H,s->layout,s->group);
   s->hull_count=map_markers_hulls(s->points,s->layout,s->group,s->n,s->hulls);
   map_markers_own(s->points,s->layout,s->group,s->n,s->hulls,s->hull_count,s->own);
+  s->plate=(s_display[2]&DISPLAY_NAMEPLATE)&&nameplate_spot(s_settings[MAP_Y],clock_block_top(visible),s_settings[FLAGS]&STACKED,&s->plate_x,&s->plate_y);
   for(int i=0;i<s->n;i++){
     for(int j=0;j<s->n;j++)if(j!=i&&s->group[j]==s->group[i])s->grouped[i]=true;
     const MapRect *o=&s->own[i];
@@ -410,9 +417,9 @@ static void marker_spots(time_t now,MarkerSpots *s){
     for(int k=0;k<s->hull_count;k++)if(s->grouped[i]&&!memcmp(&s->hulls[k].outer,o,sizeof(*o)))s->inner[i]=s->hulls[k].inner;
   }
 }
-static void map_times_inputs(time_t now,uint8_t key[16],MapTimePlace places[3],MarkerSpots *spots){
-  bool clock24=is_24(),turn=s_display[2]&ZONE_TIMES_TURN;int here=local_offset_minutes(now);memset(key,0,16);
-  marker_spots(now,spots);
+// Placement inputs from this frame's marker layout.
+static void map_times_inputs(time_t now,uint8_t key[18],MapTimePlace places[3],const MarkerSpots *spots){
+  bool clock24=is_24(),turn=s_display[2]&ZONE_TIMES_TURN;int here=local_offset_minutes(now);memset(key,0,18);
   for(int i=0;i<3;i++){
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;int k=spots->index[i];bool present=k>=0,reserve=present&&zone_offset(z,now)!=here;
     places[i]=(MapTimePlace){present,present?spots->layout[k].x:0,present?spots->layout[k].y:0,{0},present?spots->own[k]:(MapRect){0,0,0,0}};
@@ -421,10 +428,12 @@ static void map_times_inputs(time_t now,uint8_t key[16],MapTimePlace places[3],M
   }
   const MapMarker *you=spots->you>=0?&spots->layout[spots->you]:NULL;
   key[12]=clock24;key[13]=turn;key[14]=you?you->x:0xff;key[15]=you?you->y:0xff;
+  key[16]=spots->plate;key[17]=spots->plate?(uint8_t)(spots->plate_y-s_settings[MAP_Y]+32):0;
 }
 static void map_times_place_now(void *context){
   (void)context;s_map_timer=NULL;
-  time_t now=time(NULL);uint8_t key[16];MapTimePlace places[3];static MarkerSpots spots;map_times_inputs(now,key,places,&spots);
+  time_t now=time(NULL);uint8_t key[18];MapTimePlace places[3];static MarkerSpots spots;
+  marker_spots(now,layer_get_unobstructed_bounds(s_layer).size.h,&spots);map_times_inputs(now,key,places,&spots);
   memcpy(s_map_key,key,sizeof(key));s_map_key_valid=true;memset(s_map_spots,0,sizeof(s_map_spots));
   uint8_t *blocked=calloc(2,MAP_TIMES_MASK_BYTES);if(!blocked)return;
   ResHandle resource=resource_get_handle(RESOURCE_ID_MAP_LANDSCAPE);uint8_t row[MAP_TIMES_W*4];
@@ -432,12 +441,16 @@ static void map_times_place_now(void *context){
     if(resource_load_byte_range(resource,y*MAP_TIMES_W*4,row,sizeof(row))!=sizeof(row)){free(blocked);return;}
     for(int x=0;x<MAP_TIMES_W;x++)if(row[x*4+3]&3){int i=y*MAP_TIMES_W+x;blocked[i>>3]|=1u<<(i&7);}
   }
-  map_times_place(blocked,places,spots.own,spots.n,spots.layout,spots.n,s_display[2]&ZONE_TIMES_TURN,blocked+MAP_TIMES_MASK_BYTES,s_map_spots);
+  // Everyone's areas, and the nameplate's, in map coordinates.
+  MapRect obstacles[MAP_MARKERS_MAX+1];int count=spots.n;memcpy(obstacles,spots.own,sizeof(MapRect)*spots.n);
+  if(spots.plate){int mx=s_settings[MAP_X],my=s_settings[MAP_Y];
+    obstacles[count++]=(MapRect){(int16_t)(spots.plate_x-1-mx),(int16_t)(spots.plate_y-1-my),(int16_t)(spots.plate_x+WORDMARK_WIDTH-mx),(int16_t)(spots.plate_y+WORDMARK_HEIGHT-my)};}
+  map_times_place(blocked,places,obstacles,count,spots.layout,spots.n,s_display[2]&ZONE_TIMES_TURN,blocked+MAP_TIMES_MASK_BYTES,s_map_spots);
   free(blocked);layer_mark_dirty(s_layer);
 }
 // Whether the cached placement matches the current inputs; if not, schedules it.
-static bool map_times_ready(time_t now){
-  uint8_t key[16];MapTimePlace places[3];static MarkerSpots spots;map_times_inputs(now,key,places,&spots);
+static bool map_times_ready(time_t now,const MarkerSpots *spots){
+  uint8_t key[18];MapTimePlace places[3];map_times_inputs(now,key,places,spots);
   if(s_map_key_valid&&!memcmp(key,s_map_key,sizeof(key)))return true;
   if(!s_map_timer)s_map_timer=app_timer_register(10,map_times_place_now,NULL);
   return false;
@@ -454,7 +467,7 @@ static void map_pixel(void *context,int x,int y){
 static void map_outline(void *context,int x,int y){MapPen *p=context;graphics_fill_rect(p->ctx,GRect(p->ox+x-1,p->oy+y-1,3,3),0,GCornerNone);}
 // Outlined leaders first, then their lines and the tiny times, in each place's color.
 static void draw_map_times(GContext *ctx,time_t now,const struct tm *local,int mx,int my,const MarkerSpots *spots){
-  if(!map_times_ready(now))return;
+  if(!map_times_ready(now,spots))return;
   graphics_context_set_fill_color(ctx,color(0));
   for(int i=0;i<3;i++)if(s_map_spots[i].ok){
     MapPen pen={ctx,mx,my,NULL};
@@ -515,7 +528,7 @@ static void update_proc(Layer *layer,GContext *ctx) {
   uint8_t when=(s_display[2]>>2)&3;
   // Clearings (a group's hull inside) first, then map times, then hull outlines
   // (so a grouped leader starts at its hull), then glyphs.
-  static MarkerSpots spots;marker_spots(now,&spots);
+  static MarkerSpots spots;marker_spots(now,visible,&spots);
   for(int i=0;i<3;i++){int k=spots.index[i];if(k>=0&&!spots.grouped[k])pixel_rows(ctx,MARKER_HALO,7,7,mx+spots.layout[k].x-3,my+spots.layout[k].y-3,color(0));}
   // Your bullseye keeps its clearing even in a group: it stands proud of the hull.
   if(spots.you>=0)pixel_rows(ctx,HERE_HALO,HERE_SIZE+2,HERE_SIZE+2,mx+spots.layout[spots.you].x-HERE_SIZE/2-1,my+spots.layout[spots.you].y-HERE_SIZE/2-1,color(0));
@@ -531,6 +544,8 @@ static void update_proc(Layer *layer,GContext *ctx) {
     if(i==s_selected&&s_frame<16)pixel_rows(ctx,PULSE_GLYPHS[s_frame/4],PULSE_SIZE,PULSE_SIZE,pos.x-8,pos.y-8,mark_color(i));
   }
   // You: a bullseye one size up, in the clock's ink.
+  // The Dymaxion nameplate, in the accent color, when there is room.
+  if(spots.plate){graphics_context_set_stroke_color(ctx,color(7));HullPen plate={ctx,0,0};nameplate_pixels(spots.plate_x,spots.plate_y,hull_pixel,&plate);}
   if(spots.you>=0)pixel_rows(ctx,HERE_GLYPH,HERE_SIZE,HERE_SIZE,mx+spots.layout[spots.you].x-HERE_SIZE/2,my+spots.layout[spots.you].y-HERE_SIZE/2,color(6));
   s_beside=s_caps&&zones_beside(s_display[1],s_settings[FLAGS]&STACKED,when,zone_position(),panel_zones);
   draw_time(ctx,&local,now,visible);

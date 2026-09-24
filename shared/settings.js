@@ -60,7 +60,7 @@ const LEGACY_PRESETS=[{
 }];
 export function defaults() {
   return {version:1,markerSet:2,theme:0,customPalettes:[],customPalette:null,format:1,dayNight:true,edges:false,lights:true,motion:true,sun:true,moonIndicator:true,connectionBuzz:'disconnect',
-    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',leadingZero:true,mapBackground:'none',zoneTimes:'panel',zonePosition:'left',mapTimesTurn:false,location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
+    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',leadingZero:true,mapBackground:'none',zoneTimes:'panel',zonePosition:'left',mapTimesTurn:false,nameplate:false,location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
 }
 // Quick View: a clock the peek would cover moves up to sit just above it,
 // never into the status line (clock_top_for_visible in settings.c).
@@ -132,6 +132,8 @@ export function validateSettings(input,zoneExists) {
   out.zonePosition=input.zonePosition??'left';
   if(input.mapTimesTurn!==undefined&&typeof input.mapTimesTurn!=='boolean')throw new Error('Invalid map-time turning.');
   out.mapTimesTurn=input.mapTimesTurn??false;
+  if(input.nameplate!==undefined&&typeof input.nameplate!=='boolean')throw new Error('Invalid nameplate.');
+  out.nameplate=input.nameplate??false;
   const position=(key,pos)=>{
     if(!Array.isArray(pos)||pos.length!==2||!pos.every(Number.isFinite))throw new Error('Invalid position.');
     return clampPosition(out,key,pos);

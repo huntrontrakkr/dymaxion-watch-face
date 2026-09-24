@@ -14,6 +14,7 @@
 enum {ZONE_TIMES_PANEL,ZONE_TIMES_WHEN_HIDDEN,ZONE_TIMES_ALWAYS,ZONE_TIMES_COUNT};
 enum {ZONE_POSITION_LEFT,ZONE_POSITION_RIGHT,ZONE_POSITION_MAP,ZONE_POSITION_COUNT};
 #define ZONE_TIMES_TURN 64
+#define DISPLAY_NAMEPLATE 128
 typedef struct {char label[8],time[6],suffix[2],day[4];int label_x,time_x,suffix_x,day_x;} ZoneRow;
 typedef int (*ZoneMeasure)(const char *text,const void *font);
 // Chamfer (4) and the system fonts (5-9) leave room; Broad and Span do not.

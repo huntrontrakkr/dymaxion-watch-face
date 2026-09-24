@@ -30,6 +30,8 @@ test('display preferences migrate, validate, and travel separately from the stab
   assert.deepEqual([...encodeDisplay({...defaults(),zoneTimes:'always',zonePosition:'right'})],[2,4,24,0]);
   assert.deepEqual([...encodeDisplay({...defaults(),zoneTimes:'always',zonePosition:'map'})],[2,4,40,0]);
   assert.throws(()=>validateSettings({...s,zonePosition:'top'},zoneExists));
+  assert.equal(defaults().nameplate,false,'the nameplate is off by default');
+  assert.deepEqual([...encodeDisplay({...defaults(),nameplate:true})],[2,4,128,0],'bit 7: the Dymaxion nameplate');
   assert.equal(validateSettings({...s,zoneTimes:'always'},zoneExists).zoneTimes,'always');
   assert.equal(validateSettings(s,zoneExists).zoneTimes,'panel','older files keep place times in the panel');
   assert.throws(()=>validateSettings({...s,zoneTimes:'top'},zoneExists));

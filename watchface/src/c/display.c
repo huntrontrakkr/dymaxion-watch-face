@@ -9,8 +9,8 @@
 bool display_valid(const uint8_t *p,size_t length){
   if(!p||length!=DISPLAY_SIZE||p[1]>9)return false;
   // Version 2 byte 2: bit 1 no leading zero, bits 2-3 when place times also
-  // show outside the panel, bits 4-5 where, bit 6 map times may turn.
-  if(p[0]==2)return !(p[2]&~0x7e)&&((p[2]>>2)&3)<ZONE_TIMES_COUNT&&((p[2]>>4)&3)<ZONE_POSITION_COUNT&&p[3]<MAP_BACKGROUND_COUNT;
+  // show outside the panel, bits 4-5 where, bit 6 map times may turn, bit 7 the nameplate.
+  if(p[0]==2)return !(p[2]&~0xfe)&&((p[2]>>2)&3)<ZONE_TIMES_COUNT&&((p[2]>>4)&3)<ZONE_POSITION_COUNT&&p[3]<MAP_BACKGROUND_COUNT;
   return p[0]==1&&p[2]<=3&&p[3]<64&&(p[3]&3)<3&&((p[3]&3)||!p[3]);
 }
 bool display_normalize(uint8_t out[DISPLAY_SIZE],const uint8_t *data,size_t length){

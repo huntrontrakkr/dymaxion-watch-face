@@ -103,5 +103,16 @@ try{
   await page.getByLabel('Numerical display',{exact:true}).selectOption('chamfer');
   await screen.screenshot({path:'test-results/place-times-map.png'});
   await page.getByLabel('Place times position',{exact:true}).selectOption('left');await page.getByLabel('Place times',{exact:true}).selectOption('panel');
-  assert.deepEqual(errors,[]);console.log('PASS: actual and manual city captions, hourly lookup cache, 12-hour and stacked time, Span persistence, retired triangular display, system fonts, the map background, and place times beside the clock and on the map.');
+  // The Dymaxion nameplate: off by default, between the clock and the map in Meridian.
+  const gap=()=>screen.evaluate(c=>[...c.getContext('2d').getImageData(0,61,200,18).data]);const bareGap=await gap();
+  assert.equal(await page.getByLabel('Dymaxion nameplate',{exact:true}).isChecked(),false);assert.equal(await screen.getAttribute('data-nameplate'),'');
+  await page.getByLabel('Dymaxion nameplate',{exact:true}).check();
+  assert.equal(await screen.getAttribute('data-nameplate'),'39,62','centred, its last row a pixel above the map');assert.notDeepEqual(await gap(),bareGap);
+  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).nameplate,true);
+  await screen.screenshot({path:'test-results/nameplate.png'});
+  await page.getByRole('tab',{name:'Composition',exact:true}).click();await page.getByRole('button',{name:'Horizon',exact:true}).click();
+  assert.equal(await screen.getAttribute('data-nameplate'),'','Horizon has no room: hidden');
+  await page.getByRole('button',{name:'Meridian',exact:true}).click();await page.getByRole('tab',{name:'Character',exact:true}).click();
+  await page.getByLabel('Dymaxion nameplate',{exact:true}).uncheck();
+  assert.deepEqual(errors,[]);console.log('PASS: actual and manual city captions, hourly lookup cache, 12-hour and stacked time, Span persistence, retired triangular display, system fonts, the map background, and place times beside the clock and on the map, and the nameplate.');
 }finally{await browser.close();}

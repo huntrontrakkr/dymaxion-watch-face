@@ -21,6 +21,7 @@ import {PANEL_PAGES} from '../shared/panel-settings.js';
 import {cityControls} from '../shared/city-controls.js';
 import {cityIsUsable,cityHasPosition,clockCaption,mapPixel} from '../shared/city.js';
 import {layoutMarkers,markerClearance,hullPixels} from '../shared/map-markers.js';
+import {nameplateSpot,nameplateObstacle,NAMEPLATE_ROWS} from '../shared/nameplate.js';
 import {locationService} from '../tools/location-service.js';
 import {displayControls} from '../shared/display-controls.js';
 import {zoneColumn,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
@@ -55,7 +56,7 @@ let footerPage=settings.footer.home,panelChanged=Date.now(),environmentMode='sam
 let currentCity={name:'Norfolk',sample:true,lat:36.9,lon:-76.3};
 const cityLocation=locationService({getSettings:()=>settings,storage:localStorage,send:city=>{currentCity=city;render();}});
 const cityEditor=cityControls($('city-controls'),()=>settings,value=>{settings=validateSettings({...settings,location:value},zoneExists);save();},()=>cityLocation.refresh());
-const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn};sync();save();});
+const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,nameplate:value.nameplate};sync();save();});
 const paletteEditor=paletteControls($('palette-controls'),()=>settings,patch=>{settings=validateSettings({...settings,...patch},zoneExists);sync();save();});
 const environment=environmentService({getSettings:()=>settings,storage:localStorage,send:(kind,data)=>{liveData[kind]=data;render();}});
 const panelEditor=panelControls($('panel-controls'),()=>settings,footer=>{
@@ -264,7 +265,10 @@ function render(){
   const panelZones=(!band||footerPage==='zones')&&settings.places.some((p,i)=>p.on&&settings.zones[i][1]+36<=visible);
   const beside=zonesBeside(settings,panelZones);
   const onMap=zonesOnMap(settings,panelZones);canvas.dataset.zonesOnMap=String(onMap);
-  const markers=markerSpots();
+  const [tx,timeY]=settings.time,[tw,th]=blockSize(settings,'time'),ty=clockTopForVisible(timeY,th,visible);
+  // The Dymaxion nameplate, between the clock and the map when there is room.
+  const plate=settings.nameplate?nameplateSpot({mapY:my,clockTop:ty,stacked:settings.stacked}):null;
+  const markers=markerSpots();if(plate)markers.obstacles=[...markers.obstacles,nameplateObstacle(plate,mx,my)];
   // Clearings (a group's hull ground) first, then map times, then hull outlines
   // (so a grouped leader starts at its hull), then glyphs.
   markers.places.forEach(s=>{if(s&&!s.grouped)drawPixelRows(ctx,MARKER_HALO_ROWS,mx+s.x-3,my+s.y-3,pal.bg);});
@@ -278,7 +282,9 @@ function render(){
   // You: a bullseye one size up, in the clock's ink.
   if(markers.you)drawPixelRows(ctx,HERE_ROWS,mx+markers.you.x-3,my+markers.you.y-3,pal.ink);
   canvas.dataset.here=markers.you?markers.you.x+','+markers.you.y:'';
-  const [tx,timeY]=settings.time,[tw,th]=blockSize(settings,'time'),ty=clockTopForVisible(timeY,th,visible),{h,m:minute,ampm}=clockParts(local);
+  if(plate)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
+  canvas.dataset.nameplate=plate?plate.x+','+plate.y:'';
+  const {h,m:minute,ampm}=clockParts(local);
   const city=settings.location.mode==='manual'?settings.location.name:currentCity.sample?currentCity.name:cityIsUsable(currentCity)?currentCity.name+(currentCity.stale||Date.now()/1000-currentCity.fetched>7200?'?':''):'';
   const caption=clockCaption(settings.stacked?'':local.format('ddd DD MMM'),city,use24()?'':ampm,tw-4,t=>textWidth(watchTypeface.text.small,t));
   // Status line: lining capitals, date and city at the top left.
