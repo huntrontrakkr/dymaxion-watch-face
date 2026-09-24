@@ -319,7 +319,10 @@ static int clock_layout(int visible,bool *plate,int *px,int *py){
 }
 static bool motion_allowed(void){return (s_settings[FLAGS]&MOTION)&&s_battery.charge_percent>20&&s_focused;}
 static void motion_step(void *context){(void)context;s_motion_timer=NULL;layer_mark_dirty(s_layer);}
+// While the minute animation runs, its redraws carry the transitions too:
+// one frame timer at a time, however many animations overlap.
 static void motion_continue(void){
+  if(s_clock_timer){if(s_motion_timer){app_timer_cancel(s_motion_timer);s_motion_timer=NULL;}return;}
   bool tray=s_tray_active&&clock_milliseconds()-s_tray_started<TRAY_MS,beside=s_beside_p!=(s_beside_to?1000:0);
   if((tray||beside)&&!s_motion_timer)s_motion_timer=app_timer_register(TRANSITION_FRAME_MS,motion_step,NULL);
 }

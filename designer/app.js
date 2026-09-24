@@ -299,8 +299,10 @@ function render(){
   else{
     const value=hourText(h,settings.leadingZero)+':'+two(minute);
     // Every horizontal style animates its minute change through the same shrink.
+    // The glide beside the place times moves the figures, not the animation, so a
+    // minute change during the glide still animates (as on the watch).
     const style=settings.clockDisplay;
-    minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset,beside,settings.zonePosition].join('/'),settings.motion&&!reducedMotion.matches&&!document.hidden,style);
+    minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset].join('/'),settings.motion&&!reducedMotion.matches&&!document.hidden,style);
     // Beside the place times, the figures shift left and the column fills the
     // right: the clock glides over first, then the column fades in.
     drawFlipPixels(ctx,minuteClock.frame(),tx+besideShift(besideP,zoneColumn(settings.zonePosition).shift),ty+flipOffset(style),{ink:pal.ink,background:pal.bg});
@@ -352,7 +354,8 @@ function render(){
 // next page, and the clock makes room before the place times fade in beside it.
 const motionOn=()=>settings.motion&&!reducedMotion.matches&&!document.hidden;
 let motionTimer=0,trayOld=null,trayStarted=0,besideState=null;
-function scheduleMotion(){if(!motionTimer)motionTimer=setTimeout(()=>{motionTimer=0;render();},FRAME_MS);}
+// While the minute animation runs, its frames carry the transitions too.
+function scheduleMotion(){if(!motionTimer&&!minuteClock.active)motionTimer=setTimeout(()=>{motionTimer=0;render();},FRAME_MS);}
 // The canvas still shows the page being left: keep its pixels to slide out.
 function trayStart(){trayOld=motionOn()&&settings.footer.enabled&&!$('quick-view').checked?ctx.getImageData(0,TRAY_Y,200,TRAY_H):null;trayStarted=performance.now();}
 function trayCompose(band){
