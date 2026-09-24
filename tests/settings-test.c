@@ -18,6 +18,15 @@ int main(int argc,char **argv) {
   assert(clock_top_for_visible(20,84,177)==20);
   assert(clock_top_for_visible(22,40,40)==18);
   assert(clock_top_for_visible(134,46,150)==102);
+  // Bluetooth buzz: disconnect only by default, reconnect when asked, off when off,
+  // and a flapping link buzzes at most once per BUZZ_REST_S.
+  {BuzzState b={0};
+   assert(connection_buzz(&b,false,1000,BUZZ_DISCONNECT));
+   assert(!connection_buzz(&b,false,1000+BUZZ_REST_S-1,BUZZ_DISCONNECT));
+   assert(!connection_buzz(&b,true,5000,BUZZ_DISCONNECT));
+   assert(connection_buzz(&b,false,5000,BUZZ_DISCONNECT));
+   BuzzState both={0};assert(connection_buzz(&both,true,1000,BUZZ_DISCONNECT|BUZZ_RECONNECT));
+   BuzzState off={0};assert(!connection_buzz(&off,false,1000,0));assert(!connection_buzz(&off,true,1000,BUZZ_RECONNECT));}
   assert(argc==3);uint8_t bytes[SETTINGS_SIZE],bad[SETTINGS_SIZE];
   for(int i=1;i<argc;i++) {FILE *f=fopen(argv[i],"rb");assert(f);assert(fread(bytes,1,sizeof(bytes),f)==sizeof(bytes));fclose(f);assert(settings_valid(bytes,sizeof(bytes)));}
   assert(!settings_valid(bytes,231));assert(!settings_valid(bytes,233));

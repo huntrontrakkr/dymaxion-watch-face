@@ -400,7 +400,14 @@ static void battery_changed(BatteryChargeState state) {
   configure_shake();
   layer_mark_dirty(s_layer);
 }
-static void connection_changed(bool connected) {s_connected=connected;layer_mark_dirty(s_layer);if(connected)request_sync();}
+static BuzzState s_buzz;
+static void connection_changed(bool connected) {
+  // Only real changes arrive here, never the state at launch; Quiet Time mutes the buzz.
+  if(connection_buzz(&s_buzz,connected,(uint32_t)time(NULL),s_settings[FLAGS])&&!quiet_time_is_active()){
+    if(connected)vibes_short_pulse();else vibes_double_pulse();
+  }
+  s_connected=connected;layer_mark_dirty(s_layer);if(connected)request_sync();
+}
 static void received(DictionaryIterator *iter,void *context) {
   bool changed=panels_receive(iter);
   Tuple *display=dict_find(iter,MESSAGE_KEY_DISPLAY);

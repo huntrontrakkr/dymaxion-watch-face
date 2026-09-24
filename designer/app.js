@@ -148,13 +148,14 @@ function placesUI(){
 markerGallery();
 function sync(){
   for(const key of ['dayNight','edges','lights','sun','motion','stacked','moonIndicator'])$(key).checked=settings[key];
-  $('format').value=settings.format;
+  $('format').value=settings.format;$('connectionBuzz').value=settings.connectionBuzz;
   document.querySelectorAll('[data-theme]').forEach(b=>b.setAttribute('aria-pressed',String(settings.customPalette===null&&+b.dataset.theme===settings.theme)));
   const current=activePreset(settings);document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.preset===current)));
   positionFields();placesUI();panelEditor.refresh();cityEditor.refresh();displayEditor.refresh();paletteEditor.refresh();
 }
 for(const key of ['dayNight','edges','lights','sun','motion','stacked','moonIndicator'])$(key).onchange=()=>{settings[key]=$(key).checked;move('time',settings.time);positionFields();displayEditor.refresh();save();};
 $('format').onchange=()=>{settings.format=+$('format').value;save();};
+$('connectionBuzz').onchange=()=>{settings.connectionBuzz=$('connectionBuzz').value;save();};
 $('element').onchange=()=>{selected=$('element').value;positionFields();$('guides').checked=true;render();};
 for(const axis of ['x','y'])$('pos-'+axis).onchange=()=>{const value=Number($('pos-'+axis).value);if(!Number.isFinite(value))return;const p=getPosition(selected).slice();p[axis==='x'?0:1]=value;move(selected,p);positionFields();save();};
 const tabs=[...document.querySelectorAll('[role=tab]')];

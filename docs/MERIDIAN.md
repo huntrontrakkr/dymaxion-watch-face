@@ -67,7 +67,7 @@ composition you are in.
   the status-line capitals pixel for pixel.
 - Display code 4 is Chamfer; code 3 remains the retired LCD style, which the
   watch still migrates to broad. Flag 64 in the settings packet briefly
-  switched the status line and is now unused: the status line is always on.
+  switched the status line; it now asks for a buzz on Bluetooth disconnect.
 
 ## Reproduce
 

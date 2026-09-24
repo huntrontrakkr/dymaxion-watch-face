@@ -10,7 +10,7 @@ configuration, then persists it as one record under key 1 (below Pebble's
 | --- | --- |
 | 0 | Version = 7 |
 | 1 | Theme, 0–13; IDs listed in `PALETTES.md` |
-| 2 | Flags: day/night 1, edges 2, lights 4, motion 8, sun 16, stacked time 32 |
+| 2 | Flags: day/night 1, edges 2, lights 4, motion 8, sun 16, stacked time 32, buzz on disconnect 64, also buzz on reconnect 128 |
 | 3 | Format: device 0, 24h 1, 12h 2 |
 | 4 | Reserved orientation byte; always 0 |
 | 5–6 | Local time x/y |

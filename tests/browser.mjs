@@ -109,6 +109,7 @@ try{
   assert.match(await mobile.locator('[data-color-label]').first().textContent(),/#AA5500/);
   await mobile.getByText('Import settings from the workshop',{exact:true}).click();await mobile.locator('#json').fill(JSON.stringify({...defaults(),theme:3}));await mobile.getByRole('button',{name:'Load composition',exact:true}).click();assert.equal(await mobile.locator('#theme').inputValue(),'3');
   await mobile.getByLabel('Flick to change panels',{exact:true}).uncheck();
+  await mobile.getByLabel('Buzz on Bluetooth',{exact:true}).selectOption('both');
   await mobile.getByLabel('Numerical display',{exact:true}).selectOption('span');
   await mobile.getByLabel('Clock location',{exact:true}).selectOption('manual');
   await mobile.getByLabel('Clock city name',{exact:true}).fill('Norfolk');await mobile.getByLabel('Clock city name',{exact:true}).press('Tab');
@@ -116,6 +117,7 @@ try{
   await mobile.locator('#theme').selectOption('2');
   assert.equal(await mobile.locator('[data-key=label]').first().inputValue(),'HOME','editing panels must not detach other phone controls from saved settings');
   assert.equal(await mobile.getByLabel('Flick to change panels',{exact:true}).isChecked(),false);
+  assert.equal(await mobile.getByLabel('Buzz on Bluetooth',{exact:true}).inputValue(),'both');
   assert.equal(await mobile.getByLabel('Numerical display',{exact:true}).inputValue(),'span');
   assert.equal(await mobile.getByLabel('Clock city name',{exact:true}).inputValue(),'Norfolk');
   await mobile.screenshot({path:'test-results/offline-phone-settings.png',fullPage:true});

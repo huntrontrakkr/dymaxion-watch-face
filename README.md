@@ -43,6 +43,8 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
 - A configurable 44-pixel bottom band: time zones, a weather chart, a two-week
   calendar, humidity and NOAA tide predictions. Choose the pages, their order,
   colors, units, chart scales and starting page in **Panels**.
+- Optional buzz when the phone disconnects (and, if chosen, reconnects);
+  silent in Quiet Time and at most once every two minutes on a flaky link.
 - Quick View aware: when a timeline peek covers the bottom of the screen, the
   bottom band steps aside and the clock stays visible above the card.
 - Optional wrist flicks to change panels (two by default, so the backlight

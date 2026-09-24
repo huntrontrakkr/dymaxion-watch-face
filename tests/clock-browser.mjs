@@ -29,6 +29,11 @@ try{
   await study.getByLabel('Show unlit triangles',{exact:true}).uncheck();const initial=await study.locator('#geometry').screenshot();await study.getByLabel('Waist',{exact:true}).uncheck();assert.notDeepEqual(await study.locator('#geometry').screenshot(),initial);
   await study.getByLabel('Waist',{exact:true}).check();await study.getByLabel('Show unlit triangles',{exact:true}).check();await study.getByLabel('Pixel size',{exact:true}).selectOption('3');await study.screenshot({path:'test-results/triangular-display-study.png',fullPage:true});
   await study.setViewportSize({width:390,height:844});assert(await study.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'proof should scroll inside its container on a phone');
+  // Bluetooth buzz is a Character setting that persists.
+  await page.getByRole('tab',{name:'Character',exact:true}).click();
+  assert.equal(await page.getByLabel('Buzz on Bluetooth',{exact:true}).inputValue(),'disconnect');
+  await page.getByLabel('Buzz on Bluetooth',{exact:true}).selectOption('off');
+  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).connectionBuzz,'off');
   // Quick View: the bottom band hides under the card and the clock stays clear of it.
   await page.getByRole('tab',{name:'Composition',exact:true}).click();await page.getByRole('button',{name:'Meridian',exact:true}).click();
   const clockTop=()=>screen.getAttribute('data-clock-top');const before=await clockTop();

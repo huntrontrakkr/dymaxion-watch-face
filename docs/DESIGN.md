@@ -179,6 +179,14 @@ over the lower edge of the map but never into the status line
 clear of it. The workshop's **Quick View** switch previews this with an
 approximate 51-pixel card; the watch uses the real card height.
 
+## Bluetooth buzz
+
+When the phone connection drops, the watch gives a double pulse; optionally a
+single short pulse when it returns, or no buzz at all (**Buzz on Bluetooth**).
+Nothing buzzes during Quiet Time or at launch, and a flapping link buzzes at
+most once every two minutes (`connection_buzz`). The Bluetooth mark in the
+status line shows the state either way.
+
 ## Motion and time
 
 The selected place gets a one-second expanding ring on launch/settings changes.

@@ -140,7 +140,7 @@ test('lunar phase selects the eight familiar glyphs near published primary phase
 test('full-width clock and top-bar moon migrate old widget settings',()=>{
   const s=defaults();assert.deepEqual(s.time,PRESETS.meridian.time);assert.equal(s.moonIndicator,true);
   assert.equal('statusLine' in s,false,'the status line is the only header');assert.equal(s.clockDisplay,'chamfer');
-  assert.equal(encodeSettings(s)[2]&64,0,'flag 64 is retired');
+  assert.equal(encodeSettings({...s,connectionBuzz:'off'})[2]&64,0,'flag 64 no longer means the status line; it is the disconnect buzz');
   const packet=encodeSettings(s);assert.equal(packet[0],7);assert.equal(packet[16+17],1);
   assert.equal(packet[16+72+17],0);assert.equal(packet[16+71],0);assert.ok(packet[16+70]>=0xc0);
   const disabled=encodeSettings({...s,moonIndicator:false});assert.equal(disabled[16+17],0);
@@ -169,6 +169,14 @@ test('old saved presets adopt the enlarged map; custom arrangements keep their p
   assert.deepEqual(flattened.map,PRESETS.meridian.map);
   assert.equal(flattened.theme,2);
   assert.deepEqual(flattened.places,oldPortrait.places);
+});
+test('Bluetooth buzz defaults to disconnect and travels as flags 64 and 128',()=>{
+  const s=defaults();assert.equal(s.connectionBuzz,'disconnect');
+  assert.equal(encodeSettings(s)[2]&192,64);
+  assert.equal(encodeSettings({...s,connectionBuzz:'both'})[2]&192,192);
+  assert.equal(encodeSettings({...s,connectionBuzz:'off'})[2]&192,0);
+  const old={...s};delete old.connectionBuzz;assert.equal(validateSettings(old,zoneExists).connectionBuzz,'disconnect');
+  assert.throws(()=>validateSettings({...s,connectionBuzz:'loud'},zoneExists));
 });
 test('Quick View keeps the clock above the card and below the status line',async()=>{
   const {clockTopForVisible}=await import('../shared/settings.js');
