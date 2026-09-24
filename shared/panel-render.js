@@ -14,7 +14,7 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
   const pal=data.palette,w=f.weather,c=panelColors(settings);
   const text=(t,x,y,color=pal.ink,align='left')=>drawBitmapText(ctx,font,String(t),x,y,color,align);
   const rect=(x,y,width,height,color)=>{ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),Math.round(width),Math.round(height));};
-  const line=(x,y,xx,yy,color)=>drawPixelLine(ctx,x,y,xx,yy,color);
+  const line=(x,y,xx,yy,color,dotted=false)=>drawPixelLine(ctx,x,y,xx,yy,color,dotted);
   if(page!=='zones')rect(0,184,200,44,pal.bg);
   const timeLabel=minute=>{const h=Math.floor(minute/60),m=String(minute%60).padStart(2,'0');return clock24?`${String(h).padStart(2,'0')}:${m}`:`${h%12||12}:${m}${h<12?'A':'P'}`;};
   if(page==='calendar'){
@@ -38,7 +38,7 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       else if(humidity&&w.humidityScale==='percent'){lo=0;hi=1000;}
       else if(!tide&&!humidity&&w.temperatureScale==='fixed'){lo=w.temperatureMin*10;hi=w.temperatureMax*10;}
       else{const pad=Math.max(10,Math.trunc((hi-lo)/8));lo-=pad;hi+=pad;if(humidity){lo=Math.max(0,lo);hi=Math.min(1000,hi);}}
-      const n=values[0],title=tide?`${series.label} ${(n/100).toFixed(1)}${f.tide.unit.toUpperCase()}`:humidity?`RH ${Math.round(n/10)}%`:`${series.label} ${Math.round(n/10)}${w.temperatureUnit.toUpperCase()}`;
+      const n=values[0],title=tide?`${series.label} ${(n/100).toFixed(1)}${f.tide.unit.toUpperCase()}`:humidity?`RH ${Math.round(n/10)}%`:`${series.label} ${Math.round(n/10)}${w.temperatureUnit.toUpperCase()}${w.humidityLine?` RH ${samples[0].humidity}%`:''}`;
       const first=tide?series.high:series.rise,second=tide?series.low:series.set,usefirst=first>=now/1000&&(second<now/1000||first<second),event=usefirst?first:second;
       const stale=series.error||now/1000-series.fetched>(tide?12*3600:w.refreshMinutes*120);
       // Sunrise and sunset come from the daylight place (the wearer's location,
@@ -65,6 +65,8 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       });
       if(w.grid)for(let xx=layout.left;xx<=layout.right;xx+=4)rect(xx,Math.trunc((layout.top+bottom)/2),1,1,pal.edge);
       if(tide&&f.tide.zeroLine&&lo<0&&hi>0)for(let xx=layout.left;xx<=layout.right;xx+=4)rect(xx,y(0),Math.min(2,layout.right-xx+1),1,pal.edge);
+      // Humidity joins the weather chart as a dotted line on its own fixed 0-100% scale.
+      if(!tide&&!humidity&&w.humidityLine){const h=p=>chartY(p.humidity*10,0,1000,layout.top,bottom);for(let i=1;i<samples.length;i++)line(x(i-1),h(samples[i-1]),x(i),h(samples[i]),c.humidity,true);}
       for(let i=1;i<samples.length;i++)line(x(i-1),y(values[i-1]),x(i),y(values[i]),ink);
       if(w.rangeLabels){drawAxisText(ctx,upper,layout.left-3,layout.top,pal.ink,'right');drawAxisText(ctx,lower,layout.left-3,bottom-6,pal.ink,'right');}
       line(layout.left,layout.axis,layout.right,layout.axis,pal.edge);

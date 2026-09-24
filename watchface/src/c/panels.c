@@ -17,6 +17,12 @@ static GColor color(int i){return (GColor){.argb=s_palette[i]};}
 static GColor custom(int i){return (GColor){.argb=s_footer[i]};}
 static void rect(GContext *ctx,int x,int y,int w,int h,GColor c){graphics_context_set_fill_color(ctx,c);graphics_fill_rect(ctx,GRect(x,y,w,h),0,GCornerNone);}
 static void line(GContext *ctx,int x,int y,int xx,int yy,GColor c){graphics_context_set_stroke_color(ctx,c);graphics_draw_line(ctx,GPoint(x,y),GPoint(xx,yy));}
+// Dotted line, even columns only, as drawPixelLine(..., dotted) in shared/pixels.js.
+static void dotted_line(GContext *ctx,int x,int y,int xx,int yy,GColor c){
+  graphics_context_set_stroke_color(ctx,c);
+  int dx=abs(xx-x),sx=x<xx?1:-1,dy=-abs(yy-y),sy=y<yy?1:-1,error=dx+dy;
+  for(;;){if(x%2==0)graphics_draw_pixel(ctx,GPoint(x,y));if(x==xx&&y==yy)break;int twice=2*error;if(twice>=dy){error+=dy;x+=sx;}if(twice<=dx){error+=dx;y+=sy;}}
+}
 typedef struct {GContext *ctx;GColor color;} PanelPen;
 static void panel_span(void *context,int x,int y,int length){PanelPen *pen=context;line(pen->ctx,x,y,x+length-1,y,pen->color);}
 // Panel text uses the status line's lining capitals (Draft Micro text only if
@@ -119,6 +125,7 @@ static void graph_draw(GContext *ctx,time_t now){
   int n=metric(p,start,tide,humidity);
   if(tide){decimal(value,sizeof(value),(n+(n<0?-5:5))/10);snprintf(title,sizeof(title),"%.7s %s%s",(const char *)p+28,value,s_footer[F_TIDE_FEET]?"FT":"M");}
   else if(humidity)snprintf(title,sizeof(title),"RH %d%%",n/10);
+  else if(s_footer[F_HUMID_LINE])snprintf(title,sizeof(title),"%.7s %d%c RH %d%%",(const char *)p+24,(n+(n<0?-5:5))/10,s_footer[F_FAHRENHEIT]?'F':'C',p[32+start*8+2]);
   else snprintf(title,sizeof(title),"%.7s %d%c",(const char *)p+24,(n+(n<0?-5:5))/10,s_footer[F_FAHRENHEIT]?'F':'C');
   right[0]=0;uint32_t first=read_u32(p+12),second=read_u32(p+16);bool usefirst=first>=(uint32_t)now&&(second<(uint32_t)now||first<second);uint32_t event=usefirst?first:second;
   bool stale=(p[2]&2)||((uint32_t)now>read_u32(p+4)+(tide?12*3600:s_footer[F_REFRESH]*120));
@@ -162,6 +169,9 @@ static void graph_draw(GContext *ctx,time_t now){
   }
   if(s_footer[F_GRID])for(int x=layout.left;x<=layout.right;x+=4)rect(ctx,x,(layout.top+layout.bottom)/2,1,1,color(5));
   if(tide&&s_footer[F_TIDE_ZERO]&&lo<0&&hi>0)for(int x=layout.left;x<=layout.right;x+=4)rect(ctx,x,chart_y(0,lo,hi),MIN(2,layout.right-x+1),1,color(5));
+  // Humidity joins the weather chart as a dotted line on its own fixed 0-100% scale.
+  if(!tide&&!humidity&&s_footer[F_HUMID_LINE])for(int i=1;i<count;i++)
+    dotted_line(ctx,chart_x(layout,i-1),chart_y(p[32+(start+i-1)*8+2]*10,0,1000),chart_x(layout,i),chart_y(p[32+(start+i)*8+2]*10,0,1000),custom(F_HUMID_COLOR));
   for(int i=1;i<count;i++)line(ctx,chart_x(layout,i-1),chart_y(metric(p,start+i-1,tide,humidity),lo,hi),chart_x(layout,i),chart_y(metric(p,start+i,tide,humidity),lo,hi),ink);
   if(s_footer[F_RANGE_LABELS]){
     axis_label(ctx,upper,layout.left-3-chart_text_width(upper),layout.top,color(6));

@@ -15,8 +15,8 @@ bool footer_valid(const uint8_t *p,unsigned length){
   int lo=read_i16(p+F_TEMP_MIN),hi=read_i16(p+F_TEMP_MAX);if(lo< -1500||hi>1500||hi-lo<10)return false;
   int rain=(uint16_t)read_i16(p+F_RAIN_MAX),tlo=read_i16(p+F_TIDE_MIN),thi=read_i16(p+F_TIDE_MAX);
   if(rain<1||rain>1000||p[F_TIDE_FIXED]>1||tlo< -10000||thi>10000||thi-tlo<10)return false;
-  if(p[F_WEATHER_PLACE]>2)return false;
-  for(int i=51;i<FOOTER_SIZE;i++)if(p[i])return false;
+  if(p[F_WEATHER_PLACE]>2||p[F_HUMID_LINE]>1)return false;
+  for(int i=52;i<FOOTER_SIZE;i++)if(p[i])return false;
   return true;
 }
 static bool label_valid(const uint8_t *p){if(p[7])return false;for(int i=0;i<7&&p[i];i++)if(!((p[i]>='A'&&p[i]<='Z')||(p[i]>='0'&&p[i]<='9')||p[i]==' '||p[i]=='-'||p[i]=='+'))return false;return true;}

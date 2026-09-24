@@ -12,7 +12,7 @@ export function encodeFooter(s){
   const colors=panelColors(s);PANEL_COLOR_ROLES.forEach((role,i)=>b[21+i]=pebbleColor(colors[role]));
   b[29]=+(w.temperatureScale==='fixed');b[30]=+(w.humidityScale==='auto');v.setInt16(31,Math.round(w.temperatureMin*10),true);v.setInt16(33,Math.round(w.temperatureMax*10),true);
   b[35]=+(w.rainUnit==='in');b[36]=+(t.unit==='ft');b[37]=w.refreshMinutes;b[38]=+w.enabled;b[39]=+w.rangeLabels;b[40]=+t.zeroLine;b[41]=+!!t.station;b[42]=+f.shake;
-  v.setUint16(43,Math.round(w.rainMax*10),true);b[45]=+(t.scale==='fixed');v.setInt16(46,Math.round(t.min*100),true);v.setInt16(48,Math.round(t.max*100),true);b[50]=w.place;
+  v.setUint16(43,Math.round(w.rainMax*10),true);b[45]=+(t.scale==='fixed');v.setInt16(46,Math.round(t.min*100),true);v.setInt16(48,Math.round(t.max*100),true);b[50]=w.place;b[51]=+w.humidityLine;
   return b;
 }
 const putText=(b,offset,text)=>[...(text||'').slice(0,7)].forEach((ch,i)=>b[offset+i]=ch.charCodeAt(0));

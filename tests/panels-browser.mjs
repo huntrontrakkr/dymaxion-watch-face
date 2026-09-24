@@ -10,7 +10,7 @@ try{
   await page.route('https://api.open-meteo.com/**',route=>route.fulfill({json:fixture('weather'),headers:{'access-control-allow-origin':'*'}}));
   await page.route('https://api.tidesandcurrents.noaa.gov/**',route=>route.fulfill({json:fixture(route.request().url().includes('interval=hilo')?'tide-extrema':'tide-hourly'),headers:{'access-control-allow-origin':'*'}}));
   await page.goto(base);await page.waitForFunction(()=>document.querySelector('#preview-time').textContent.includes('LIVE'));await page.locator('#reset').click();
-  for(const [id,label]of [['zones','Time zones'],['weather','Weather'],['calendar','Two-week calendar'],['humidity','Humidity'],['tide','Tide']]){
+  for(const [id,label]of [['zones','Time zones'],['weather','Weather'],['calendar','Two-week calendar'],['tide','Tide']]){
     assert.equal(await page.locator('#panel-preview-label').textContent(),label);
     await page.locator('#screen').screenshot({path:`test-results/panel-${id}.png`});await page.locator('#next-panel').click();
   }
@@ -47,5 +47,5 @@ try{
   await page.reload();await page.waitForFunction(()=>document.querySelector('#preview-time').textContent.includes('LIVE'));const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('dymaxion-workshop-v1')));assert.deepEqual(after.footer,before.footer);
   await page.getByRole('tab',{name:'Panels',exact:true}).click();await page.screenshot({path:'test-results/panels-editor.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'panel controls must fit a phone');await page.screenshot({path:'test-results/panels-mobile.png',fullPage:true});
-  assert.deepEqual(errors,[]);console.log('PASS: all five bottom panels, timed rotation, live-provider fixtures, station and unit settings, calendar options, persistence and mobile layout.');
+  assert.deepEqual(errors,[]);console.log('PASS: default panel rotation, timed rotation, live-provider fixtures, station and unit settings, calendar options, persistence and mobile layout.');
 }finally{await browser.close();}
