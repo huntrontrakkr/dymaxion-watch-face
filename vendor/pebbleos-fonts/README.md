@@ -9,3 +9,9 @@ The watch face does not bundle them: on the watch the same fonts are read from
 the firmware with `fonts_get_system_font`. `tools/generate-system-clock.mjs`
 reads these files as data to produce the workshop's pixel-exact preview glyphs
 (`assets/type/system-clock.json`) and the native placement constants.
+
+**Modified work:** Leco Delta (`leco-delta`) is derived from `LECO_42_NUMBERS`.
+`deltaRows` in `tools/generate-system-clock.mjs` cuts every exposed corner of
+its digit and colon bitmaps on a line 60 degrees from horizontal; the result is
+bundled in the watch app (`watchface/src/c/generated/system_clock.h`) and the
+workshop preview. The unmodified fonts are not bundled.

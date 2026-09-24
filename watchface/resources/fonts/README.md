@@ -37,3 +37,9 @@ LLC, Core Devices LLC and PebbleOS contributors) with this project's own
 reader and writes `assets/type/system-clock.json` and
 `watchface/src/c/generated/system_clock.h`: the digits and colon, and the text
 box offset that centres each font's figures in the 40-pixel clock strip.
+
+**Leco Delta** is this project's variant of Leco 42: every exposed corner is cut
+on a line 60 degrees from horizontal, matching the sides of the map's
+triangles, so upright stroke ends come to equilateral points, bar ends to
+chevrons, and joints get a 3-pixel bevel. A modified font cannot come from
+firmware, so its eleven glyphs (740 bytes of bits) ship in the app.

@@ -242,6 +242,16 @@ static void draw_span_time(GContext *ctx,const char *timebuf,int x,int y) {
 // Pebble system fonts (display codes 5-8): one centred line, placed so the
 // figures sit centred in the 40-pixel strip (generated/system_clock.h).
 static void draw_system_time(GContext *ctx,const char *timebuf,int x,int y){
+  if(s_display[1]==DELTA_CODE){ // Leco Delta: same centred layout, glyphs from generated/system_clock.h
+    const char *text=timebuf[0]==' '?timebuf+1:timebuf;int width=0; // glyphs 0-9, then ':' at 10
+    for(const char *p=text;*p;p++)if((*p>='0'&&*p<='9')||*p==':')width+=DELTA_GLYPHS[*p==':'?10:*p-'0'].advance;
+    int cursor=x+(200-width)/2;graphics_context_set_stroke_color(ctx,color(6));
+    for(const char *p=text;*p;p++){if(!((*p>='0'&&*p<='9')||*p==':'))continue;const DeltaGlyph *g=&DELTA_GLYPHS[*p==':'?10:*p-'0'];
+      for(int r=0;r<g->height;r++)for(int c=0;c<g->width;c++){int i=g->bit+r*g->width+c;
+        if((DELTA_BITS[i>>3]>>(i&7))&1)graphics_draw_pixel(ctx,GPoint(cursor+g->left+c,y+DELTA_BOX_TOP+g->top+r));}
+      cursor+=g->advance;}
+    return;
+  }
   for(int i=0;i<SYSTEM_CLOCK_COUNT;i++)if(SYSTEM_CLOCK_FONTS[i].code==s_display[1]){
     const SystemClockFont *f=&SYSTEM_CLOCK_FONTS[i];
     text(ctx,timebuf[0]==' '?timebuf+1:timebuf,fonts_get_system_font(f->key),GRect(x,y+f->box_top,200,f->box_height),GTextAlignmentCenter,color(6));

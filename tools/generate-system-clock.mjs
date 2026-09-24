@@ -54,6 +54,30 @@ export function readPbf(bytes) {
   return {version, maxHeight, glyph};
 }
 
+// Leco Delta: Leco with every exposed corner cut on a line 60 degrees from
+// horizontal (the map's triangle sides): horizontal leg a, vertical leg a*sqrt(3).
+// Upright stroke ends come to equilateral points, bar ends to chevrons, and
+// joints get a 3-pixel bevel. Inside corners stay square.
+export const DELTA = {id: 'leco-delta', from: 'leco', code: 9, name: 'Leco Delta (60° corners)', joint: 3};
+export function deltaRows(rows, joint = DELTA.joint) {
+  const H = rows.length, W = rows[0]?.length || 0, R3 = Math.sqrt(3);
+  const ink = (x, y) => x >= 0 && y >= 0 && x < W && y < H && rows[y][x] === '#';
+  const out = rows.map(r => [...r].map(c => c === '#'));
+  const side = (u, v, w) => (u[0] - w[0]) * (v[1] - w[1]) - (v[0] - w[0]) * (u[1] - w[1]);
+  const inTriangle = (p, a, b, c) => { const d = [side(p, a, b), side(p, b, c), side(p, c, a)]; return !(d.some(n => n < 0) && d.some(n => n > 0)); };
+  for (let vy = 0; vy <= H; vy++) for (let vx = 0; vx <= W; vx++) {
+    const quadrants = [[ink(vx - 1, vy - 1), -1, -1], [ink(vx, vy - 1), 1, -1], [ink(vx - 1, vy), -1, 1], [ink(vx, vy), 1, 1]];
+    const inked = quadrants.filter(q => q[0]);
+    if (inked.length !== 1) continue; // only convex corners
+    const [, dx, dy] = inked[0], px = dx > 0 ? vx : vx - 1, py = dy > 0 ? vy : vy - 1;
+    let along = 0; while (ink(px + dx * along, py) && !ink(px + dx * along, py - dy)) along++;
+    let down = 0; while (ink(px, py + dy * down) && !ink(px - dx, py + dy * down)) down++;
+    const a = Math.min(along / 2, down / (2 * R3), joint), A = [vx, vy], B = [vx + dx * a, vy], C = [vx, vy + dy * a * R3];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (inTriangle([x + .5, y + .5], A, B, C)) out[y][x] = false;
+  }
+  return out.map(r => r.map(v => v ? '#' : '.').join(''));
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
   const fonts = {}, native = [];
   for (const [id, file, key, code, name] of SYSTEM_CLOCK_FONTS) {
@@ -71,6 +95,17 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     fonts[id] = {name, key, code, maxHeight: font.maxHeight, boxTop, glyphs};
     native.push({key, code, boxTop, boxHeight: font.maxHeight + 8});
   }
+  // Leco Delta ships its own glyphs (a modified font cannot come from firmware).
+  const base = fonts[DELTA.from];
+  fonts[DELTA.id] = {name: DELTA.name, key: null, code: DELTA.code, maxHeight: base.maxHeight, boxTop: base.boxTop,
+    glyphs: Object.fromEntries(Object.entries(base.glyphs).map(([ch, g]) => [ch, {...g, rows: deltaRows(g.rows)}]))};
+  const deltaChars = [...CHARACTERS], bits = [], metrics = [];
+  for (const ch of deltaChars) {
+    const g = fonts[DELTA.id].glyphs[ch], start = bits.length;
+    for (const row of g.rows) for (const c of row) bits.push(c === '#' ? 1 : 0);
+    metrics.push(`{${g.width},${g.height},${g.left},${g.top},${g.advance},${start}}`);
+  }
+  const bytes = Array.from({length: Math.ceil(bits.length / 8)}, (_, i) => bits.slice(i * 8, i * 8 + 8).reduce((b, v, k) => b | (v << k), 0));
   mkdirSync(new URL('../assets/type/', import.meta.url), {recursive: true});
   writeFileSync(new URL('../assets/type/system-clock.json', import.meta.url), JSON.stringify(fonts) + '\n');
   writeFileSync(new URL('../watchface/src/c/generated/system_clock.h', import.meta.url), [
@@ -82,7 +117,15 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     'typedef struct { uint8_t code; const char *key; int8_t box_top; uint8_t box_height; } SystemClockFont;',
     'static const SystemClockFont SYSTEM_CLOCK_FONTS[SYSTEM_CLOCK_COUNT] = {',
     ...native.map(n => `  {${n.code}, ${n.key}, ${n.boxTop}, ${n.boxHeight}},`),
-    '};', ''
+    '};',
+    '// Leco Delta (display code 9): Leco 42 with 60-degree corner cuts, drawn from',
+    '// these bitmaps. Glyphs for "0123456789:": width, height, left, top, advance,',
+    '// first bit; bits row-major, least significant bit first.',
+    `#define DELTA_CODE ${DELTA.code}`,
+    `#define DELTA_BOX_TOP ${base.boxTop}`,
+    'typedef struct { uint8_t width, height; int8_t left, top, advance; uint16_t bit; } DeltaGlyph;',
+    `static const DeltaGlyph DELTA_GLYPHS[${deltaChars.length}] = {${metrics.join(',')}};`,
+    `static const uint8_t DELTA_BITS[${bytes.length}] = {${bytes.join(',')}};`, ''
   ].join('\n'));
   console.log(`System clock fonts: ${native.map(n => `${n.key.replace('FONT_KEY_', '')} (top ${n.boxTop})`).join(', ')}.`);
 }

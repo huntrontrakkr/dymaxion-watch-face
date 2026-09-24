@@ -33,10 +33,10 @@ try{
   await study.setViewportSize({width:390,height:844});assert(await study.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'proof should scroll inside its container on a phone');
   // Pebble's built-in fonts are numeral styles too; the choice persists.
   await page.locator('#stacked').uncheck();await page.getByRole('tab',{name:'Character',exact:true}).click();
-  for(const id of ['leco','bitham-bold','bitham-light','bitham-medium']){
+  for(const id of ['leco','bitham-bold','bitham-light','bitham-medium','leco-delta']){
     await page.getByLabel('Numerical display',{exact:true}).selectOption(id);assert.equal(await screen.getAttribute('data-clock-display'),id);
   }
-  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).clockDisplay,'bitham-medium');
+  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).clockDisplay,'leco-delta');
   await page.getByLabel('Numerical display',{exact:true}).selectOption('chamfer');
   // Leading zero is on by default and switches off from the display controls.
   await page.getByRole('tab',{name:'Character',exact:true}).click();
