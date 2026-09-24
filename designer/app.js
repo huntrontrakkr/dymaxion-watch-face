@@ -21,7 +21,6 @@ import {cityControls} from '../shared/city-controls.js';
 import {cityIsUsable,cityHasPosition,clockCaption} from '../shared/city.js';
 import {locationService} from '../tools/location-service.js';
 import {displayControls} from '../shared/display-controls.js';
-import {drawTriangleTime} from '../shared/triangle-display.js';
 import {minuteFlipClock,drawFlipPixels,FLIP_FACES,flipOffset} from '../shared/minute-flip.js';
 
 const $=id=>document.getElementById(id),zoneExists=tz=>!!moment.tz.zone(tz);
@@ -52,7 +51,7 @@ let footerPage=settings.footer.home,panelChanged=Date.now(),environmentMode='sam
 let currentCity={name:'Norfolk',sample:true,lat:36.9,lon:-76.3};
 const cityLocation=locationService({getSettings:()=>settings,storage:localStorage,send:city=>{currentCity=city;render();}});
 const cityEditor=cityControls($('city-controls'),()=>settings,value=>{settings=validateSettings({...settings,location:value},zoneExists);save();},()=>cityLocation.refresh());
-const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay,value.segmentGrid),leadingZero:value.leadingZero};sync();save();});
+const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero};sync();save();});
 const paletteEditor=paletteControls($('palette-controls'),()=>settings,patch=>{settings=validateSettings({...settings,...patch},zoneExists);sync();save();});
 const environment=environmentService({getSettings:()=>settings,storage:localStorage,send:(kind,data)=>{liveData[kind]=data;render();}});
 const panelEditor=panelControls($('panel-controls'),()=>settings,footer=>{
@@ -239,10 +238,9 @@ function render(){
   else{
     const value=hourText(h,settings.leadingZero)+':'+two(minute);
     // Every horizontal style animates its minute change through the same shrink.
-    const style=settings.clockDisplay,triangles=style==='triangles';
+    const style=settings.clockDisplay;
     minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset].join('/'),settings.motion&&!reducedMotion.matches&&!document.hidden,style);
-    if(triangles&&settings.segmentGrid)drawTriangleTime(ctx,'  :  ',tx,ty-1,pal.ink,pal.inactive,true);
-    drawFlipPixels(ctx,minuteClock.frame(),tx,ty+flipOffset(style),{ink:pal.ink,background:triangles?null:pal.bg});
+    drawFlipPixels(ctx,minuteClock.frame(),tx,ty+flipOffset(style),{ink:pal.ink,background:pal.bg});
     if(style==='chamfer'&&!use24())drawBitmapText(ctx,watchTypeface.lining.small,ampm,tx+167,ty+9,pal.accent);
   }
   canvas.dataset.clockDisplay=settings.stacked?'draft':settings.clockDisplay;

@@ -3,7 +3,7 @@ const clone=value=>JSON.parse(JSON.stringify(value));
 const groups=[
   ['Main colors',[['bg','Background'],['ink','Lettering'],['accent','Highlights & city lights'],['edge','Map edges & chart guides']]],
   ['Map & night colors',[['ocean','Day ocean'],['land','Day land'],['nightOcean','Night ocean'],['nightLand','Night land']]],
-  ['Places & small indicators',[['marks.0','Place 1 default'],['marks.1','Place 2 default'],['marks.2','Place 3 default'],['moonShadow','Moon shadow'],['inactive','Unlit triangles']]],
+  ['Places & small indicators',[['marks.0','Place 1 default'],['marks.1','Place 2 default'],['marks.2','Place 3 default'],['moonShadow','Moon shadow']]],
   ['Chart & calendar defaults',[['panelColors.temperature','Temperature'],['panelColors.rain','Rain'],['panelColors.humidity','Humidity'],['panelColors.tide','Tide'],['panelColors.saturday','Weekend'],['panelColors.holiday','Holiday'],['panelColors.today','Today']]]
 ];
 const get=(object,path)=>path.split('.').reduce((value,key)=>value[key],object);

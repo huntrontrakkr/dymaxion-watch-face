@@ -99,24 +99,10 @@ Native C draws the authored pixel runs directly; this avoids the hidden side
 bearings and wrapping that Pebble's text layout adds at this width. The browser
 uses those same runs.
 
-The **triangular seven-segment experiment** remains selectable. Its six outer
-electrodes follow a hexagon; the seventh crosses the interior slightly above
-center so the lower counter has more room. It uses one continuous 196-pixel
-strip of 330 equilateral cells, with seven-pixel edges and six rows. All source
-edges follow 0°, 60° or 120°. Electrode gutters are a uniform geometric inset;
-whole cells switch together, and the two colon triangles use the same lattice.
-The hexagon's sloping right edge makes `1` a bent, chevron-like figure; this is
-an explicit legibility tradeoff to review at native size, especially against `7`.
-
-This is a contemporary interpretation informed by [Synergetics §420](https://rwgrayprojects.com/synergetics/s04/p2000.html)
-and its equilateral relationships, not a historical display by Fuller. The
-two-dimensional lattice is not itself the three-dimensional isotropic vector matrix.
-The [interactive segment study](../designer/segment-study.html) separates the exact
-construction geometry from its square-pixel sampling, offers 1×/3× pixel proofs,
-and shows every numeral. It also lets each of the seven electrodes be switched
-independently. The watch uses the same generated 1,350 pixel runs (5,400 bytes).
-There is no antialiasing, horizontal distortion, or extra update timer. Unlit
-cells can be hidden; Span remains selectable and stacked time still uses Draft.
+The **triangular seven-segment experiment** (a hexagonal display of 330
+equilateral cells, informed by Synergetics §420) is retired. Saved faces that
+used it open with Chamfer figures, and removing its 1,350 native pixel runs
+freed 5.8 KB of the watch's static memory.
 
 **Dymaxion Draft** remains the information type. Its earlier display cut is
 available for optional stacked hours/minutes. The 12-pixel zone numerals are

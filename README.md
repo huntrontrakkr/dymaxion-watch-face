@@ -28,12 +28,11 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
   See [minute transitions](docs/MINUTE-FLIP.md).
 - Pebble's own clock fonts as extra numeral styles: Leco, Bitham Bold, Bitham
   Light and Bitham Medium, with a pixel-exact workshop preview. Every style,
-  including Span and the triangles, gets the same minute transition. Leco Delta is Leco with every corner cut at 60°, to
+  including Span, gets the same minute transition. Leco Delta is Leco with every corner cut at 60°, to
   match the map's triangles.
-- Rounded broad numerals, Span lettering and the earlier triangular seven-segment
-  experiment remain available. The segment display has six hexagonal
-  edges and a raised waist, assembled from whole equilateral cells. Switch styles in
-  **Character → Numerical display**. `/segment-study.html` lets you toggle each electrode.
+- Rounded broad numerals and Span lettering remain available. Switch styles in
+  **Character → Numerical display**. The triangular seven-segment experiment is
+  retired; saved faces that used it open with Chamfer figures.
 - The status line names the current city, using the phone's location at most
   hourly, or a manual name. The workshop labels Norfolk as an example until you
   request a location preview. City lookup uses Photon / OpenStreetMap.
@@ -149,8 +148,7 @@ npm run companion
 
 The eight lunar phases and Bluetooth rune are drawn at their final pixel size
 in `shared/` and packed into a native C table by `npm run generate:status`.
-`npm run generate:display` samples the earlier segment geometry into native pixel
-runs. Rounded broad numerals animate only during their 400 ms minute transition;
+Rounded broad numerals animate only during their 400 ms minute transition;
 there is no continuous animation or additional sensor.
 Run `pebble clean` before building after changes to AppMessage keys or resources.
 
@@ -174,7 +172,7 @@ Physical hardware and an actual phone webview have not been tested.
 | `shared/solar.js` | Solar direction model used by the workshop |
 | `shared/moon.js` | UTC lunar phase and eight native-size glyphs |
 | `shared/status-glyphs.js` | Pixel Bluetooth connection rune |
-| `shared/triangle-display.js` | Equilateral cells, seven electrodes, numeral masks and display packet |
+| `shared/display.js` | Numeral styles and the display packet |
 | `shared/city.js`, `tools/location-service.js` | City naming, hourly reverse geocoding and offline cache |
 | `shared/panel-*`, `shared/calendar.js` | Panel controls, provider normalization, packet contract and preview |
 | `designer/` | Interactive preview, accessible controls, JSON import/export |

@@ -149,31 +149,18 @@ static uint8_t clock_shade(uint8_t from,uint8_t toward){
   for(int shift=0;shift<=4;shift+=2){int a=(from>>shift)&3,b=(toward>>shift)&3;out|=(a+(b>a?1:b<a?-1:0))<<shift;}
   return out;
 }
-static GColor triangle_inactive(void){return (GColor){.argb=custom_palette()?s_palette[PAL_INACTIVE]:TRIANGLE_INACTIVE[s_settings[THEME]]};}
-static void draw_triangles(GContext *ctx,const uint8_t digits[4],bool grid,int x,int y){
-  GColor inactive=triangle_inactive();
-  for(int i=0;i<TRIANGLE_RUN_COUNT;i++){
-    TriangleRun run=TRIANGLE_RUNS[i];bool lit=display_group_lit(run.group,digits);
-    if(lit||grid)line(ctx,x+2+run.x,y-1+run.y,x+1+run.x+run.length,y-1+run.y,lit?color(6):inactive);
-  }
-}
-static void draw_triangle_grid(GContext *ctx,int x,int y){static const uint8_t blank[4]={10,10,10,10};draw_triangles(ctx,blank,true,x,y);}
 static void draw_flip_time(GContext *ctx,struct tm *local,time_t now,int x,int y){
   clock_prepare(local,now,false);
   uint32_t ms=s_clock_running?clock_milliseconds()-s_clock_started:CLOCK_FLIP_MS;
   uint16_t elapsed=ms<CLOCK_FLIP_MS?ms:CLOCK_FLIP_MS;
   if(elapsed!=s_clock_frame){clock_flip_sample(&s_clock_flip,elapsed,s_clock_pixels);s_clock_frame=elapsed;}
   uint8_t colors[4]={palette()[0],palette()[6],clock_shade(palette()[0],palette()[6]),clock_shade(palette()[6],palette()[0])};
-  // Broad figures sit two pixels above the time block and triangles one; the rest fill it.
-  bool triangles=s_clock_face==&s_styled&&s_styled.style==1;
-  int top=s_clock_face==&BROAD_FACE?y-2:triangles?y-1:y;
-  // Triangles keep their unlit grid underneath; only lit pixels are drawn over it.
-  if(triangles&&(s_display[2]&1))draw_triangle_grid(ctx,x,y);
+  // Broad figures sit two pixels above the time block; the rest fill it.
+  int top=s_clock_face==&BROAD_FACE?y-2:y;
   for(int row=0;row<s_clock_face->height;row++)for(int start=0;start<CLOCK_WIDTH;){
     uint8_t value=clock_frame_pixel(s_clock_pixels,row*CLOCK_WIDTH+start);int end=start+1;
     while(end<CLOCK_WIDTH&&clock_frame_pixel(s_clock_pixels,row*CLOCK_WIDTH+end)==value)end++;
-    if(value||!triangles)line(ctx,x+start,top+row,x+end-1,top+row,(GColor){.argb=colors[value]});
-    start=end;
+    line(ctx,x+start,top+row,x+end-1,top+row,(GColor){.argb=colors[value]});start=end;
   }
 }
 static void clock_release(void){
@@ -308,7 +295,7 @@ static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
     uint8_t digits[4]={timebuf[0]==' '?10:timebuf[0]-'0',timebuf[1]-'0',timebuf[3]-'0',timebuf[4]-'0'};
     if(s_clock_face)draw_flip_time(ctx,local,now,x,y);
     else if(s_display[1]>=5)draw_system_time(ctx,timebuf,x,y);
-    else if(s_display[1]==1)draw_triangles(ctx,digits,s_display[2]&1,x,y);else draw_span_time(ctx,digits,x,y);
+    else draw_span_time(ctx,digits,x,y);
     // 12-hour Chamfer time carries AM/PM beside the figures, top-aligned with them.
     if(s_clock_face==&s_chamfer&&*ampm)draw_meridiem(ctx,ampm,x+167,y+9);
   }

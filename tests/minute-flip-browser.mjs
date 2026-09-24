@@ -37,7 +37,7 @@ try {
   await page.reload();await page.waitForFunction(()=>document.querySelector('#preview-time').textContent.includes('LIVE'));
   assert.equal(await screen.getAttribute('data-clock-display'),'chamfer');
   // Every horizontal numeral style shares the transition.
-  const styles=['span','triangles','leco','bitham-bold','bitham-light','bitham-medium','leco-delta'];
+  const styles=['span','leco','bitham-bold','bitham-light','bitham-medium','leco-delta'];
   await page.getByRole('tab',{name:'Character',exact:true}).click();
   for(const id of styles){
     await page.getByLabel('Numerical display',{exact:true}).selectOption(id);assert.equal(await screen.getAttribute('data-clock-display'),id);

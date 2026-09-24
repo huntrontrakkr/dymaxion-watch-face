@@ -1,13 +1,10 @@
 // Transition masks for the numeral styles without fixed figure slots: Span,
-// triangles, the Pebble system fonts and Leco Delta. Each renders the time into
+// the Pebble system fonts and Leco Delta. Each renders the time into
 // a 200 x 40 strip exactly as the watch does (watchface/src/c/clock_styles.c),
 // so the minute transition shrinks the same tiles on both.
 import span from '../assets/type/span-clock.json' with {type: 'json'};
 import fonts from '../assets/type/system-clock.json' with {type: 'json'};
-import {TRIANGLE_GRID, groupLit} from './triangle-display.js';
 export const STYLE_WIDTH = 200, STYLE_HEIGHT = 40;
-// Strip top relative to the clock block: triangles start a row above it.
-export const styleOffset = style => style === 'triangles' ? -1 : 0;
 const blank = () => new Uint8Array(STYLE_WIDTH * STYLE_HEIGHT);
 const plot = (mask, x, y) => { if (x >= 0 && y >= 0 && x < STYLE_WIDTH && y < STYLE_HEIGHT) mask[y * STYLE_WIDTH + x] = 1; };
 const check = time => { if (!/^[\d ]\d:\d{2}$/.test(time)) throw new Error('Use a readout such as 12:34.'); };
@@ -20,11 +17,6 @@ export function spanTimeMask(time) {
   }
   return mask;
 }
-export function triangleTimeMask(time) {
-  check(time);const mask = blank(), digits = time.replace(':', '').split('').map(c => c === ' ' ? 10 : Number(c));
-  for (const run of TRIANGLE_GRID.runs) if (groupLit(run.group, digits)) for (let k = 0; k < run.length; k++) plot(mask, 2 + run.x + k, run.y);
-  return mask;
-}
 export function fontTimeMask(id, time) {
   check(time);const mask = blank(), font = fonts[id], text = time.trim();
   let cursor = Math.trunc((STYLE_WIDTH - [...text].reduce((w, ch) => w + font.glyphs[ch].advance, 0)) / 2);
@@ -35,5 +27,5 @@ export function fontTimeMask(id, time) {
   }
   return mask;
 }
-export const STYLE_MASKS = Object.freeze({span: spanTimeMask, triangles: triangleTimeMask,
+export const STYLE_MASKS = Object.freeze({span: spanTimeMask,
   ...Object.fromEntries(Object.keys(fonts).map(id => [id, time => fontTimeMask(id, time)]))});

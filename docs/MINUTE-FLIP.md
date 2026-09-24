@@ -11,13 +11,12 @@ Chamfer, 32 for broad), close to the scale of the map's own faces: 34 and 37
 tiles across the strip.
 
 Chamfer and broad have four fixed numeral slots, and only slot pixels may
-change. Span, the triangular segments, the Pebble system fonts and Leco Delta
+change. Span, the Pebble system fonts and Leco Delta
 have no slots (proportional fonts re-centre as the time changes), so they
 borrow Chamfer's 40-pixel strip and lattice and let any strip pixel change.
 Their masks come from `shared/clock-styles.js` and
 `watchface/src/c/clock_styles.c`, which emit the same horizontal runs; the
-watch draws those styles from the same runs when the transition is off. The
-triangular display keeps its unlit grid underneath: only lit pixels shrink over it.
+watch draws those styles from the same runs when the transition is off.
 
 Each selected tile keeps the old drawing in the face's own ink and ground and
 shrinks toward its centroid, taking its contents with it, until it vanishes into

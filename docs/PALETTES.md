@@ -10,7 +10,7 @@ In **Character → Custom palettes**, choose **New custom palette** to copy the
 current preset or saved palette. Give it a name and edit the background,
 lettering, and highlights while watching the live preview. Expand the additional
 groups to edit day/night land and ocean, map edges, default place colors, moon
-shadow, inactive triangles, and chart/calendar colors. Color picks snap to the
+shadow, and chart/calendar colors. Color picks snap to the
 nearest color the Pebble can display.
 
 Keep up to 12 named palettes. The designer saves edits locally as you make them;
@@ -68,14 +68,14 @@ has been copied into the face.
 
 `shared/palettes.js` is the palette source. Every theme includes the daylight
 and night map colors, lettering, annotations, three default place colors, moon
-shadow, and inactive triangular-display color. The minute transition uses only each
+shadow, and a retired inactive-segment color, still carried in the palette
+packet for compatibility but no longer drawn or edited. The minute transition uses only each
 palette's ink and ground. Independent custom place colors retain
 their existing settings. New palettes provide chart and calendar defaults;
 custom panel colors are retained until **Use theme colors** is selected.
 
 The original IDs and default selection are retained. The generators export the
-native theme count, watch palette tables, moon colors, and inactive display
-colors; the companion bundles the same definitions for offline configuration.
+native theme count, watch palette tables and moon colors; the companion bundles the same definitions for offline configuration.
 The six additions and matching label glyphs increase the native static footprint
 by 220 bytes compared with the eight-palette build. The README records the
 current total, including later chart refinements. The palette additions

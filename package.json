@@ -7,8 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "generate": "node tools/generate-map.mjs && node tools/generate-zones.mjs && node tools/generate-markers.mjs && node tools/generate-status-glyphs.mjs && node tools/generate-triangle-display.mjs && node tools/generate-chart-axis.mjs && node tools/generate-caps.mjs",
-    "generate:display": "node tools/generate-triangle-display.mjs",
+    "generate": "node tools/generate-map.mjs && node tools/generate-zones.mjs && node tools/generate-markers.mjs && node tools/generate-status-glyphs.mjs && node tools/generate-chart-axis.mjs && node tools/generate-caps.mjs",
     "generate:clock": "node tools/generate-broad-clock.mjs",
     "generate:chamfer": "node tools/generate-chamfer-clock.mjs",
     "generate:system": "node tools/generate-system-clock.mjs",

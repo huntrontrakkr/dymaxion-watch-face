@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {readPbf, SYSTEM_CLOCK_FONTS, DELTA, deltaRows} from '../tools/generate-system-clock.mjs';
-import {DISPLAY_CODES, DISPLAY_STYLES} from '../shared/triangle-display.js';
+import {DISPLAY_CODES, DISPLAY_STYLES} from '../shared/display.js';
 import {SYSTEM_CLOCKS} from '../shared/system-clock.js';
 const generated = JSON.parse(readFileSync('assets/type/system-clock.json'));
 const header = readFileSync('watchface/src/c/generated/system_clock.h', 'utf8');

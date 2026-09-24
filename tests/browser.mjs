@@ -81,7 +81,7 @@ try{
     Pebble:{addEventListener:(name,fn)=>handlers[name]=fn,openURL:url=>opened=url,sendAppMessage:(message,success)=>{messages.push(message);success();}}};
   vm.runInNewContext(readFileSync('watchface/src/pkjs/index.js','utf8'),context);
   handlers.ready();assert.equal(messages[0].SETTINGS.length,PACKET_SIZE);
-  assert.deepEqual(Array.from(messages[0].DISPLAY),[1,4,1,0],'a fresh install shows Chamfer figures');
+  assert.deepEqual(Array.from(messages[0].DISPLAY),[1,4,0,0],'a fresh install shows Chamfer figures');
   handlers.showConfiguration();assert.ok(opened.startsWith('data:text/html;charset=utf-8,'));
   const mobile=await browser.newPage({viewport:{width:390,height:844}});mobile.on('pageerror',e=>errors.push(e.message));await mobile.goto(opened);
   assert.equal(await mobile.locator('#theme option').count(),THEMES.length);
@@ -132,7 +132,7 @@ try{
   assert.match(await study.locator('[data-family="span"] .figure-status').textContent(),/no oldstyle/);
   await study.screenshot({path:'test-results/type-study.png',fullPage:true});
   handlers.webviewclosed({response:encodeURIComponent(JSON.stringify({...defaults(),theme:3,clockDisplay:'span',location:{mode:'manual',name:'Norfolk'}}))});assert.equal(messages.findLast(m=>m.SETTINGS).SETTINGS[1],3);
-  assert.deepEqual(Array.from(messages.findLast(m=>m.DISPLAY).DISPLAY),[1,0,1,0]);
+  assert.deepEqual(Array.from(messages.findLast(m=>m.DISPLAY).DISPLAY),[1,0,0,0]);
   const city=Array.from(messages.findLast(m=>m.CITY).CITY);assert.equal(city.length,52);assert.equal(city[1],1,'a manual city carries no position');assert.deepEqual(city.slice(48),[0,0,0,0]);assert.equal(String.fromCharCode(...city.slice(8,15)),'Norfolk');
   const count=messages.filter(m=>m.SETTINGS).length;handlers.webviewclosed({response:'CANCELLED'});handlers.webviewclosed({response:'%broken'});assert.equal(messages.filter(m=>m.SETTINGS).length,count);
   assert.equal(JSON.parse(store.get('dymaxion-settings-v1')).theme,3);

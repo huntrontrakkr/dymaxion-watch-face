@@ -2,7 +2,7 @@ import {mkdirSync,writeFileSync} from 'node:fs';
 import {defaults,THEMES,MOON_COLORS} from '../shared/settings.js';
 import {encodeSettings} from '../shared/protocol.js';
 import {encodeFooter} from '../shared/panel-protocol.js';
-import {encodeDisplay} from '../shared/triangle-display.js';
+import {encodeDisplay} from '../shared/display.js';
 import {CITIES} from '../shared/cities.js';
 import {makeMap,direction} from '../shared/map.js';
 const map=makeMap();

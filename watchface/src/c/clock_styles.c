@@ -1,5 +1,4 @@
 #include "clock_styles.h"
-#include "display.h"
 #include "generated/span_font.h"
 #define GLYPH_COUNT 11
 #define GLYPH_BYTES 7
@@ -35,10 +34,6 @@ static void span_runs(const uint8_t digits[4],ClockSpan span,void *context){
     cursor+=i==2?10:45;
   }
 }
-static void triangle_runs(const uint8_t digits[4],ClockSpan span,void *context){
-  for(int i=0;i<TRIANGLE_RUN_COUNT;i++){TriangleRun run=TRIANGLE_RUNS[i];
-    if(display_group_lit(run.group,digits))clipped(span,context,2+run.x,run.y,run.length);}
-}
 // One centred line, as PebbleOS lays out text: the advances sum to the width.
 static void font_runs(const uint8_t *font,int8_t box_top,const uint8_t digits[4],ClockSpan span,void *context){
   const uint8_t text[5]={digits[0],digits[1],10,digits[2],digits[3]},*bits=font+GLYPH_COUNT*GLYPH_BYTES;
@@ -58,7 +53,6 @@ static void font_runs(const uint8_t *font,int8_t box_top,const uint8_t digits[4]
 }
 void clock_style_runs(uint8_t style,const uint8_t *font,int8_t box_top,const uint8_t digits[4],ClockSpan span,void *context){
   if(style==0)span_runs(digits,span,context);
-  else if(style==1)triangle_runs(digits,span,context);
   else if(font)font_runs(font,box_top,digits,span,context);
 }
 static void set_run(void *context,int x,int y,int length){
@@ -69,7 +63,7 @@ static void style_mask(const ClockFace *f,const uint8_t digits[4],uint8_t *bits)
   clock_style_runs(f->style,f->font,f->box_top,digits,set_run,bits);
 }
 bool clock_style_face(ClockFace *face,const ClockFace *lattice,uint8_t style,const uint8_t *font,int8_t box_top){
-  if(!face||!lattice||lattice->height!=CLOCK_STYLE_HEIGHT||(style>1&&!font))return false;
+  if(!face||!lattice||lattice->height!=CLOCK_STYLE_HEIGHT||(style!=0&&!font))return false;
   *face=*lattice;face->mask=style_mask;face->style=style;face->font=font;face->box_top=box_top;
   return true;
 }

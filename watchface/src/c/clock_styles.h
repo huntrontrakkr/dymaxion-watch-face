@@ -1,7 +1,7 @@
 #pragma once
 #include "minute_flip.h"
 // Numeral styles without fixed slots, drawn as horizontal runs in the 200 x 40
-// clock strip exactly as shared/clock-styles.js does: 0 Span, 1 triangles,
+// clock strip exactly as shared/clock-styles.js does: 0 Span,
 // 5-9 the Pebble system fonts and Leco Delta (glyphs from clock-glyphs.bin).
 typedef void (*ClockSpan)(void *context,int x,int y,int length);
 #define CLOCK_STYLE_HEIGHT 40

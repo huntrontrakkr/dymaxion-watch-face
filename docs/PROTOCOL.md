@@ -163,28 +163,29 @@ panel charts use it for sunrise and sunset. Without it they must be zero, and a
 manual name never carries a position. An older 48-byte packet is rejected, so
 the watch shows no city until the phone's next update.
 
-`DISPLAY` (10006) is four bytes, persisted under key 3: `[1, style, grid, 0]`.
-Style 0 selects Span, 1 selects triangular seven-segment numerals, 2 selects
+`DISPLAY` (10006) is four bytes, persisted under key 3: `[1, style, options, 0]`.
+Style 0 selects Span, 2 selects
 rounded broad numerals, 4 Chamfer figures, and 5–8 Pebble system fonts (Leco 42,
 Bitham 42 Bold, Bitham 42 Light, Bitham 42 Medium Numbers) and 9 Leco Delta
 (Leco 42 with 60-degree corners), drawn from the bundled `clock-glyphs.bin`
-figures so the minute transition can run over them. Byte 2 bit 0 shows unlit triangles in
-style 1; bit 1 turns the leading zero off (the first digit slot stays blank for
+figures so the minute transition can run over them. Byte 2 bit 1 turns the leading zero off (the first digit slot stays blank for
 hours under ten). Bit 1 is clear in every older packet, so the zero stays on.
-Stacked time always uses Draft. Style 2 uses a temporary 400 ms minute-transition
-timer when the existing MOTION flag is enabled and battery is above 20%; it adds
-no sensor. The default is `[1, 2, 1, 0]`.
+Stacked time always uses Draft. Every horizontal style uses a temporary 400 ms
+minute-transition timer when the existing MOTION flag is enabled and battery is
+above 20%; it adds no sensor. The default is `[1, 4, 0, 0]`.
 
 For compatibility with the retired LCD/framing experiment, valid older packets
-are normalized before use and persistence: style 3 becomes style 2 and byte 3
-is cleared. Legacy byte 3 accepts zero, or a style of 1 or 2 in bits 0–1 with
+are normalized before use and persistence: style 1 (the retired triangular
+seven-segment display) becomes style 4, style 3 becomes style 2, byte 2 bit 0
+(its unlit-grid switch) and byte 3 are cleared. Legacy byte 3 accepts zero, or a style of 1 or 2 in bits 0–1 with
 optional flags in bits 2–5. Unknown styles, bits, lengths and flags are rejected.
 This migration also runs when the watch loads its saved display preferences.
 
 Exported JSON remains version 1. Optional `location: {mode: 'auto'|'manual', name}`,
-`clockDisplay: 'span'|'triangles'|'broad'`, and `segmentGrid: boolean` fields migrate
-from older files to automatic location and rounded broad numerals when no explicit
-display choice was saved. A saved `clockDisplay: 'lcd'` becomes `'broad'`; legacy
+and `clockDisplay` fields migrate from older files to automatic location and
+rounded broad numerals when no explicit display choice was saved. A saved
+`clockDisplay: 'lcd'` becomes `'broad'` and `'triangles'` becomes `'chamfer'`; a
+legacy `segmentGrid` field is dropped; legacy
 `framing` objects are discarded without changing palettes, locations or layout.
 `SETTINGS` remains unchanged at 232 bytes / version 7. The city and display
 records are independently validated and persisted only when changed.

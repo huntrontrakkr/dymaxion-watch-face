@@ -2,7 +2,7 @@ import {MAP_SIZE} from './map.js';
 import {MARKERS,LEGACY_MARKER_IDS} from './markers.js';
 import {defaultFooter,validateFooter} from './panel-settings.js';
 import {validateLocation} from './city.js';
-import {DISPLAY_STYLES} from './triangle-display.js';
+import {DISPLAY_STYLES} from './display.js';
 import {SYSTEM_CLOCKS} from './system-clock.js';
 import {THEMES} from './palettes.js';
 import {paletteFor,validatePalettes} from './palette-settings.js';
@@ -41,8 +41,8 @@ export function activePreset(settings){
   return Object.keys(PRESETS).find(name=>{const p=presetFor(name,settings.clockDisplay);return PRESET_KEYS.every(k=>JSON.stringify(settings[k])===JSON.stringify(p[k]));})??null;
 }
 // Changing the numerals keeps a preset composition intact rather than clipping it.
-export function withClockDisplay(settings,clockDisplay,segmentGrid=settings.segmentGrid){
-  const preset=activePreset(settings),next={...settings,clockDisplay,segmentGrid};
+export function withClockDisplay(settings,clockDisplay){
+  const preset=activePreset(settings),next={...settings,clockDisplay};
   if(preset)Object.assign(next,presetFor(preset,clockDisplay));
   next.time=clampPosition(next,'time',next.time);
   return next;
@@ -58,7 +58,7 @@ const LEGACY_PRESETS=[{
 }];
 export function defaults() {
   return {version:1,markerSet:2,theme:0,customPalettes:[],customPalette:null,format:1,dayNight:true,edges:false,lights:true,motion:true,sun:true,moonIndicator:true,connectionBuzz:'disconnect',
-    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',segmentGrid:true,leadingZero:true,location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
+    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',leadingZero:true,location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
 }
 // Quick View: a clock the peek would cover moves up to sit just above it,
 // never into the status line (clock_top_for_visible in settings.c).
@@ -115,10 +115,11 @@ export function validateSettings(input,zoneExists) {
   out.location=validateLocation(input.location);
   // Retired LCD/framing experiments return to the open broad clock. Keep all
   // other preferences, and leave the legacy framing object out of the result.
-  const clockDisplay=input.clockDisplay==='lcd'?'broad':input.clockDisplay;
+  // The retired triangular seven-segment style opens as Chamfer; its unlit-grid
+  // switch (segmentGrid) is dropped.
+  const clockDisplay=input.clockDisplay==='lcd'?'broad':input.clockDisplay==='triangles'?'chamfer':input.clockDisplay;
   if(clockDisplay!==undefined&&!DISPLAY_STYLES.includes(clockDisplay))throw new Error('Unknown clock display.');
-  if(input.segmentGrid!==undefined&&typeof input.segmentGrid!=='boolean')throw new Error('Invalid segment grid.');
-  out.clockDisplay=clockDisplay??'broad';out.segmentGrid=input.segmentGrid??true;
+  out.clockDisplay=clockDisplay??'broad';
   if(input.leadingZero!==undefined&&typeof input.leadingZero!=='boolean')throw new Error('Invalid leading zero.');
   out.leadingZero=input.leadingZero??true;
   const position=(key,pos)=>{

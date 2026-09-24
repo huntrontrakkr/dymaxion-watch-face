@@ -171,7 +171,7 @@ test('old saved presets adopt the enlarged map; custom arrangements keep their p
   assert.deepEqual(flattened.places,oldPortrait.places);
 });
 test('leading zero is on by default and can blank the first digit slot',async()=>{
-  const {hourText}=await import('../shared/settings.js'),{encodeDisplay}=await import('../shared/triangle-display.js');
+  const {hourText}=await import('../shared/settings.js'),{encodeDisplay}=await import('../shared/display.js');
   const {chamferTimeMask,CHAMFER_METRICS:M}=await import('../shared/chamfer-numerals.js'),{broadTimeMask}=await import('../shared/broad-numerals.js');
   const s=defaults();assert.equal(s.leadingZero,true);
   assert.equal(hourText(9),'09');assert.equal(hourText(9,false),' 9');assert.equal(hourText(10,false),'10');assert.equal(hourText(0,false),' 0');

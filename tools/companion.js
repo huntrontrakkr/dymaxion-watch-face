@@ -5,7 +5,7 @@ import {encodeFooter,encodeEnvironment} from '../shared/panel-protocol.js';
 import {environmentService} from './environment-service.js';
 import {locationService} from './location-service.js';
 import {encodeCity} from '../shared/city.js';
-import {encodeDisplay} from '../shared/triangle-display.js';
+import {encodeDisplay} from '../shared/display.js';
 import {encodePalette} from '../shared/palette-protocol.js';
 import html from './mobile-config.generated.html';
 const STORAGE='dymaxion-settings-v1';

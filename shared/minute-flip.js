@@ -1,6 +1,6 @@
 import {BROAD_METRICS, broadTimeMask, equilateralGrid} from './broad-numerals.js';
 import {CHAMFER_METRICS, chamferTimeMask, chamferTriangleGrid} from './chamfer-numerals.js';
-import {STYLE_MASKS, STYLE_WIDTH, STYLE_HEIGHT, styleOffset} from './clock-styles.js';
+import {STYLE_MASKS, STYLE_WIDTH, STYLE_HEIGHT} from './clock-styles.js';
 
 export const FLIP_DURATION = 400;
 export const TILE_DURATION = 320;
@@ -15,9 +15,10 @@ export const FLIP_FACES = Object.freeze({
   // Styles without fixed slots share Chamfer's 40-pixel strip and lattice; their
   // figures may move (proportional fonts re-centre), so any strip pixel may change.
   ...Object.fromEntries(Object.entries(STYLE_MASKS).map(([id, mask]) => [id,
-    {metrics: {width: STYLE_WIDTH, height: STYLE_HEIGHT, free: true}, mask, lattice: chamferTriangleGrid, offset: styleOffset(id)}]))
+    {metrics: {width: STYLE_WIDTH, height: STYLE_HEIGHT, free: true}, mask, lattice: chamferTriangleGrid}]))
 });
-export const flipOffset = name => FLIP_FACES[name]?.offset ?? (name === 'broad' ? -2 : 0);
+// Broad figures sit two pixels above the time block; the others fill it.
+export const flipOffset = name => name === 'broad' ? -2 : 0;
 function face(name) {
   const f = FLIP_FACES[name];
   if (!f) throw new Error('Unknown clock face.');
@@ -101,14 +102,13 @@ function shade(from, toward) {
 }
 export function drawFlipPixels(ctx, pixels, x = 0, y = 0, {ink = '#000000', background = '#FFFFFF'} = {}) {
   const W = 200, H = pixels.length / W;
-  // A null background leaves ground pixels untouched (triangles keep their unlit grid).
-  const colors = background === null ? [null, ink, ink, ink] : [background, ink, shade(background, ink), shade(ink, background)];
+  const colors = [background, ink, shade(background, ink), shade(ink, background)];
   for (let row = 0; row < H; row++) {
     let start = 0;
     while (start < W) {
       const color = pixels[row * W + start]; let end = start + 1;
       while (end < W && pixels[row * W + end] === color) end++;
-      if (color || background !== null) { ctx.fillStyle = colors[color]; ctx.fillRect(x + start, y + row, end - start, 1); }
+      ctx.fillStyle = colors[color]; ctx.fillRect(x + start, y + row, end - start, 1);
       start = end;
     }
   }

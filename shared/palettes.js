@@ -29,4 +29,3 @@ export const THEMES = [
 
 // Background, shadow, and illuminated pixels for the small phase glyphs.
 export const MOON_COLORS = THEMES.map(theme => [theme.bg, theme.moonShadow, theme.ink]);
-export const INACTIVE_SEGMENTS = THEMES.map(theme => theme.inactive);
