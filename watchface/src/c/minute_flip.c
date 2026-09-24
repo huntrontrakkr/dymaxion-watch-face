@@ -21,7 +21,7 @@ static void broad_colon(uint8_t *bits){
     for(int x=inset;x<8-inset;x++)set_bit(bits,(top+y)*CLOCK_WIDTH+96+x);
   }
 }
-const ClockFace BROAD_FACE={40,4,32,45,{2,49,106,153},CLOCK_CELL_COUNT,broad_glyph,broad_owner,broad_cell,broad_colon,NULL};
+const ClockFace BROAD_FACE={40,4,32,45,{2,49,106,153},CLOCK_CELL_COUNT,broad_glyph,broad_owner,broad_cell,broad_colon,NULL,NULL,0,0,NULL};
 
 static uint16_t u16(const uint8_t *p){return (uint16_t)(p[0]|p[1]<<8);}
 static const uint8_t *chamfer_glyph(const ClockFace *f,int digit){return f->data+digit*CHAMFER_GLYPH_BYTES;}
@@ -45,7 +45,7 @@ bool chamfer_face_init(ClockFace *f,const uint8_t *data,size_t length){
   if(!f||!data||length!=CHAMFER_BYTES)return false;
   static const uint8_t starts[4]=CHAMFER_STARTS;
   *f=(ClockFace){CHAMFER_HEIGHT,CHAMFER_CAP_TOP,CHAMFER_CAP_HEIGHT,CHAMFER_DIGIT_WIDTH,{0},CHAMFER_CELL_COUNT,
-    chamfer_glyph,chamfer_owner,chamfer_cell,chamfer_colon,data};
+    chamfer_glyph,chamfer_owner,chamfer_cell,chamfer_colon,data,NULL,0,0,NULL};
   memcpy(f->starts,starts,4);
   // Reject a resource whose rows point outside it or name a missing tile.
   for(int y=0;y<CHAMFER_HEIGHT;y++){
@@ -62,6 +62,7 @@ void clock_flip_attach(ClockFlip *flip,const ClockFace *face,uint8_t *memory){
 }
 void clock_mask(const ClockFace *f,const uint8_t digits[4],uint8_t *bits){
   memset(bits,0,(size_t)clock_pixels(f)/8);
+  if(f->mask){f->mask(f,digits,bits);return;}
   for(int s=0;s<4;s++)if(digits[s]<10){
     const uint8_t *glyph=f->glyph(f,digits[s]);
     for(int y=0;y<f->cap_height;y++)for(int x=0;x<f->digit_width;x++)
@@ -74,8 +75,8 @@ void clock_flip_prepare(ClockFlip *flip,const uint8_t before[4],const uint8_t af
   clock_mask(f,before,flip->before);clock_mask(f,after,flip->after);
   memset(flip->active,0,f->cell_count);memset(flip->delay,0,f->cell_count);flip->changed_slots=0;flip->changed_cells=0;
   for(int i=0;i<clock_pixels(f);i++)if(bit(flip->before,i)!=bit(flip->after,i)){
-    int slot=slot_at(f,i%CLOCK_WIDTH);if(slot<0)continue;
-    flip->active[f->owner(f,i%CLOCK_WIDTH,i/CLOCK_WIDTH)]=1;flip->changed_slots|=1u<<slot;
+    int slot=f->mask?-1:slot_at(f,i%CLOCK_WIDTH);if(slot<0&&!f->mask)continue;
+    flip->active[f->owner(f,i%CLOCK_WIDTH,i/CLOCK_WIDTH)]=1;if(slot>=0)flip->changed_slots|=1u<<slot;
   }
   int32_t min=INT32_MAX,max=INT32_MIN;ClockCell c;
   for(int id=0;id<f->cell_count;id++)if(flip->active[id]){

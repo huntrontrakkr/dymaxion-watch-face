@@ -6,13 +6,13 @@
 #include "generated/system_clock.h"
 #include "display.h"
 #include "minute_flip.h"
+#include "clock_styles.h"
 #include "caps.h"
 #include "palette.h"
 #include "generated/defaults.h"
 #include "generated/cities.h"
 #include "generated/moon_palette.h"
 #include "generated/status_glyphs.h"
-#include "generated/span_font.h"
 #include "generated/markers.h"
 
 static Window *s_window;
@@ -31,10 +31,10 @@ static uint8_t s_selected=0,s_frame=16;
 static AppTimer *s_animation;
 static AppTimer *s_clock_timer;
 static ClockFlip s_clock_flip;
-static ClockFace s_chamfer;
+static ClockFace s_chamfer,s_styled;
 // Flip state lives in the heap, sized for the active face; see clock_configure.
 static const ClockFace *s_clock_face;
-static uint8_t *s_clock_memory,*s_clock_pixels,*s_chamfer_data,*s_caps;
+static uint8_t *s_clock_memory,*s_clock_pixels,*s_chamfer_data,*s_glyph_data,*s_caps;
 static uint8_t s_clock_digits[4];
 static bool s_clock_ready,s_clock_running,s_clock_24,s_focused=true;
 static time_t s_clock_minute;
@@ -149,37 +149,71 @@ static uint8_t clock_shade(uint8_t from,uint8_t toward){
   for(int shift=0;shift<=4;shift+=2){int a=(from>>shift)&3,b=(toward>>shift)&3;out|=(a+(b>a?1:b<a?-1:0))<<shift;}
   return out;
 }
+static GColor triangle_inactive(void){return (GColor){.argb=custom_palette()?s_palette[PAL_INACTIVE]:TRIANGLE_INACTIVE[s_settings[THEME]]};}
+static void draw_triangles(GContext *ctx,const uint8_t digits[4],bool grid,int x,int y){
+  GColor inactive=triangle_inactive();
+  for(int i=0;i<TRIANGLE_RUN_COUNT;i++){
+    TriangleRun run=TRIANGLE_RUNS[i];bool lit=display_group_lit(run.group,digits);
+    if(lit||grid)line(ctx,x+2+run.x,y-1+run.y,x+1+run.x+run.length,y-1+run.y,lit?color(6):inactive);
+  }
+}
+static void draw_triangle_grid(GContext *ctx,int x,int y){static const uint8_t blank[4]={10,10,10,10};draw_triangles(ctx,blank,true,x,y);}
 static void draw_flip_time(GContext *ctx,struct tm *local,time_t now,int x,int y){
   clock_prepare(local,now,false);
   uint32_t ms=s_clock_running?clock_milliseconds()-s_clock_started:CLOCK_FLIP_MS;
   uint16_t elapsed=ms<CLOCK_FLIP_MS?ms:CLOCK_FLIP_MS;
   if(elapsed!=s_clock_frame){clock_flip_sample(&s_clock_flip,elapsed,s_clock_pixels);s_clock_frame=elapsed;}
   uint8_t colors[4]={palette()[0],palette()[6],clock_shade(palette()[0],palette()[6]),clock_shade(palette()[6],palette()[0])};
-  // Broad figures sit two pixels above the time block; Chamfer fills it.
-  int top=s_clock_face==&BROAD_FACE?y-2:y;
+  // Broad figures sit two pixels above the time block and triangles one; the rest fill it.
+  bool triangles=s_clock_face==&s_styled&&s_styled.style==1;
+  int top=s_clock_face==&BROAD_FACE?y-2:triangles?y-1:y;
+  // Triangles keep their unlit grid underneath; only lit pixels are drawn over it.
+  if(triangles&&(s_display[2]&1))draw_triangle_grid(ctx,x,y);
   for(int row=0;row<s_clock_face->height;row++)for(int start=0;start<CLOCK_WIDTH;){
     uint8_t value=clock_frame_pixel(s_clock_pixels,row*CLOCK_WIDTH+start);int end=start+1;
     while(end<CLOCK_WIDTH&&clock_frame_pixel(s_clock_pixels,row*CLOCK_WIDTH+end)==value)end++;
-    line(ctx,x+start,top+row,x+end-1,top+row,(GColor){.argb=colors[value]});start=end;
+    if(value||!triangles)line(ctx,x+start,top+row,x+end-1,top+row,(GColor){.argb=colors[value]});
+    start=end;
   }
 }
 static void clock_release(void){
   clock_stop();s_clock_ready=false;s_clock_face=NULL;
-  free(s_clock_memory);free(s_clock_pixels);free(s_chamfer_data);
-  s_clock_memory=s_clock_pixels=s_chamfer_data=NULL;
+  free(s_clock_memory);free(s_clock_pixels);free(s_chamfer_data);free(s_glyph_data);
+  s_clock_memory=s_clock_pixels=s_chamfer_data=s_glyph_data=NULL;
+}
+// One font's glyphs from clock-glyphs.bin, repacked as a one-font resource so
+// only that block (under 1 KB) stays in the heap.
+static const uint8_t *clock_load_font(uint8_t code,int8_t *box_top){
+  ResHandle handle=resource_get_handle(RESOURCE_ID_CLOCK_GLYPHS);size_t length=resource_size(handle);uint8_t table[1+4*8];
+  if(length<1||resource_load_byte_range(handle,0,table,1)!=1||!table[0]||table[0]>8)return NULL;
+  size_t size=1+4u*table[0];if(resource_load_byte_range(handle,0,table,size)!=size)return NULL;
+  for(int f=0;f<table[0];f++)if(table[1+4*f]==code){
+    size_t at=table[3+4*f]|table[4+4*f]<<8,end=f+1<table[0]?(size_t)(table[7+4*f]|table[8+4*f]<<8):length;
+    if(at<size||end>length||end<=at)return NULL;
+    s_glyph_data=malloc(5+end-at);if(!s_glyph_data)return NULL;
+    memcpy(s_glyph_data,(uint8_t[5]){1,code,table[2+4*f],5,0},5);
+    if(resource_load_byte_range(handle,at,s_glyph_data+5,end-at)!=end-at)return NULL;
+    return clock_glyph_font(s_glyph_data,5+end-at,code,box_top);
+  }
+  return NULL;
 }
 // Choose the flip face for the current display and allocate only its state.
-// Chamfer tables are a resource so the app image stays under 64 KB; if the
-// heap cannot hold them, the clock falls back to Span lettering.
+// Chamfer tables are a resource so the app image stays under 64 KB; the other
+// styles without Broad's slots borrow its lattice. If the heap cannot hold
+// them, the clock is drawn without the transition (Broad and Chamfer as Span).
 static void clock_configure(void){
   clock_release();
   if(s_settings[FLAGS]&STACKED)return;
-  const ClockFace *face=NULL;
-  if(s_display[1]==2)face=&BROAD_FACE;
-  else if(s_display[1]==4){
+  const ClockFace *face=NULL;uint8_t style=s_display[1];
+  if(style==2)face=&BROAD_FACE;
+  else {
     ResHandle handle=resource_get_handle(RESOURCE_ID_CLOCK_CHAMFER);size_t length=resource_size(handle);
     s_chamfer_data=malloc(length);
     if(s_chamfer_data&&resource_load(handle,s_chamfer_data,length)==length&&chamfer_face_init(&s_chamfer,s_chamfer_data,length))face=&s_chamfer;
+    if(face&&style!=4){
+      int8_t box_top=0;const uint8_t *font=style>=5?clock_load_font(style,&box_top):NULL;
+      face=clock_style_face(&s_styled,&s_chamfer,style,font,box_top)?&s_styled:NULL;
+    }
   }
   if(face){s_clock_memory=malloc(clock_flip_bytes(face));s_clock_pixels=malloc(clock_frame_bytes(face));}
   if(!face||!s_clock_memory||!s_clock_pixels){clock_release();return;}
@@ -225,44 +259,19 @@ static void draw_bluetooth_indicator(GContext *ctx) {
       graphics_draw_pixel(ctx,GPoint(148+x,2+y));
   if(!s_connected)line(ctx,147,12,155,2,color(7));
 }
-static void draw_span_time(GContext *ctx,const char *timebuf,int x,int y) {
-  int cursor=x+5;
-  graphics_context_set_stroke_color(ctx,color(6));
-  for(const char *p=timebuf;*p;p++) {
-    if(*p==' '){cursor+=45;continue;} // blank first slot keeps the others in place
-    int glyph=*p==':'?10:*p-'0';
-    if(glyph<0||glyph>10)continue;
-    for(int i=SPAN_OFFSETS[glyph];i<SPAN_OFFSETS[glyph+1];i++) {
-      SpanRun run=SPAN_RUNS[i];
-      line(ctx,cursor+run.x,y+2+run.y,cursor+run.x+run.length-1,y+2+run.y,color(6));
-    }
-    cursor+=glyph==10?10:45;
-  }
+typedef struct {GContext *ctx;int x,y;GColor color;} StripPen;
+static void strip_span(void *context,int x,int y,int length){StripPen *pen=context;line(pen->ctx,pen->x+x,pen->y+y,pen->x+x+length-1,pen->y+y,pen->color);}
+// Without the transition's heap state, Span (and Broad or Chamfer in its place) is drawn directly.
+static void draw_span_time(GContext *ctx,const uint8_t digits[4],int x,int y){
+  StripPen pen={ctx,x,y,color(6)};clock_style_runs(0,NULL,0,digits,strip_span,&pen);
 }
-// Pebble system fonts (display codes 5-8): one centred line, placed so the
-// figures sit centred in the 40-pixel strip (generated/system_clock.h).
+// Pebble system fonts (display codes 5-9) without the transition: one centred
+// line from firmware, placed so the figures sit centred in the 40-pixel strip
+// (generated/system_clock.h). Leco Delta falls back to plain Leco.
 static void draw_system_time(GContext *ctx,const char *timebuf,int x,int y){
-  if(s_display[1]==DELTA_CODE){ // Leco Delta: same centred layout, glyphs from generated/system_clock.h
-    const char *text=timebuf[0]==' '?timebuf+1:timebuf;int width=0; // glyphs 0-9, then ':' at 10
-    for(const char *p=text;*p;p++)if((*p>='0'&&*p<='9')||*p==':')width+=DELTA_GLYPHS[*p==':'?10:*p-'0'].advance;
-    int cursor=x+(200-width)/2;graphics_context_set_stroke_color(ctx,color(6));
-    for(const char *p=text;*p;p++){if(!((*p>='0'&&*p<='9')||*p==':'))continue;const DeltaGlyph *g=&DELTA_GLYPHS[*p==':'?10:*p-'0'];
-      for(int r=0;r<g->height;r++)for(int c=0;c<g->width;c++){int i=g->bit+r*g->width+c;
-        if((DELTA_BITS[i>>3]>>(i&7))&1)graphics_draw_pixel(ctx,GPoint(cursor+g->left+c,y+DELTA_BOX_TOP+g->top+r));}
-      cursor+=g->advance;}
-    return;
-  }
   for(int i=0;i<SYSTEM_CLOCK_COUNT;i++)if(SYSTEM_CLOCK_FONTS[i].code==s_display[1]){
     const SystemClockFont *f=&SYSTEM_CLOCK_FONTS[i];
     text(ctx,timebuf[0]==' '?timebuf+1:timebuf,fonts_get_system_font(f->key),GRect(x,y+f->box_top,200,f->box_height),GTextAlignmentCenter,color(6));
-  }
-}
-static void draw_triangle_time(GContext *ctx,const char *timebuf,int x,int y){
-  uint8_t digits[4]={timebuf[0]-'0',timebuf[1]-'0',timebuf[3]-'0',timebuf[4]-'0'};
-  GColor inactive=(GColor){.argb=custom_palette()?s_palette[PAL_INACTIVE]:TRIANGLE_INACTIVE[s_settings[THEME]]};
-  for(int i=0;i<TRIANGLE_RUN_COUNT;i++){
-    TriangleRun run=TRIANGLE_RUNS[i];bool lit=display_group_lit(run.group,digits);
-    if(lit||(s_display[2]&1))line(ctx,x+2+run.x,y-1+run.y,x+1+run.x+run.length,y-1+run.y,lit?color(6):inactive);
   }
 }
 static int caption_width(const char *caption){return graphics_text_layout_get_content_size(caption,s_small,GRect(0,0,600,16),GTextOverflowModeFill,GTextAlignmentLeft).w;}
@@ -296,11 +305,12 @@ static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
   }else {
     snprintf(timebuf,sizeof(timebuf),"%02d:%02d",hour,local->tm_min);
     if(hour<10&&!leading_zero())timebuf[0]=' ';
+    uint8_t digits[4]={timebuf[0]==' '?10:timebuf[0]-'0',timebuf[1]-'0',timebuf[3]-'0',timebuf[4]-'0'};
     if(s_clock_face)draw_flip_time(ctx,local,now,x,y);
-    // 12-hour Chamfer time carries AM/PM beside the figures, top-aligned with them.
-    if(s_display[1]==4&&*ampm)draw_meridiem(ctx,ampm,x+167,y+9);
     else if(s_display[1]>=5)draw_system_time(ctx,timebuf,x,y);
-    else if(s_display[1]==1)draw_triangle_time(ctx,timebuf,x,y);else draw_span_time(ctx,timebuf,x,y);
+    else if(s_display[1]==1)draw_triangles(ctx,digits,s_display[2]&1,x,y);else draw_span_time(ctx,digits,x,y);
+    // 12-hour Chamfer time carries AM/PM beside the figures, top-aligned with them.
+    if(s_clock_face==&s_chamfer&&*ampm)draw_meridiem(ctx,ampm,x+167,y+9);
   }
 }
 static void draw_zones(GContext *ctx,time_t now,struct tm *local,int visible) {

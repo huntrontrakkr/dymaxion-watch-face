@@ -19,20 +19,28 @@ test('PebbleOS system fonts decode to the committed preview glyphs', () => {
   }
   assert.deepEqual(SYSTEM_CLOCKS, [...SYSTEM_CLOCK_FONTS.map(f => f[0]), DELTA.id]);
 });
-test('Leco Delta is Leco with 60-degree corner cuts, packed identically for the watch', () => {
+test('Leco Delta is Leco with 60-degree corner cuts; every style’s glyphs pack identically for the watch', () => {
   const delta = generated[DELTA.id], leco = generated[DELTA.from], R3 = Math.sqrt(3);
   assert.equal(DISPLAY_CODES[DELTA.id], DELTA.code);assert.equal(delta.boxTop, leco.boxTop);
-  const bytes = header.match(/DELTA_BITS\[\d+\] = \{([^}]*)\}/)[1].split(',').map(Number);
-  const glyphs = [...header.match(/DELTA_GLYPHS\[\d+\] = \{(.*)\};/)[1].matchAll(/\{(-?\d+),(-?\d+),(-?\d+),(-?\d+),(-?\d+),(\d+)\}/g)].map(m => m.slice(1).map(Number));
-  [...'0123456789:'].forEach((ch, i) => {
-    const g = delta.glyphs[ch], base = leco.glyphs[ch], [w, h, left, top, advance, bit] = glyphs[i];
-    assert.deepEqual(g.rows, deltaRows(base.rows), ch);
-    assert.deepEqual([w, h, left, top, advance], [g.width, g.height, g.left, g.top, g.advance], ch);
-    const rows = Array.from({length: h}, (_, y) => Array.from({length: w}, (_, x) => { const k = bit + y * w + x; return (bytes[k >> 3] >> (k & 7)) & 1 ? '#' : '.'; }).join(''));
-    assert.deepEqual(rows, g.rows, `${ch} bits in system_clock.h`);
+  for (const ch of '0123456789:') {
+    assert.deepEqual(delta.glyphs[ch].rows, deltaRows(leco.glyphs[ch].rows), ch);
     // Cutting only removes ink, and never from a pixel the original lacks.
-    g.rows.forEach((r, y) => [...r].forEach((c, x) => { if (c === '#') assert.equal(base.rows[y][x], '#'); }));
-  });
+    delta.glyphs[ch].rows.forEach((r, y) => [...r].forEach((c, x) => { if (c === '#') assert.equal(leco.glyphs[ch].rows[y][x], '#'); }));
+  }
+  // clock-glyphs.bin: [count], per font [code, box top, offset u16], 11 glyphs of 7 bytes, then bits.
+  const bin = readFileSync('watchface/resources/data/clock-glyphs.bin'), count = bin[0];
+  assert.equal(count, Object.keys(generated).length);assert.match(header, new RegExp(`CLOCK_GLYPHS_BYTES ${bin.length}\\b`));
+  for (let f = 0; f < count; f++) {
+    const code = bin[1 + f * 4], boxTop = bin.readInt8(2 + f * 4), at = bin.readUInt16LE(3 + f * 4);
+    const [id, font] = Object.entries(generated).find(([, v]) => v.code === code);
+    assert.equal(boxTop, font.boxTop, id);
+    [...'0123456789:'].forEach((ch, k) => {
+      const m = at + k * 7, w = bin[m], h = bin[m + 1], bit = bin.readUInt16LE(m + 5), bits = at + 77, g = font.glyphs[ch];
+      assert.deepEqual([w, h, bin.readInt8(m + 2), bin.readInt8(m + 3), bin.readInt8(m + 4)], [g.width, g.height, g.left, g.top, g.advance], `${id} ${ch}`);
+      const rows = Array.from({length: h}, (_, y) => Array.from({length: w}, (_, x) => { const n = bit + y * w + x; return (bin[bits + (n >> 3)] >> (n & 7)) & 1 ? '#' : '.'; }).join(''));
+      assert.deepEqual(rows, g.rows, `${id} ${ch} bits`);
+    });
+  }
   // An upright stroke end comes to a symmetric point that widens row by row,
   // about 1.2 pixels per row on each side: a 60-degree edge (tan 30 = 0.58 per side).
   const end = deltaRows(Array(12).fill('######')), widths = end.map(r => r.split('#').length - 1);

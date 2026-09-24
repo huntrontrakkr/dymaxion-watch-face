@@ -36,7 +36,18 @@ try {
   await page.locator('#live').click();assert.equal(await screen.getAttribute('data-clock-animating'),'false');
   await page.reload();await page.waitForFunction(()=>document.querySelector('#preview-time').textContent.includes('LIVE'));
   assert.equal(await screen.getAttribute('data-clock-display'),'chamfer');
-  assert.deepEqual(errors,[]);reports.push({liveMinute:true,reducedMotion:true,motionDisabled:true,idleStable:true,errors});
+  // Every horizontal numeral style shares the transition.
+  const styles=['span','triangles','leco','bitham-bold','bitham-light','bitham-medium','leco-delta'];
+  await page.getByRole('tab',{name:'Character',exact:true}).click();
+  for(const id of styles){
+    await page.getByLabel('Numerical display',{exact:true}).selectOption(id);assert.equal(await screen.getAttribute('data-clock-display'),id);
+    const start=await clock();await page.clock.runFor(await page.evaluate(()=>60000-Date.now()%60000)+2);
+    assert.equal(await screen.getAttribute('data-clock-animating'),'true',id+' animates the minute');
+    await page.clock.runFor(180);assert.notDeepEqual(await clock(),start,id);
+    await page.clock.runFor(250);assert.equal(await screen.getAttribute('data-clock-animating'),'false',id+' settles within 400 ms');
+  }
+  await page.getByLabel('Numerical display',{exact:true}).selectOption('chamfer');
+  assert.deepEqual(errors,[]);reports.push({liveMinute:true,styles,reducedMotion:true,motionDisabled:true,idleStable:true,errors});
   await page.close();
   for(const [width,scheme] of [[736,'light'],[390,'light'],[320,'dark']]){
     const page=await browser.newPage({viewport:{width,height:1000},colorScheme:scheme}),errors=[];

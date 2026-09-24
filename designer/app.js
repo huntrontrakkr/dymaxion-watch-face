@@ -15,7 +15,6 @@ import {CITIES} from '../shared/cities.js';
 import {panelControls} from '../shared/panel-controls.js';
 import {drawFooter} from '../shared/panel-render.js';
 import {sampleEnvironment} from '../shared/panel-data.js';
-import {SYSTEM_CLOCKS,drawSystemTime} from '../shared/system-clock.js';
 import {environmentService} from '../tools/environment-service.js';
 import {PANEL_PAGES} from '../shared/panel-settings.js';
 import {cityControls} from '../shared/city-controls.js';
@@ -23,7 +22,7 @@ import {cityIsUsable,cityHasPosition,clockCaption} from '../shared/city.js';
 import {locationService} from '../tools/location-service.js';
 import {displayControls} from '../shared/display-controls.js';
 import {drawTriangleTime} from '../shared/triangle-display.js';
-import {minuteFlipClock,drawFlipPixels} from '../shared/minute-flip.js';
+import {minuteFlipClock,drawFlipPixels,FLIP_FACES,flipOffset} from '../shared/minute-flip.js';
 
 const $=id=>document.getElementById(id),zoneExists=tz=>!!moment.tz.zone(tz);
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -235,20 +234,16 @@ function render(){
   const clockAmpm=settings.stacked||settings.clockDisplay==='chamfer';
   const status=clockCaption(local.format('ddd DD MMM').toUpperCase(),city.toUpperCase(),use24()||clockAmpm?'':ampm,statusWidth(),t=>textWidth(watchTypeface.lining.small,t),'  ');
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
-  if(settings.stacked||!['broad','chamfer'].includes(settings.clockDisplay))minuteClock.reset();
+  if(settings.stacked||!FLIP_FACES[settings.clockDisplay])minuteClock.reset();
   if(settings.stacked){paintText(hourText(h,settings.leadingZero).trim(),tx+tw/2,ty+30,48,pal.ink,'center');paintText(two(minute),tx+tw/2,ty+65,48,pal.ink,'center');strokeLine(tx+25,ty+35,tx+47,ty+35,pal.accent);paintText(caption,tx+tw/2,ty+81,11,pal.accent,'center');}
   else{
     const value=hourText(h,settings.leadingZero)+':'+two(minute);
-    if(settings.clockDisplay==='broad'||settings.clockDisplay==='chamfer'){
-      const chamfer=settings.clockDisplay==='chamfer';
-      minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset].join('/'),settings.motion&&!reducedMotion.matches&&!document.hidden,settings.clockDisplay);
-      drawFlipPixels(ctx,minuteClock.frame(),tx,chamfer?ty:ty-2,{ink:pal.ink,background:pal.bg});
-      if(chamfer&&!use24())drawBitmapText(ctx,watchTypeface.lining.small,ampm,tx+167,ty+9,pal.accent);
-    }else if(SYSTEM_CLOCKS.includes(settings.clockDisplay))drawSystemTime(ctx,settings.clockDisplay,value,tx,ty,pal.ink);
-    else if(settings.clockDisplay==='triangles')drawTriangleTime(ctx,value,tx,ty-1,pal.ink,pal.inactive,settings.segmentGrid);
-    // Span keeps fixed 45-pixel slots (as on the watch): draw the full readout,
-    // then clear the first slot when the leading zero is off.
-    else{paintText(value.replace(/^ /,'0'),tx+tw/2,ty+30,50,pal.ink,'center');if(value[0]===' '){ctx.fillStyle=pal.bg;ctx.fillRect(tx+5,ty,45,th);}}
+    // Every horizontal style animates its minute change through the same shrink.
+    const style=settings.clockDisplay,triangles=style==='triangles';
+    minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset].join('/'),settings.motion&&!reducedMotion.matches&&!document.hidden,style);
+    if(triangles&&settings.segmentGrid)drawTriangleTime(ctx,'  :  ',tx,ty-1,pal.ink,pal.inactive,true);
+    drawFlipPixels(ctx,minuteClock.frame(),tx,ty+flipOffset(style),{ink:pal.ink,background:triangles?null:pal.bg});
+    if(style==='chamfer'&&!use24())drawBitmapText(ctx,watchTypeface.lining.small,ampm,tx+167,ty+9,pal.accent);
   }
   canvas.dataset.clockDisplay=settings.stacked?'draft':settings.clockDisplay;
   canvas.dataset.clockAnimating=String(minuteClock.active);

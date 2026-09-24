@@ -1,5 +1,6 @@
 import {BROAD_METRICS, broadTimeMask, equilateralGrid} from './broad-numerals.js';
 import {CHAMFER_METRICS, chamferTimeMask, chamferTriangleGrid} from './chamfer-numerals.js';
+import {STYLE_MASKS, STYLE_WIDTH, STYLE_HEIGHT, styleOffset} from './clock-styles.js';
 
 export const FLIP_DURATION = 400;
 export const TILE_DURATION = 320;
@@ -10,8 +11,13 @@ export const FLIP_SCALE = Object.freeze(Array.from({length: 33}, (_, i) => Math.
 export const FLIP_FACES = Object.freeze({
   broad: {metrics: BROAD_METRICS, mask: broadTimeMask,
     lattice: () => equilateralGrid({width: 200, height: 40, pitch: BROAD_METRICS.capHeight, originX: 2, originY: BROAD_METRICS.capTop})},
-  chamfer: {metrics: CHAMFER_METRICS, mask: chamferTimeMask, lattice: chamferTriangleGrid}
+  chamfer: {metrics: CHAMFER_METRICS, mask: chamferTimeMask, lattice: chamferTriangleGrid},
+  // Styles without fixed slots share Chamfer's 40-pixel strip and lattice; their
+  // figures may move (proportional fonts re-centre), so any strip pixel may change.
+  ...Object.fromEntries(Object.entries(STYLE_MASKS).map(([id, mask]) => [id,
+    {metrics: {width: STYLE_WIDTH, height: STYLE_HEIGHT, free: true}, mask, lattice: chamferTriangleGrid, offset: styleOffset(id)}]))
 });
+export const flipOffset = name => FLIP_FACES[name]?.offset ?? (name === 'broad' ? -2 : 0);
 function face(name) {
   const f = FLIP_FACES[name];
   if (!f) throw new Error('Unknown clock face.');
@@ -40,9 +46,9 @@ export function planPixelFlip(before, after, name = 'broad') {
   const grid = flipGrid(name), active = new Uint8Array(grid.cells.length), delays = new Uint8Array(grid.cells.length);
   let changedSlots = 0, changedPixels = 0;
   for (let i = 0; i < before.length; i++) if (before[i] !== after[i]) {
-    const slot = slotAt(i % W);
-    if (slot < 0) throw new Error('Only numeral pixels may change during the minute flip.');
-    active[grid.membership[i]] = 1; changedSlots |= 1 << slot; changedPixels++;
+    const slot = face(name).metrics.free ? -1 : slotAt(i % W);
+    if (slot < 0 && !face(name).metrics.free) throw new Error('Only numeral pixels may change during the minute flip.');
+    active[grid.membership[i]] = 1; if (slot >= 0) changedSlots |= 1 << slot; changedPixels++;
   }
   const changed = grid.cells.filter(cell => active[cell.id]);
   const min = Math.min(...changed.map(cell => cell.centerX)), max = Math.max(...changed.map(cell => cell.centerX));
@@ -95,13 +101,15 @@ function shade(from, toward) {
 }
 export function drawFlipPixels(ctx, pixels, x = 0, y = 0, {ink = '#000000', background = '#FFFFFF'} = {}) {
   const W = 200, H = pixels.length / W;
-  const colors = [background, ink, shade(background, ink), shade(ink, background)];
+  // A null background leaves ground pixels untouched (triangles keep their unlit grid).
+  const colors = background === null ? [null, ink, ink, ink] : [background, ink, shade(background, ink), shade(ink, background)];
   for (let row = 0; row < H; row++) {
     let start = 0;
     while (start < W) {
       const color = pixels[row * W + start]; let end = start + 1;
       while (end < W && pixels[row * W + end] === color) end++;
-      ctx.fillStyle = colors[color]; ctx.fillRect(x + start, y + row, end - start, 1); start = end;
+      if (color || background !== null) { ctx.fillStyle = colors[color]; ctx.fillRect(x + start, y + row, end - start, 1); }
+      start = end;
     }
   }
 }

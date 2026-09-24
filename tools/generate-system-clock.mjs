@@ -99,13 +99,34 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const base = fonts[DELTA.from];
   fonts[DELTA.id] = {name: DELTA.name, key: null, code: DELTA.code, maxHeight: base.maxHeight, boxTop: base.boxTop,
     glyphs: Object.fromEntries(Object.entries(base.glyphs).map(([ch, g]) => [ch, {...g, rows: deltaRows(g.rows)}]))};
-  const deltaChars = [...CHARACTERS], bits = [], metrics = [];
-  for (const ch of deltaChars) {
-    const g = fonts[DELTA.id].glyphs[ch], start = bits.length;
-    for (const row of g.rows) for (const c of row) bits.push(c === '#' ? 1 : 0);
-    metrics.push(`{${g.width},${g.height},${g.left},${g.top},${g.advance},${start}}`);
+  // Fallback if the glyph resource cannot load: plain firmware Leco in Delta's place.
+  native.push({key: 'FONT_KEY_LECO_42_NUMBERS', code: DELTA.code, boxTop: base.boxTop, boxHeight: base.maxHeight + 8});
+  // Watch resource clock-glyphs.bin, loaded only for these styles so the minute
+  // transition can render them: [count] then per font [code, box top, block
+  // offset u16]; each block holds 11 glyphs for "0123456789:" as width, height,
+  // left, top, advance, first bit (u16), followed by their bits (row-major,
+  // least significant bit first).
+  const blocks = [], order = [...SYSTEM_CLOCK_FONTS.map(f => f[0]), DELTA.id];
+  for (const id of order) {
+    const font = fonts[id], bits = [], glyphBytes = [];
+    for (const ch of CHARACTERS) {
+      const g = font.glyphs[ch], start = bits.length;
+      for (const row of g.rows) for (const c of row) bits.push(c === '#' ? 1 : 0);
+      glyphBytes.push(g.width, g.height, g.left & 255, g.top & 255, g.advance & 255, start & 255, start >> 8);
+    }
+    const packed = Array.from({length: Math.ceil(bits.length / 8)}, (_, k) => bits.slice(k * 8, k * 8 + 8).reduce((b, v, n) => b | (v << n), 0));
+    blocks.push({code: font.code, boxTop: font.boxTop, bytes: [...glyphBytes, ...packed]});
   }
-  const bytes = Array.from({length: Math.ceil(bits.length / 8)}, (_, i) => bits.slice(i * 8, i * 8 + 8).reduce((b, v, k) => b | (v << k), 0));
+  const table = 1 + blocks.length * 4;let offset = table;
+  const resource = [blocks.length];
+  for (const b of blocks) { resource.push(b.code, b.boxTop & 255, offset & 255, offset >> 8); offset += b.bytes.length; }
+  for (const b of blocks) resource.push(...b.bytes);
+  mkdirSync(new URL('../watchface/resources/data/', import.meta.url), {recursive: true});
+  writeFileSync(new URL('../watchface/resources/data/clock-glyphs.bin', import.meta.url), Buffer.from(resource));
+  // Span's exact watch runs for the browser's transition masks (the full
+  // proofs file is too large to bundle).
+  const proofs = JSON.parse(readFileSync(new URL('../designer/public/type/proofs.json', import.meta.url)));
+  writeFileSync(new URL('../assets/type/span-clock.json', import.meta.url), JSON.stringify(Object.fromEntries([...CHARACTERS].map(ch => [ch, proofs.span.lining.large[ch]]))) + '\n');
   mkdirSync(new URL('../assets/type/', import.meta.url), {recursive: true});
   writeFileSync(new URL('../assets/type/system-clock.json', import.meta.url), JSON.stringify(fonts) + '\n');
   writeFileSync(new URL('../watchface/src/c/generated/system_clock.h', import.meta.url), [
@@ -118,14 +139,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     'static const SystemClockFont SYSTEM_CLOCK_FONTS[SYSTEM_CLOCK_COUNT] = {',
     ...native.map(n => `  {${n.code}, ${n.key}, ${n.boxTop}, ${n.boxHeight}},`),
     '};',
-    '// Leco Delta (display code 9): Leco 42 with 60-degree corner cuts, drawn from',
-    '// these bitmaps. Glyphs for "0123456789:": width, height, left, top, advance,',
-    '// first bit; bits row-major, least significant bit first.',
+    '// Leco Delta (display code 9) and the four system fonts are drawn from the',
+    '// clock-glyphs.bin resource; without it Delta falls back to firmware Leco.',
     `#define DELTA_CODE ${DELTA.code}`,
-    `#define DELTA_BOX_TOP ${base.boxTop}`,
-    'typedef struct { uint8_t width, height; int8_t left, top, advance; uint16_t bit; } DeltaGlyph;',
-    `static const DeltaGlyph DELTA_GLYPHS[${deltaChars.length}] = {${metrics.join(',')}};`,
-    `static const uint8_t DELTA_BITS[${bytes.length}] = {${bytes.join(',')}};`, ''
+    `#define CLOCK_GLYPHS_BYTES ${resource.length}`,
+    `#define CLOCK_GLYPH_FONTS ${blocks.length}`, ''
   ].join('\n'));
   console.log(`System clock fonts: ${native.map(n => `${n.key.replace('FONT_KEY_', '')} (top ${n.boxTop})`).join(', ')}.`);
 }

@@ -27,8 +27,8 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
   Motion stops at 20% battery or when **Brief animations** is disabled.
   See [minute transitions](docs/MINUTE-FLIP.md).
 - Pebble's own clock fonts as extra numeral styles: Leco, Bitham Bold, Bitham
-  Light and Bitham Medium, read from the watch firmware (no app memory), with a
-  pixel-exact workshop preview. Leco Delta is Leco with every corner cut at 60°, to
+  Light and Bitham Medium, with a pixel-exact workshop preview. Every style,
+  including Span and the triangles, gets the same minute transition. Leco Delta is Leco with every corner cut at 60°, to
   match the map's triangles.
 - Rounded broad numerals, Span lettering and the earlier triangular seven-segment
   experiment remain available. The segment display has six hexagonal

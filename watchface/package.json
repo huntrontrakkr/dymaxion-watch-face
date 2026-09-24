@@ -26,6 +26,7 @@
         {"type":"font","name":"FONT_DRAFT_18","file":"fonts/DymaxionDraftZone.ttf","characterRegex":"[0-9:]"},
         {"type":"font","name":"FONT_DRAFT_12","file":"fonts/DymaxionDraftMicro.ttf","characterRegex":"[A-Za-z0-9 .,:%+/?-]"},
         {"type":"raw","name":"CLOCK_CHAMFER","file":"data/clock-chamfer.bin"},
+        {"type":"raw","name":"CLOCK_GLYPHS","file":"data/clock-glyphs.bin"},
         {"type":"raw","name":"TYPE_CAPS","file":"data/caps.bin"}
       ]
     }

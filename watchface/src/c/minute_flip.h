@@ -8,6 +8,8 @@
 typedef struct {int32_t cx,cy;} ClockCell;
 // A 200-pixel strip with four fixed numeral slots and one equilateral lattice.
 // Broad reads static tables; Chamfer reads a resource loaded into the heap.
+// Styles without fixed slots (clock_styles.c) borrow Chamfer's lattice and
+// supply their own mask; any pixel of their strip may change.
 typedef struct ClockFace ClockFace;
 struct ClockFace {
   uint8_t height,cap_top,cap_height,digit_width,starts[4];
@@ -17,6 +19,8 @@ struct ClockFace {
   void (*cell)(const ClockFace *face,int id,ClockCell *out);
   void (*colon)(uint8_t *bits);
   const uint8_t *data;
+  void (*mask)(const ClockFace *face,const uint8_t digits[4],uint8_t *bits);
+  uint8_t style;int8_t box_top;const uint8_t *font;
 };
 typedef struct {
   const ClockFace *face;

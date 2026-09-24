@@ -1,14 +1,23 @@
 # Minute transition
 
-The Chamfer and rounded broad clocks use a **400 ms** transition on each
+Every horizontal numeral style uses a **400 ms** transition on each
 adjacent minute change: the triangles over the changed figures shrink away and
-uncover the new time. It replaces the earlier hinge flip. Both clocks share one
+uncover the new time. It replaces the earlier hinge flip. All styles share one
 implementation (`shared/minute-flip.js`, `watchface/src/c/minute_flip.c`) with
 a small per-face descriptor. It renders the old and new time into two binary 200 × 40 frames, compares
 their pixels, and selects only the equilateral tiles containing a difference.
 The lattice is a single row of triangles as tall as the figures (36 pixels for
 Chamfer, 32 for broad), close to the scale of the map's own faces: 34 and 37
 tiles across the strip.
+
+Chamfer and broad have four fixed numeral slots, and only slot pixels may
+change. Span, the triangular segments, the Pebble system fonts and Leco Delta
+have no slots (proportional fonts re-centre as the time changes), so they
+borrow Chamfer's 40-pixel strip and lattice and let any strip pixel change.
+Their masks come from `shared/clock-styles.js` and
+`watchface/src/c/clock_styles.c`, which emit the same horizontal runs; the
+watch draws those styles from the same runs when the transition is off. The
+triangular display keeps its unlit grid underneath: only lit pixels shrink over it.
 
 Each selected tile keeps the old drawing in the face's own ink and ground and
 shrinks toward its centroid, taking its contents with it, until it vanishes into
@@ -19,7 +28,7 @@ pixel stay still; a changed tile can cover part of a neighbouring figure or the
 colon, which shrink with it and reappear unchanged behind. No shading is
 added: the motion alone separates old from new.
 
-The horizontal main clock uses this motion. Zone clocks and stacked Draft time
+The horizontal main clock uses this motion in every style. Zone clocks and stacked Draft time
 keep their existing rendering. Chamfer figures are the default for new
 settings; existing explicit Span/triangle choices are preserved.
 
@@ -37,9 +46,12 @@ settings; existing explicit Span/triangle choices are preserved.
   immediately. The browser schedules its idle clock refresh at minute boundaries.
   No tap, touch, accelerometer, or phone request is added by this animation.
 - Masks, tile flags and the two-bit animation frame are allocated in the heap
-  for the active face only: 4,074 bytes for broad, 4,068 for Chamfer. Broad's
+  for the active face only: 4,074 bytes for broad, 4,068 for the others. Broad's
   masters and lattice are static tables; Chamfer's are a 2,350-byte raw
-  resource loaded only while it is shown, and the watch finds a pixel's tile by
+  resource loaded only while it or a slotless style is shown. The font styles
+  also load one font's figures (817–903 bytes) from the `clock-glyphs.bin`
+  resource; if the heap cannot hold them, the watch draws the time from the
+  firmware font without the transition (Leco Delta as plain Leco), and the watch finds a pixel's tile by
   binary search over per-row runs instead of a lookup table. This keeps the app
   image inside Pebble's 64 KB process limit. The map bitmap is reused during
   animation frames.
@@ -52,10 +64,10 @@ pixel masters and geometry to native tables; this preparation step needs the
 installed Playwright browser. Ordinary Pebble builds use the generated assets.
 
 `npm run generate:chamfer` cuts the zone masters and packs its
-resource. `npm test` checks all 1,440 adjacent minute transitions for both clocks, untouched tiles,
+resource. `npm test` checks all 1,440 adjacent minute transitions for Broad and Chamfer, untouched tiles,
 shrinking areas, endpoints, the 400 ms schedule, and native/browser frame equality for ordinary
-minutes, hour carries, midnight, and 12-hour rollovers.
-`tests/minute-flip-browser.mjs` exercises the live minute trigger, reduced motion,
+minutes, hour carries, midnight, and 12-hour rollovers, in every style.
+`tests/minute-flip-browser.mjs` exercises the live minute trigger in every style, reduced motion,
 disabled motion, idle behavior, time scrubbing, and the responsive replay study.
 Workshop captures, real speed and 4× slower:
 `output/meridian/minute-shrink.gif`, `output/meridian/minute-shrink-slow.gif`.
