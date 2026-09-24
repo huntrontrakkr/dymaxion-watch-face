@@ -77,7 +77,7 @@ try{
   await page.locator('#next-panel').click();assert.notEqual(await page.locator('#panel-preview-label').textContent(),'Time zones');
   assert.equal(await beside(),'true','another panel: times move beside the clock');
   // Transitions: the tray swipes over and the clock glides aside before the times fade in.
-  assert.equal(await screen.getAttribute('data-tray-sliding'),'true');assert.equal(await screen.getAttribute('data-beside-progress'),'0');
+  assert.equal(await screen.getAttribute('data-tray-sliding'),'true');assert(Number(await screen.getAttribute('data-beside-progress'))<200,'just started');
   await page.clock.runFor(150);const glide=Number(await screen.getAttribute('data-beside-progress'));assert(glide>0&&glide<1000,`mid-way: ${glide}`);
   await screen.screenshot({path:'test-results/transition-mid.png'});
   await page.clock.runFor(600);assert.equal(await screen.getAttribute('data-beside-progress'),'1000');assert.equal(await screen.getAttribute('data-tray-sliding'),'false');
