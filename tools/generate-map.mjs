@@ -2,7 +2,7 @@ import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {geoContains} from 'd3-geo';
 import {feature} from 'topojson-client';
 import {makeMap} from '../shared/map.js';
-import {backgroundMask,netRows,BACKGROUND_BITS,MAP_BACKGROUNDS} from '../shared/map-background.js';
+import {triangleGridMask,netRows,BACKGROUND_BITS,GRID_PATTERNS} from '../shared/map-background.js';
 const atlas=JSON.parse(readFileSync('node_modules/world-atlas/land-110m.json'));
 const land=feature(atlas,atlas.objects.land);
 mkdirSync('watchface/resources/maps',{recursive:true});
@@ -27,8 +27,8 @@ function isLand(dir) {
   }
   // Empty pixels carry each optional background's dots as a flag bit.
   const rows=netRows(m);
-  for(const pattern of MAP_BACKGROUNDS.slice(1)){
-    const grid=backgroundMask(m,pattern,rows);
+  for(const pattern of Object.keys(GRID_PATTERNS)){
+    const grid=triangleGridMask(m,pattern,rows);
     for(let i=0;i<grid.length;i++)if(grid[i]&&!(data[i*4+3]&3))data[i*4+3]|=BACKGROUND_BITS[pattern];
   }
   for(const path of ['watchface/resources/maps','designer/public/maps'])writeFileSync(`${path}/map-0.bin`,data);

@@ -47,13 +47,13 @@ try{
   await page.locator('#quick-view').check();assert.equal(await screen.getAttribute('data-quick-view'),'true');assert.equal(await clockTop(),before,'Meridian\'s clock is already clear of the card');
   const band=await screen.evaluate(c=>[...c.getContext('2d').getImageData(0,184,200,5).data]);await page.locator('#quick-view').uncheck();
   assert.notDeepEqual(band,await screen.evaluate(c=>[...c.getContext('2d').getImageData(0,184,200,5).data]),'the card covers the bottom band');
-  // Map backgrounds (triangle points, lines, fine points, fold tabs) fill only the empty map pixels, in the edge colour.
+  // Map backgrounds (triangle points, lines, fine points) fill only the empty map pixels, in the edge colour.
   const mapBlock=()=>screen.evaluate(c=>[...c.getContext('2d').getImageData(0,73,200,104).data]);
   assert.equal(await page.getByLabel('Map background',{exact:true}).inputValue(),'none');
   await page.clock.runFor(3000);const plain=await mapBlock(); // let any marker pulse finish
   const settingsNow=JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))),{paletteFor}=await import('../shared/palette-settings.js'),pal=paletteFor(settingsNow);
   const rgb=hex=>[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
-  for(const [id,low,high] of [['points',20,40],['lines',300,494],['fine-points',90,130],['folds',150,238]]){
+  for(const [id,low,high] of [['points',20,40],['lines',300,494],['fine-points',90,130]]){
     await page.getByLabel('Map background',{exact:true}).selectOption(id);await page.clock.runFor(3000);const gridded=await mapBlock();
     let changed=0;for(let i=0;i<plain.length;i+=4)if(plain[i]!==gridded[i]||plain[i+1]!==gridded[i+1]||plain[i+2]!==gridded[i+2]){
       changed++;assert.deepEqual(gridded.slice(i,i+3),rgb(pal.edge),'dots use the edge colour');assert.deepEqual(plain.slice(i,i+3),rgb(pal.bg),'only the empty ground changes');
