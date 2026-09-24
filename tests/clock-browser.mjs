@@ -17,9 +17,11 @@ try{
   await screen.screenshot({path:'test-results/clock-triangles-meridian.png'});
   await page.getByRole('button',{name:'Horizon',exact:true}).click();await screen.screenshot({path:'test-results/clock-triangles-horizon.png'});
   await page.getByLabel('Clock location',{exact:true}).selectOption('manual');await page.getByLabel('Clock city name',{exact:true}).fill('São José');await page.getByLabel('Clock city name',{exact:true}).press('Tab');assert.match(await screen.getAttribute('data-clock-caption'),/SAO JOSE/);
-  await page.getByRole('tab',{name:'Character',exact:true}).click();await page.locator('#format').selectOption('2');assert.match(await screen.getAttribute('data-clock-caption'),/^WED 23 SEP  SAO JO.* PM$/);
+  await page.getByRole('tab',{name:'Character',exact:true}).click();await page.locator('#format').selectOption('2');assert.match(await screen.getAttribute('data-clock-caption'),/^WED 23 SEP  SAO JO.* PM$/,'triangle numerals have no room for AM/PM, so it stays in the status line');
+  await page.getByLabel('Numerical display',{exact:true}).selectOption('chamfer');assert.equal(await screen.getAttribute('data-clock-caption'),'WED 23 SEP  SAO JOSE','12-hour Chamfer shows AM/PM beside the clock, so the city fits');
+  await page.getByLabel('Numerical display',{exact:true}).selectOption('triangles');
   await page.getByLabel('Show unlit triangles',{exact:true}).uncheck();const noGrid=await screen.screenshot();
-  await page.getByLabel('Numerical display',{exact:true}).selectOption('span');assert.equal(await screen.getAttribute('data-clock-display'),'span');assert(await page.getByLabel('Show unlit triangles',{exact:true}).isDisabled());assert.notDeepEqual(await screen.screenshot(),noGrid);
+  await page.getByLabel('Numerical display',{exact:true}).selectOption('span');assert.equal(await screen.getAttribute('data-clock-display'),'span');assert.match(await screen.getAttribute('data-clock-caption'),/ PM$/,'Span has no room beside the figures, so AM/PM stays in the status line');assert(await page.getByLabel('Show unlit triangles',{exact:true}).isDisabled());assert.notDeepEqual(await screen.screenshot(),noGrid);
   await page.getByLabel('Numerical display',{exact:true}).selectOption('triangles');await page.reload();await page.waitForFunction(()=>document.querySelector('#preview-time').textContent.includes('LIVE'));assert.equal(await screen.getAttribute('data-clock-display'),'triangles');
   await page.locator('#stacked').check();assert.equal(await screen.getAttribute('data-clock-display'),'draft');assert.match(await screen.getAttribute('data-clock-caption'),/Sao Jose PM$/);
   const study=await context.newPage();study.on('pageerror',e=>errors.push(e.message));await study.goto(new URL('segment-study.html',base+'/').href);

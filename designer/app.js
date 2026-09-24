@@ -230,7 +230,9 @@ function render(){
   const city=settings.location.mode==='manual'?settings.location.name:currentCity.sample?currentCity.name:cityIsUsable(currentCity)?currentCity.name+(currentCity.stale||Date.now()/1000-currentCity.fetched>7200?'?':''):'';
   const caption=clockCaption(settings.stacked?'':local.format('ddd DD MMM'),city,use24()?'':ampm,tw-4,t=>textWidth(watchTypeface.text.small,t));
   // Status line: lining capitals, date and city at the top left.
-  const status=clockCaption(local.format('ddd DD MMM').toUpperCase(),city.toUpperCase(),use24()?'':ampm,statusWidth(),t=>textWidth(watchTypeface.lining.small,t),'  ');
+  // AM/PM belongs to the clock when it can show it (Chamfer or stacked).
+  const clockAmpm=settings.stacked||settings.clockDisplay==='chamfer';
+  const status=clockCaption(local.format('ddd DD MMM').toUpperCase(),city.toUpperCase(),use24()||clockAmpm?'':ampm,statusWidth(),t=>textWidth(watchTypeface.lining.small,t),'  ');
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
   if(settings.stacked||!['broad','chamfer'].includes(settings.clockDisplay))minuteClock.reset();
   if(settings.stacked){paintText(two(h),tx+tw/2,ty+30,48,pal.ink,'center');paintText(two(minute),tx+tw/2,ty+65,48,pal.ink,'center');strokeLine(tx+25,ty+35,tx+47,ty+35,pal.accent);paintText(caption,tx+tw/2,ty+81,11,pal.accent,'center');}
@@ -240,6 +242,7 @@ function render(){
       const chamfer=settings.clockDisplay==='chamfer';
       minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset].join('/'),settings.motion&&!reducedMotion.matches&&!document.hidden,settings.clockDisplay);
       drawFlipPixels(ctx,minuteClock.frame(),tx,chamfer?ty:ty-2,{ink:pal.ink,background:pal.bg});
+      if(chamfer&&!use24())drawBitmapText(ctx,watchTypeface.lining.small,ampm,tx+167,ty+9,pal.accent);
     }else if(settings.clockDisplay==='triangles')drawTriangleTime(ctx,value,tx,ty-1,pal.ink,pal.inactive,settings.segmentGrid);
     else paintText(value,tx+tw/2,ty+30,50,pal.ink,'center');
   }

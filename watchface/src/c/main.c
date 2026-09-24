@@ -257,6 +257,7 @@ static void clock_caption(char *out,size_t size,const char *date,const char *amp
     do{if(n)city[--n]=0;snprintf(out,size,"%s%s...%s",prefix,city,suffix);}while(n&&measure(out)>width);
   }
 }
+static void draw_meridiem(GContext *ctx,const char *ampm,int x,int baseline);
 static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
   int x=s_settings[TIME_X],w=(s_settings[FLAGS]&STACKED)?72:200;
   int h=(s_settings[FLAGS]&STACKED)?84:s_display[1]==4?40:46;
@@ -273,6 +274,8 @@ static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
   }else {
     snprintf(timebuf,sizeof(timebuf),"%02d:%02d",hour,local->tm_min);
     if(s_clock_face)draw_flip_time(ctx,local,now,x,y);
+    // 12-hour Chamfer time carries AM/PM beside the figures, top-aligned with them.
+    if(s_display[1]==4&&*ampm)draw_meridiem(ctx,ampm,x+167,y+9);
     else if(s_display[1]==1)draw_triangle_time(ctx,timebuf,x,y);else draw_span_time(ctx,timebuf,x,y);
   }
 }
@@ -306,8 +309,12 @@ static void draw_zones(GContext *ctx,time_t now,struct tm *local,int visible) {
 typedef struct {GContext *ctx;GColor color;} CapsPen;
 static void caps_span(void *context,int x,int y,int length){CapsPen *pen=context;line(pen->ctx,x,y,x+length-1,y,pen->color);}
 // Status line: lining capitals for date and city at the top of the face.
+static void draw_meridiem(GContext *ctx,const char *ampm,int x,int baseline){if(s_caps){CapsPen pen={ctx,color(7)};caps_draw(s_caps,ampm,x,baseline,false,caps_span,&pen);}}
 static void draw_status_line(GContext *ctx,struct tm *local,time_t now,const char *battery){
-  char date[24],status[96];const char *ampm=is_24()?"":(local->tm_hour<12?"AM":"PM");
+  // AM/PM belongs to the clock when it can show it (Chamfer or stacked), which
+  // leaves the status line room for the city.
+  bool clock_ampm=(s_settings[FLAGS]&STACKED)||s_display[1]==4;
+  char date[24],status[96];const char *ampm=is_24()||clock_ampm?"":(local->tm_hour<12?"AM":"PM");
   snprintf(date,sizeof(date),"%s %02d %s",(const char *[]){"Sun","Mon","Tue","Wed","Thu","Fri","Sat"}[local->tm_wday],local->tm_mday,
     (const char *[]){"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"}[local->tm_mon]);
   clock_caption(status,sizeof(status),date,ampm,s_settings[HEADER_SIZE+17]?126:140,now,"  ",status_width);
