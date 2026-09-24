@@ -4,7 +4,7 @@ import {paletteFor} from '../shared/palette-settings.js';
 import {paletteControls} from '../shared/palette-controls.js';
 import moment from 'moment-timezone';
 import {drawBitmapText,fitLabel,textWidth} from '../shared/type.js';
-import {defaults,THEMES,PLACES,PRESETS,activePreset,presetFor,withClockDisplay,validateSettings,clampPosition,blockSize,markColor,quantizeColor,clockTopForVisible,QUICK_VIEW_HEIGHT} from '../shared/settings.js';
+import {defaults,THEMES,PLACES,PRESETS,activePreset,presetFor,withClockDisplay,validateSettings,clampPosition,blockSize,markColor,quantizeColor,clockTopForVisible,QUICK_VIEW_HEIGHT,hourText} from '../shared/settings.js';
 import {MARKERS,drawMarkerPixels} from '../shared/markers.js';
 import {makeMap,direction,dot,MAP_SIZE} from '../shared/map.js';
 import {sunDirection} from '../shared/solar.js';
@@ -52,7 +52,7 @@ let footerPage=settings.footer.home,panelChanged=Date.now(),environmentMode='sam
 let currentCity={name:'Norfolk',sample:true,lat:36.9,lon:-76.3};
 const cityLocation=locationService({getSettings:()=>settings,storage:localStorage,send:city=>{currentCity=city;render();}});
 const cityEditor=cityControls($('city-controls'),()=>settings,value=>{settings=validateSettings({...settings,location:value},zoneExists);save();},()=>cityLocation.refresh());
-const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings=withClockDisplay(settings,value.clockDisplay,value.segmentGrid);sync();save();});
+const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay,value.segmentGrid),leadingZero:value.leadingZero};sync();save();});
 const paletteEditor=paletteControls($('palette-controls'),()=>settings,patch=>{settings=validateSettings({...settings,...patch},zoneExists);sync();save();});
 const environment=environmentService({getSettings:()=>settings,storage:localStorage,send:(kind,data)=>{liveData[kind]=data;render();}});
 const panelEditor=panelControls($('panel-controls'),()=>settings,footer=>{
@@ -235,16 +235,18 @@ function render(){
   const status=clockCaption(local.format('ddd DD MMM').toUpperCase(),city.toUpperCase(),use24()||clockAmpm?'':ampm,statusWidth(),t=>textWidth(watchTypeface.lining.small,t),'  ');
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
   if(settings.stacked||!['broad','chamfer'].includes(settings.clockDisplay))minuteClock.reset();
-  if(settings.stacked){paintText(two(h),tx+tw/2,ty+30,48,pal.ink,'center');paintText(two(minute),tx+tw/2,ty+65,48,pal.ink,'center');strokeLine(tx+25,ty+35,tx+47,ty+35,pal.accent);paintText(caption,tx+tw/2,ty+81,11,pal.accent,'center');}
+  if(settings.stacked){paintText(hourText(h,settings.leadingZero).trim(),tx+tw/2,ty+30,48,pal.ink,'center');paintText(two(minute),tx+tw/2,ty+65,48,pal.ink,'center');strokeLine(tx+25,ty+35,tx+47,ty+35,pal.accent);paintText(caption,tx+tw/2,ty+81,11,pal.accent,'center');}
   else{
-    const value=two(h)+':'+two(minute);
+    const value=hourText(h,settings.leadingZero)+':'+two(minute);
     if(settings.clockDisplay==='broad'||settings.clockDisplay==='chamfer'){
       const chamfer=settings.clockDisplay==='chamfer';
       minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset].join('/'),settings.motion&&!reducedMotion.matches&&!document.hidden,settings.clockDisplay);
       drawFlipPixels(ctx,minuteClock.frame(),tx,chamfer?ty:ty-2,{ink:pal.ink,background:pal.bg});
       if(chamfer&&!use24())drawBitmapText(ctx,watchTypeface.lining.small,ampm,tx+167,ty+9,pal.accent);
     }else if(settings.clockDisplay==='triangles')drawTriangleTime(ctx,value,tx,ty-1,pal.ink,pal.inactive,settings.segmentGrid);
-    else paintText(value,tx+tw/2,ty+30,50,pal.ink,'center');
+    // Span keeps fixed 45-pixel slots (as on the watch): draw the full readout,
+    // then clear the first slot when the leading zero is off.
+    else{paintText(value.replace(/^ /,'0'),tx+tw/2,ty+30,50,pal.ink,'center');if(value[0]===' '){ctx.fillStyle=pal.bg;ctx.fillRect(tx+5,ty,45,th);}}
   }
   canvas.dataset.clockDisplay=settings.stacked?'draft':settings.clockDisplay;
   canvas.dataset.clockAnimating=String(minuteClock.active);

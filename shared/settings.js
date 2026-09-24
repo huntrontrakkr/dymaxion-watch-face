@@ -57,12 +57,14 @@ const LEGACY_PRESETS=[{
 }];
 export function defaults() {
   return {version:1,markerSet:2,theme:0,customPalettes:[],customPalette:null,format:1,dayNight:true,edges:false,lights:true,motion:true,sun:true,moonIndicator:true,connectionBuzz:'disconnect',
-    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',segmentGrid:true,location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
+    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',segmentGrid:true,leadingZero:true,location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
 }
 // Quick View: a clock the peek would cover moves up to sit just above it,
 // never into the status line (clock_top_for_visible in settings.c).
 // Buzz when the phone connection drops (and optionally returns).
 export const CONNECTION_BUZZ=['disconnect','both','off'];
+// Hour text for the main clock: a space keeps the first digit slot blank.
+export function hourText(hour,leadingZero=true){return hour<10&&!leadingZero?' '+hour:String(hour).padStart(2,'0');}
 export function clockTopForVisible(top,height,visible){
   if(top+height>visible-2)top=visible-2-height;
   return Math.max(18,top);
@@ -115,6 +117,8 @@ export function validateSettings(input,zoneExists) {
   if(clockDisplay!==undefined&&!DISPLAY_STYLES.includes(clockDisplay))throw new Error('Unknown clock display.');
   if(input.segmentGrid!==undefined&&typeof input.segmentGrid!=='boolean')throw new Error('Invalid segment grid.');
   out.clockDisplay=clockDisplay??'broad';out.segmentGrid=input.segmentGrid??true;
+  if(input.leadingZero!==undefined&&typeof input.leadingZero!=='boolean')throw new Error('Invalid leading zero.');
+  out.leadingZero=input.leadingZero??true;
   const position=(key,pos)=>{
     if(!Array.isArray(pos)||pos.length!==2||!pos.every(Number.isFinite))throw new Error('Invalid position.');
     return clampPosition(out,key,pos);

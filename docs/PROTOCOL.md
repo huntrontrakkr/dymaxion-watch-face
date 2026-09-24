@@ -165,7 +165,9 @@ the watch shows no city until the phone's next update.
 
 `DISPLAY` (10006) is four bytes, persisted under key 3: `[1, style, grid, 0]`.
 Style 0 selects Span, 1 selects triangular seven-segment numerals, 2 selects
-rounded broad numerals. Grid is a boolean controlling unlit triangles in style 1.
+rounded broad numerals, 4 Chamfer figures. Byte 2 bit 0 shows unlit triangles in
+style 1; bit 1 turns the leading zero off (the first digit slot stays blank for
+hours under ten). Bit 1 is clear in every older packet, so the zero stays on.
 Stacked time always uses Draft. Style 2 uses a temporary 400 ms minute-transition
 timer when the existing MOTION flag is enabled and battery is above 20%; it adds
 no sensor. The default is `[1, 2, 1, 0]`.

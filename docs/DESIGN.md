@@ -83,7 +83,9 @@ sit in 27-pixel tabular cells so the readout never shifts and the minute transit
 moves only what changes. A status line of Draft Micro lining capitals carries
 the date and city at the top of every composition. In 12-hour time the Chamfer
 clock carries AM/PM itself, in small accent capitals top-aligned with the
-figures, so the status line keeps its width for the city; stacked time keeps
+figures, so the status line keeps its width for the city. The leading zero
+(09:07) is on by default and can be turned off, which leaves the first slot
+blank so the other figures keep their places; stacked time keeps
 AM/PM in its caption, and the wider numeral styles leave it in the status line. The reasoning, and a comparison with the previous default,
 are in [Meridian](MERIDIAN.md).
 

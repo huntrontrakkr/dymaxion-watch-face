@@ -52,7 +52,7 @@ export function groupLit(group,digits){
   return !!(SEGMENT_DIGITS[digits[Math.floor((group-1)/7)]]&(1<<((group-1)%7)));
 }
 export function drawTriangleTime(ctx,time,x,y,ink,inactive,showInactive=true){
-  const digits=time.replace(':','').split('').map(Number);
+  const digits=time.replace(':','').split('').map(c=>c===' '?10:Number(c)); // 10: blank slot
   for(const run of TRIANGLE_GRID.runs){
     const lit=groupLit(run.group,digits);if(!lit&&!showInactive)continue;
     ctx.fillStyle=lit?ink:inactive;ctx.fillRect(x+2+run.x,y+run.y,run.length,1);
@@ -61,5 +61,6 @@ export function drawTriangleTime(ctx,time,x,y,ink,inactive,showInactive=true){
 export function encodeDisplay(settings){
   const style=DISPLAY_CODES[settings.clockDisplay];
   if(style===undefined||typeof settings.segmentGrid!=='boolean')throw new Error('Invalid clock display.');
-  return new Uint8Array([1,style,+settings.segmentGrid,0]);
+  // Byte 2: bit 0 unlit segments, bit 1 no leading zero (clear by default).
+  return new Uint8Array([1,style,+settings.segmentGrid|(settings.leadingZero===false?2:0),0]);
 }

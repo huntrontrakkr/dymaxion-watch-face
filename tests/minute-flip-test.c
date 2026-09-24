@@ -6,7 +6,7 @@
 // minute-flip-test <broad | chamfer-resource.bin> <from> <to> <ms>...
 int main(int argc,char **argv){
   assert(argc>=5);uint8_t from[4],to[4];const int positions[4]={0,1,3,4};
-  for(int s=0;s<4;s++){from[s]=argv[2][positions[s]]-'0';to[s]=argv[3][positions[s]]-'0';assert(from[s]<10&&to[s]<10);}
+  for(int s=0;s<4;s++){from[s]=argv[2][positions[s]]==' '?10:argv[2][positions[s]]-'0';to[s]=argv[3][positions[s]]==' '?10:argv[3][positions[s]]-'0';assert(from[s]<=10&&to[s]<=10);}
   const ClockFace *face=&BROAD_FACE;ClockFace chamfer;static uint8_t resource[65536];
   if(strcmp(argv[1],"broad")){
     FILE *file=fopen(argv[1],"rb");assert(file);size_t length=fread(resource,1,sizeof(resource),file);fclose(file);

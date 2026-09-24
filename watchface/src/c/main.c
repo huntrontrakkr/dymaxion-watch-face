@@ -127,10 +127,12 @@ static void clock_step(void *context){
   }
   layer_mark_dirty(s_layer);
 }
+static bool leading_zero(void){return !(s_display[2]&2);}
 static void clock_prepare(struct tm *local,time_t now,bool animate){
   if(!s_clock_face)return;
   bool format=is_24();int hour=local->tm_hour;if(!format){hour%=12;if(!hour)hour=12;}
-  uint8_t digits[4]={hour/10,hour%10,local->tm_min/10,local->tm_min%10};
+  // 10 leaves the first slot blank when the leading zero is off.
+  uint8_t digits[4]={hour<10&&!leading_zero()?10:hour/10,hour%10,local->tm_min/10,local->tm_min%10};
   time_t minute=now/60;
   if(s_clock_ready&&minute==s_clock_minute&&format==s_clock_24&&!memcmp(digits,s_clock_digits,4))return;
   bool smooth=animate&&s_clock_ready&&minute==s_clock_minute+1&&format==s_clock_24
@@ -226,6 +228,7 @@ static void draw_span_time(GContext *ctx,const char *timebuf,int x,int y) {
   int cursor=x+5;
   graphics_context_set_stroke_color(ctx,color(6));
   for(const char *p=timebuf;*p;p++) {
+    if(*p==' '){cursor+=45;continue;} // blank first slot keeps the others in place
     int glyph=*p==':'?10:*p-'0';
     if(glyph<0||glyph>10)continue;
     for(int i=SPAN_OFFSETS[glyph];i<SPAN_OFFSETS[glyph+1];i++) {
@@ -240,7 +243,7 @@ static void draw_triangle_time(GContext *ctx,const char *timebuf,int x,int y){
   GColor inactive=(GColor){.argb=custom_palette()?s_palette[PAL_INACTIVE]:TRIANGLE_INACTIVE[s_settings[THEME]]};
   for(int i=0;i<TRIANGLE_RUN_COUNT;i++){
     TriangleRun run=TRIANGLE_RUNS[i];bool lit=display_group_lit(run.group,digits);
-    if(lit||s_display[2])line(ctx,x+2+run.x,y-1+run.y,x+1+run.x+run.length,y-1+run.y,lit?color(6):inactive);
+    if(lit||(s_display[2]&1))line(ctx,x+2+run.x,y-1+run.y,x+1+run.x+run.length,y-1+run.y,lit?color(6):inactive);
   }
 }
 static int caption_width(const char *caption){return graphics_text_layout_get_content_size(caption,s_small,GRect(0,0,600,16),GTextOverflowModeFill,GTextAlignmentLeft).w;}
@@ -266,13 +269,14 @@ static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
   char timebuf[8],datebuf[96];int hour=local->tm_hour;if(!is_24()){hour%=12;if(!hour)hour=12;}
   const char *ampm=is_24()?"":(local->tm_hour<12?"AM":"PM");
   if(s_settings[FLAGS]&STACKED) {
-    snprintf(timebuf,sizeof(timebuf),"%02d",hour);text(ctx,timebuf,s_large,GRect(x,y-14,w,44),GTextAlignmentCenter,color(6));
+    snprintf(timebuf,sizeof(timebuf),leading_zero()?"%02d":"%d",hour);text(ctx,timebuf,s_large,GRect(x,y-14,w,44),GTextAlignmentCenter,color(6));
     snprintf(timebuf,sizeof(timebuf),"%02d",local->tm_min);text(ctx,timebuf,s_large,GRect(x,y+21,w,44),GTextAlignmentCenter,color(6));
     line(ctx,x+25,y+35,x+47,y+35,color(7));
     clock_caption(datebuf,sizeof(datebuf),"",ampm,w-4,now," / ",caption_width);
     text(ctx,datebuf,s_small,GRect(x,y+69,w,15),GTextAlignmentCenter,color(7));
   }else {
     snprintf(timebuf,sizeof(timebuf),"%02d:%02d",hour,local->tm_min);
+    if(hour<10&&!leading_zero())timebuf[0]=' ';
     if(s_clock_face)draw_flip_time(ctx,local,now,x,y);
     // 12-hour Chamfer time carries AM/PM beside the figures, top-aligned with them.
     if(s_display[1]==4&&*ampm)draw_meridiem(ctx,ampm,x+167,y+9);

@@ -31,6 +31,12 @@ try{
   await study.getByLabel('Show unlit triangles',{exact:true}).uncheck();const initial=await study.locator('#geometry').screenshot();await study.getByLabel('Waist',{exact:true}).uncheck();assert.notDeepEqual(await study.locator('#geometry').screenshot(),initial);
   await study.getByLabel('Waist',{exact:true}).check();await study.getByLabel('Show unlit triangles',{exact:true}).check();await study.getByLabel('Pixel size',{exact:true}).selectOption('3');await study.screenshot({path:'test-results/triangular-display-study.png',fullPage:true});
   await study.setViewportSize({width:390,height:844});assert(await study.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'proof should scroll inside its container on a phone');
+  // Leading zero is on by default and switches off from the display controls.
+  await page.getByRole('tab',{name:'Character',exact:true}).click();
+  assert.equal(await page.getByLabel('Leading zero',{exact:true}).isChecked(),true);
+  await page.getByLabel('Leading zero',{exact:true}).uncheck();
+  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).leadingZero,false);
+  await page.getByLabel('Leading zero',{exact:true}).check();
   // Bluetooth buzz is a Character setting that persists.
   await page.getByRole('tab',{name:'Character',exact:true}).click();
   assert.equal(await page.getByLabel('Buzz on Bluetooth',{exact:true}).inputValue(),'disconnect');

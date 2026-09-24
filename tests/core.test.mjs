@@ -170,6 +170,20 @@ test('old saved presets adopt the enlarged map; custom arrangements keep their p
   assert.equal(flattened.theme,2);
   assert.deepEqual(flattened.places,oldPortrait.places);
 });
+test('leading zero is on by default and can blank the first digit slot',async()=>{
+  const {hourText}=await import('../shared/settings.js'),{encodeDisplay}=await import('../shared/triangle-display.js');
+  const {chamferTimeMask,CHAMFER_METRICS:M}=await import('../shared/chamfer-numerals.js'),{broadTimeMask}=await import('../shared/broad-numerals.js');
+  const s=defaults();assert.equal(s.leadingZero,true);
+  assert.equal(hourText(9),'09');assert.equal(hourText(9,false),' 9');assert.equal(hourText(10,false),'10');assert.equal(hourText(0,false),' 0');
+  assert.equal(encodeDisplay(s)[2]&2,0);assert.equal(encodeDisplay({...s,leadingZero:false})[2]&2,2);
+  const old={...s};delete old.leadingZero;assert.equal(validateSettings(old,zoneExists).leadingZero,true);
+  assert.throws(()=>validateSettings({...s,leadingZero:'no'},zoneExists));
+  // The blank slot is empty and the other figures do not move.
+  for(const [mask,start,width] of [[chamferTimeMask,M.starts[0],M.digitWidth],[broadTimeMask,2,45]]){
+    const blank=mask(' 9:07'),full=mask('09:07');
+    for(let i=0;i<blank.length;i++){const x=i%200;if(x>=start&&x<start+width)assert.equal(blank[i],0);else assert.equal(blank[i],full[i]);}
+  }
+});
 test('Bluetooth buzz defaults to disconnect and travels as flags 64 and 128',()=>{
   const s=defaults();assert.equal(s.connectionBuzz,'disconnect');
   assert.equal(encodeSettings(s)[2]&192,64);

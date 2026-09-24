@@ -72,7 +72,7 @@ test('native Chamfer frames, read from the packed resource, match the browser at
   mkdirSync('test-results',{recursive:true});
   execFileSync('cc',['-std=c11','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/minute-flip-test.c','watchface/src/c/minute_flip.c','-o','test-results/minute-flip-test']);
   const timings=[0,33,80,120,160,200,240,280,320,399,400];
-  for(const [from,to] of [['12:33','12:34'],['12:59','13:00'],['23:59','00:00'],['09:09','09:10'],['19:59','20:00'],['01:11','01:12'],['12:34','12:34']]){
+  for(const [from,to] of [['12:33','12:34'],['12:59','13:00'],['23:59','00:00'],['09:09','09:10'],['19:59','20:00'],['01:11','01:12'],['12:34','12:34'],[' 9:59','10:00'],['12:59',' 1:00'],[' 9:07',' 9:08']]){
     const plan=planPixelFlip(clockMask(from,'chamfer'),clockMask(to,'chamfer'),'chamfer');
     const expected=Buffer.concat(timings.map(ms=>Buffer.from(sampleMinuteFlip(plan,ms))));
     assert.deepEqual(execFileSync('test-results/minute-flip-test',['watchface/resources/data/clock-chamfer.bin',from,to,...timings.map(String)],{maxBuffer:4_000_000}),expected,from+' → '+to);

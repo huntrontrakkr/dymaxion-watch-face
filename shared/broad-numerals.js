@@ -72,9 +72,11 @@ export function drawBroadDigit(ctx, character, x, y, ink = '#000000') {
 }
 
 export function broadTimeGeometry(time) {
-  if (!/^\d{2}:\d{2}$/.test(time)) throw new Error('Use a readout such as 12:34.');
+  // A space in the first slot leaves it blank (no leading zero).
+  if (!/^[\d ]\d:\d{2}$/.test(time)) throw new Error('Use a readout such as 12:34.');
   const mask = new Uint8Array(width * height), digits = [...time.replace(':', '')];
   for (let slot = 0; slot < 4; slot++) {
+    if (digits[slot] === ' ') continue;
     const glyph = glyphMask(digits[slot]);
     for (let y = 0; y < capHeight; y++) for (let x = 0; x < digitWidth; x++)
       mask[index(starts[slot] + x, y + capTop)] = glyph[y * digitWidth + x];

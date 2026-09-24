@@ -89,9 +89,11 @@ function glyphMask(character) {
 // Colon: two 6-pixel squares with their corners cut, matching the figures.
 export function colonDot(x, y) { return Math.abs(x + .5 - colonWidth / 2) + Math.abs(y + .5 - colonWidth / 2) <= colonWidth / 2 + 0.45; }
 export function chamferTimeMask(time) {
-  if (!/^\d{2}:\d{2}$/.test(time)) throw new Error('Use a readout such as 12:34.');
+  // A space in the first slot leaves it blank (no leading zero).
+  if (!/^[\d ]\d:\d{2}$/.test(time)) throw new Error('Use a readout such as 12:34.');
   const mask = new Uint8Array(width * height), digits = [...time.replace(':', '')];
   for (let slot = 0; slot < 4; slot++) {
+    if (digits[slot] === ' ') continue;
     const glyph = glyphMask(digits[slot]);
     for (let y = 0; y < capHeight; y++) for (let x = 0; x < digitWidth; x++)
       if (glyph[y * digitWidth + x]) mask[index(starts[slot] + x, y + capTop)] = 1;
