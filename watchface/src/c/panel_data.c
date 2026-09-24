@@ -15,8 +15,9 @@ bool footer_valid(const uint8_t *p,unsigned length){
   int lo=read_i16(p+F_TEMP_MIN),hi=read_i16(p+F_TEMP_MAX);if(lo< -1500||hi>1500||hi-lo<10)return false;
   int rain=(uint16_t)read_i16(p+F_RAIN_MAX),tlo=read_i16(p+F_TIDE_MIN),thi=read_i16(p+F_TIDE_MAX);
   if(rain<1||rain>1000||p[F_TIDE_FIXED]>1||tlo< -10000||thi>10000||thi-tlo<10)return false;
-  if(p[F_WEATHER_PLACE]>2||p[F_HUMID_LINE]>1)return false;
-  for(int i=52;i<FOOTER_SIZE;i++)if(p[i])return false;
+  // Flick count 1-3; 0 is a footer saved before the setting existed (two flicks).
+  if(p[F_WEATHER_PLACE]>2||p[F_HUMID_LINE]>1||p[F_FLICKS]>3)return false;
+  for(int i=53;i<FOOTER_SIZE;i++)if(p[i])return false;
   return true;
 }
 static bool label_valid(const uint8_t *p){if(p[7])return false;for(int i=0;i<7&&p[i];i++)if(!((p[i]>='A'&&p[i]<='Z')||(p[i]>='0'&&p[i]<='9')||p[i]==' '||p[i]=='-'||p[i]=='+'))return false;return true;}
@@ -86,4 +87,11 @@ void panel_calendar(int year,int month,int day,int weekday,const uint8_t *config
     out[i]=d;shift_day(&d,1);
   }
 }
-bool panel_tap(TapState *s,uint64_t now){if(now<s->cooldown)return false;s->cooldown=now+TAP_GUARD_MS;return true;}
+bool panel_tap(TapState *s,uint64_t now,int required){
+  if(now<s->rest)return false;
+  if(s->count&&now-s->last<TAP_SAME_MS)return false;
+  if(s->count&&now-s->last>TAP_GAP_MS)s->count=0;
+  s->count++;s->last=now;
+  if(s->count<required)return false;
+  s->count=0;s->rest=now+TAP_REST_MS;return true;
+}

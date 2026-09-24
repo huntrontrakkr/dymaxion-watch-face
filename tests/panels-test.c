@@ -39,9 +39,15 @@ int main(int argc,char **argv){
   memcpy(copy,t,sizeof(t));copy[48+2]=24;assert(!environment_valid(copy,sizeof(t),true));
   memcpy(copy,t,sizeof(t));copy[48]=0xff;copy[49]=0x7f;assert(!environment_valid(copy,sizeof(t),true));
   assert(environment_start_index(w,0)==-1);assert(environment_start_index(w,0xffffffff)==-1);
-  // One flick's several tap events change one panel; the next flick after the guard changes another.
+  // Double flick (default): one flick only lights the screen; a flick's extra
+  // axis taps count once; a slow second flick starts over; two quick flicks change.
   TapState tap={0};uint64_t ms=10000;
-  assert(panel_tap(&tap,ms));assert(!panel_tap(&tap,ms+5));assert(!panel_tap(&tap,ms+TAP_GUARD_MS-1));
-  assert(panel_tap(&tap,ms+TAP_GUARD_MS));assert(!panel_tap(&tap,ms+TAP_GUARD_MS+200));
+  assert(!panel_tap(&tap,ms,2));assert(!panel_tap(&tap,ms+40,2));
+  assert(!panel_tap(&tap,ms+=TAP_GAP_MS+100,2));
+  assert(panel_tap(&tap,ms+=500,2));
+  assert(!panel_tap(&tap,ms+=300,2));assert(!panel_tap(&tap,ms+=300,2));   // resting after a change
+  assert(!panel_tap(&tap,ms+=TAP_REST_MS,2));assert(panel_tap(&tap,ms+=600,2));
+  TapState one={0};assert(panel_tap(&one,50000,1));assert(!panel_tap(&one,50100,1));assert(panel_tap(&one,51100,1));
+  TapState three={0};ms=90000;assert(!panel_tap(&three,ms,3));assert(!panel_tap(&three,ms+=500,3));assert(panel_tap(&three,ms+=500,3));
   puts("Native panel packets and wrist-flick guard passed.");return 0;
 }

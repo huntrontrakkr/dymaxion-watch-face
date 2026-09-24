@@ -363,7 +363,7 @@ static void pulse(void) {
 // so nothing samples the accelerometer or wakes the watch between flicks.
 static void tapped(AccelAxisType axis,int32_t direction) {
   time_t seconds;uint16_t ms;time_ms(&seconds,&ms);
-  if(panel_tap(&s_tap,(uint64_t)seconds*1000+ms)&&panels_cycle(time(NULL)))layer_mark_dirty(s_layer);
+  if(panel_tap(&s_tap,(uint64_t)seconds*1000+ms,panels_flicks())&&panels_cycle(time(NULL)))layer_mark_dirty(s_layer);
 }
 static void configure_shake(void) {
   bool wanted=panels_shake_enabled();

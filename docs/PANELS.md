@@ -101,11 +101,14 @@ clocks without reserving that band.
 ## Changing pages and battery use
 
 Choose any one to five pages, reorder them, and select a starting page. A
-quick wrist flick advances one page. It uses Pebble's accelerometer tap
-service, a hardware interrupt: nothing samples the accelerometer and the watch
-does not wake between flicks, so it stays on at any battery level. One flick can
-raise a tap on more than one axis, so taps within 1.5 seconds of a page change
-are ignored (`panel_tap`). The tap service unsubscribes when flicks are
+wrist flick changes the page: by default two quick flicks, because a single
+flick is also the watch's motion-backlight gesture and glancing at the watch in
+the dark should not change what it shows. One or three flicks can be chosen
+instead. Flicks use Pebble's accelerometer tap service, a hardware interrupt:
+nothing samples the accelerometer and the watch does not wake between flicks,
+so it stays on at any battery level. Taps closer than 250 ms are one flick (a
+flick can register on several axes); each further flick must follow within
+0.9 s, and a page change is followed by a one-second rest (`panel_tap`). The tap service unsubscribes when flicks are
 disabled, when there is only one page or when panels are disabled.
 
 Other periodic work is kept small. The map is relit every five minutes, not

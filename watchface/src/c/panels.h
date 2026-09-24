@@ -8,4 +8,5 @@ int panels_weather_place(void);
 bool panels_tick(time_t now);
 bool panels_cycle(time_t now);
 bool panels_shake_enabled(void);
+int panels_flicks(void);
 int panels_refresh_minutes(void);

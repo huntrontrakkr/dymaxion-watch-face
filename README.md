@@ -43,8 +43,9 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
 - A configurable 44-pixel bottom band: time zones, a weather chart, a two-week
   calendar, humidity and NOAA tide predictions. Choose the pages, their order,
   colors, units, chart scales and starting page in **Panels**.
-- Optional wrist flick to change panels, using Pebble's hardware tap detection
-  (no accelerometer sampling). Disable it for a fixed page or timed rotation
+- Optional wrist flicks to change panels (two by default, so the backlight
+  flick alone does not), using Pebble's hardware tap detection (no
+  accelerometer sampling). Disable it for a fixed page or timed rotation
   using the existing minute tick.
 - Brief marker pulses on launch/settings changes; real battery and a pixel
   Bluetooth connection indicator.

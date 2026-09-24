@@ -29,6 +29,9 @@ try{
   await page.getByRole('button',{name:'Use theme colors',exact:true}).click();
   assert.equal(await page.getByLabel('Temperature panel color',{exact:true}).inputValue(),'#000000');
   assert.equal(await page.getByLabel('Rain panel color',{exact:true}).inputValue(),'#555555');
+  assert.equal(await page.getByLabel('Flicks per panel change',{exact:true}).inputValue(),'2','two flicks by default, so the backlight flick does not change panels');
+  await page.getByLabel('Flicks per panel change',{exact:true}).selectOption('3');
+  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).footer.flicks,3);
   await page.getByLabel('Flick to change panels',{exact:true}).uncheck();await page.getByLabel('Automatic rotation',{exact:true}).selectOption('1');
   await page.clock.fastForward(61000);assert.equal(await page.locator('#panel-preview-label').textContent(),'Weather');
   await page.getByLabel('Automatic rotation',{exact:true}).selectOption('0');

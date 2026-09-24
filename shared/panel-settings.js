@@ -21,7 +21,7 @@ export const TIDE_STATIONS=[
 export function defaultFooter(){return {
   // Humidity and tide ride on the weather chart, so their own panels are optional,
   // outside the default rotation.
-  enabled:true,pages:PANEL_PAGES.map(([id])=>id).filter(id=>id!=='humidity'&&id!=='tide'),home:'zones',rotationMinutes:0,shake:true,horizon:24,
+  flicks:2,enabled:true,pages:PANEL_PAGES.map(([id])=>id).filter(id=>id!=='humidity'&&id!=='tide'),home:'zones',rotationMinutes:0,shake:true,horizon:24,
   weather:{enabled:true,place:0,temperatureUnit:'c',precipitation:'probability',rainUnit:'mm',rainMax:5,daylight:true,solarTimes:true,grid:false,rangeLabels:true,humidityLine:true,temperatureScale:'auto',temperatureMin:-10,temperatureMax:40,humidityScale:'percent',refreshMinutes:60},
   calendar:{weekStart:0,weeks:'current-next',weekends:'sat-sun',holidays:'none',todayStyle:'fill'},
   tide:{station:'',label:'TIDE',tz:'America/New_York',unit:'m',zeroLine:true,scale:'auto',min:-1,max:3},
@@ -33,7 +33,7 @@ export function validateFooter(input,zoneExists,quantize){
   const f={...d,...input,weather:{...d.weather,...input.weather},calendar:{...d.calendar,...input.calendar},tide:{...d.tide,...input.tide},colors:{...d.colors,...input.colors}};
   const choice=(o,key,values)=>{if(!values.includes(o[key]))throw new Error('Invalid panel '+key+'.');};
   const bool=(o,key)=>{if(typeof o[key]!=='boolean')throw new Error('Invalid panel '+key+'.');};
-  bool(f,'enabled');bool(f,'shake');
+  bool(f,'enabled');bool(f,'shake');choice(f,'flicks',[1,2,3]);
   if(!Array.isArray(f.pages)||!f.pages.length||f.pages.length>5||new Set(f.pages).size!==f.pages.length||f.pages.some(p=>!PANEL_PAGES.some(([id])=>id===p)))throw new Error('Choose one to five different bottom panels.');
   choice(f,'home',f.pages);choice(f,'rotationMinutes',[0,1,2,5,10,15,30,60]);choice(f,'horizon',[12,24,48]);
   const w=f.weather,c=f.calendar,t=f.tide;
@@ -54,7 +54,7 @@ export function validateFooter(input,zoneExists,quantize){
   if(input.colorMode===undefined)f.colorMode=PANEL_COLOR_ROLES.some(k=>f.colors[k]!==d.colors[k])?'custom':'theme';
   choice(f,'colorMode',['theme','custom']);
   // Explicit fields keep old/unknown imported properties out of exported settings.
-  return {enabled:f.enabled,pages:[...f.pages],home:f.home,rotationMinutes:f.rotationMinutes,shake:f.shake,horizon:f.horizon,
+  return {enabled:f.enabled,pages:[...f.pages],home:f.home,rotationMinutes:f.rotationMinutes,shake:f.shake,flicks:f.flicks,horizon:f.horizon,
     weather:Object.fromEntries(Object.keys(d.weather).map(k=>[k,w[k]])),calendar:Object.fromEntries(Object.keys(d.calendar).map(k=>[k,c[k]])),
     tide:Object.fromEntries(Object.keys(d.tide).map(k=>[k,t[k]])),colorMode:f.colorMode,colors:Object.fromEntries(PANEL_COLOR_ROLES.map(k=>[k,f.colors[k]]))};
 }
