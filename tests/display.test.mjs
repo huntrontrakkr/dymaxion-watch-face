@@ -21,6 +21,12 @@ test('display preferences migrate, validate, and travel separately from the stab
   assert.deepEqual([...encodeDisplay({...defaults(),mapBackground:'points'})],[2,4,0,1]);
   assert.deepEqual([...encodeDisplay({...defaults(),mapBackground:'lines'})],[2,4,0,2]);
   assert.deepEqual([...encodeDisplay({...defaults(),mapBackground:'fine-points'})],[2,4,0,3]);
+  assert.equal(defaults().zoneTimes,'panel','place times stay in the panel by default');
+  assert.deepEqual([...encodeDisplay({...defaults(),zoneTimes:'beside-hidden'})],[2,4,4,0]);
+  assert.deepEqual([...encodeDisplay({...defaults(),zoneTimes:'beside',leadingZero:false})],[2,4,10,0]);
+  assert.equal(validateSettings({...s,zoneTimes:'beside'},zoneExists).zoneTimes,'beside');
+  assert.equal(validateSettings(s,zoneExists).zoneTimes,'panel','older files keep place times in the panel');
+  assert.throws(()=>validateSettings({...s,zoneTimes:'top'},zoneExists));
   assert.equal(validateSettings({...s,mapBackground:'lines'},zoneExists).mapBackground,'lines');
   assert.equal(validateSettings(s,zoneExists).mapBackground,'none','older files have no background');
   assert.throws(()=>validateSettings({...s,mapBackground:'stars'},zoneExists));

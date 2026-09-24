@@ -4,6 +4,7 @@ import {defaultFooter,validateFooter} from './panel-settings.js';
 import {validateLocation} from './city.js';
 import {DISPLAY_STYLES} from './display.js';
 import {MAP_BACKGROUNDS} from './map-background.js';
+import {ZONE_TIMES} from './zone-column.js';
 import {SYSTEM_CLOCKS} from './system-clock.js';
 import {THEMES} from './palettes.js';
 import {paletteFor,validatePalettes} from './palette-settings.js';
@@ -59,7 +60,7 @@ const LEGACY_PRESETS=[{
 }];
 export function defaults() {
   return {version:1,markerSet:2,theme:0,customPalettes:[],customPalette:null,format:1,dayNight:true,edges:false,lights:true,motion:true,sun:true,moonIndicator:true,connectionBuzz:'disconnect',
-    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',leadingZero:true,mapBackground:'none',location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
+    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',leadingZero:true,mapBackground:'none',zoneTimes:'panel',location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
 }
 // Quick View: a clock the peek would cover moves up to sit just above it,
 // never into the status line (clock_top_for_visible in settings.c).
@@ -125,6 +126,8 @@ export function validateSettings(input,zoneExists) {
   out.leadingZero=input.leadingZero??true;
   if(input.mapBackground!==undefined&&!MAP_BACKGROUNDS.includes(input.mapBackground))throw new Error('Invalid map background.');
   out.mapBackground=input.mapBackground??'none';
+  if(input.zoneTimes!==undefined&&!ZONE_TIMES.includes(input.zoneTimes))throw new Error('Invalid place-time placement.');
+  out.zoneTimes=input.zoneTimes??'panel';
   const position=(key,pos)=>{
     if(!Array.isArray(pos)||pos.length!==2||!pos.every(Number.isFinite))throw new Error('Invalid position.');
     return clampPosition(out,key,pos);

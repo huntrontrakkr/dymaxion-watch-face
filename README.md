@@ -38,6 +38,12 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
   points** (a dot wherever the triangles meet), **Fine triangle points** (split
   once more) or **Triangle lines** (every edge dotted). It is baked into spare bits of the map data, so it costs the watch no
   memory. **Composition → The planetary clock → Map background**.
+- Place times can sit beside the clock: the figures shift left and up to three
+  places stack on the right, in the status-line capitals. Choose **Character →
+  Place times**: in the bottom panel (default), beside the clock whenever the
+  panel shows weather, tides or the calendar (or Quick View covers it), or
+  always. Works with Chamfer and the Pebble system fonts; the minute transition
+  is unchanged.
 - The status line names the current city, using the phone's location at most
   hourly, or a manual name. The workshop labels Norfolk as an example until you
   request a location preview. City lookup uses Photon / OpenStreetMap.
@@ -179,6 +185,7 @@ Physical hardware and an actual phone webview have not been tested.
 | `shared/status-glyphs.js` | Pixel Bluetooth connection rune |
 | `shared/display.js` | Numeral styles and the display packet |
 | `shared/map-background.js` | Triangle points and lines behind the map |
+| `shared/zone-column.js` | Place times beside the clock (mirrored by `zone_column.c`) |
 | `shared/city.js`, `tools/location-service.js` | City naming, hourly reverse geocoding and offline cache |
 | `shared/panel-*`, `shared/calendar.js` | Panel controls, provider normalization, packet contract and preview |
 | `designer/` | Interactive preview, accessible controls, JSON import/export |

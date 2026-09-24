@@ -46,7 +46,14 @@ try {
     await page.clock.runFor(180);assert.notDeepEqual(await clock(),start,id);
     await page.clock.runFor(250);assert.equal(await screen.getAttribute('data-clock-animating'),'false',id+' settles within 400 ms');
   }
-  await page.getByLabel('Numerical display',{exact:true}).selectOption('chamfer');
+  // Beside the place times the clock shifts left and still animates.
+  await page.getByLabel('Numerical display',{exact:true}).selectOption('chamfer');await page.getByLabel('Place times',{exact:true}).selectOption('beside');
+  assert.equal(await screen.getAttribute('data-zones-beside'),'true');
+  {const start=await clock();await page.clock.runFor(await page.evaluate(()=>60000-Date.now()%60000)+2);
+  assert.equal(await screen.getAttribute('data-clock-animating'),'true','beside: the minute animates');
+  await page.clock.runFor(180);assert.notDeepEqual(await clock(),start);
+  await page.clock.runFor(250);assert.equal(await screen.getAttribute('data-clock-animating'),'false');}
+  await page.getByLabel('Place times',{exact:true}).selectOption('panel');
   assert.deepEqual(errors,[]);reports.push({liveMinute:true,styles,reducedMotion:true,motionDisabled:true,idleStable:true,errors});
   await page.close();
   for(const [width,scheme] of [[736,'light'],[390,'light'],[320,'dark']]){

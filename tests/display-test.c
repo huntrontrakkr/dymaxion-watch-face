@@ -22,6 +22,14 @@ int main(void){
       assert(display_normalize(normalized,normalized,4));assert(!memcmp(normalized,expected,4));
     }
   }
+  // Version 2 byte 2: bit 1 leading zero, bits 2-3 place times (0-2); bit 0 and
+  // bits 4-7 stay clear.
+  for(int options=0;options<256;options++){
+    uint8_t current[4]={2,4,options,0};
+    bool valid=!(options&~0x0e)&&((options>>2)&3)<3;
+    assert(display_valid(current,4)==valid);
+    if(valid){assert(display_normalize(normalized,current,4));assert(!memcmp(normalized,current,4));}
+  }
   // Version 2 carries the map background in byte 3.
   for(int background=0;background<8;background++){
     uint8_t current[4]={2,4,2,background};

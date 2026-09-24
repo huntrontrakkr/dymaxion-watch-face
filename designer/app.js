@@ -22,6 +22,7 @@ import {cityControls} from '../shared/city-controls.js';
 import {cityIsUsable,cityHasPosition,clockCaption} from '../shared/city.js';
 import {locationService} from '../tools/location-service.js';
 import {displayControls} from '../shared/display-controls.js';
+import {ZONE_COLUMN,zonesBeside,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
 import {minuteFlipClock,drawFlipPixels,FLIP_FACES,flipOffset} from '../shared/minute-flip.js';
 
 const $=id=>document.getElementById(id),zoneExists=tz=>!!moment.tz.zone(tz);
@@ -52,7 +53,7 @@ let footerPage=settings.footer.home,panelChanged=Date.now(),environmentMode='sam
 let currentCity={name:'Norfolk',sample:true,lat:36.9,lon:-76.3};
 const cityLocation=locationService({getSettings:()=>settings,storage:localStorage,send:city=>{currentCity=city;render();}});
 const cityEditor=cityControls($('city-controls'),()=>settings,value=>{settings=validateSettings({...settings,location:value},zoneExists);save();},()=>cityLocation.refresh());
-const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero};sync();save();});
+const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes};sync();save();});
 const paletteEditor=paletteControls($('palette-controls'),()=>settings,patch=>{settings=validateSettings({...settings,...patch},zoneExists);sync();save();});
 const environment=environmentService({getSettings:()=>settings,storage:localStorage,send:(kind,data)=>{liveData[kind]=data;render();}});
 const panelEditor=panelControls($('panel-controls'),()=>settings,footer=>{
@@ -227,12 +228,17 @@ function render(){
   settings.places.forEach((p,i)=>{if(!p.on)return;const [x,y]=m.project(p.lat,p.lon).map(Math.round),ink=markColor(p,settings,i);marker(mx+x,my+y,p.icon,ink,pal.bg);if(animation&&i===activePlace){const frame=Math.floor((performance.now()-animation)/260);if(frame<4)drawPixelRows(ctx,PULSE_ROWS[frame],mx+x-8,my+y-8,ink);}});
   // Quick View preview: the bottom band hides and the clock stays above the card.
   const visible=$('quick-view').checked?228-QUICK_VIEW_HEIGHT:228;
+  // Place times go beside the clock when chosen, or when the bottom band is
+  // not showing them (another panel, or Quick View covering it).
+  const band=visible>=228&&settings.footer.enabled;
+  const panelZones=(!band||footerPage==='zones')&&settings.places.some((p,i)=>p.on&&settings.zones[i][1]+36<=visible);
+  const beside=zonesBeside(settings,panelZones);
   const [tx,timeY]=settings.time,[tw,th]=blockSize(settings,'time'),ty=clockTopForVisible(timeY,th,visible),{h,m:minute,ampm}=clockParts(local);
   const city=settings.location.mode==='manual'?settings.location.name:currentCity.sample?currentCity.name:cityIsUsable(currentCity)?currentCity.name+(currentCity.stale||Date.now()/1000-currentCity.fetched>7200?'?':''):'';
   const caption=clockCaption(settings.stacked?'':local.format('ddd DD MMM'),city,use24()?'':ampm,tw-4,t=>textWidth(watchTypeface.text.small,t));
   // Status line: lining capitals, date and city at the top left.
   // AM/PM belongs to the clock when it can show it (Chamfer or stacked).
-  const clockAmpm=settings.stacked||settings.clockDisplay==='chamfer';
+  const clockAmpm=settings.stacked||(settings.clockDisplay==='chamfer'&&!beside);
   const status=clockCaption(local.format('ddd DD MMM').toUpperCase(),city.toUpperCase(),use24()||clockAmpm?'':ampm,statusWidth(),t=>textWidth(watchTypeface.lining.small,t),'  ');
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
   if(settings.stacked||!FLIP_FACES[settings.clockDisplay])minuteClock.reset();
@@ -241,15 +247,24 @@ function render(){
     const value=hourText(h,settings.leadingZero)+':'+two(minute);
     // Every horizontal style animates its minute change through the same shrink.
     const style=settings.clockDisplay;
-    minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset].join('/'),settings.motion&&!reducedMotion.matches&&!document.hidden,style);
-    drawFlipPixels(ctx,minuteClock.frame(),tx,ty+flipOffset(style),{ink:pal.ink,background:pal.bg});
-    if(style==='chamfer'&&!use24())drawBitmapText(ctx,watchTypeface.lining.small,ampm,tx+167,ty+9,pal.accent);
+    minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset,beside].join('/'),settings.motion&&!reducedMotion.matches&&!document.hidden,style);
+    // Beside the place times, the figures shift left and the column fills the right.
+    drawFlipPixels(ctx,minuteClock.frame(),tx+(beside?ZONE_COLUMN.shift:0),ty+flipOffset(style),{ink:pal.ink,background:pal.bg});
+    if(beside){
+      const font=watchTypeface.lining.small,shown=settings.places.map((p,i)=>[p,i]).filter(([p])=>p.on);
+      shown.forEach(([p,i],row)=>{
+        const there=moment(now).tz(p.tz),delta=Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000);
+        const r=zoneRow({label:p.label,hour:there.hours(),minute:there.minutes(),clock24:use24(),delta},t=>textWidth(font,t)),base=ty+zoneRowBaseline(row,shown.length);
+        drawBitmapText(ctx,font,r.label,tx+r.labelX,base,markColor(p,settings,i));drawBitmapText(ctx,font,r.time,tx+r.timeX,base,pal.ink);
+        drawBitmapText(ctx,font,r.suffix,tx+r.suffixX,base,pal.accent);drawBitmapText(ctx,font,r.day,tx+r.dayX,base,pal.accent);
+      });
+    }else if(style==='chamfer'&&!use24())drawBitmapText(ctx,watchTypeface.lining.small,ampm,tx+167,ty+9,pal.accent);
   }
   canvas.dataset.clockDisplay=settings.stacked?'draft':settings.clockDisplay;
+  canvas.dataset.zonesBeside=String(beside);
   canvas.dataset.clockAnimating=String(minuteClock.active);
   canvas.dataset.clockCaption=settings.stacked?caption:status;
   $('city-state').textContent=settings.location.mode==='manual'?'The clock uses your entered city name.':currentCity.sample?'Norfolk is an example city in this preview. The watch uses your phone’s location.':city?`Current city: ${currentCity.name}${currentCity.stale?' (last known location)':''}.`:'City unavailable. Allow location in the phone app, or enter a city name.';
-  const band=visible>=228&&settings.footer.enabled;
   if(band){ctx.fillStyle=pal.bg;ctx.fillRect(0,184,200,44);}
   if(!band||footerPage==='zones')settings.places.forEach((p,i)=>{
     if(!p.on||settings.zones[i][1]+36>visible)return;const [x,y]=settings.zones[i],there=moment(now).tz(p.tz),time=clockParts(there);

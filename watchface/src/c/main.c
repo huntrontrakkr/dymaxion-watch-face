@@ -7,6 +7,7 @@
 #include "display.h"
 #include "minute_flip.h"
 #include "clock_styles.h"
+#include "zone_column.h"
 #include "caps.h"
 #include "palette.h"
 #include "generated/defaults.h"
@@ -43,6 +44,7 @@ static uint16_t s_clock_frame=UINT16_MAX;
 static TapState s_tap;
 static bool s_accel_subscribed;
 static int s_map_w,s_map_h;
+static bool s_beside; // place times beside the clock this frame
 
 static float fsin(float r) { return (float)sin_lookup((int32_t)(r*TRIG_MAX_ANGLE/6.283185307f))/TRIG_MAX_RATIO; }
 static float fcos(float r) { return (float)cos_lookup((int32_t)(r*TRIG_MAX_ANGLE/6.283185307f))/TRIG_MAX_RATIO; }
@@ -276,6 +278,7 @@ static void clock_caption(char *out,size_t size,const char *date,const char *amp
   }
 }
 static void draw_meridiem(GContext *ctx,const char *ampm,int x,int baseline);
+static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int x,int y);
 static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
   int x=s_settings[TIME_X],w=(s_settings[FLAGS]&STACKED)?72:200;
   int h=(s_settings[FLAGS]&STACKED)?84:s_display[1]>=4?40:46;
@@ -293,12 +296,20 @@ static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
     snprintf(timebuf,sizeof(timebuf),"%02d:%02d",hour,local->tm_min);
     if(hour<10&&!leading_zero())timebuf[0]=' ';
     uint8_t digits[4]={timebuf[0]==' '?10:timebuf[0]-'0',timebuf[1]-'0',timebuf[3]-'0',timebuf[4]-'0'};
-    if(s_clock_face)draw_flip_time(ctx,local,now,x,y);
-    else if(s_display[1]>=5)draw_system_time(ctx,timebuf,x,y);
-    else draw_span_time(ctx,digits,x,y);
+    // Beside the place times, the figures shift left and the column fills the right.
+    int cx=s_beside?x+ZONE_COLUMN_SHIFT:x;
+    if(s_clock_face)draw_flip_time(ctx,local,now,cx,y);
+    else if(s_display[1]>=5)draw_system_time(ctx,timebuf,cx,y);
+    else draw_span_time(ctx,digits,cx,y);
+    if(s_beside)draw_zone_column(ctx,now,local,x,y);
     // 12-hour Chamfer time carries AM/PM beside the figures, top-aligned with them.
-    if(s_clock_face==&s_chamfer&&*ampm)draw_meridiem(ctx,ampm,x+167,y+9);
+    else if(s_clock_face==&s_chamfer&&*ampm)draw_meridiem(ctx,ampm,x+167,y+9);
   }
+}
+static struct tm zone_time(const uint8_t *z,time_t now,const struct tm *local,int *delta,bool *stale){
+  time_t there=now+(int32_t)zone_offset(z,now)*60;struct tm zone=*gmtime(&there);
+  *delta=ordinal(&zone)-ordinal(local);*stale=(uint32_t)now>=read_u32(z+18);
+  return zone;
 }
 static void draw_zones(GContext *ctx,time_t now,struct tm *local,int visible) {
   for(int i=0;i<3;i++) {
@@ -307,8 +318,8 @@ static void draw_zones(GContext *ctx,time_t now,struct tm *local,int visible) {
     int x=s_settings[ZONE_X+2*i],y=s_settings[ZONE_Y+2*i];
     if(y+36>visible)continue; // under the Quick View card
     graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(x,y,60,36),0,GCornerNone);
-    time_t there=now+(int32_t)zone_offset(z,now)*60;struct tm zone=*gmtime(&there);
-    int delta=ordinal(&zone)-ordinal(local),hour=zone.tm_hour;char label[8],hours[8],day[4];
+    int delta;bool stale;struct tm zone=zone_time(z,now,local,&delta,&stale);
+    int hour=zone.tm_hour;char label[8],hours[8],day[4];
     bool glyph=custom_palette()?s_palette[PAL_ZONE_GLYPHS]:PALETTE_ZONE_GLYPHS[s_settings[THEME]];
     snprintf(label,sizeof(label),"%.5s",(const char *)z);
     while(strlen(label)>0&&graphics_text_layout_get_content_size(label,s_small,GRect(0,0,200,16),GTextOverflowModeFill,GTextAlignmentLeft).w>(glyph?28:34))
@@ -317,7 +328,7 @@ static void draw_zones(GContext *ctx,time_t now,struct tm *local,int visible) {
     pixel_rows(ctx,DAY_NIGHT_GLYPHS[daylight],5,5,x+1,y+5,mark_color(i));
     if(glyph)marker(ctx,GPoint(x+10,y+7),z[10],mark_color(i));
     text(ctx,label,s_small,GRect(x+(glyph?16:9),y,glyph?28:38,14),GTextAlignmentLeft,mark_color(i));
-    if((uint32_t)now>=read_u32(z+18))snprintf(day,sizeof(day),"?");
+    if(stale)snprintf(day,sizeof(day),"?");
     else if(delta)snprintf(day,sizeof(day),"%+d",delta);else day[0]=0;
     text(ctx,day,s_small,GRect(x+44,y,16,14),GTextAlignmentRight,color(7));
     if(!is_24()){hour%=12;if(!hour)hour=12;}
@@ -331,10 +342,37 @@ typedef struct {GContext *ctx;GColor color;} CapsPen;
 static void caps_span(void *context,int x,int y,int length){CapsPen *pen=context;line(pen->ctx,x,y,x+length-1,y,pen->color);}
 // Status line: lining capitals for date and city at the top of the face.
 static void draw_meridiem(GContext *ctx,const char *ampm,int x,int baseline){if(s_caps){CapsPen pen={ctx,color(7)};caps_draw(s_caps,ampm,x,baseline,false,caps_span,&pen);}}
+static int caps_measure(const char *text,const void *font){return caps_width(font,text);}
+// Up to three places stacked beside the clock: label in the place's color,
+// time in ink, A/P and day offset in the accent (shared/zone-column.js).
+static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int x,int y){
+  int count=0,row=0;
+  for(int i=0;i<3;i++)if(s_settings[ENABLED]&(1<<i))count++;
+  for(int i=0;i<3;i++){
+    if(!(s_settings[ENABLED]&(1<<i)))continue;
+    const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;int delta;bool stale;
+    struct tm zone=zone_time(z,now,local,&delta,&stale);char label[8];
+    snprintf(label,sizeof(label),"%.7s",(const char *)z);
+    ZoneRow r;zone_row(&r,label,zone.tm_hour,zone.tm_min,is_24(),delta,stale,caps_measure,s_caps);
+    int base=y+zone_row_baseline(row++,count);
+    CapsPen mark={ctx,mark_color(i)},ink={ctx,color(6)},accent={ctx,color(7)};
+    caps_draw(s_caps,r.label,x+r.label_x,base,false,caps_span,&mark);
+    caps_draw(s_caps,r.time,x+r.time_x,base,false,caps_span,&ink);
+    caps_draw(s_caps,r.suffix,x+r.suffix_x,base,false,caps_span,&accent);
+    caps_draw(s_caps,r.day,x+r.day_x,base,false,caps_span,&accent);
+  }
+}
+// The bottom band shows the place times: the zones page (or no panels), with
+// at least one place above any Quick View card.
+static bool zones_in_panel(int visible){
+  if(visible>=228&&!panels_showing_zones())return false;
+  for(int i=0;i<3;i++)if((s_settings[ENABLED]&(1<<i))&&s_settings[ZONE_Y+2*i]+36<=visible)return true;
+  return false;
+}
 static void draw_status_line(GContext *ctx,struct tm *local,time_t now,const char *battery){
   // AM/PM belongs to the clock when it can show it (Chamfer or stacked), which
   // leaves the status line room for the city.
-  bool clock_ampm=(s_settings[FLAGS]&STACKED)||s_display[1]==4;
+  bool clock_ampm=(s_settings[FLAGS]&STACKED)||(s_display[1]==4&&!s_beside);
   char date[24],status[96];const char *ampm=is_24()||clock_ampm?"":(local->tm_hour<12?"AM":"PM");
   snprintf(date,sizeof(date),"%s %02d %s",(const char *[]){"Sun","Mon","Tue","Wed","Thu","Fri","Sat"}[local->tm_wday],local->tm_mday,
     (const char *[]){"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"}[local->tm_mon]);
@@ -371,6 +409,7 @@ static void update_proc(Layer *layer,GContext *ctx) {
   // Quick View (timeline peek) covers the bottom of the screen: the bottom band
   // is skipped and the clock kept above the card.
   int visible=layer_get_unobstructed_bounds(layer).size.h;
+  s_beside=s_caps&&zones_beside(s_display[1],s_settings[FLAGS]&STACKED,(s_display[2]>>2)&3,zones_in_panel(visible));
   draw_time(ctx,&local,now,visible);
   // Chart daylight follows the wearer's position when the phone sent one,
   // otherwise the forecast place.

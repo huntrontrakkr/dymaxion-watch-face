@@ -10,7 +10,7 @@ const exists=zone=>data.zoneNames.indexOf(zone)>=0;
 let s=validateSettings(data.settings||defaults(),exists);
 const panelEditor=panelControls($('panel-controls'),()=>s,footer=>{s.footer=validateSettings({...s,footer},exists).footer;});
 const cityEditor=cityControls($('city-controls'),()=>s,location=>{s.location=validateSettings({...s,location},exists).location;});
-const displayEditor=displayControls($('display-controls'),()=>s,value=>{s={...withClockDisplay(s,value.clockDisplay),leadingZero:value.leadingZero};refresh();});
+const displayEditor=displayControls($('display-controls'),()=>s,value=>{s={...withClockDisplay(s,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes};refresh();});
 const paletteEditor=paletteControls($('palette-controls'),()=>s,patch=>{s=validateSettings({...s,...patch},exists);refresh();});
 function options(select,entries){select.replaceChildren();entries.forEach(([label,value])=>select.add(new Option(label,value)));}
 options($('theme'),THEMES.map((t,i)=>[t.name,i]));

@@ -209,6 +209,7 @@ static void graph_draw(GContext *ctx,time_t now){
     }
   }
 }
+bool panels_showing_zones(void){return !s_footer[F_ENABLED]||s_page==PANEL_ZONES;}
 bool panels_draw(GContext *ctx,time_t now,const struct tm *local,GFont font,const uint8_t *caps,const uint8_t *palette,bool clock24,const float *daylight){
   if(!s_footer[F_ENABLED])return false;
   s_font=font;s_caps=caps;s_daylight=daylight;s_palette=palette;s_clock24=clock24;
