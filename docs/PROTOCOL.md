@@ -163,19 +163,22 @@ panel charts use it for sunrise and sunset. Without it they must be zero, and a
 manual name never carries a position. An older 48-byte packet is rejected, so
 the watch shows no city until the phone's next update.
 
-`DISPLAY` (10006) is four bytes, persisted under key 3: `[1, style, options, 0]`.
+`DISPLAY` (10006) is four bytes, persisted under key 3: `[2, style, options, background]`.
 Style 0 selects Span, 2 selects
 rounded broad numerals, 4 Chamfer figures, and 5–8 Pebble system fonts (Leco 42,
 Bitham 42 Bold, Bitham 42 Light, Bitham 42 Medium Numbers) and 9 Leco Delta
 (Leco 42 with 60-degree corners), drawn from the bundled `clock-glyphs.bin`
 figures so the minute transition can run over them. Byte 2 bit 1 turns the leading zero off (the first digit slot stays blank for
-hours under ten). Bit 1 is clear in every older packet, so the zero stays on.
+hours under ten). Bit 1 is clear in every older packet, so the zero stays on. Byte 3 selects the
+map background: 0 none, 1 triangle points, 2 triangle lines. Background *n* is
+flag bit `4 << n` of each empty pixel in `map-0.bin` byte 3, drawn in the
+palette's edge colour.
 Stacked time always uses Draft. Every horizontal style uses a temporary 400 ms
 minute-transition timer when the existing MOTION flag is enabled and battery is
-above 20%; it adds no sensor. The default is `[1, 4, 0, 0]`.
+above 20%; it adds no sensor. The default is `[2, 4, 0, 0]`.
 
-For compatibility with the retired LCD/framing experiment, valid older packets
-are normalized before use and persistence: style 1 (the retired triangular
+For compatibility with the retired LCD/framing experiment, valid version 1
+packets are normalized to version 2 before use and persistence (background none): style 1 (the retired triangular
 seven-segment display) becomes style 4, style 3 becomes style 2, byte 2 bit 0
 (its unlit-grid switch) and byte 3 are cleared. Legacy byte 3 accepts zero, or a style of 1 or 2 in bits 0–1 with
 optional flags in bits 2–5. Unknown styles, bits, lengths and flags are rejected.

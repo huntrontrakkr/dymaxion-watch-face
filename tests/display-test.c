@@ -3,23 +3,30 @@
 #include "display.h"
 int main(void){
   uint8_t p[4]={1,4,1,0};assert(display_valid(p,4));assert(!display_valid(NULL,4));assert(!display_valid(p,3));
-  p[0]=2;assert(!display_valid(p,4));p[0]=1;
+  p[0]=3;assert(!display_valid(p,4));p[0]=0;assert(!display_valid(p,4));p[0]=1;
   for(int style=0;style<=10;style++){p[1]=style;assert(display_valid(p,4)==(style<=9));}
   p[1]=4;p[2]=3;assert(display_valid(p,4));p[2]=4;assert(!display_valid(p,4));p[2]=1;
   p[3]=1;assert(display_valid(p,4));p[3]=3;assert(!display_valid(p,4));p[3]=64;assert(!display_valid(p,4));p[3]=4;assert(!display_valid(p,4));
   uint8_t normalized[4]={9,9,9,9};
   assert(!display_normalize(normalized,p,4));assert(!memcmp(normalized,(uint8_t[]){9,9,9,9},4));
   assert(!display_normalize(normalized,NULL,4));assert(!display_normalize(NULL,p,4));
-  // Retired styles migrate: 1 triangles to Chamfer, 3 LCD to broad. The unlit-grid bit is dropped.
+  // Version 1 packets become version 2: retired styles migrate (1 triangles to
+  // Chamfer, 3 LCD to broad), the unlit-grid bit and legacy byte 3 are dropped.
   for(int style=0;style<=9;style++)for(int grid=0;grid<=3;grid++)for(int flags=0;flags<64;flags++){
     uint8_t legacy[4]={1,style,grid,flags};
     bool valid=!flags||(flags&3)==1||(flags&3)==2;
     assert(display_normalize(normalized,legacy,4)==valid);
     if(valid){
-      uint8_t expected[4]={1,style==1?4:style==3?2:style,grid&2,0};
+      uint8_t expected[4]={2,style==1?4:style==3?2:style,grid&2,0};
       assert(!memcmp(normalized,expected,4));
       assert(display_normalize(normalized,normalized,4));assert(!memcmp(normalized,expected,4));
     }
+  }
+  // Version 2 carries the map background in byte 3.
+  for(int background=0;background<8;background++){
+    uint8_t current[4]={2,4,2,background};
+    assert(display_normalize(normalized,current,4)==(background<MAP_BACKGROUND_COUNT));
+    if(background<MAP_BACKGROUND_COUNT)assert(!memcmp(normalized,current,4));
   }
   return 0;
 }

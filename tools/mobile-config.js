@@ -22,7 +22,7 @@ function refresh(){
   cityEditor.refresh();
   displayEditor.refresh();
   paletteEditor.refresh();
-  $('theme').value=s.theme;$('format').value=s.format;$('connectionBuzz').value=s.connectionBuzz;
+  $('theme').value=s.theme;$('format').value=s.format;$('connectionBuzz').value=s.connectionBuzz;$('mapBackground').value=s.mapBackground;
   for(const k of ['moonIndicator','dayNight','lights','sun','edges','motion','stacked'])$(k).checked=s[k];
   $('places').replaceChildren();
   s.places.forEach((p,i)=>{
@@ -44,6 +44,7 @@ function refresh(){
 }
 $('preset').onchange=()=>{const preset=$('preset').value;if(preset!=='custom')Object.assign(s,presetFor(preset,s.clockDisplay));refresh();};
 $('connectionBuzz').onchange=()=>{s.connectionBuzz=$('connectionBuzz').value;};
+$('mapBackground').onchange=()=>{s.mapBackground=$('mapBackground').value;};
 for(const key of ['theme','format'])$(key).onchange=()=>{s[key]=Number($(key).value);if(key==='theme'){s.customPalette=null;refresh();}};
 for(const key of ['moonIndicator','dayNight','lights','sun','edges','motion','stacked'])$(key).onchange=()=>{s[key]=$(key).checked;if(key==='stacked'){s.time=clampPosition(s,'time',s.time);refresh();}};
 function importText(text){try{s=validateSettings(JSON.parse(text),exists);$('error').textContent='Composition loaded.';$('preset').value='custom';refresh();}catch(e){$('error').textContent=e.message;}}

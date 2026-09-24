@@ -33,6 +33,11 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
 - Rounded broad numerals and Span lettering remain available. Switch styles in
   **Character → Numerical display**. The triangular seven-segment experiment is
   retired; saved faces that used it open with Chamfer figures.
+- An optional background behind the map, edge to edge and from the map's top
+  to its bottom: the map's own triangle lattice split once, as **Triangle
+  points** (a dot wherever the triangles meet) or **Triangle lines** (every edge
+  dotted). It is baked into spare bits of the map data, so it costs the watch no
+  memory. **Composition → The planetary clock → Map background**.
 - The status line names the current city, using the phone's location at most
   hourly, or a manual name. The workshop labels Norfolk as an example until you
   request a location preview. City lookup uses Photon / OpenStreetMap.
@@ -173,6 +178,7 @@ Physical hardware and an actual phone webview have not been tested.
 | `shared/moon.js` | UTC lunar phase and eight native-size glyphs |
 | `shared/status-glyphs.js` | Pixel Bluetooth connection rune |
 | `shared/display.js` | Numeral styles and the display packet |
+| `shared/map-background.js` | Triangle points and lines behind the map |
 | `shared/city.js`, `tools/location-service.js` | City naming, hourly reverse geocoding and offline cache |
 | `shared/panel-*`, `shared/calendar.js` | Panel controls, provider normalization, packet contract and preview |
 | `designer/` | Interactive preview, accessible controls, JSON import/export |

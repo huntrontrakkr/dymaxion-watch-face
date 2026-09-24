@@ -6,8 +6,8 @@ import {encodeDisplay} from '../shared/display.js';
 import {defaults,validateSettings} from '../shared/settings.js';
 import {zoneExists} from '../shared/protocol.js';
 test('display preferences migrate, validate, and travel separately from the stable layout packet',()=>{
-  const s=defaults();assert.deepEqual([...encodeDisplay(s)],[1,4,0,0],'new faces use Chamfer figures');
-  assert.deepEqual([...encodeDisplay({...s,clockDisplay:'broad'})],[1,2,0,0]);
+  const s=defaults();assert.deepEqual([...encodeDisplay(s)],[2,4,0,0],'new faces use Chamfer figures');
+  assert.deepEqual([...encodeDisplay({...s,clockDisplay:'broad'})],[2,2,0,0]);
   for(const clockDisplay of ['span','broad','chamfer','leco'])assert(![1,3].includes(encodeDisplay({...s,clockDisplay})[1]),'codes 1 and 3 are retired styles');
   assert.throws(()=>encodeDisplay({...s,clockDisplay:'triangles'}),'the triangular display is retired');
   assert(!('segmentGrid' in s));
@@ -16,7 +16,13 @@ test('display preferences migrate, validate, and travel separately from the stab
   assert.throws(()=>validateSettings({...s,clockDisplay:'unknown'},zoneExists));
   const old=validateSettings({...s,clockDisplay:'triangles',segmentGrid:false},zoneExists);
   assert.equal(old.clockDisplay,'chamfer','saved triangular faces open as Chamfer');assert(!('segmentGrid' in old));
-  assert.deepEqual([...encodeDisplay({...defaults(),clockDisplay:'span',leadingZero:false})],[1,0,2,0]);
+  assert.deepEqual([...encodeDisplay({...defaults(),clockDisplay:'span',leadingZero:false})],[2,0,2,0]);
+  assert.equal(defaults().mapBackground,'none','the map background is off by default');
+  assert.deepEqual([...encodeDisplay({...defaults(),mapBackground:'points'})],[2,4,0,1]);
+  assert.deepEqual([...encodeDisplay({...defaults(),mapBackground:'lines'})],[2,4,0,2]);
+  assert.equal(validateSettings({...s,mapBackground:'lines'},zoneExists).mapBackground,'lines');
+  assert.equal(validateSettings(s,zoneExists).mapBackground,'none','older files have no background');
+  assert.throws(()=>validateSettings({...s,mapBackground:'stars'},zoneExists));
 });
 test('retired LCD and framing settings restore the open face without resetting personal preferences',()=>{
   const saved=defaults();saved.theme=2;saved.format=2;saved.time=[0,30];saved.map=[0,78];
@@ -26,7 +32,7 @@ test('retired LCD and framing settings restore the open face without resetting p
     const expected=validateSettings({...saved,clockDisplay:{lcd:'broad',triangles:'chamfer'}[clockDisplay]??clockDisplay},zoneExists);
     const migrated=validateSettings({...saved,clockDisplay,framing:{style:'rails',clock:true,map:true,footer:true,grid:true}},zoneExists);
     assert.deepEqual(migrated,expected);
-    assert(!('framing' in migrated));assert.equal(encodeDisplay(migrated)[3],0);
+    assert(!('framing' in migrated));assert.equal(encodeDisplay(migrated)[3],0,'legacy framing never becomes a map background');
     assert.deepEqual(validateSettings(migrated,zoneExists),migrated,'migration is stable on subsequent saves');
   }
 });

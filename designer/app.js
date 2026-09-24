@@ -7,6 +7,7 @@ import {drawBitmapText,fitLabel,textWidth} from '../shared/type.js';
 import {defaults,THEMES,PLACES,PRESETS,activePreset,presetFor,withClockDisplay,validateSettings,clampPosition,blockSize,markColor,quantizeColor,clockTopForVisible,QUICK_VIEW_HEIGHT,hourText} from '../shared/settings.js';
 import {MARKERS,drawMarkerPixels} from '../shared/markers.js';
 import {makeMap,direction,dot,MAP_SIZE} from '../shared/map.js';
+import {BACKGROUND_BITS} from '../shared/map-background.js';
 import {sunDirection} from '../shared/solar.js';
 import {moonFrame,moonDescription,MOON_GLYPHS,MOON_SIZE} from '../shared/moon.js';
 import {BLUETOOTH_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS,PULSE_ROWS} from '../shared/status-glyphs.js';
@@ -147,7 +148,7 @@ function placesUI(){
 markerGallery();
 function sync(){
   for(const key of ['dayNight','edges','lights','sun','motion','stacked','moonIndicator'])$(key).checked=settings[key];
-  $('format').value=settings.format;$('connectionBuzz').value=settings.connectionBuzz;
+  $('format').value=settings.format;$('connectionBuzz').value=settings.connectionBuzz;$('mapBackground').value=settings.mapBackground;
   document.querySelectorAll('[data-theme]').forEach(b=>b.setAttribute('aria-pressed',String(settings.customPalette===null&&+b.dataset.theme===settings.theme)));
   const current=activePreset(settings);document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.preset===current)));
   positionFields();placesUI();panelEditor.refresh();cityEditor.refresh();displayEditor.refresh();paletteEditor.refresh();
@@ -155,6 +156,7 @@ function sync(){
 for(const key of ['dayNight','edges','lights','sun','motion','stacked','moonIndicator'])$(key).onchange=()=>{settings[key]=$(key).checked;move('time',settings.time);positionFields();displayEditor.refresh();save();};
 $('format').onchange=()=>{settings.format=+$('format').value;save();};
 $('connectionBuzz').onchange=()=>{settings.connectionBuzz=$('connectionBuzz').value;save();};
+$('mapBackground').onchange=()=>{settings.mapBackground=$('mapBackground').value;save();};
 $('element').onchange=()=>{selected=$('element').value;positionFields();$('guides').checked=true;render();};
 for(const axis of ['x','y'])$('pos-'+axis).onchange=()=>{const value=Number($('pos-'+axis).value);if(!Number.isFinite(value))return;const p=getPosition(selected).slice();p[axis==='x'?0:1]=value;move(selected,p);positionFields();save();};
 const tabs=[...document.querySelectorAll('[role=tab]')];
@@ -183,7 +185,7 @@ function marker(x,y,icon,color,bg){
   drawMarkerPixels(ctx,icon,x,y,color);
 }
 function mapImage(now,pal,sun){
-  const key=[pal.bg,pal.ocean,pal.land,pal.nightOcean,pal.nightLand,pal.edge,settings.dayNight,settings.edges,Math.floor(now/300000)].join('/');
+  const key=[pal.bg,pal.ocean,pal.land,pal.nightOcean,pal.nightLand,pal.edge,settings.dayNight,settings.edges,settings.mapBackground,Math.floor(now/300000)].join('/');
   if(key===cacheKey&&mapCache)return mapCache;
   const [w,h]=MAP_SIZE,data=mapPixels;
   const offscreen=document.createElement('canvas');offscreen.width=w;offscreen.height=h;
@@ -197,7 +199,7 @@ function mapImage(now,pal,sun){
       let night=settings.dayNight&&light<0;
       if(settings.dayNight&&Math.abs(light)<.05)night=(x+y)&1?light<.05:light<-.05;
       c=kind+(night?2:0);if(settings.edges&&(data[i+3]&4))c=5;
-    }
+    }else if(data[i+3]&BACKGROUND_BITS[settings.mapBackground])c=5; // background dots in the edge colour
     img.data.set([...colors[c],255],i);
   }
   g.putImageData(img,0,0);cacheKey=key;mapCache={canvas:offscreen,sunPoint};return mapCache;

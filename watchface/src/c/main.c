@@ -83,7 +83,7 @@ static void rebuild_map(void) {
         if((s_settings[FLAGS]&DAY_NIGHT)&&light>-6500&&light<6500)night=((x+y)&1)?light<6500:light<-6500;
         c=p[kind+(night?2:0)];
         if((s_settings[FLAGS]&EDGES)&&(r[3]&4))c=p[5];
-      }
+      }else if(s_display[3]&&(r[3]&(4<<s_display[3])))c=p[5]; // map background, in the edge colour
       data[y*stride+x]=c;
     }
   }
@@ -442,6 +442,7 @@ static void received(DictionaryIterator *iter,void *context) {
   uint8_t next_display[DISPLAY_SIZE];
   if(display&&display->type==TUPLE_BYTE_ARRAY&&display_normalize(next_display,display->value->data,display->length)&&memcmp(s_display,next_display,DISPLAY_SIZE)){
     clock_stop();s_clock_ready=false;
+    if(s_display[3]!=next_display[3])s_map_dirty=true;
     memcpy(s_display,next_display,DISPLAY_SIZE);persist_write_data(3,s_display,DISPLAY_SIZE);
     clock_configure();
   }
