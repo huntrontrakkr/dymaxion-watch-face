@@ -1,10 +1,11 @@
 # Map glyphs
 
-Five 5×5-pixel glyphs distinguish places on the Dymaxion map. They are simple
-cartographic marks, with no literal depiction of Fuller's buildings or ideas.
+Twelve 5×5-pixel glyphs distinguish places on the Dymaxion map: five simple
+cartographic marks and seven notation and bookkeeping marks, with no literal
+depiction of Fuller's buildings or ideas.
 The small scale gives the map room to remain the subject.
 
-![The five pixel glyphs, enlarged without interpolation](screenshots/marker-gallery.png)
+![The original five pixel glyphs, enlarged without interpolation](screenshots/marker-gallery.png)
 
 | ID | Glyph | Shape |
 | ---: | --- | --- |
@@ -13,6 +14,20 @@ The small scale gives the map room to remain the subject.
 | 2 | Ring | Open circular form |
 | 3 | Triangle | Upright triangular outline |
 | 4 | Plus | Small crosshair |
+| 5 | Dagger | Footnote dagger † |
+| 6 | Double dagger | Second footnote ‡ |
+| 7 | Asterisk | Note mark * |
+| 8 | Pilcrow | Paragraph mark ¶ |
+| 9 | Check | Tick ✓ |
+| 10 | Cross | Cross-out ✗ |
+| 11 | Number | Number sign # |
+
+The section sign §, reference mark ※, asterism ⁂ and therefore sign ∴ were
+tried and left out: at five pixels they read as an S, a blur or stray dots.
+
+The subsolar point has its own 7×7 glyph (`SUN_ROWS` in
+`shared/status-glyphs.js`): a small sun, an orb with eight short rays, on a
+9×9 clearing.
 
 Each tracked place can select any glyph and its own color. The color picker
 rounds to Pebble's 64-color RGB222 palette. “Use theme color” returns a place

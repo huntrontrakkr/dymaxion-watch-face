@@ -1,6 +1,6 @@
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {MOON_GLYPHS,MOON_FRAMES,MOON_NAMES,MOON_SIZE} from '../shared/moon.js';
-import {BLUETOOTH_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS,PULSE_ROWS,PULSE_SIZE} from '../shared/status-glyphs.js';
+import {BLUETOOTH_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS,SUN_ROWS,SUN_HALO_ROWS,SUN_SIZE,PULSE_ROWS,PULSE_SIZE} from '../shared/status-glyphs.js';
 
 if(MOON_GLYPHS.length!==MOON_FRAMES || MOON_GLYPHS.some(frame=>
   frame.length!==MOON_SIZE || frame.some(row=>row.length!==MOON_SIZE || /[^.o#]/.test(row))))
@@ -21,6 +21,7 @@ writeFileSync('watchface/src/c/generated/status_glyphs.h',
   +`static const uint8_t BLUETOOTH_GLYPH[BLUETOOTH_HEIGHT] = {${bt}};\n`
   +`static const uint32_t DAY_NIGHT_GLYPHS[2][5] = {${DAY_NIGHT_ROWS.map(pixelRows).join(',')}};\n`
   +`static const uint32_t MARKER_HALO[7] = ${pixelRows(MARKER_HALO_ROWS)};\n`
+  +`#define SUN_SIZE ${SUN_SIZE}\nstatic const uint32_t SUN_GLYPH[SUN_SIZE] = ${pixelRows(SUN_ROWS)};\nstatic const uint32_t SUN_HALO[SUN_SIZE+2] = ${pixelRows(SUN_HALO_ROWS)};\n`
   +`#define PULSE_SIZE ${PULSE_SIZE}\nstatic const uint32_t PULSE_GLYPHS[4][PULSE_SIZE] = {${PULSE_ROWS.map(pixelRows).join(',')}};\n`);
 const pixel=(x,y,color)=>`<rect x="${x}" y="${y}" width="1" height="1" fill="${color}"/>`;
 const moonSamples=MOON_GLYPHS.map((rows,i)=>{
@@ -37,4 +38,4 @@ writeFileSync('docs/screenshots/status-glyphs.svg',
   +`<g fill="#c9d0d8" font-family="sans-serif" font-size="8">${moonSamples}`
   +`<g transform="translate(258 91) scale(2)">${bluetooth}</g>`
   +`<text x="281" y="105">Bluetooth connected</text></g></svg>\n`);
-console.log('Pixel status masks: eight Moon phases, Bluetooth, day/night, marker halo and four pulse rings.');
+console.log('Pixel status masks: eight Moon phases, Bluetooth, day/night, marker halo, sun and four pulse rings.');

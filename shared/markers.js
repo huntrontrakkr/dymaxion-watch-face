@@ -11,7 +11,22 @@ export const MARKERS=[
   glyph('Triangle','A small directional triangle',
     '.....','..#..','.#.#.','#...#','#####'),
   glyph('Plus','A small crosshair',
-    '..#..','..#..','#####','..#..','..#..')
+    '..#..','..#..','#####','..#..','..#..'),
+  // Notation and bookkeeping marks, drawn to read at five pixels.
+  glyph('Dagger','A footnote dagger',
+    '..#..','.###.','..#..','..#..','..#..'),
+  glyph('Double dagger','A second footnote',
+    '..#..','.###.','..#..','.###.','..#..'),
+  glyph('Asterisk','A note mark',
+    '..#..','#.#.#','.###.','#.#.#','..#..'),
+  glyph('Pilcrow','A paragraph mark',
+    '.####','###.#','.##.#','..#.#','..#.#'),
+  glyph('Check','A tick',
+    '....#','...#.','#.#..','.#...','.....'),
+  glyph('Cross','A cross-out',
+    '#...#','.#.#.','..#..','.#.#.','#...#'),
+  glyph('Number','A number sign',
+    '.#.#.','#####','.#.#.','#####','.#.#.')
 ];
 export const MARKER_SIZE=5;
 

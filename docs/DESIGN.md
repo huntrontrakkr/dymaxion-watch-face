@@ -47,8 +47,9 @@ Shoji Sadao's contribution to the map is acknowledged alongside Fuller.
 
 ## Map symbols
 
-Five abstract 5×5-pixel glyphs distinguish the three tracked places: diamond,
-point, ring, triangle, and plus. The former 9×9 pictograms competed with the
+Twelve abstract 5×5-pixel glyphs distinguish the three tracked places: diamond,
+point, ring, triangle and plus, and the notation marks dagger, double dagger,
+asterisk, pilcrow, check, cross and number sign. The former 9×9 pictograms competed with the
 map and made literal claims that the small display could not support. These
 marks are cartographic cues rather than miniature illustrations. The
 [map-glyph notes](MARKERS.md) show the set enlarged without interpolation.

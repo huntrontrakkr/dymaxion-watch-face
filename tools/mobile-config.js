@@ -14,7 +14,7 @@ const displayEditor=displayControls($('display-controls'),()=>s,value=>{s={...wi
 const paletteEditor=paletteControls($('palette-controls'),()=>s,patch=>{s=validateSettings({...s,...patch},exists);refresh();});
 function options(select,entries){select.replaceChildren();entries.forEach(([label,value])=>select.add(new Option(label,value)));}
 options($('theme'),THEMES.map((t,i)=>[t.name,i]));
-for(const [key,title] of [['moonIndicator','Moon in top bar'],['dayNight','Day and night'],['lights','City lights'],['sun','Subsolar diamond'],['edges','Face edges'],['motion','Brief animations'],['stacked','Stack hours and minutes']]){
+for(const [key,title] of [['moonIndicator','Moon in top bar'],['dayNight','Day and night'],['lights','City lights'],['sun','Subsolar sun'],['edges','Face edges'],['motion','Brief animations'],['stacked','Stack hours and minutes']]){
   const label=document.createElement('label');label.textContent=title;const input=document.createElement('input');input.type='checkbox';input.id=key;label.append(input);$('switches').append(label);
 }
 function refresh(){

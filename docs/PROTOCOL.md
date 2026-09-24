@@ -23,7 +23,7 @@ configuration, then persists it as one record under key 1 (below Pebble's
 | --- | --- |
 | 0–7 | ASCII label, max 7 characters plus NUL |
 | 8–9 | Projected map pixel x/y, relative to map origin |
-| 10 | Map glyph ID, 0–4: diamond, point, ring, triangle, plus |
+| 10 | Map glyph ID, 0–11: diamond, point, ring, triangle, plus, dagger, double dagger, asterisk, pilcrow, check, cross, number |
 | 11–13 | Signed unit direction components scaled by 127 |
 | 14–15 | Current UTC offset in minutes, signed int16 |
 | 16 | Number of cached transitions, 0–8 |

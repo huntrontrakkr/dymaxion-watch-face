@@ -60,7 +60,7 @@ test('invalid imports fail before replacing settings; placements are constrained
   for(const theme of [-1,THEMES.length,255,4.5])assert.throws(()=>validateSettings({...defaults(),theme},zoneExists));
 });
 test('small map glyphs are distinct and match the native pixel table',()=>{
-  assert.equal(MARKERS.length,5);assert.equal(MARKER_SIZE,5);
+  assert.equal(MARKERS.length,12);assert.equal(MARKER_SIZE,5);
   const patterns=new Set();
   for(const marker of MARKERS){
     assert.equal(marker.rows.length,MARKER_SIZE);

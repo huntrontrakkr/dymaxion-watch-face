@@ -43,8 +43,8 @@ try{
   assert.equal(await page.getByRole('button',{name:'Original axis',exact:true}).count(),0);
   await page.getByRole('tab',{name:'Places',exact:true}).click();
   assert.equal(await page.locator('.marker-control canvas').first().evaluate(c=>c.clientWidth/c.width),3,'marker samples enlarge each pixel exactly three times');
-  assert.equal(await page.locator('#marker-gallery .marker-tile').count(),5);
-  assert.equal(await page.getByLabel('Symbol for place 1',{exact:true}).locator('option').count(),5);
+  assert.equal(await page.locator('#marker-gallery .marker-tile').count(),12);
+  assert.equal(await page.getByLabel('Symbol for place 1',{exact:true}).locator('option').count(),12);
   await page.getByLabel('Enable place 1',{exact:true}).uncheck();
   await page.getByLabel('Symbol for place 1',{exact:true}).selectOption('4');
   await page.getByLabel('Color for place 1',{exact:true}).fill('#cc7700');
@@ -102,7 +102,7 @@ try{
   await mobile.locator('#stacked').check();
   assert.equal(await mobile.locator('#stacked').isChecked(),true);
   await mobile.locator('#moonIndicator').uncheck();assert.equal(await mobile.locator('#moonIndicator').isChecked(),false);
-  assert.equal(await mobile.locator('[data-key=icon]').first().locator('option').count(),5);
+  assert.equal(await mobile.locator('[data-key=icon]').first().locator('option').count(),12);
   await mobile.locator('[data-key=icon]').first().selectOption('3');
   assert.match(await mobile.locator('[data-symbol-meaning]').first().textContent(),/directional triangle/);
   await mobile.getByLabel('Color for place 1',{exact:true}).fill('#cc7700');

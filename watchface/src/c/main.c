@@ -358,7 +358,11 @@ static void update_proc(Layer *layer,GContext *ctx) {
       graphics_context_set_stroke_color(ctx,color(7));graphics_draw_pixel(ctx,GPoint(mx+c->x,my+c->y));
     }
   }
-  if((s_settings[FLAGS]&SUN)&&(s_settings[FLAGS]&DAY_NIGHT)&&s_map)marker(ctx,GPoint(mx+s_sun_point.x,my+s_sun_point.y),0,color(7));
+  if((s_settings[FLAGS]&SUN)&&(s_settings[FLAGS]&DAY_NIGHT)&&s_map){
+    GPoint sun=GPoint(mx+s_sun_point.x,my+s_sun_point.y);
+    pixel_rows(ctx,SUN_HALO,SUN_SIZE+2,SUN_SIZE+2,sun.x-SUN_SIZE/2-1,sun.y-SUN_SIZE/2-1,color(0));
+    pixel_rows(ctx,SUN_GLYPH,SUN_SIZE,SUN_SIZE,sun.x-SUN_SIZE/2,sun.y-SUN_SIZE/2,color(7));
+  }
   for(int i=0;i<3;i++)if(s_settings[ENABLED]&(1<<i)) {
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;GPoint pos=GPoint(mx+z[8],my+z[9]);
     marker(ctx,pos,z[10],mark_color(i));
