@@ -50,6 +50,7 @@
     "night": false,
     "nightStart": 22,
     "nightEnd": 7,
+    "quietTime": false,
     "darkPause": false,
     "lowBattery": 10
   },

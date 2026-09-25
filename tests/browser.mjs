@@ -94,6 +94,8 @@ try{
   assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isDisabled());
   await mobile.getByLabel('Night saver',{exact:true}).check();assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isEnabled());
   await mobile.getByLabel('Night saver',{exact:true}).uncheck();
+  await mobile.getByLabel('During Quiet Time',{exact:true}).check();assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isEnabled(),'Quiet Time alone can be the night');
+  await mobile.getByLabel('During Quiet Time',{exact:true}).uncheck();
   for(let theme=4;theme<THEMES.length;theme++){
     if(!THEMES[theme].hidden){
       await mobile.locator('#theme').selectOption(String(theme));

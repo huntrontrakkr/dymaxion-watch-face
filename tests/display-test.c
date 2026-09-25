@@ -40,7 +40,7 @@ int main(void){
   // Version 3: power and motion in bytes 4-7; 8 bytes only.
   uint8_t v3[8]={3,4,2,1,0x3f,23,0,10};assert(display_valid(v3,8));assert(!display_valid(v3,4));
   assert(display_normalize(normalized,v3,8));assert(!memcmp(normalized,v3,8));
-  v3[4]=0x40;assert(!display_valid(v3,8));v3[4]=0;
+  v3[4]=0x7f;assert(display_valid(v3,8));v3[4]=0x80;assert(!display_valid(v3,8));v3[4]=0;
   v3[5]=24;assert(!display_valid(v3,8));v3[5]=22;v3[6]=24;assert(!display_valid(v3,8));v3[6]=7;
   for(int low=0;low<256;low++){v3[7]=low;assert(display_valid(v3,8)==(low==5||low==10||low==20||low==30));}v3[7]=10;v3[0]=2;assert(!display_valid(v3,8));v3[0]=3;
   v3[2]=1;assert(!display_valid(v3,8));

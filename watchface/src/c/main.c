@@ -81,6 +81,8 @@ static bool s_map_key_valid;
 static AppTimer *s_map_timer;
 // Power and motion (power.c): DISPLAY bytes 4-6.
 static const uint8_t *power(void){return s_display+4;}
+// The watch's Quiet Time, which the night saver can treat as night.
+static bool quiet(void){return quiet_time_is_active();}
 static int local_hour(void){time_t t=time(NULL);return localtime(&t)->tm_hour;}
 static uint8_t zone_position(void){return (s_display[2]>>4)&3;}
 
@@ -184,7 +186,7 @@ static void clock_prepare(struct tm *local,time_t now,bool animate){
   time_t minute=now/60;
   if(s_clock_ready&&minute==s_clock_minute&&format==s_clock_24&&!memcmp(digits,s_clock_digits,4))return;
   bool smooth=animate&&s_clock_ready&&minute==s_clock_minute+1&&format==s_clock_24
-    &&s_focused&&power_minute_animation(power(),s_settings[FLAGS]&MOTION,local->tm_hour)&&power_battery_allows_motion(power(),s_battery.charge_percent);
+    &&s_focused&&power_minute_animation(power(),s_settings[FLAGS]&MOTION,local->tm_hour,quiet())&&power_battery_allows_motion(power(),s_battery.charge_percent);
   clock_stop();clock_flip_prepare(&s_clock_flip,smooth?s_clock_digits:digits,digits);
   memcpy(s_clock_digits,digits,4);s_clock_ready=true;s_clock_minute=minute;s_clock_24=format;s_clock_frame=UINT16_MAX;
   if(smooth&&s_clock_flip.changed_cells){
@@ -336,7 +338,7 @@ static int clock_layout(int visible,bool *plate,int *px,int *py){
   if(plate){*plate=shown;if(shown){*px=x;*py=y;}}
   return top;
 }
-static bool motion_allowed(void){return power_flourishes(power(),s_settings[FLAGS]&MOTION,local_hour())&&power_battery_allows_motion(power(),s_battery.charge_percent)&&s_focused;}
+static bool motion_allowed(void){return power_flourishes(power(),s_settings[FLAGS]&MOTION,local_hour(),quiet())&&power_battery_allows_motion(power(),s_battery.charge_percent)&&s_focused;}
 static void motion_step(void *context){
   (void)context;s_motion_timer=NULL;
   redraw_part((s_tray_active?PART_TRAY:0)|(s_beside_p!=(s_beside_to?1000:0)?PART_CLOCK:0));
@@ -696,7 +698,7 @@ static void animation_step(void *context) {
 static void pulse(void) {
   if(s_animation){app_timer_cancel(s_animation);s_animation=NULL;}
   s_frame=s_frames=0;
-  if(power_flourishes(power(),s_settings[FLAGS]&MOTION,local_hour())&&power_battery_allows_motion(power(),s_battery.charge_percent)&&s_settings[ENABLED]) {
+  if(power_flourishes(power(),s_settings[FLAGS]&MOTION,local_hour(),quiet())&&power_battery_allows_motion(power(),s_battery.charge_percent)&&s_settings[ENABLED]) {
     for(int i=0;i<3;i++)if(s_settings[ENABLED]&(1<<i))s_frames+=4;
     s_animation=app_timer_register(PULSE_RING_MS,animation_step,NULL);}
   redraw();
@@ -724,10 +726,10 @@ static void backlight_changed(bool on){
   panel_light_update(&s_gesture_light,on,gesture_now());
   configure_shake();
   // A screen tap can light the watch even though watchfaces cannot receive it.
-  if(on&&s_focused&&power_dark_paused(power(),local_hour()))redraw();
+  if(on&&s_focused&&power_dark_paused(power(),local_hour(),quiet()))redraw();
 }
 static void configure_shake(void) {
-  bool observe_light=s_focused&&((panels_shake_enabled()&&panels_light_only())||((power()[0]&POWER_NIGHT)&&(power()[0]&POWER_DARK_PAUSE)));
+  bool observe_light=s_focused&&((panels_shake_enabled()&&panels_light_only())||((power()[0]&(POWER_NIGHT|POWER_QUIET_TIME))&&(power()[0]&POWER_DARK_PAUSE)));
   if(observe_light!=s_backlight_subscribed){
     s_gesture_light=(PanelLightState){0};
     if(observe_light){backlight_service_subscribe(backlight_changed);panel_light_update(&s_gesture_light,light_is_on(),gesture_now());}
@@ -751,11 +753,12 @@ static void tick(struct tm *local_time,TimeUnits changed) {
   // is off, when the map does not change with time. The place times' daylight
   // dots still follow the sun every five minutes then.
   time_t now=time(NULL);
-  if(power_relight(power(),s_settings[FLAGS]&DAY_NIGHT,local_time->tm_hour,local_time->tm_min))s_map_dirty=true;
+  if(power_relight(power(),s_settings[FLAGS]&DAY_NIGHT,local_time->tm_hour,local_time->tm_min,quiet()))s_map_dirty=true;
   else if(!(s_settings[FLAGS]&DAY_NIGHT)&&local_time->tm_min%5==0)sun_update(now-now%300);
-  // Paused in the dark (night saver): the screen keeps its last frame until a
-  // backlight-on event redraws it, including a touch that wakes the backlight.
-  if(!power_dark_paused(power(),local_time->tm_hour))redraw();
+  // Paused in the dark (night saver): with the backlight off the screen keeps
+  // its last frame; the backlight coming on redraws it (backlight_changed),
+  // and while it stays on the minute keeps up.
+  if(!power_dark_paused(power(),local_time->tm_hour,quiet())||light_is_on())redraw();
   int page=panels_page();if(panels_tick(now))tray_start(page);pulse_on_zones();
   if(s_clock_face)clock_prepare(local_time,now,true);
   int interval=panels_refresh_minutes();if(!(s_city[1]&1)&&interval>60)interval=60;

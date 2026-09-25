@@ -40,7 +40,9 @@ behind this watch. [Meet Fuller](https://www.bfi.org/about-fuller/) and
   or leave one in place. Health data stays on the watch.
 - **Small details, considered.** Current city, date, lunar phase, Bluetooth
   and battery in the top line. Optional 400 ms minute transitions, separate
-  motion controls, adjustable daylight updates, and a night saver.
+  motion controls, adjustable daylight updates, and a night saver for set
+  hours or the watch's Quiet Time that can hold the screen still until the
+  backlight comes on.
 
 The [76-face gallery](https://huntrontrakkr.github.io/dymaxion-watch-face/gallery.html)
 covers the public palettes, clock styles and panels, with downloadable settings for

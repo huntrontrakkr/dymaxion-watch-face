@@ -155,8 +155,10 @@ so a watchface cannot detect a double tap on the bottom bar. The watch's own
 [wake-on-touch setting](https://help.repebble.com/en/articles/15277496-backlight)
 can light the screen; a subsequent wrist flick can then change the panel in
 the new mode. Dymaxion subscribes to backlight state changes, never touchscreen
-events. With the night saver set to pause redraws, any backlight wake also brings
-the face up to date, including a touch or button that lights it.
+events. With the night saver set to pause redraws, the face redraws at night only
+while the backlight is on: any backlight wake brings it up to date at once,
+including a touch or button that lights it, and it keeps time until the light
+goes out. The night can be your chosen hours, the watch's Quiet Time, or both.
 
 Other periodic work is kept small. The map is relit every five minutes by
 default, not every minute (the terminator moves about a pixel in that time);

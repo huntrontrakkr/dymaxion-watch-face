@@ -1,13 +1,14 @@
 #include "power.h"
 static const uint8_t DAYLIGHT_MINUTES[4]={5,10,15,30};
-bool power_night(const uint8_t *p,int hour){
+bool power_night(const uint8_t *p,int hour,bool quiet){
+  if((p[0]&POWER_QUIET_TIME)&&quiet)return true;
   if(!(p[0]&POWER_NIGHT))return false;
   int s=p[1],e=p[2];
   return s==e?true:s<e?hour>=s&&hour<e:hour>=s||hour<e;
 }
-int power_daylight_minutes(const uint8_t *p,int hour){return power_night(p,hour)?NIGHT_DAYLIGHT_MINUTES:DAYLIGHT_MINUTES[p[0]&3];}
-bool power_relight(const uint8_t *p,bool day_night,int hour,int minute){return day_night&&(hour*60+minute)%power_daylight_minutes(p,hour)==0;}
-bool power_minute_animation(const uint8_t *p,bool motion,int hour){return motion&&!(p[0]&POWER_MINUTE_OFF)&&!power_night(p,hour);}
-bool power_flourishes(const uint8_t *p,bool motion,int hour){return motion&&!(p[0]&POWER_FLOURISHES_OFF)&&!power_night(p,hour);}
+int power_daylight_minutes(const uint8_t *p,int hour,bool quiet){return power_night(p,hour,quiet)?NIGHT_DAYLIGHT_MINUTES:DAYLIGHT_MINUTES[p[0]&3];}
+bool power_relight(const uint8_t *p,bool day_night,int hour,int minute,bool quiet){return day_night&&(hour*60+minute)%power_daylight_minutes(p,hour,quiet)==0;}
+bool power_minute_animation(const uint8_t *p,bool motion,int hour,bool quiet){return motion&&!(p[0]&POWER_MINUTE_OFF)&&!power_night(p,hour,quiet);}
+bool power_flourishes(const uint8_t *p,bool motion,int hour,bool quiet){return motion&&!(p[0]&POWER_FLOURISHES_OFF)&&!power_night(p,hour,quiet);}
 bool power_battery_allows_motion(const uint8_t *p,int percent){return percent>p[3];}
-bool power_dark_paused(const uint8_t *p,int hour){return (p[0]&POWER_DARK_PAUSE)&&power_night(p,hour);}
+bool power_dark_paused(const uint8_t *p,int hour,bool quiet){return (p[0]&POWER_DARK_PAUSE)&&power_night(p,hour,quiet);}

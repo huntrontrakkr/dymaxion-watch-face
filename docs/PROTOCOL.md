@@ -201,10 +201,15 @@ change with time). Bit 2 turns the minute animation off and bit 3 the marker
 pulse, tray swipe and clock glide; MOTION still turns them all off. Bit 4 is
 the night saver: from the hour in byte 5 until the hour in byte 6 (wrapping
 past midnight; the same hour means all day) the map is reshaded every other
-hour, on even hours, and nothing animates. Bit 5, with the night saver, pauses
-redraws at night: the minute tick no longer redraws, and a backlight-on event
-brings the face up to date, whether motion, a button or screen touch woke it.
-This uses Pebble's backlight service, without polling or touchscreen input.
+hour, on even hours, and nothing animates. Bit 6 also makes it night whenever
+the watch's own Quiet Time is on, at any hour: `quiet_time_is_active()`, which
+covers Quiet Time switched on by hand, its weekday/weekend schedule and
+calendar-aware Quiet Time (apps can read only whether it is on, not its
+schedule, and get no event when it changes, so the face asks at each minute
+tick). Bit 5, at night, pauses redraws in the dark: the minute tick redraws only
+while the backlight is on (`light_is_on()`), and the backlight coming on redraws
+at once, whether motion, a button or screen touch woke it. This uses Pebble's
+backlight service, without polling or touchscreen input.
 Byte 7 is the battery percentage at or below which nothing
 animates: 5, 10 (the default), 20 or 30. The default packet is
 `[3, 4, 0, 0, 0, 22, 7, 10]`.
