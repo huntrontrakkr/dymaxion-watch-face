@@ -340,7 +340,7 @@ function render(){
       const font=watchTypeface.lining.small,shown=settings.places.map((p,i)=>[p,i]).filter(([p])=>p.on);
       shown.forEach(([p,i],row)=>{
         const there=moment(now).tz(p.tz),delta=Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000);
-        const r=zoneRow({label:p.label,hour:there.hours(),minute:there.minutes(),clock24:use24(),delta,side:settings.zonePosition},t=>textWidth(font,t)),base=ty+zoneRowBaseline(row,shown.length,settings.zoneTimesTall);
+        const r=zoneRow({label:p.label,hour:there.hours(),minute:there.minutes(),clock24:use24(),delta,side:settings.zonePosition,tall:settings.zoneTimesTall},t=>textWidth(font,t)),base=ty+zoneRowBaseline(row,shown.length,settings.zoneTimesTall);
         drawBitmapText(ctx,font,r.label,tx+r.labelX,base,fade(markColor(p,settings,i)));
         if(settings.zoneTimesTall){ctx.fillStyle=fade(pal.ink);for(const [x,y] of tallPixels(r.time))ctx.fillRect(tx+r.timeX+x,base+y,1,1);}
         else drawBitmapText(ctx,font,r.time,tx+r.timeX,base,fade(pal.ink));

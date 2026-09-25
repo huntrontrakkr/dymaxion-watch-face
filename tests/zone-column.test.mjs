@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {mkdirSync,readFileSync} from 'node:fs';
-import {ZONE_TIMES,ZONE_POSITIONS,zoneColumn,zoneColumnFits,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline,tallPixels,TALL_FIGURES,TALL_HEIGHT} from '../shared/zone-column.js';
+import {ZONE_TIMES,ZONE_POSITIONS,zoneColumn,zoneColumnFits,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline,tallPixels,tallWidth,TALL_FIGURES,TALL_HEIGHT} from '../shared/zone-column.js';
 import {textWidth} from '../shared/type.js';
 import {SYSTEM_CLOCKS} from '../shared/system-clock.js';
 import fonts from '../assets/type/system-clock.json' with {type:'json'};
@@ -13,10 +13,10 @@ test('the watch lays out place times beside the clock exactly as the workshop do
   mkdirSync('test-results',{recursive:true});
   execFileSync('cc',['-std=c11','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/zone-column-test.c','watchface/src/c/zone_column.c','watchface/src/c/caps.c','-o','test-results/zone-column-test']);
   const base=[['NYC',9,5,1,0,0],['LON',17,34,0,0,0],['TYO',1,34,0,1,0],['Tokyo',13,7,0,1,0],['SYDNEY',23,59,1,-1,0],['HNL',0,0,0,-1,0],['X',12,0,0,0,1],['ABCDEFG',11,11,1,0,0]];
-  const rows=[0,1].flatMap(right=>base.map(r=>[...r,right]));
+  const rows=[0,1].flatMap(tall=>[0,1].flatMap(right=>base.map(r=>[...r,right,tall])));
   const native=execFileSync('test-results/zone-column-test',['watchface/resources/data/caps.bin',...rows.flat().map(String)]).toString().trim().split('\n');
-  rows.forEach(([label,hour,minute,clock24,delta,stale,right],i)=>{
-    const r=zoneRow({label,hour,minute,clock24:!!clock24,delta,stale:!!stale,side:right?'right':'left'},measure);
+  rows.forEach(([label,hour,minute,clock24,delta,stale,right,tall],i)=>{
+    const r=zoneRow({label,hour,minute,clock24:!!clock24,delta,stale:!!stale,side:right?'right':'left',tall:!!tall},measure);
     assert.equal(native[i],[r.label,r.labelX,r.time,r.timeX,r.suffix,r.suffixX,r.day,r.dayX].join('|'),label);
   });
   assert.equal(native[rows.length].trim(),[1,2,3].flatMap(n=>Array.from({length:n},(_,i)=>zoneRowBaseline(i,n))).join(' '));
@@ -29,21 +29,21 @@ test('the watch lays out place times beside the clock exactly as the workshop do
   ['01:23','45:67','89:00'].forEach((t,i)=>{
     const [pixels,advance]=native[rows.length+4+i].split('|');
     assert.equal(pixels.trim(),tallPixels(t).map(p=>p.join(',')).join(' '),t+' tall pixels');
-    assert.equal(Number(advance),27,t+' keeps the capitals\' advance');
+    assert.equal(Number(advance),30,t+' advances 7 a figure, 2 the colon');assert.equal(tallWidth(t),30);
   });
 });
 test('rows fit the column on either side, clear of the shifted figures, on the figures\' rows',()=>{
   assert.deepEqual(ZONE_POSITIONS,['left','right','map']);
   for(const side of ['left','right']){const {x,right,shift}=zoneColumn(side);
-    for(const clock24 of [true,false])for(const delta of [-1,0,1])for(const label of ['NYC','LON','TYO','SYDNEY','W']){
-      const r=zoneRow({label,hour:23,minute:59,clock24,delta,side},measure);
+    for(const tall of [false,true])for(const clock24 of [true,false])for(const delta of [-1,0,1])for(const label of ['NYC','LON','TYO','SYDNEY','W']){
+      const r=zoneRow({label,hour:23,minute:59,clock24,delta,side,tall},measure),t=tall?1:0;
       assert.equal(r.labelX,x);assert(r.label.length>=Math.min(3,label.length),`${label}: at least three letters`);
       // The day offset follows the label; both clear the time.
       const labelEnd=r.day?r.dayX+measure(r.day):r.labelX+measure(r.label);
-      if(r.day)assert.equal(r.dayX,r.labelX+measure(r.label)+1,'the day offset sits right after the label');
-      assert(labelEnd<=r.timeX-2,`${side} ${label} clears the time`);
-      assert(r.suffixX+measure(r.suffix)<=right);
-      assert.equal(r.timeX,zoneRow({label:'X',hour:1,minute:1,clock24,delta:0,side},measure).timeX,'times line up in one column');
+      if(r.day)assert.equal(r.dayX,r.labelX+measure(r.label)+1-t,'the day offset sits right after the label');
+      assert(labelEnd<=r.timeX-2+t,`${side} ${label} clears the time`);
+      assert(r.suffixX+measure(r.suffix)-t<=right);
+      assert.equal(r.timeX,zoneRow({label:'X',hour:1,minute:1,clock24,delta:0,side,tall},measure).timeX,'times line up in one column');
     }
     // Shifted, Chamfer and every system font clear the column by 3 pixels.
     const inkLeft=[CHAMFER_METRICS.starts[0]],inkRight=[CHAMFER_METRICS.starts.at(-1)+CHAMFER_METRICS.digitWidth];

@@ -67,7 +67,7 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
   if(s.stacked){drawBitmapText(ctx,font.lining.large,hourText(clock24?local.h:local.h%12||12,s.leadingZero).trim(),tx+36,ty+30,pal.ink,'center');drawBitmapText(ctx,font.lining.large,two(local.m),tx+36,ty+65,pal.ink,'center');}
   else drawFlipPixels(ctx,clockMask(time(local),s.clockDisplay),tx+(beside?zoneColumn(s.zonePosition).shift:0),ty+flipOffset(s.clockDisplay),{ink:pal.ink,background:pal.bg});
   if(beside)enabled.forEach(({p,i},row)=>{
-    const t=times[i],r=zoneRow({label:p.label,hour:t.h,minute:t.m,clock24,delta:Math.round((t.day-local.day)/86400000),side:s.zonePosition},text=>[...text].reduce((n,c)=>n+(font.lining.small[c]||font.lining.small['?']).a,0)),base=ty+zoneRowBaseline(row,enabled.length,s.zoneTimesTall);
+    const t=times[i],r=zoneRow({label:p.label,hour:t.h,minute:t.m,clock24,delta:Math.round((t.day-local.day)/86400000),side:s.zonePosition,tall:s.zoneTimesTall},text=>[...text].reduce((n,c)=>n+(font.lining.small[c]||font.lining.small['?']).a,0)),base=ty+zoneRowBaseline(row,enabled.length,s.zoneTimesTall);
     drawBitmapText(ctx,font.lining.small,r.label,tx+r.labelX,base,markColor(p,s,i));
     if(s.zoneTimesTall){ctx.fillStyle=pal.ink;for(const [x,y] of tallPixels(r.time))ctx.fillRect(tx+r.timeX+x,base+y,1,1);}
     else drawBitmapText(ctx,font.lining.small,r.time,tx+r.timeX,base,pal.ink);

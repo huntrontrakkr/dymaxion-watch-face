@@ -35,41 +35,45 @@ export function zoneRowBaseline(index, count, tall = false) {
   const block = glyphHeight + pitch * (count - 1);
   return top + Math.floor((height - block) / 2) + index * pitch + glyphHeight;
 }
-// Tall figures for the times beside the clock: the status-line figures drawn
-// 10 pixels high with the same shapes and the same advances (6, the colon 3),
-// so a row keeps its width. Labels, day offsets and A/P stay in the capitals
-// on the same baseline.
+// Tall figures for the times beside the clock (the Tall place times option):
+// the status-line figures drawn 10 pixels high and a pixel wider, 6×10 on an
+// advance of 7, the colon 1 pixel on an advance of 2. Labels, day offsets and
+// A/P stay in the capitals on the same baseline; zoneRow tightens their spacing
+// by a pixel each so a 12-hour row with a day offset still fits.
 export const TALL_HEIGHT = 10;
 export const TALL_FIGURES = Object.freeze({
-  '0': ['.###.', '#...#', '#...#', '#...#', '#...#', '#...#', '#...#', '#...#', '#...#', '.###.'], '1': ['..#..', '.##..', '#.#..', '..#..', '..#..', '..#..', '..#..', '..#..', '..#..', '.###.'],
-  '2': ['.###.', '#...#', '....#', '....#', '...#.', '..#..', '.#...', '#....', '#....', '#####'], '3': ['####.', '....#', '....#', '....#', '.###.', '....#', '....#', '....#', '....#', '####.'],
-  '4': ['...#.', '..##.', '.#.#.', '.#.#.', '#..#.', '#..#.', '#####', '...#.', '...#.', '...#.'], '5': ['#####', '#....', '#....', '#....', '####.', '....#', '....#', '....#', '....#', '####.'],
-  '6': ['.###.', '#....', '#....', '#....', '####.', '#...#', '#...#', '#...#', '#...#', '.###.'], '7': ['#####', '....#', '....#', '...#.', '...#.', '..#..', '..#..', '.#...', '.#...', '.#...'],
-  '8': ['.###.', '#...#', '#...#', '#...#', '.###.', '#...#', '#...#', '#...#', '#...#', '.###.'], '9': ['.###.', '#...#', '#...#', '#...#', '#...#', '.####', '....#', '....#', '....#', '.###.'],
+  '0': ['.####.', '#....#', '#....#', '#....#', '#....#', '#....#', '#....#', '#....#', '#....#', '.####.'], '1': ['...#..', '..##..', '.#.#..', '...#..', '...#..', '...#..', '...#..', '...#..', '...#..', '..###.'],
+  '2': ['.####.', '#....#', '.....#', '.....#', '....#.', '...#..', '..#...', '.#....', '#.....', '######'], '3': ['#####.', '.....#', '.....#', '.....#', '.####.', '.....#', '.....#', '.....#', '.....#', '#####.'],
+  '4': ['....#.', '...##.', '..#.#.', '.#..#.', '#...#.', '#...#.', '######', '....#.', '....#.', '....#.'], '5': ['######', '#.....', '#.....', '#.....', '#####.', '.....#', '.....#', '.....#', '.....#', '#####.'],
+  '6': ['.####.', '#.....', '#.....', '#.....', '#####.', '#....#', '#....#', '#....#', '#....#', '.####.'], '7': ['######', '.....#', '.....#', '....#.', '....#.', '...#..', '...#..', '..#...', '..#...', '..#...'],
+  '8': ['.####.', '#....#', '#....#', '#....#', '.####.', '#....#', '#....#', '#....#', '#....#', '.####.'], '9': ['.####.', '#....#', '#....#', '#....#', '#....#', '.#####', '.....#', '.....#', '.....#', '.####.'],
   ':': ['.', '.', '#', '.', '.', '.', '.', '#', '.', '.']
 });
-export const TALL_ADVANCE = Object.freeze({':': 3});
+export const TALL_ADVANCE = Object.freeze({':': 2});
+export const tallWidth = text => [...text].reduce((n, c) => n + (TALL_ADVANCE[c] ?? 7), 0);
 // Pixels of a time in tall figures, relative to (x, baseline).
 export function tallPixels(text) {
   const out = [];let x = 0;
   for (const c of text) {
     const rows = TALL_FIGURES[c];
     if (rows) rows.forEach((row, y) => [...row].forEach((p, px) => { if (p === '#') out.push([x + px, y - TALL_HEIGHT]); }));
-    x += TALL_ADVANCE[c] ?? 6;
+    x += TALL_ADVANCE[c] ?? 7;
   }
   return out;
 }
 // One row: the label with its day offset ("+1") right after it, then the time
 // and A/P in fixed slots flush right, so the times line up in one column.
 // `measure` returns a string's advance width in the capitals.
-export function zoneRow({label, hour, minute, clock24, delta = 0, stale = false, side = 'left'}, measure) {
+// Tall rows drop the pixel after A/P at the edge, a pixel of the gap before
+// the time and the extra pixel between label and day offset.
+export function zoneRow({label, hour, minute, clock24, delta = 0, stale = false, side = 'left', tall = false}, measure) {
   const {x, right} = zoneColumn(side), two = n => String(n).padStart(2, '0');
   const h = clock24 ? hour : hour % 12 || 12;
   const time = two(h) + ':' + two(minute), suffix = clock24 ? '' : hour < 12 ? 'A' : 'P';
   const day = stale ? '?' : delta ? (delta > 0 ? '+' : '') + delta : '';
-  const suffixX = right - (clock24 ? 0 : measure('P')), timeX = suffixX - measure(time);
-  const room = timeX - ZONE_COLUMN.gap - x - (day ? measure(day) + 1 : 0);
+  const trim = tall ? 1 : 0, suffixX = right - (clock24 ? 0 : measure('P') - trim), timeX = suffixX - (tall ? tallWidth(time) : measure(time));
+  const room = timeX - ZONE_COLUMN.gap + trim - x - (day ? measure(day) + 1 - trim : 0);
   let text = label.toUpperCase().slice(0, 7);
   while (text && measure(text) > room) text = text.slice(0, -1);
-  return {label: text, labelX: x, day, dayX: x + measure(text) + 1, time, timeX, suffix, suffixX};
+  return {label: text, labelX: x, day, dayX: x + measure(text) + 1 - trim, time, timeX, suffix, suffixX};
 }

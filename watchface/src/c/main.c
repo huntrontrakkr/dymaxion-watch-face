@@ -473,8 +473,9 @@ static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;int delta;bool stale;
     struct tm zone=zone_time(z,now,local,&delta,&stale);char label[8];
     snprintf(label,sizeof(label),"%.7s",(const char *)z);
-    ZoneRow r;zone_row(&r,label,zone.tm_hour,zone.tm_min,is_24(),delta,stale,zone_position()==ZONE_POSITION_RIGHT,caps_measure,s_caps);
-    bool tall=DISPLAY_ZONE_TALL(s_display);int base=y+zone_row_baseline(row++,count,tall);
+    bool tall=DISPLAY_ZONE_TALL(s_display);
+    ZoneRow r;zone_row(&r,label,zone.tm_hour,zone.tm_min,is_24(),delta,stale,zone_position()==ZONE_POSITION_RIGHT,tall,caps_measure,s_caps);
+    int base=y+zone_row_baseline(row++,count,tall);
     CapsPen mark={ctx,faded(mark_color(i),alpha)},ink={ctx,faded(color(6),alpha)},accent={ctx,faded(color(7),alpha)};
     caps_draw(s_caps,r.label,x+r.label_x,base,false,caps_span,&mark);
     if(tall){graphics_context_set_stroke_color(ctx,ink.color);zone_tall_draw(r.time,x+r.time_x,base,tall_plot,ctx);}
