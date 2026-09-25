@@ -3,8 +3,8 @@
 #include <stdlib.h>
 static bool one_of(uint8_t v,const uint8_t *values,unsigned n){for(unsigned i=0;i<n;i++)if(v==values[i])return true;return false;}
 bool footer_valid(const uint8_t *p,unsigned length){
-  if(length!=FOOTER_SIZE||p[0]!=1||p[F_ENABLED]>1||p[F_COUNT]<1||p[F_COUNT]>5||p[F_HOME]>4)return false;
-  unsigned used=0;for(int i=0;i<5;i++){int v=p[F_ORDER+i];if(i<p[F_COUNT]){if(v>4||(used&(1<<v)))return false;used|=1<<v;}else if(v!=255)return false;}
+  if(length!=FOOTER_SIZE||p[0]!=1||p[F_ENABLED]>1||p[F_COUNT]<1||p[F_COUNT]>5||p[F_HOME]>=PANEL_COUNT)return false;
+  unsigned used=0;for(int i=0;i<5;i++){int v=p[F_ORDER+i];if(i<p[F_COUNT]){if(v>=PANEL_COUNT||(used&(1<<v)))return false;used|=1<<v;}else if(v!=255)return false;}
   if(!(used&(1<<p[F_HOME])))return false;
   const uint8_t rotations[]={0,1,2,5,10,15,30,60},horizons[]={12,24,48},refresh[]={30,60,120,180};
   if(!one_of(p[F_ROTATE],rotations,8)||!one_of(p[F_HORIZON],horizons,3)||!one_of(p[F_REFRESH],refresh,4)||p[F_RAIN]>2||p[F_WEEKENDS]>2)return false;

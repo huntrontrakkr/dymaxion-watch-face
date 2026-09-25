@@ -1,3 +1,4 @@
+import {sampleHealth} from './health.js';
 import moment from 'moment-timezone';
 const HOUR=3600;
 export const SAMPLE_COUNT=49;
@@ -57,7 +58,7 @@ export function sampleEnvironment(now=Date.now()){
       return {temperature:Math.round(210+55*wave),humidity:Math.round(64-18*wave),probability:Math.round(70*Math.exp(-(((i-14)/5)**2))),rain:Math.round(24*Math.exp(-(((i-14)/3)**2))),day:hour>=7&&hour<19?1:0,hour};})};
   const tide={kind:'tide',start,fetched:Math.floor(now/1000),label:'TIDE',station:'',high:start+3*HOUR,low:start+9*HOUR,highHeight:170,lowHeight:12,highMinute:540,lowMinute:915,demo:true,error:false,
     samples:Array.from({length:SAMPLE_COUNT},(_,i)=>({height:Math.round(85+80*Math.cos((i-3)*Math.PI/6.2)),hour:weather.samples[i].hour}))};
-  return {weather,tide};
+  return {weather,tide,health:sampleHealth(now)};
 }
 export function dataWindow(data,now,horizon){
   if(!data?.samples?.length)return null;

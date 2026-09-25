@@ -4,6 +4,7 @@ import {drawBitmapText,textWidth} from './type.js';
 import {panelColors} from './panel-settings.js';
 import {drawPixelLine} from './pixels.js';
 import {sunUp,nextSunEvent} from './solar.js';
+import {healthView} from './health.js';
 import {drawAxisText,axisTextWidth,axisValue,chartLayout,chartX,chartY,chartHourLabels} from './chart-axis.js';
 // One RGB222 step (85) per channel toward the ground: a dimmer version of a color.
 export function dimColor(color,ground){
@@ -26,6 +27,22 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       if(day.today){if(f.calendar.todayStyle==='outline'){line(x+1,y-9,x+22,y-9,c.today);line(x+1,y+1,x+22,y+1,c.today);line(x+1,y-9,x+1,y+1,c.today);line(x+22,y-9,x+22,y+1,c.today);}else{rect(x+1,y-9,22,11,c.today);const channels=[1,3,5].map(i=>parseInt(c.today.slice(i,i+2),16));ink=channels[0]*.299+channels[1]*.587+channels[2]*.114>127?'#000000':'#FFFFFF';}}
       text(day.day,x+12,y,ink,'center');
     });
+  }else if(page==='health'){
+    // Today on Pebble Health: steps per hour as bars, heart rate as a line and
+    // this weekday's typical steps dotted behind (shared/health.js).
+    const h=data.health;
+    if(!h){text('HEALTH',4,193,pal.accent);text('STEPS AND HEART RATE ARE ON THE WATCH',4,214);}
+    else{
+      const v=healthView(h,w.rangeLabels,axisTextWidth(clock24?'23':'12A')),l=v.layout;
+      text(v.title,4,191);text(h.demo?'DEMO':v.right,196,191,pal.accent,'right');
+      for(let i=1;i<24;i++)line(chartX(l,i-1),v.usual[i-1],chartX(l,i),v.usual[i],pal.ink,true);
+      for(const b of v.bars)if(b.height)rect(b.x,b.y,b.width,b.height,c.rain);
+      for(let i=1;i<24;i++)if(v.pulse[i-1]>=0&&v.pulse[i]>=0)line(chartX(l,i-1),v.pulse[i-1],chartX(l,i),v.pulse[i],c.temperature);
+      if(w.rangeLabels){drawAxisText(ctx,v.upper,l.left-3,l.top,pal.ink,'right');drawAxisText(ctx,v.lower,l.left-3,l.bottom-6,pal.ink,'right');}
+      line(l.left,l.axis,l.right,l.axis,pal.edge);
+      for(let i=0;i<24;i++){const major=i%l.step===0;line(chartX(l,i),l.axis+1,chartX(l,i),l.axis+(major?2:1),major?pal.ink:pal.edge);}
+      for(const label of chartHourLabels(l,[...Array(24).keys()],clock24))drawAxisText(ctx,label.text,label.x,l.labelBaseline-6,pal.ink);
+    }
   }else if(page!=='zones'){
     const tide=page==='tide',humidity=page==='humidity',series=data[tide?'tide':'weather'],window=dataWindow(series,now,f.horizon),kind=tide?'TIDE':humidity?'HUMIDITY':'WEATHER';
     if(tide&&!f.tide.station&&!series?.demo||!tide&&!w.enabled||!window){

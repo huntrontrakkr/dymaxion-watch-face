@@ -17,7 +17,7 @@
     "watchapp": {
       "watchface": true
     },
-    "capabilities": ["configurable", "location"],
+    "capabilities": ["configurable", "location", "health"],
     "messageKeys": ["SETTINGS", "REQUEST", "FOOTER", "WEATHER", "TIDE", "CITY", "DISPLAY", "PALETTE"],
     "resources": {
       "media": [

@@ -3,6 +3,7 @@
 #include "chart_axis.h"
 #include "caps.h"
 #include "solar.h"
+#include "health.h"
 #include "generated/footer_defaults.h"
 #define MIN(a,b) ((a)<(b)?(a):(b))
 #define MAX(a,b) ((a)>(b)?(a):(b))
@@ -211,11 +212,66 @@ static void graph_draw(GContext *ctx,time_t now){
 }
 int panels_page(void){return s_page;}
 void panels_set_page(int page){s_page=(uint8_t)page;}
+// Health: today from Pebble Health, read on the watch and never sent anywhere.
+// Hourly totals are cached; while the drawer shows, a new minute rereads only
+// the current hour (and the hour just finished), and the typical day for this
+// weekday is read once a day. Nothing subscribes to health events.
+static HealthDay s_health;static int s_health_yday=-1;static bool s_health_ok;
+#if defined(PBL_HEALTH)
+static bool health_available(HealthMetric metric,time_t start,time_t end){return health_service_metric_accessible(metric,start,end)&HealthServiceAccessibilityMaskAvailable;}
+static void health_hour(time_t midnight,int hour,time_t now){
+  time_t start=midnight+hour*3600,end=MIN(now,start+3600);
+  s_health.steps[hour]=end>start&&health_available(HealthMetricStepCount,start,end)?(uint16_t)MIN(65535,health_service_sum(HealthMetricStepCount,start,end)):0;
+  s_health.heart[hour]=end>start&&(health_service_metric_aggregate_averaged_accessible(HealthMetricHeartRateBPM,start,end,HealthAggregationAvg,HealthServiceTimeScopeOnce)&HealthServiceAccessibilityMaskAvailable)
+    ?(uint8_t)MIN(255,health_service_aggregate_averaged(HealthMetricHeartRateBPM,start,end,HealthAggregationAvg,HealthServiceTimeScopeOnce)):0;
+}
+static void health_refresh(time_t now,const struct tm *local){
+  time_t midnight=time_start_of_today();
+  if(s_health_yday!=local->tm_yday){
+    memset(&s_health,0,sizeof(s_health));s_health_yday=local->tm_yday;s_health.hour=-1;
+    s_health_ok=health_available(HealthMetricStepCount,midnight,MAX(now,midnight+1));
+    // Without permission (yet), ask again on the next draw.
+    if(!s_health_ok){s_health_yday=-1;return;}
+    for(int h=0;h<HEALTH_HOURS;h++){time_t start=midnight+h*3600;
+      s_health.typical[h]=(health_service_metric_averaged_accessible(HealthMetricStepCount,start,start+3600,HealthServiceTimeScopeDailyWeekdayOrWeekend)&HealthServiceAccessibilityMaskAvailable)
+        ?(uint16_t)MIN(65535,health_service_sum_averaged(HealthMetricStepCount,start,start+3600,HealthServiceTimeScopeDailyWeekdayOrWeekend)):0;}
+  }else if(s_health.hour==local->tm_hour&&s_health.minute==local->tm_min)return;
+  for(int h=MAX(0,s_health.hour);h<=local->tm_hour;h++)health_hour(midnight,h,now);
+  s_health.hour=local->tm_hour;s_health.minute=local->tm_min;
+  s_health.heart_now=(int)health_service_peek_current_value(HealthMetricHeartRateBPM);
+}
+#else
+static void health_refresh(time_t now,const struct tm *local){(void)now;(void)local;s_health_ok=false;}
+#endif
+static void health_draw(GContext *ctx,time_t now,const struct tm *local){
+  health_refresh(now,local);
+  if(!s_health_ok){
+    label(ctx,"HEALTH",4,193,190,GTextAlignmentLeft,color(7));
+    label(ctx,"ALLOW HEALTH IN THE PEBBLE APP",4,214,192,GTextAlignmentLeft,color(6));return;
+  }
+  static HealthView v;health_view(&s_health,s_footer[F_RANGE_LABELS],chart_text_width(s_clock24?"23":"12A"),&v);
+  const ChartLayout l=v.layout;
+  label(ctx,v.title,4,191,104,GTextAlignmentLeft,color(6));label(ctx,v.right,107,191,89,GTextAlignmentRight,color(7));
+  for(int i=1;i<HEALTH_HOURS;i++)dotted_line(ctx,chart_x(l,i-1),v.usual[i-1],chart_x(l,i),v.usual[i],color(6));
+  for(int i=0;i<v.bar_count;i++)if(v.bar_h[i])rect(ctx,v.bar_x[i],v.bar_y[i],v.bar_w[i],v.bar_h[i],custom(F_RAIN_COLOR));
+  for(int i=1;i<HEALTH_HOURS;i++)if(v.pulse[i-1]>=0&&v.pulse[i]>=0)line(ctx,chart_x(l,i-1),v.pulse[i-1],chart_x(l,i),v.pulse[i],custom(F_TEMP_COLOR));
+  if(s_footer[F_RANGE_LABELS]){
+    axis_label(ctx,v.upper,l.left-3-chart_text_width(v.upper),l.top,color(6));
+    axis_label(ctx,v.lower,l.left-3-chart_text_width(v.lower),l.bottom-6,color(6));
+  }
+  line(ctx,l.left,l.axis,l.right,l.axis,color(5));
+  char value[12];
+  for(int i=0;i<HEALTH_HOURS;i++){
+    bool major=i%l.step==0;int x=chart_x(l,i);
+    line(ctx,x,l.axis+1,x,l.axis+(major?2:1),major?color(6):color(5));
+    if(major){chart_hour_label(value,sizeof(value),i,s_clock24);axis_label(ctx,value,chart_hour_left(l,i,chart_text_width(value)),l.label_baseline-6,color(6));}
+  }
+}
 bool panels_showing_zones(void){return !s_footer[F_ENABLED]||s_page==PANEL_ZONES;}
 bool panels_draw(GContext *ctx,time_t now,const struct tm *local,GFont font,const uint8_t *caps,const uint8_t *palette,bool clock24,const float *daylight){
   if(!s_footer[F_ENABLED])return false;
   s_font=font;s_caps=caps;s_daylight=daylight;s_palette=palette;s_clock24=clock24;
   rect(ctx,0,184,200,44,color(0));
-  if(s_page==PANEL_CALENDAR)calendar_draw(ctx,local);else if(s_page!=PANEL_ZONES)graph_draw(ctx,now);
+  if(s_page==PANEL_CALENDAR)calendar_draw(ctx,local);else if(s_page==PANEL_HEALTH)health_draw(ctx,now,local);else if(s_page!=PANEL_ZONES)graph_draw(ctx,now);
   page_dots(ctx);return s_page!=PANEL_ZONES;
 }

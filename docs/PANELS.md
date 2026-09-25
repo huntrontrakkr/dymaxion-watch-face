@@ -98,6 +98,25 @@ Custom layouts should leave the bottom band free when panels are enabled. The
 Meridian and Horizon presets already do. Disabling panels restores the place
 clocks without reserving that band.
 
+## Health
+
+The Health page charts today from midnight in the weather chart's layout:
+steps per hour as bars in the rain color, the hourly average heart rate as a
+line in the temperature color, and this weekday's typical steps per hour
+(Pebble Health's weekday-or-weekend average) dotted in the ink color across
+the whole day, so the rest of a usual day shows ahead. The header gives today's
+steps and the latest heart rate; the corner compares steps so far with a
+typical day to this minute (`TYPICAL +12%`). The range labels give the heart
+rate scale, or the step scale when there are no heart-rate readings. How often
+heart rate is recorded is set in the Pebble app, not by the face.
+
+The watch reads Pebble Health directly and sends nothing to the phone. Hourly
+totals are cached: while the page shows, each new minute rereads only the
+current hour (and the hour just finished); the typical day is read once a day,
+and nothing subscribes to health events. Without Health permission the page
+asks for it. Geometry is shared by `shared/health.js` and `health.c` and
+checked against each other; the workshop shows an example day marked DEMO.
+
 ## Changing pages and battery use
 
 Choose any one to five pages, reorder them, and select a starting page. A

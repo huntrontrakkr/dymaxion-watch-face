@@ -84,7 +84,9 @@ reset the selected page.
 
 `FOOTER` contains only watch rendering settings; coordinates, IANA zone names,
 NOAA station identifiers and network caching remain in the phone's JSON.
-Page IDs are zones 0, weather 1, calendar 2, humidity 3 and tide 4.
+Page IDs are zones 0, weather 1, calendar 2, humidity 3, tide 4 and health 5.
+Health needs no packet: the watch reads Pebble Health itself (the app
+declares the `health` capability) and nothing about it leaves the watch.
 
 | Byte | Meaning |
 | --- | --- |

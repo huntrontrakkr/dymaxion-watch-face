@@ -10,7 +10,7 @@ try{
   await page.route('https://api.open-meteo.com/**',route=>route.fulfill({json:fixture('weather'),headers:{'access-control-allow-origin':'*'}}));
   await page.route('https://api.tidesandcurrents.noaa.gov/**',route=>route.fulfill({json:fixture(route.request().url().includes('interval=hilo')?'tide-extrema':'tide-hourly'),headers:{'access-control-allow-origin':'*'}}));
   await page.goto(base);await page.waitForFunction(()=>document.querySelector('#preview-time').textContent.includes('LIVE'));await page.locator('#reset').click();
-  for(const [id,label]of [['zones','Time zones'],['weather','Weather'],['calendar','Two-week calendar']]){
+  for(const [id,label]of [['zones','Time zones'],['weather','Weather'],['calendar','Two-week calendar'],['health','Health']]){
     assert.equal(await page.locator('#panel-preview-label').textContent(),label);
     await page.locator('#screen').screenshot({path:`test-results/panel-${id}.png`});await page.locator('#next-panel').click();
   }

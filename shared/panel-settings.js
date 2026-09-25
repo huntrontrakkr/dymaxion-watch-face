@@ -1,7 +1,7 @@
 import {HOLIDAY_REGIONS} from './calendar.js';
 import {paletteFor,PANEL_COLOR_ROLES,DEFAULT_PANEL_COLORS as LEGACY_COLORS} from './palette-settings.js';
 export {PANEL_COLOR_ROLES} from './palette-settings.js';
-export const PANEL_PAGES=[['zones','Time zones'],['weather','Weather'],['calendar','Two-week calendar'],['humidity','Humidity'],['tide','Tide']];
+export const PANEL_PAGES=[['zones','Time zones'],['weather','Weather'],['calendar','Two-week calendar'],['humidity','Humidity'],['tide','Tide'],['health','Health']];
 export function panelColors(settings){
   return settings.footer.colorMode==='custom'?settings.footer.colors:paletteFor(settings).panelColors||LEGACY_COLORS;
 }

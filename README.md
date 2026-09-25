@@ -68,7 +68,10 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
 - Five 5×5-pixel map glyphs in the Places tab: diamond, point, ring, triangle
   and plus. The place colors also carry through to the zone labels.
 - A configurable 44-pixel bottom band: time zones, a weather chart, a two-week
-  calendar, humidity and NOAA tide predictions. Choose the pages, their order,
+  calendar, humidity, NOAA tide predictions and **Health**: today's steps per
+  hour as bars, heart rate as a line and this weekday's typical steps dotted
+  behind, with steps so far against a typical day in the corner. Health is
+  read on the watch from Pebble Health and never leaves it. Choose the pages, their order,
   colors, units, chart scales and starting page in **Panels**.
 - Optional buzz when the phone disconnects (and, if chosen, reconnects);
   silent in Quiet Time and at most once every two minutes on a flaky link.
@@ -207,6 +210,7 @@ Physical hardware and an actual phone webview have not been tested.
 | `shared/display.js` | Numeral styles and the display packet |
 | `shared/map-background.js` | Triangle points and lines behind the map |
 | `shared/zone-column.js` | Place times beside the clock (mirrored by `zone_column.c`) |
+| `shared/health.js` | Health drawer layout (mirrored by `health.c`) and workshop example day |
 | `shared/power.js` | Daylight update interval, animation switches and night saver (mirrored by `power.c`) |
 | `shared/transitions.js` | Tray swipe and beside-the-clock transitions (mirrored by `transitions.c`) |
 | `shared/nameplate.js` | The optional Dymaxion nameplate (mirrored by `nameplate.c`) |
