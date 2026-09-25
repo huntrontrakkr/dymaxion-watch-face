@@ -39,7 +39,7 @@ try{
   assert.equal(await page.getByLabel('Panel gesture',{exact:true}).inputValue(),'2','existing default remains two flicks');
   await page.getByLabel('Panel gesture',{exact:true}).selectOption('4');
   assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).footer.flicks,4);
-  assert.match(await page.locator('[data-gesture-help]').textContent(),/listening stops when the light goes out/);
+  assert.match(await page.locator('[data-gesture-help]').textContent(),/stops listening for flicks when the light goes out/);
   await page.getByLabel('Panel gesture',{exact:true}).selectOption('3');
   assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).footer.flicks,3);
   await page.getByLabel('Flick to change panels',{exact:true}).uncheck();await page.getByLabel('Automatic rotation',{exact:true}).selectOption('1');

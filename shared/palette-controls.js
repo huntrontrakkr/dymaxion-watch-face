@@ -45,7 +45,7 @@ export function paletteControls(root,getSettings,onChange){
     saved.value=custom?String(s.customPalette):'';
     root.querySelector('[data-editor]').hidden=!custom;root.querySelector('[data-delete]').disabled=!custom;
     root.querySelector('[data-new]').disabled=s.customPalettes.length>=MAX_CUSTOM_PALETTES;
-    root.querySelector('[data-summary]').textContent=custom?'Saved with your composition. Export settings to back up or share your palettes.':`Start from ${p.name}, then change any color. Your saved palettes stay available when you try a preset.`;
+    root.querySelector('[data-summary]').textContent=custom?'Saved with your composition. Export settings to back up or share your palettes.':`Based on ${p.name}. Change any color below. Your saved palettes stay in the list when you switch to a preset.`;
     if(!custom){name.setCustomValidity('');return;}
     name.value=p.name;
     for(const input of root.querySelectorAll('[data-color]')){

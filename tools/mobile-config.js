@@ -37,7 +37,7 @@ $('place-clock-options').append($('display-controls').querySelector('[data-zone-
 const powerEditor=powerControls($('power-controls'),()=>s,power=>{s=validateSettings({...s,power},exists);refresh();});
 const paletteEditor=paletteControls($('palette-controls'),()=>s,patch=>{s=validateSettings({...s,...patch},exists);refresh();});
 function options(select,entries){select.replaceChildren();entries.forEach(([label,value])=>select.add(new Option(label,value)));}
-for(const [key,title] of [['moonIndicator','Moon in top bar'],['dayNight','Day and night'],['lights','City lights'],['sun','Follow the sun'],['edges','Triangle edges']]){
+for(const [key,title] of [['moonIndicator','Moon in top bar'],['dayNight','Day and night'],['lights','City lights'],['sun','Sun on the map'],['edges','Triangle edges']]){
   const label=document.createElement('label');label.className='toggle';const span=document.createElement('span');span.textContent=title;const input=document.createElement('input');input.type='checkbox';input.id=key;label.append(span,input);$('switches').append(label);
 }
 function swatches(root,p){root.replaceChildren();for(const color of [p.bg,p.ocean,p.land,p.nightOcean,p.nightLand,p.ink]){const i=document.createElement('i');i.style.background=color;root.append(i);}}

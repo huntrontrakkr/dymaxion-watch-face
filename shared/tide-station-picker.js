@@ -5,7 +5,7 @@ import {devicePosition} from '../tools/device-position.js';
 // A setup suggestion, saved as an ordinary fixed station. Travelling never
 // silently swaps the waterway behind an existing tide chart.
 export function tideStationPicker(root,{getTide,onSelect,onCustom,getPosition=devicePosition,lookup=tideStationLookup()}){
-  root.innerHTML=`<button type="button" data-nearby-tides>Find nearby NOAA stations</button><p class="micro" role="status" aria-live="polite" data-tide-status>We’ll suggest the nearest station with hourly tides. You can choose another for your waterway.</p><label class="field">Tide station<select data-station aria-label="Tide station"></select></label><p class="micro" data-tide-selected></p>`;
+  root.innerHTML=`<button type="button" data-nearby-tides>Find nearby NOAA stations</button><p class="micro" role="status" aria-live="polite" data-tide-status>The nearest station with hourly tides is suggested. You can pick a different one.</p><label class="field">Tide station<select data-station aria-label="Tide station"></select></label><p class="micro" data-tide-selected></p>`;
   const select=root.querySelector('[data-station]'),button=root.querySelector('[data-nearby-tides]'),status=root.querySelector('[data-tide-status]'),selected=root.querySelector('[data-tide-selected]');
   let nearby=[],known=new Map(),generation=0,signature='',attempted=false,busy=false;
   const fingerprint=()=>JSON.stringify([getTide().station,getTide().label,getTide().tz]);

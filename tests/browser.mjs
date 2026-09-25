@@ -134,7 +134,7 @@ try{
   await mobile.locator('#moonIndicator').uncheck();assert.equal(await mobile.locator('#moonIndicator').isChecked(),false);
   assert.equal(await mobile.locator('[data-key=icon]').first().locator('option').count(),12);
   await mobile.locator('[data-key=icon]').first().selectOption('3');
-  assert.match(await mobile.locator('[data-symbol-meaning]').first().textContent(),/directional triangle/);
+  assert.match(await mobile.locator('[data-symbol-meaning]').first().textContent(),/point up/);
   await mobile.getByLabel('Color for place 1',{exact:true}).fill('#cc7700');
   assert.match(await mobile.locator('[data-color-label]').first().textContent(),/#AA5500/);
   const importSummary=mobile.getByText('Import settings from the workshop',{exact:true});

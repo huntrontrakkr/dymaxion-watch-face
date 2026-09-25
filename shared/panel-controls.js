@@ -10,10 +10,10 @@ export function panelControls(root,getSettings,onChange,{getPosition}={}){
   const number=(path,title,min,max,step=1)=>`<label class="field">${title}<input type="number" data-panel="${path}" aria-label="${title}" min="${min}" max="${max}" step="${step}"></label>`;
   const input=(path,title,max=80)=>`<label class="field">${title}<input type="text" data-panel="${path}" aria-label="${title}" maxlength="${max}"></label>`;
   root.classList.add('panel-controls');
-  root.innerHTML=toggle('enabled','Enable bottom panels','Choose what appears below the map, one panel at a time.')
+  root.innerHTML=toggle('enabled','Enable bottom panels','Choose which panels show below the map.')
     +`<div class="panel-order" data-order></div>`
     +select('home','Starting panel',PANEL_PAGES)
-    +toggle('shake','Flick to change panels','Uses wrist motion, not taps on the touchscreen.')+select('flicks','Panel gesture',[[4,'Light the screen, then flick once'],[2,'Two separate flicks, within 2 seconds'],[1,'One flick, including the gesture that lights the screen'],[3,'Three separate flicks, each within 2 seconds']])
+    +toggle('shake','Flick to change panels','Uses wrist flicks, not screen taps.')+select('flicks','Panel gesture',[[4,'Light the screen, then flick once'],[2,'Two separate flicks, within 2 seconds'],[1,'One flick, including the gesture that lights the screen'],[3,'Three separate flicks, each within 2 seconds']])
     +`<p class="micro" data-gesture-help></p>`
     +select('rotationMinutes','Automatic rotation',[[0,'Off — keep the panel until changed'],['smart','Smart — what matters now'],...[1,2,5,10,15,30,60].map(n=>[n,`Every ${n} minute${n===1?'':'s'}`])])
     +`<p class="micro">Choose up to five panels. Turn off flicks and rotation to keep one in place.</p>`
@@ -62,7 +62,7 @@ export function panelControls(root,getSettings,onChange,{getPosition}={}){
     root.querySelector('[data-theme-colors]').disabled=f.colorMode==='theme';
     root.querySelector('[data-color-mode]').textContent=f.colorMode==='theme'?'Follows palette':'Custom colors';
     root.querySelector('[data-panel="flicks"]').disabled=!f.enabled||!f.shake||f.pages.length<2;
-    root.querySelector('[data-gesture-help]').textContent=f.flicks===4?'Light the screen using your usual watch gesture, let your wrist settle briefly, then flick once to change panels. Motion listening stops when the light goes out. If daylight keeps the backlight off, use another gesture mode or automatic rotation.':'Let your wrist settle between flicks. Screen taps only control Pebble’s backlight; Pebble does not currently deliver touchscreen input to watchfaces.';
+    root.querySelector('[data-gesture-help]').textContent=f.flicks===4?'Wake the screen with your usual gesture, pause briefly, then flick once to change panels. The watch stops listening for flicks when the light goes out. If the backlight stays off in bright light, use another gesture mode or automatic rotation.':'Pause briefly between flicks. Tapping the screen only turns on the backlight, because Pebble doesn’t send touch input to watch faces.';
     const home=root.querySelector('[data-panel="home"]');home.replaceChildren();f.pages.forEach(id=>home.add(new Option(PANEL_PAGES.find(([p])=>p===id)[1],id)));home.value=f.home;
     root.querySelector('[data-panel="weather.place"]').querySelectorAll('option').forEach(o=>{if(o.value!=='current')o.textContent=`Place ${+o.value+1} / ${settings.places[+o.value].name}`;});
     tidePicker.refresh();

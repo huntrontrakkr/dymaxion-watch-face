@@ -20,7 +20,7 @@ async function phone({settings=defaults(),location=position(),reply}={}){
   const html=template.replace('__CONFIG__',JSON.stringify({settings,zoneNames:moment.tz.names(),city:{name:'Norfolk',lat:36.8,lon:-76.3},position:location}));
   await page.goto('data:text/html;charset=utf-8,'+encodeURIComponent(html));
   await page.waitForFunction(()=>document.querySelector('#preview-caption').textContent.includes('Sample readings'));
-  await page.locator('.config-section > summary').filter({hasText:'A window on the day'}).click();
+  await page.locator('.config-section > summary').filter({hasText:'Bottom panels'}).click();
   return {page,requests,open:()=>page.getByText('NOAA tides',{exact:true}).click(),
     station:()=>page.getByLabel('NOAA station ID',{exact:true}).inputValue(),
     settled:()=>page.waitForFunction(()=>!document.querySelector('[data-nearby-tides]').disabled)};

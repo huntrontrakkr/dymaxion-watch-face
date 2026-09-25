@@ -8,7 +8,7 @@ const browser=await chromium.launch(),page=await browser.newPage({viewport:{widt
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 const norfolk={id:4776222,name:'Norfolk',latitude:36.84681,longitude:-76.28522,timezone:'America/New_York',admin1:'Virginia',country:'United States'};
 const html=readFileSync('tools/mobile-config.generated.html','utf8').replace('__CONFIG__',JSON.stringify({settings:defaults(),zoneNames:moment.tz.names(),city:{name:'Norfolk',lat:36.8,lon:-76.3}}));
-const section=name=>page.locator('.config-section').filter({has:page.locator('summary').filter({hasText:name})}).first();
+const section=name=>page.locator('.config-section').filter({has:page.locator(':scope > summary').filter({hasText:name})}).first();
 const openSection=async name=>{const el=section(name);if(!await el.evaluate(e=>e.open))await el.locator(':scope > summary').click();};
 const pixels=()=>page.locator('#watch-preview').evaluate(c=>Array.from(c.getContext('2d').getImageData(0,0,200,228).data));
 try{
@@ -42,7 +42,7 @@ try{
   await lettering.selectOption('chamfer');
   await page.locator('#preset').selectOption('horizon');await page.locator('#stacked').check();await page.waitForTimeout(40);assert.equal(await page.locator('#preview-error').textContent(),'');
   await page.locator('#stacked').uncheck();await page.locator('#preset').selectOption('meridian');
-  await openSection('Your places');
+  await openSection('Places');
   let mode='ok',requests=0;
   await page.route('https://geocoding-api.open-meteo.com/**',async route=>{
     requests++;const q=new URL(route.request().url()).searchParams.get('name');
@@ -72,7 +72,7 @@ try{
   mode='empty';await search.fill('NoSuchPlace');await page.getByText('No cities found.',{exact:false}).waitFor();
   mode='offline';await search.fill('Norfolk');await page.getByText('City search is unavailable.',{exact:false}).waitFor();
   await page.getByRole('listbox',{name:'Matching cities'}).getByRole('option').filter({hasText:'Norfolk'}).tap();assert.equal(await page.getByLabel('Label for place 1',{exact:true}).inputValue(),'ORF','offline city remains selectable by touch');
-  await openSection('A window on the day');await page.getByLabel('Starting panel',{exact:true}).selectOption('weather');
+  await openSection('Bottom panels');await page.getByLabel('Starting panel',{exact:true}).selectOption('weather');
   await page.getByLabel('Panel gesture',{exact:true}).selectOption('4');
   await page.getByText('Weather & humidity',{exact:true}).click();
   const forecast=page.getByLabel('Forecast location',{exact:true});assert.equal(await forecast.inputValue(),'current');

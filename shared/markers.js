@@ -2,30 +2,30 @@
 // The shape distinguishes places even when their colors look alike.
 const glyph=(name,meaning,...rows)=>({name,meaning,rows});
 export const MARKERS=[
-  glyph('Diamond','An open diamond',
+  glyph('Diamond','Outlined diamond',
     '..#..','.#.#.','#...#','.#.#.','..#..'),
-  glyph('Point','A quiet filled point',
+  glyph('Point','Solid dot',
     '.....','.###.','.###.','.###.','.....'),
-  glyph('Ring','An open circle',
+  glyph('Ring','Outlined circle',
     '.###.','#...#','#...#','#...#','.###.'),
-  glyph('Triangle','A small directional triangle',
+  glyph('Triangle','Outlined, point up',
     '.....','..#..','.#.#.','#...#','#####'),
-  glyph('Plus','A small crosshair',
+  glyph('Plus','Crosshair',
     '..#..','..#..','#####','..#..','..#..'),
   // Notation and bookkeeping marks, drawn to read at five pixels.
-  glyph('Dagger','A footnote dagger',
+  glyph('Dagger','Footnote mark',
     '..#..','.###.','..#..','..#..','..#..'),
-  glyph('Double dagger','A second footnote',
+  glyph('Double dagger','Second footnote mark',
     '..#..','.###.','..#..','.###.','..#..'),
-  glyph('Asterisk','A note mark',
+  glyph('Asterisk','Note mark',
     '..#..','#.#.#','.###.','#.#.#','..#..'),
-  glyph('Pilcrow','A paragraph mark',
+  glyph('Pilcrow','Paragraph mark',
     '.####','###.#','.##.#','..#.#','..#.#'),
-  glyph('Check','A tick',
+  glyph('Check','Tick',
     '....#','...#.','#.#..','.#...','.....'),
-  glyph('Cross','A cross-out',
+  glyph('Cross','Diagonal cross',
     '#...#','.#.#.','..#..','.#.#.','#...#'),
-  glyph('Number','A number sign',
+  glyph('Number','Hash sign',
     '.#.#.','#####','.#.#.','#####','.#.#.')
 ];
 export const MARKER_SIZE=5;
