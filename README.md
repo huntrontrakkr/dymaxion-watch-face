@@ -4,7 +4,8 @@ A small planetary instrument for **Pebble Time 2 / Emery**. A Dymaxion map
 follows the sunlight around Earth, with your time, your places, and a window
 on the day.
 
-[**Download the watch face**](https://github.com/huntrontrakkr/dymaxion-watch-face/releases/latest/download/dymaxion.pbw)
+[**Get it on the Pebble Appstore**](https://apps.repebble.com/6d7f75de20c3406198a5abd6)
+· [**Download the watch face**](https://github.com/huntrontrakkr/dymaxion-watch-face/releases/latest/download/dymaxion.pbw)
 · [**Open the workshop**](https://huntrontrakkr.github.io/dymaxion-watch-face/)
 · [**Explore 76 faces**](https://huntrontrakkr.github.io/dymaxion-watch-face/gallery.html)
 
@@ -42,8 +43,12 @@ tides, Health and device-status values shown in the gallery are examples.
 
 ## Install and configure
 
-Download **dymaxion.pbw** from the [latest release](https://github.com/huntrontrakkr/dymaxion-watch-face/releases/latest).
-This build targets **Emery only**. With the [Pebble SDK](https://developer.repebble.com/sdk/)
+Install from the [Pebble Appstore](https://apps.repebble.com/6d7f75de20c3406198a5abd6)
+in the Pebble phone app. This build targets **Pebble Time 2 / Emery only**.
+
+For manual installation, download **dymaxion.pbw** from the
+[latest release](https://github.com/huntrontrakkr/dymaxion-watch-face/releases/latest).
+With the [Pebble SDK](https://developer.repebble.com/sdk/)
 installed and the phone's [Developer Connection](https://developer.repebble.com/guides/tools-and-resources/developer-connection/)
 enabled, install the downloaded file with:
 

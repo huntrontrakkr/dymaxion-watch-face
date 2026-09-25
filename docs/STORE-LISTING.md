@@ -1,11 +1,18 @@
 # Pebble app-store listing
 
 Name: **Dymaxion**  
-Developer: **segfaultgolf**  
+Developer: **Segfaultgolf**\
 Type: **Watchface**  
 Platform: **Pebble Time 2 / Emery**  
 Website: https://huntrontrakkr.github.io/dymaxion-watch-face/  
 Source and support: https://github.com/huntrontrakkr/dymaxion-watch-face
+
+## Published listing
+
+[Dymaxion on the Pebble Appstore](https://apps.repebble.com/6d7f75de20c3406198a5abd6)
+is public as version **0.3.5**, published September 25, 2026 (UTC), with six
+Emery screenshots. The public API confirms the release, publisher and platform.
+Rebble requires a separate submission; no Rebble listing is published yet.
 
 ## Description
 
@@ -44,14 +51,20 @@ Use the latest release's `dymaxion.pbw` and `dymaxion-store-kit.zip`. The kit
 contains the package, this description, six 200 x 228 PNG screenshots,
 their importable settings, and checksums. Novelty palettes are excluded.
 
-Sign in to the [Pebble developer dashboard](https://developer.repebble.com/dashboard)
-and create a watchface listing with these assets. The SDK also supports
-`pebble login` followed by `pebble publish`; its `--screenshots` files must
+Manage the existing listing in the
+[Pebble developer dashboard](https://developer.repebble.com/dashboard).
+The SDK also supports `pebble login` followed by `pebble publish` for future
+releases; its `--screenshots` files must
 start with the platform name, as the kit's `emery_*.png` files do.
 
 Publish the same package and screenshots separately through the
 [Rebble developer portal](https://dev-portal.rebble.io/), using **segfaultgolf**
-as the public developer name there too. The Pebble CLI targets Pebble's store.
+as the public developer name there too. Rebble accepts up to five screenshots
+per platform; use screenshots 01, 02, 03, 05 and 06 from the kit. The Pebble CLI
+targets Pebble's store.
+
+The release also includes `dymaxion-rebble-kit.zip`, with exactly those five
+screenshots, the PBW, description, release notes and step-by-step portal fields.
 
 The repository, workshop and GitHub releases are public independently of an
 app-store listing. A GitHub release does not submit the watch face to the store.
