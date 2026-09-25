@@ -16,7 +16,7 @@ download checksum and description. Rebble publication is deferred.
 
 ## Description
 
-A watch face built on Buckminster Fuller's Dymaxion projection, which unfolds the globe onto the faces of an icosahedron and keeps the continents as a single connected landmass. Fuller meant it to show Earth as one island in one ocean, with no fixed up or down and no country at the center.
+A watch face built on Buckminster Fuller's Dymaxion map, which unfolds the globe onto the twenty faces of an icosahedron without splitting a continent. Fuller spent decades on it and called the result a deck plan of Spaceship Earth. It shows the planet as one island in one ocean, with no country at the center.
 
 The map is shaded from the sun's actual position, so the terminator moves across it through the day, and city lights appear on the night side. The subsolar point is marked.
 
@@ -26,7 +26,7 @@ The bottom panel also offers weather, a two-week calendar, humidity, NOAA tide p
 
 Twenty-five palettes are included, custom palettes can be defined, and there are eight clock typefaces. The phone settings page renders an exact preview before anything is sent to the watch.
 
-In keeping with Fuller's idea of doing more with less, the map is redrawn at a configurable interval rather than every minute, and an optional night mode reduces redraws further, including during Quiet Time.
+Fuller's word for doing more with less was ephemeralization. In that spirit, the map is redrawn at a configurable interval rather than every minute, and an optional night mode reduces redraws further, including during Quiet Time.
 
 Requires Pebble Time 2. Weather uses the phone's location. Health data stays on the watch. Weather shown in the screenshots is sample data. Source code is available on GitHub.
 
