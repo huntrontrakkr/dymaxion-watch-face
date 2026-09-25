@@ -33,8 +33,9 @@ export function validateFooter(input,zoneExists,quantize){
   const f={...d,...input,weather:{...d.weather,...input.weather},calendar:{...d.calendar,...input.calendar},tide:{...d.tide,...input.tide},colors:{...d.colors,...input.colors}};
   const choice=(o,key,values)=>{if(!values.includes(o[key]))throw new Error('Invalid panel '+key+'.');};
   const bool=(o,key)=>{if(typeof o[key]!=='boolean')throw new Error('Invalid panel '+key+'.');};
-  // 1-3 are gesture counts; 4 is one flick after the backlight is already on.
-  bool(f,'enabled');bool(f,'shake');choice(f,'flicks',[1,2,3,4]);
+  // 1-3 flicks. The retired "light the screen, then flick once" mode (4) opens as two.
+  if(f.flicks===4)f.flicks=2;
+  bool(f,'enabled');bool(f,'shake');choice(f,'flicks',[1,2,3]);
   if(!Array.isArray(f.pages)||!f.pages.length||f.pages.length>5||new Set(f.pages).size!==f.pages.length||f.pages.some(p=>!PANEL_PAGES.some(([id])=>id===p)))throw new Error('Choose one to five different bottom panels.');
   choice(f,'home',f.pages);choice(f,'rotationMinutes',[0,1,2,5,10,15,30,60,'smart']);choice(f,'horizon',[12,24,48]);
   const w=f.weather,c=f.calendar,t=f.tide;

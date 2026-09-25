@@ -1,8 +1,7 @@
 # Watch typography
 
-The Emery build packages three original **Dymaxion Draft** cuts:
+The Emery build packages two original **Dymaxion Draft** cuts:
 
-- `DymaxionDraftDisplay.ttf`: the optional stacked local clock.
 - `DymaxionDraftZone.ttf`: remote-zone numerals.
 - `DymaxionDraftMicro.ttf`: dates and small labels.
 

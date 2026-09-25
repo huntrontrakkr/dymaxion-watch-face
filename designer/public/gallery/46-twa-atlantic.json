@@ -13,7 +13,6 @@
   "moonIndicator": false,
   "connectionBuzz": "disconnect",
   "orientation": 0,
-  "stacked": false,
   "time": [
     0,
     22

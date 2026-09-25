@@ -14,7 +14,6 @@ bool environment_valid(const uint8_t *p,unsigned length,bool tide);
 int environment_start_index(const uint8_t *p,uint32_t now);
 typedef struct {int year,month,day,weekday;bool today,holiday,weekend;} CalendarCell;
 void panel_calendar(int year,int month,int day,int weekday,const uint8_t *config,CalendarCell out[14]);
-enum { PANEL_GESTURE_LIT=4 };
 // Byte F_ROTATE: minutes between pages, or ROTATE_SMART (smart_tray.h).
 #define ROTATE_SMART 255
 // Motion events change panels. A flick can raise a tap on several axes, so taps
@@ -26,9 +25,3 @@ enum { PANEL_GESTURE_LIT=4 };
 #define TAP_REST_MS 1000
 typedef struct {uint64_t last,rest;uint8_t count;} TapState;
 bool panel_tap(TapState *state,uint64_t now_ms,int required);
-// Ignore the motion which woke the backlight, including events delivered before
-// its on-callback. No timer or sampling loop is needed to arm the next gesture.
-#define PANEL_LIGHT_SETTLE_MS 400
-typedef struct {uint64_t since;bool on;} PanelLightState;
-void panel_light_update(PanelLightState *state,bool on,uint64_t now_ms);
-bool panel_light_ready(PanelLightState *state,bool on,uint64_t now_ms);

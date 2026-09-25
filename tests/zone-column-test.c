@@ -15,8 +15,8 @@ int main(int argc,char **argv){
   }
   for(int count=1;count<=3;count++)for(int i=0;i<count;i++)printf("%d ",zone_row_baseline(i,count,false));
   printf("\n");
-  for(int style=0;style<=9;style++)for(int stacked=0;stacked<2;stacked++)for(int mode=0;mode<3;mode++)for(int position=0;position<3;position++)for(int shown=0;shown<2;shown++)
-    printf("%d%d",zones_beside(style,stacked,mode,position,shown),zones_on_map(mode,position,shown));
+  for(int style=0;style<=9;style++)for(int mode=0;mode<3;mode++)for(int position=0;position<3;position++)for(int shown=0;shown<2;shown++)
+    printf("%d%d",zones_beside(style,mode,position,shown),zones_on_map(mode,position,shown));
   printf("\n%d %d\n",zone_clock_shift(false),zone_clock_shift(true));
   for(int count=1;count<=3;count++)for(int i=0;i<count;i++)printf("%d ",zone_row_baseline(i,count,true));
   printf("\n");

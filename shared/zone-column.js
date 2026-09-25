@@ -22,7 +22,7 @@ export const zoneColumnFits = style => NARROW.includes(style);
 // clock (which needs a narrow horizontal clock) or on the map.
 const elsewhere = (settings, panelShowsZones) => settings.zoneTimes === 'always' || (settings.zoneTimes === 'when-hidden' && !panelShowsZones);
 export function zonesBeside(settings, panelShowsZones) {
-  if (settings.zonePosition === 'map' || settings.stacked || !zoneColumnFits(settings.clockDisplay)) return false;
+  if (settings.zonePosition === 'map' || !zoneColumnFits(settings.clockDisplay)) return false;
   return elsewhere(settings, panelShowsZones);
 }
 export const zonesOnMap = (settings, panelShowsZones) => settings.zonePosition === 'map' && elsewhere(settings, panelShowsZones);

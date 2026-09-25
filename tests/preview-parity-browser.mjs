@@ -13,7 +13,7 @@ const cases={
   'default, 12-hour':{format:2},
   'place icons off':{theme:theme('High Visibility'),format:2,placeIcons:false},
   'tall times beside the clock, 24-hour':{format:1,zoneTimes:'always',zonePosition:'left',zoneTimesTall:true},
-  'stacked':{format:2,stacked:true}
+  'clock below the map, nameplate on':{format:2,time:[0,134],map:[0,24],nameplate:true}
 };
 const browser=await chromium.launch(),errors=[];
 try{

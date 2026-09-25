@@ -5,9 +5,8 @@
 #define STATUS_BOTTOM 18
 #define PANEL_TOP 184
 #define CLOCK_INK 38
-#define STACKED_INK 84
-int nameplate_layout(int map_y,int time_y,int height,bool stacked,int visible,bool *shown,int *x,int *y){
-  int ink=stacked?STACKED_INK:CLOCK_INK,nx=(200-WORDMARK_WIDTH)>>1,ny,shift=0;
+int nameplate_layout(int map_y,int time_y,int height,int visible,bool *shown,int *x,int *y){
+  int ink=CLOCK_INK,nx=(200-WORDMARK_WIDTH)>>1,ny,shift=0;
   *shown=false;
   if(time_y>map_y){
     ny=map_y+NET_BOTTOM+3;

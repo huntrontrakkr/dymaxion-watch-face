@@ -29,8 +29,8 @@ pixel stay still; a changed tile can cover part of a neighbouring figure or the
 colon, which shrink with it and reappear unchanged behind. No shading is
 added: the motion alone separates old from new.
 
-The horizontal main clock uses this motion in every style. Zone clocks and stacked Draft time
-keep their existing rendering. Chamfer figures are the default for new
+The main clock uses this motion in every style. Zone clocks keep their existing
+rendering. Chamfer figures are the default for new
 settings; existing explicit Span/triangle choices are preserved.
 
 ## Runtime

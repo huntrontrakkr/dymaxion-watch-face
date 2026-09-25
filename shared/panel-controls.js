@@ -13,7 +13,7 @@ export function panelControls(root,getSettings,onChange,{getPosition}={}){
   root.innerHTML=toggle('enabled','Enable bottom panels','Choose which panels show below the map.')
     +`<div class="panel-order" data-order></div>`
     +select('home','Starting panel',PANEL_PAGES)
-    +toggle('shake','Flick to change panels','Uses wrist flicks, not screen taps.')+select('flicks','Panel gesture',[[4,'Light the screen, then flick once'],[2,'Two separate flicks, within 2 seconds'],[1,'One flick, including the gesture that lights the screen'],[3,'Three separate flicks, each within 2 seconds']])
+    +toggle('shake','Flick to change panels','Uses wrist flicks, not screen taps.')+select('flicks','Panel gesture',[[2,'Two flicks, within 2 seconds'],[1,'One flick'],[3,'Three flicks, each within 2 seconds']])
     +`<p class="micro" data-gesture-help></p>`
     +select('rotationMinutes','Automatic rotation',[[0,'Off — keep the panel until changed'],['smart','Smart — what matters now'],...[1,2,5,10,15,30,60].map(n=>[n,`Every ${n} minute${n===1?'':'s'}`])])
     +`<p class="micro">Choose up to five panels. Turn off flicks and rotation to keep one in place.</p>`
@@ -62,7 +62,7 @@ export function panelControls(root,getSettings,onChange,{getPosition}={}){
     root.querySelector('[data-theme-colors]').disabled=f.colorMode==='theme';
     root.querySelector('[data-color-mode]').textContent=f.colorMode==='theme'?'Follows palette':'Custom colors';
     root.querySelector('[data-panel="flicks"]').disabled=!f.enabled||!f.shake||f.pages.length<2;
-    root.querySelector('[data-gesture-help]').textContent=f.flicks===4?'Wake the screen with your usual gesture, pause briefly, then flick once to change panels. The watch stops listening for flicks when the light goes out. If the backlight stays off in bright light, use another gesture mode or automatic rotation.':'Pause briefly between flicks. Tapping the screen only turns on the backlight, because Pebble doesn’t send touch input to watch faces.';
+    root.querySelector('[data-gesture-help]').textContent=f.flicks===1?'A single flick is also the watch’s own wake gesture, so waking the screen can change the panel too.':'Pause briefly between flicks. Tapping the screen only turns on the backlight, because Pebble doesn’t send touch input to watch faces.';
     const home=root.querySelector('[data-panel="home"]');home.replaceChildren();f.pages.forEach(id=>home.add(new Option(PANEL_PAGES.find(([p])=>p===id)[1],id)));home.value=f.home;
     root.querySelector('[data-panel="weather.place"]').querySelectorAll('option').forEach(o=>{if(o.value!=='current')o.textContent=`Place ${+o.value+1} / ${settings.places[+o.value].name}`;});
     tidePicker.refresh();

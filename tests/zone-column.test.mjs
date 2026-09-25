@@ -21,8 +21,8 @@ test('the watch lays out place times beside the clock exactly as the workshop do
   });
   assert.equal(native[rows.length].trim(),[1,2,3].flatMap(n=>Array.from({length:n},(_,i)=>zoneRowBaseline(i,n))).join(' '));
   let rules='';
-  for(let style=0;style<=9;style++)for(const stacked of [false,true])for(const mode of ZONE_TIMES)for(const zonePosition of ZONE_POSITIONS)for(const shown of [false,true]){
-    const s={stacked,clockDisplay:STYLE_CODES[style]??'none',zoneTimes:mode,zonePosition};rules+=`${+zonesBeside(s,shown)}${+zonesOnMap(s,shown)}`;}
+  for(let style=0;style<=9;style++)for(const mode of ZONE_TIMES)for(const zonePosition of ZONE_POSITIONS)for(const shown of [false,true]){
+    const s={clockDisplay:STYLE_CODES[style]??'none',zoneTimes:mode,zonePosition};rules+=`${+zonesBeside(s,shown)}${+zonesOnMap(s,shown)}`;}
   assert.equal(native[rows.length+1],rules);
   assert.equal(native[rows.length+2],`${zoneColumn('left').shift} ${zoneColumn('right').shift}`);
   assert.equal(native[rows.length+3].trim(),[1,2,3].flatMap(n=>Array.from({length:n},(_,i)=>zoneRowBaseline(i,n,true))).join(' '),'tall baselines');

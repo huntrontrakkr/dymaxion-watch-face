@@ -4,12 +4,12 @@ import {execFileSync} from 'node:child_process';
 import {mkdirSync,readFileSync} from 'node:fs';
 import {nameplateLayout,NAMEPLATE_ROWS,NAMEPLATE_WIDTH,NAMEPLATE_HEIGHT} from '../shared/nameplate.js';
 import {PRESETS} from '../shared/settings.js';
-const CASES=[[73,22,40,0,228],[73,20,46,0,228],[73,30,40,0,228],[24,134,40,0,228],[24,134,46,0,228],[24,134,40,0,177],[24,150,40,0,228],[24,142,40,0,228],[19,132,40,0,228],[73,0,84,1,228],[90,22,40,0,228],[60,22,40,0,228],[100,40,84,1,228],[24,60,84,1,228],[73,22,40,0,40]];
+const CASES=[[73,22,40,228],[73,20,46,228],[73,30,40,228],[24,134,40,228],[24,134,46,228],[24,134,40,177],[24,150,40,228],[24,142,40,228],[19,132,40,228],[73,0,46,228],[90,22,40,228],[60,22,40,228],[100,40,46,228],[24,60,40,228],[73,22,40,40]];
 test('the watch places and draws the nameplate exactly as the workshop does',()=>{
   mkdirSync('test-results',{recursive:true});
   execFileSync('cc',['-std=c11','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/nameplate-test.c','watchface/src/c/nameplate.c','watchface/src/c/settings.c','-o','test-results/nameplate-test']);
   const [spots,checksum]=execFileSync('test-results/nameplate-test',CASES.flat().map(String)).toString().trim().split('\n');
-  assert.equal(spots.trim(),CASES.map(([mapY,timeY,height,stacked,visible])=>{const {plate,clockTop}=nameplateLayout({mapY,timeY,height,stacked:!!stacked,visible});return (plate?plate.x+','+plate.y:'-')+'@'+clockTop;}).join(' '));
+  assert.equal(spots.trim(),CASES.map(([mapY,timeY,height,visible])=>{const {plate,clockTop}=nameplateLayout({mapY,timeY,height,visible});return (plate?plate.x+','+plate.y:'-')+'@'+clockTop;}).join(' '));
   let count=0,sum=0;NAMEPLATE_ROWS.forEach((row,y)=>[...row].forEach((c,x)=>{if(c==='#'){count++;sum+=x*1000+y;}}));
   assert.equal(checksum,`${count} ${sum}`,'same pixels');
 });

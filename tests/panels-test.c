@@ -36,7 +36,8 @@ int main(int argc,char **argv){
   memcpy(copy,f,sizeof(f));copy[F_RAIN_MAX]=copy[F_RAIN_MAX+1]=0;assert(!footer_valid(copy,sizeof(f)));
   memcpy(copy,f,sizeof(f));for(int place=0;place<=3;place++){copy[F_WEATHER_PLACE]=place;assert(footer_valid(copy,sizeof(f)));}
   copy[F_WEATHER_PLACE]=4;assert(!footer_valid(copy,sizeof(f)));
-  memcpy(copy,f,sizeof(f));for(int mode=0;mode<=PANEL_GESTURE_LIT;mode++){copy[F_FLICKS]=mode;assert(footer_valid(copy,sizeof(f)));}
+  // 0 (older phones) and 4 (the retired lit-screen mode) are accepted and read as two flicks.
+  memcpy(copy,f,sizeof(f));for(int mode=0;mode<=4;mode++){copy[F_FLICKS]=mode;assert(footer_valid(copy,sizeof(f)));}
   copy[F_FLICKS]=5;assert(!footer_valid(copy,sizeof(f)));
   memcpy(copy,w,sizeof(w));copy[32+2]=101;assert(!environment_valid(copy,sizeof(w),false));
   memcpy(copy,w,sizeof(w));copy[1]=50;assert(!environment_valid(copy,sizeof(w),false));
@@ -57,15 +58,5 @@ int main(int argc,char **argv){
   assert(!panel_tap(&settled,12000,2));assert(!panel_tap(&settled,12500,2));assert(panel_tap(&settled,14500,2));
   // A clock adjustment must not leave the gesture locked behind an old deadline.
   assert(!panel_tap(&settled,1000,2));assert(panel_tap(&settled,2200,2));
-  PanelLightState light={0};
-  assert(!panel_light_ready(&light,false,10000));
-  assert(!panel_light_ready(&light,true,10010)); // motion delivered before on callback
-  panel_light_update(&light,true,10040); // same wake must not restart the guard
-  assert(!panel_light_ready(&light,true,10409));
-  assert(panel_light_ready(&light,true,10410));
-  assert(!panel_light_ready(&light,false,13000));
-  panel_light_update(&light,true,14000);assert(!panel_light_ready(&light,true,14001));
-  assert(panel_light_ready(&light,true,14400));
-  assert(!panel_light_ready(&light,true,500));assert(panel_light_ready(&light,true,900));
   puts("Native panel packets and wrist-flick guard passed.");return 0;
 }

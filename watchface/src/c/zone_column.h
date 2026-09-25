@@ -19,7 +19,7 @@ typedef struct {char label[8],time[6],suffix[2],day[4];int label_x,time_x,suffix
 typedef int (*ZoneMeasure)(const char *text,const void *font);
 // Chamfer (4) and the system fonts (5-9) leave room; Broad and Span do not.
 bool zone_column_fits(uint8_t style);
-bool zones_beside(uint8_t style,bool stacked,uint8_t zone_times,uint8_t position,bool panel_shows_zones);
+bool zones_beside(uint8_t style,uint8_t zone_times,uint8_t position,bool panel_shows_zones);
 bool zones_on_map(uint8_t zone_times,uint8_t position,bool panel_shows_zones);
 // How far the clock strip moves: right for a left column, left for a right one.
 static inline int zone_clock_shift(bool right){return right?-ZONE_COLUMN_SHIFT:ZONE_COLUMN_SHIFT;}

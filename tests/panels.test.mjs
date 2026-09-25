@@ -15,7 +15,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 test('footer settings migrate, constrain panel order, preserve ranges and station choices',()=>{
   const old=defaults();delete old.footer;const migrated=validateSettings(old,zoneExists);assert.equal(migrated.footer.home,'zones');
   for(const patch of [{pages:[]},{pages:['zones','zones']},{rotationMinutes:3},{horizon:0},{shake:'yes'},{flicks:5},{flicks:'2'},{tide:{station:'evil/url'}}])assert.throws(()=>validateSettings({...defaults(),footer:{...defaults().footer,...patch}},zoneExists));
-  const lit=defaults();lit.footer.flicks=4;assert.equal(encodeFooter(validateSettings(lit,zoneExists))[52],4);
+  const lit=defaults();lit.footer.flicks=4;assert.equal(encodeFooter(validateSettings(lit,zoneExists))[52],2,'the retired lit-screen gesture opens as two flicks');
   const s=defaults();s.footer.pages=['calendar','tide'];s.footer.home='calendar';s.footer.tide={...s.footer.tide,...meta.station};s.footer.colors.tide='#997744';
   const valid=validateSettings(s,zoneExists);assert.deepEqual(valid.footer.pages,['calendar','tide']);assert.equal(valid.footer.colors.tide,'#AA5555');assert.equal(valid.footer.tide.station,'8518750');
 });

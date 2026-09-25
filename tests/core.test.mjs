@@ -170,6 +170,13 @@ test('old saved presets adopt the enlarged map; custom arrangements keep their p
   assert.equal(flattened.theme,2);
   assert.deepEqual(flattened.places,oldPortrait.places);
 });
+test('the retired stacked clock opens as the regular clock',async()=>{
+  const {encodeSettings}=await import('../shared/protocol.js');
+  const old=validateSettings({...defaults(),stacked:true,time:[64,60]},zoneExists);
+  assert(!('stacked' in old),'the setting is gone');
+  assert.deepEqual(old.time,[0,60],'the clock spans the width again');
+  assert.equal(encodeSettings(old)[2]&32,0,'the retired flag is never sent');
+});
 test('leading zero is on by default and can blank the first digit slot',async()=>{
   const {hourText}=await import('../shared/settings.js'),{encodeDisplay}=await import('../shared/display.js');
   const {chamferTimeMask,CHAMFER_METRICS:M}=await import('../shared/chamfer-numerals.js'),{broadTimeMask}=await import('../shared/broad-numerals.js');

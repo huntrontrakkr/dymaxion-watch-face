@@ -22,9 +22,9 @@ try{
   const options=await page.getByLabel('Numerical display',{exact:true}).locator('option').evaluateAll(o=>o.map(x=>x.value));
   assert(!options.includes('triangles'),'the triangular display is retired');assert.equal(await page.getByLabel('Show unlit triangles',{exact:true}).count(),0);
   await page.getByLabel('Numerical display',{exact:true}).selectOption('span');await page.reload();await page.waitForFunction(()=>document.querySelector('#preview-time').textContent.includes('LIVE'));assert.equal(await screen.getAttribute('data-clock-display'),'span');
-  await page.locator('#stacked').check();assert.equal(await screen.getAttribute('data-clock-display'),'draft');assert.match(await screen.getAttribute('data-clock-caption'),/Sao Jose PM$/);
+  assert.equal(await page.locator('#stacked').count(),0,'the stacked clock is retired');
   // Pebble's built-in fonts are numeral styles too; the choice persists.
-  await page.locator('#stacked').uncheck();await page.getByRole('tab',{name:'Character',exact:true}).click();
+  await page.getByRole('tab',{name:'Character',exact:true}).click();
   for(const id of ['leco','bitham-bold','bitham-light','bitham-medium','leco-delta']){
     await page.getByLabel('Numerical display',{exact:true}).selectOption(id);assert.equal(await screen.getAttribute('data-clock-display'),id);
   }
@@ -159,5 +159,5 @@ try{
   assert.deepEqual(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).power,{daylightMinutes:5,minuteAnimation:true,flourishes:true,night:true,nightStart:0,nightEnd:0,quietTime:false,darkPause:false,lowBattery:10});
   assert(!await flipsAtNextMinute(),'at night it does not');
   await page.getByLabel('Night saver',{exact:true}).uncheck();
-  assert.deepEqual(errors,[]);console.log('PASS: actual and manual city captions, hourly lookup cache, 12-hour and stacked time, Span persistence, retired triangular display, system fonts, the map background, and place times beside the clock and on the map, and the nameplate.');
+  assert.deepEqual(errors,[]);console.log('PASS: actual and manual city captions, hourly lookup cache, 12-hour time, Span persistence, retired triangular display, system fonts, the map background, and place times beside the clock and on the map, and the nameplate.');
 }finally{await browser.close();}

@@ -6,7 +6,8 @@
 #define HEADER_SIZE 16
 #define MARKER_COUNT 12
 enum { VERSION, THEME, FLAGS, FORMAT, ORIENTATION, TIME_X, TIME_Y, MAP_X, MAP_Y, ZONE_X, ZONE_Y, ZONE2_X, ZONE2_Y, ZONE3_X, ZONE3_Y, ENABLED };
-enum { DAY_NIGHT=1, EDGES=2, LIGHTS=4, MOTION=8, SUN=16, STACKED=32, BUZZ_DISCONNECT=64, BUZZ_RECONNECT=128 };
+// Flag 32 was the retired stacked clock; it is ignored.
+enum { DAY_NIGHT=1, EDGES=2, LIGHTS=4, MOTION=8, SUN=16, BUZZ_DISCONNECT=64, BUZZ_RECONNECT=128 };
 int16_t read_i16(const uint8_t *p);
 uint32_t read_u32(const uint8_t *p);
 int32_t calendar_ordinal(int year, int month, int day);

@@ -37,10 +37,10 @@ export const PLACES = [
 ].map(([label,name,tz,lat,lon])=>({label,name,tz,lat,lon})).concat(extraPlaces);
 export const PRESETS = {
   // Meridian: status line, small figures over the map, zones below.
-  meridian:{orientation:0,stacked:false,time:[0,22],map:[0,73],zones:[[4,189],[70,189],[136,189]]},
-  horizon:{orientation:0,stacked:false,time:[0,134],map:[0,24],zones:[[4,189],[70,189],[136,189]]}
+  meridian:{orientation:0,time:[0,22],map:[0,73],zones:[[4,189],[70,189],[136,189]]},
+  horizon:{orientation:0,time:[0,134],map:[0,24],zones:[[4,189],[70,189],[136,189]]}
 };
-export const PRESET_KEYS = ['orientation','stacked','time','map','zones'];
+export const PRESET_KEYS = ['orientation','time','map','zones'];
 export function presetFor(name){return JSON.parse(JSON.stringify(PRESETS[name]));}
 export function activePreset(settings){
   return Object.keys(PRESETS).find(name=>{const p=presetFor(name,settings.clockDisplay);return PRESET_KEYS.every(k=>JSON.stringify(settings[k])===JSON.stringify(p[k]));})??null;
@@ -53,13 +53,13 @@ export function withClockDisplay(settings,clockDisplay){
   return next;
 }
 const LEGACY_PRESETS=[{
-  atlas:{orientation:0,stacked:false,time:[0,20],map:[0,73],zones:[[4,189],[70,189],[136,189]]}
+  atlas:{orientation:0,time:[0,20],map:[0,73],zones:[[4,189],[70,189],[136,189]]}
 },{
-  atlas:{orientation:0,stacked:false,time:[28,20],map:[0,73],zones:[[4,189],[70,189],[136,189]]},
-  horizon:{orientation:0,stacked:false,time:[28,134],map:[0,24],zones:[[4,189],[70,189],[136,189]]}
+  atlas:{orientation:0,time:[28,20],map:[0,73],zones:[[4,189],[70,189],[136,189]]},
+  horizon:{orientation:0,time:[28,134],map:[0,24],zones:[[4,189],[70,189],[136,189]]}
 },{
-  atlas:{orientation:0,stacked:false,time:[20,18],map:[4,73],zones:[[4,189],[70,189],[136,189]]},
-  horizon:{orientation:0,stacked:false,time:[20,132],map:[4,19],zones:[[4,189],[70,189],[136,189]]}
+  atlas:{orientation:0,time:[20,18],map:[4,73],zones:[[4,189],[70,189],[136,189]]},
+  horizon:{orientation:0,time:[20,132],map:[4,19],zones:[[4,189],[70,189],[136,189]]}
 }];
 export function defaults() {
   return {version:1,markerSet:2,theme:0,customPalettes:[],customPalette:null,format:1,dayNight:true,edges:false,lights:true,motion:true,sun:true,moonIndicator:true,connectionBuzz:'disconnect',
@@ -81,7 +81,6 @@ export const QUICK_VIEW_HEIGHT=51;
 export function blockSize(settings,key) {
   if(key==='map')return MAP_SIZE;
   if(key==='time'){
-    if(settings.stacked)return [72,84];
     // Chamfer and the system fonts sit in a 40-pixel strip.
     if(settings.clockDisplay==='chamfer'||SYSTEM_CLOCKS.includes(settings.clockDisplay))return [200,40];
     return [200,46];
@@ -109,7 +108,9 @@ export function validateSettings(input,zoneExists) {
     if(!Number.isInteger(input[key])||input[key]<0||input[key]>max)throw new Error('Invalid '+key+'.');
     out[key]=input[key];
   }
-  for(const key of ['dayNight','edges','lights','motion','sun','stacked']) {
+  // The stacked hours-over-minutes clock is retired: old settings that had it
+  // open with the regular clock, their time position clamped to fit.
+  for(const key of ['dayNight','edges','lights','motion','sun']) {
     if(typeof input[key]!=='boolean')throw new Error('Invalid '+key+'.');out[key]=input[key];
   }
   if(input.moonIndicator!==undefined&&typeof input.moonIndicator!=='boolean')throw new Error('Invalid moon indicator.');

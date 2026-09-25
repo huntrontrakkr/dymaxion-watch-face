@@ -132,16 +132,14 @@ checked against each other; the workshop shows an example day marked DEMO.
 
 Choose any one to five pages, reorder them, and select a starting page. Under
 **Panel gesture**, the default is two separate wrist flicks within two seconds.
-Let your wrist settle between them. One or three flicks are also available;
-saved choices are preserved on upgrade. These are motion events, not screen taps.
+Pause briefly between them. One or three flicks are also available. A single
+flick is also the watch's own wake gesture, so waking the screen can change the
+panel too. These are motion events, not screen taps.
 
-The optional **Light the screen, then flick once** mode listens for motion only
-while the watchface is visible and its backlight is on. Wake the light normally,
-pause briefly, then flick once to change the panel. A 400 ms guard ignores motion
-around the moment the light turns on. It stops listening when the light turns
-off; it never keeps the light on or polls a sensor. In bright surroundings,
-Pebble's ambient-light setting may keep the backlight off, so use the ordinary
-flick modes or automatic rotation if you want to change panels in daylight.
+An earlier "light the screen, then flick once" mode was removed: once the
+light was on, a flick could never be told apart from the next wake, and the
+backlight often stayed off in daylight. Saved faces that used it open with two
+flicks.
 
 **Smart rotation** (Automatic rotation → Smart) changes the page without being
 asked, to what matters now. On each minute tick the watch checks data it already

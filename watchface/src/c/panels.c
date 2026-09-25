@@ -142,8 +142,7 @@ bool panels_tick(time_t now){
 // A flick: the page the wearer chose holds against smart rotation for a while.
 void panels_note_manual(time_t now){s_manual=now;}
 int panels_weather_place(void){return s_footer[F_WEATHER_PLACE];}
-bool panels_light_only(void){return s_footer[F_FLICKS]==PANEL_GESTURE_LIT;}
-int panels_flicks(void){return panels_light_only()?1:s_footer[F_FLICKS]?s_footer[F_FLICKS]:2;}
+int panels_flicks(void){return s_footer[F_FLICKS]>=1&&s_footer[F_FLICKS]<=3?s_footer[F_FLICKS]:2;}
 bool panels_shake_enabled(void){return s_footer[F_ENABLED]&&s_footer[F_SHAKE]&&s_footer[F_COUNT]>1;}
 int panels_refresh_minutes(void){
   if(s_footer[F_ENABLED]&&s_footer[F_WEATHER_ON])for(int i=0;i<s_footer[F_COUNT];i++)

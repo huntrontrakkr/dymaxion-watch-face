@@ -22,7 +22,6 @@
     "resources": {
       "media": [
         {"type":"raw","name":"MAP_LANDSCAPE","file":"maps/map-0.bin"},
-        {"type":"font","name":"FONT_DRAFT_44","file":"fonts/DymaxionDraftDisplay.ttf","characterRegex":"[0-9:]"},
         {"type":"font","name":"FONT_DRAFT_18","file":"fonts/DymaxionDraftZone.ttf","characterRegex":"[0-9:]"},
         {"type":"font","name":"FONT_DRAFT_12","file":"fonts/DymaxionDraftMicro.ttf","characterRegex":"[A-Za-z0-9 .,:%+/?-]"},
         {"type":"raw","name":"CLOCK_CHAMFER","file":"data/clock-chamfer.bin"},

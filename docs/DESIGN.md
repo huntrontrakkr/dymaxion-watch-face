@@ -86,8 +86,7 @@ the date and city at the top of every composition. In 12-hour time the Chamfer
 clock carries AM/PM itself, in small accent capitals top-aligned with the
 figures, so the status line keeps its width for the city. The leading zero
 (09:07) is on by default and can be turned off, which leaves the first slot
-blank so the other figures keep their places; stacked time keeps
-AM/PM in its caption, and the wider numeral styles leave it in the status line. The reasoning, and a comparison with the previous default,
+blank so the other figures keep their places; the wider numeral styles leave it in the status line. The reasoning, and a comparison with the previous default,
 are in [Meridian](MERIDIAN.md).
 
 The **Dymaxion Span** option is an original 28-pixel-high cut drawn for
@@ -105,8 +104,9 @@ equilateral cells, informed by Synergetics §420) is retired. Saved faces that
 used it open with Chamfer figures, and removing its 1,350 native pixel runs
 freed 5.8 KB of the watch's static memory.
 
-**Dymaxion Draft** remains the information type. Its earlier display cut is
-available for optional stacked hours/minutes. The 12-pixel zone numerals are
+**Dymaxion Draft** remains the information type. The optional stacked
+hours-over-minutes clock that used its earlier display cut is retired; saved
+faces that used it open with the regular clock. The 12-pixel zone numerals are
 drawn separately with two-pixel stems. **Micro**
 has seven-pixel capitals, a five-pixel x-height, open counters and natural letter
 widths. Dates use a separately drawn oldstyle numeral set. Micro is not a reduced

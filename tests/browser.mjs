@@ -81,9 +81,9 @@ try{
     Pebble:{addEventListener:(name,fn)=>handlers[name]=fn,openURL:url=>opened=url,sendAppMessage:(message,success)=>{messages.push(message);success();}}};
   vm.runInNewContext(readFileSync('watchface/src/pkjs/index.js','utf8'),context);
   handlers.ready();assert.equal(messages[0].SETTINGS.length,PACKET_SIZE);
-  const litGesture=defaults();litGesture.footer.flicks=4;
-  handlers.webviewclosed({response:encodeURIComponent(JSON.stringify(litGesture))});
-  assert.equal(messages.findLast(m=>m.FOOTER).FOOTER[52],4,'phone sends the backlight-gated gesture');
+  const oneFlick=defaults();oneFlick.footer.flicks=1;
+  handlers.webviewclosed({response:encodeURIComponent(JSON.stringify(oneFlick))});
+  assert.equal(messages.findLast(m=>m.FOOTER).FOOTER[52],1,'phone sends the gesture');
   assert.deepEqual(Array.from(messages[0].DISPLAY),[3,4,36,0,0,22,7,10],'a fresh install shows Chamfer figures, with default power and motion');
   await handlers.showConfiguration();assert.ok(opened.startsWith('data:text/html;charset=utf-8,'));
   const mobile=await browser.newPage({viewport:{width:390,height:844}});mobile.on('pageerror',e=>errors.push(e.message));await mobile.goto(opened);
@@ -129,8 +129,7 @@ try{
   await eggPage.getByRole('button',{name:'Airocean',exact:true}).click();
   assert(await eggPage.getByRole('button',{name:'Hot Dog Stand',exact:true}).isHidden());await eggPage.close();
   await mobile.locator('#preset').selectOption('horizon');await mobile.locator('#theme').selectOption('1');
-  await mobile.locator('#stacked').check();
-  assert.equal(await mobile.locator('#stacked').isChecked(),true);
+  assert.equal(await mobile.locator('#stacked').count(),0,'the stacked clock is retired');
   await mobile.locator('#moonIndicator').uncheck();assert.equal(await mobile.locator('#moonIndicator').isChecked(),false);
   assert.equal(await mobile.locator('[data-key=icon]').first().locator('option').count(),12);
   await mobile.locator('[data-key=icon]').first().selectOption('3');

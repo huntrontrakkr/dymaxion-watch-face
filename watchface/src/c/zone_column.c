@@ -3,8 +3,8 @@
 #include <string.h>
 bool zone_column_fits(uint8_t style){return style>=4&&style<=9;}
 static bool elsewhere(uint8_t zone_times,bool panel_shows_zones){return zone_times==ZONE_TIMES_ALWAYS||(zone_times==ZONE_TIMES_WHEN_HIDDEN&&!panel_shows_zones);}
-bool zones_beside(uint8_t style,bool stacked,uint8_t zone_times,uint8_t position,bool panel_shows_zones){
-  if(position==ZONE_POSITION_MAP||stacked||!zone_column_fits(style))return false;
+bool zones_beside(uint8_t style,uint8_t zone_times,uint8_t position,bool panel_shows_zones){
+  if(position==ZONE_POSITION_MAP||!zone_column_fits(style))return false;
   return elsewhere(zone_times,panel_shows_zones);
 }
 bool zones_on_map(uint8_t zone_times,uint8_t position,bool panel_shows_zones){return position==ZONE_POSITION_MAP&&elsewhere(zone_times,panel_shows_zones);}

@@ -4,7 +4,7 @@
 import rows from '../assets/type/wordmark.json' with {type: 'json'};
 import {clockTopForVisible} from './settings.js';
 export const NAMEPLATE_ROWS = rows, NAMEPLATE_WIDTH = rows[0].length, NAMEPLATE_HEIGHT = rows.length;
-const NET_TOP = 6, NET_BOTTOM = 97, STATUS_BOTTOM = 18, PANEL_TOP = 184, CLOCK_INK = 38, STACKED_INK = 84;
+const NET_TOP = 6, NET_BOTTOM = 97, STATUS_BOTTOM = 18, PANEL_TOP = 184, CLOCK_INK = 38;
 // Where the nameplate sits on screen (null when there is no room) and where the
 // clock then goes. Clock above the map: centred, its last row a pixel above the
 // net's top edge, below the status line. Clock below the map: two rows under
@@ -12,8 +12,8 @@ const NET_TOP = 6, NET_BOTTOM = 97, STATUS_BOTTOM = 18, PANEL_TOP = 184, CLOCK_I
 // long as the clock's figures still clear the bottom panel by six pixels.
 // Either way the clock's figures (after Quick View moves them) keep a pixel
 // clear, or the nameplate is left out and the clock stays where it was.
-export function nameplateLayout({mapY, timeY, height, stacked = false, visible = 228}) {
-  const ink = stacked ? STACKED_INK : CLOCK_INK, x = (200 - NAMEPLATE_WIDTH) >> 1;
+export function nameplateLayout({mapY, timeY, height, visible = 228}) {
+  const ink = CLOCK_INK, x = (200 - NAMEPLATE_WIDTH) >> 1;
   const none = {plate: null, clockTop: clockTopForVisible(timeY, height, visible)};
   let y, shift = 0;
   if (timeY > mapY) {

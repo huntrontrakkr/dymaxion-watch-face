@@ -62,7 +62,7 @@ function refresh(){
   paletteEditor.refresh();
   paletteChoices();
   $('theme').value=s.theme;$('format').value=s.format;$('connectionBuzz').value=s.connectionBuzz;$('mapBackground').value=s.mapBackground;
-  for(const k of ['moonIndicator','dayNight','lights','sun','edges','motion','stacked'])$(k).checked=s[k];
+  for(const k of ['moonIndicator','dayNight','lights','sun','edges','motion'])$(k).checked=s[k];
   const openPlaces=[...$('places').querySelectorAll('details')].map(d=>d.open);
   searches.forEach(search=>search.destroy());searches=[];$('places').replaceChildren();
   s.places.forEach((p,i)=>{
@@ -91,7 +91,7 @@ $('preset').onchange=()=>{const preset=$('preset').value;if(preset!=='custom')Ob
 $('connectionBuzz').onchange=()=>{s.connectionBuzz=$('connectionBuzz').value;};
 $('mapBackground').onchange=()=>{s.mapBackground=$('mapBackground').value;changed();};
 for(const key of ['theme','format'])$(key).onchange=()=>{s[key]=Number($(key).value);if(key==='theme'){s.customPalette=null;refresh();}changed();};
-for(const key of ['moonIndicator','dayNight','lights','sun','edges','motion','stacked'])$(key).onchange=()=>{s[key]=$(key).checked;powerEditor.refresh();if(key==='stacked'){s.time=clampPosition(s,'time',s.time);refresh();}changed();};
+for(const key of ['moonIndicator','dayNight','lights','sun','edges','motion'])$(key).onchange=()=>{s[key]=$(key).checked;powerEditor.refresh();changed();};
 function importText(text){try{s=validateSettings(JSON.parse(text),exists);$('error').textContent='Composition loaded.';$('preset').value='custom';refresh();}catch(e){$('error').textContent=e.message;}}
 $('file').onchange=async()=>{const file=$('file').files[0];if(!file)return;if(file.size>50000){$('error').textContent='Settings file is too large.';return;}importText(await file.text());};
 $('import').onclick=()=>importText($('json').value);

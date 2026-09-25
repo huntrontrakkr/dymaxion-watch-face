@@ -10,7 +10,7 @@ configuration, then persists it as one record under key 1 (below Pebble's
 | --- | --- |
 | 0 | Version = 7 |
 | 1 | Theme, 0–13; IDs listed in `PALETTES.md` |
-| 2 | Flags: day/night 1, edges 2, lights 4, motion 8, sun 16, stacked time 32, buzz on disconnect 64, also buzz on reconnect 128 |
+| 2 | Flags: day/night 1, edges 2, lights 4, motion 8, sun 16, buzz on disconnect 64, also buzz on reconnect 128. Bit 32 was the retired stacked clock and is ignored. |
 | 3 | Format: device 0, 24h 1, 12h 2 |
 | 4 | Reserved orientation byte; always 0 |
 | 5–6 | Local time x/y |
@@ -106,7 +106,7 @@ declares the `health` capability) and nothing about it leaves the watch.
 | 46–49 | Two int16 tide bounds, hundredths of selected meters/feet |
 | 50 | Forecast source: saved place 0–2, or current phone location 3 (default since 0.4.1). Daylight follows that source; absent current-city coordinates use forecast daylight flags. |
 | 51 | Humidity line on the weather chart (0/1) |
-| 52 | Panel gesture: 1–3 flicks, or 4 for one flick while the backlight is already on; 0 from older phones means 2. Mode 4 requires watchface 0.4.2 or later. |
+| 52 | Panel gesture: 1–3 flicks; 0 from older phones, and 4 (the retired lit-screen mode), mean 2. |
 | 53–63 | Reserved zero |
 
 The phone resolves `footer.colorMode` (`theme` or `custom`) to explicit colors
@@ -199,7 +199,7 @@ map background: 0 none, 1 triangle points, 2 triangle lines, 3 fine triangle
 points (the lattice split twice). Background *n* is
 flag bit `4 << n` of each empty pixel in `map-0.bin` byte 3, drawn in the
 palette's edge colour.
-Stacked time always uses Draft. Every horizontal style uses a temporary 400 ms
+Every clock style uses a temporary 400 ms
 minute-transition timer when the existing MOTION flag is enabled and battery is
 above the low-battery level (byte 7); it adds no sensor.
 

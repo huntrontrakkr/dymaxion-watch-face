@@ -167,7 +167,7 @@ function placesUI(){
 }
 markerGallery();
 function sync(){
-  for(const key of ['dayNight','edges','lights','sun','motion','stacked','moonIndicator'])$(key).checked=settings[key];
+  for(const key of ['dayNight','edges','lights','sun','motion','moonIndicator'])$(key).checked=settings[key];
   $('format').value=settings.format;$('connectionBuzz').value=settings.connectionBuzz;$('mapBackground').value=settings.mapBackground;
   document.querySelectorAll('[data-theme]').forEach(b=>{
     const id=+b.dataset.theme;b.hidden=!!THEMES[id].hidden&&id!==settings.theme;
@@ -176,7 +176,7 @@ function sync(){
   const current=activePreset(settings);document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.preset===current)));
   positionFields();placesUI();panelEditor.refresh();cityEditor.refresh();displayEditor.refresh();powerEditor.refresh();paletteEditor.refresh();
 }
-for(const key of ['dayNight','edges','lights','sun','motion','stacked','moonIndicator'])$(key).onchange=()=>{settings[key]=$(key).checked;move('time',settings.time);positionFields();displayEditor.refresh();powerEditor.refresh();save();};
+for(const key of ['dayNight','edges','lights','sun','motion','moonIndicator'])$(key).onchange=()=>{settings[key]=$(key).checked;move('time',settings.time);positionFields();displayEditor.refresh();powerEditor.refresh();save();};
 $('format').onchange=()=>{settings.format=+$('format').value;save();};
 $('connectionBuzz').onchange=()=>{settings.connectionBuzz=$('connectionBuzz').value;save();};
 $('mapBackground').onchange=()=>{settings.mapBackground=$('mapBackground').value;save();};
@@ -299,7 +299,7 @@ function render(){
   const [tx,timeY]=settings.time,[tw,th]=blockSize(settings,'time');
   // The Dymaxion nameplate, between the clock and the map when there is room
   // (a clock below the map moves down for it).
-  const {plate,clockTop:ty}=settings.nameplate?nameplateLayout({mapY:my,timeY,height:th,stacked:settings.stacked,visible}):{plate:null,clockTop:clockTopForVisible(timeY,th,visible)};
+  const {plate,clockTop:ty}=settings.nameplate?nameplateLayout({mapY:my,timeY,height:th,visible}):{plate:null,clockTop:clockTopForVisible(timeY,th,visible)};
   const markers=markerSpots();if(plate)markers.obstacles=[...markers.obstacles,nameplateObstacle(plate,mx,my)];
   // Clearings (a group's hull ground) first, then map times, then hull outlines
   // (so a grouped leader starts at its hull), then glyphs.
@@ -318,15 +318,13 @@ function render(){
   canvas.dataset.nameplate=plate?plate.x+','+plate.y:'';
   const {h,m:minute,ampm}=clockParts(local);
   const city=settings.location.mode==='manual'?settings.location.name:currentCity.sample?currentCity.name:cityIsUsable(currentCity)?currentCity.name+(currentCity.stale||Date.now()/1000-currentCity.fetched>7200?'?':''):'';
-  const caption=clockCaption(settings.stacked?'':local.format('ddd DD MMM'),city,use24()?'':ampm,tw-4,t=>textWidth(watchTypeface.text.small,t));
   // Status line: lining capitals, date and city at the top left.
-  // AM/PM belongs to the clock when it can show it (Chamfer or stacked).
-  const clockAmpm=settings.stacked||(settings.clockDisplay==='chamfer'&&!besideOn);
+  // AM/PM belongs to the clock when it can show it (Chamfer, with nothing beside it).
+  const clockAmpm=settings.clockDisplay==='chamfer'&&!besideOn;
   const status=clockCaption(local.format('ddd DD MMM').toUpperCase(),city.toUpperCase(),use24()||clockAmpm?'':ampm,statusWidth(),t=>textWidth(watchTypeface.lining.small,t),'  ');
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
-  if(settings.stacked||!FLIP_FACES[settings.clockDisplay])minuteClock.reset();
-  if(settings.stacked){paintText(hourText(h,settings.leadingZero).trim(),tx+tw/2,ty+30,48,pal.ink,'center');paintText(two(minute),tx+tw/2,ty+65,48,pal.ink,'center');strokeLine(tx+25,ty+35,tx+47,ty+35,pal.accent);paintText(caption,tx+tw/2,ty+81,11,pal.accent,'center');}
-  else{
+  if(!FLIP_FACES[settings.clockDisplay])minuteClock.reset();
+  {
     const value=hourText(h,settings.leadingZero)+':'+two(minute);
     // Every horizontal style animates its minute change through the same shrink.
     // The glide beside the place times moves the figures, not the animation, so a
@@ -348,10 +346,10 @@ function render(){
       });
     }else if(!besideOn&&style==='chamfer'&&!use24())drawBitmapText(ctx,watchTypeface.lining.small,ampm,tx+167,ty+9,pal.accent);
   }
-  canvas.dataset.clockDisplay=settings.stacked?'draft':settings.clockDisplay;
+  canvas.dataset.clockDisplay=settings.clockDisplay;
   canvas.dataset.zonesBeside=String(beside);
   canvas.dataset.clockAnimating=String(minuteClock.active);
-  canvas.dataset.clockCaption=settings.stacked?caption:status;
+  canvas.dataset.clockCaption=status;
   $('city-state').textContent=settings.location.mode==='manual'?'The clock uses your entered city name.':currentCity.sample?'Norfolk is an example city in this preview. The watch uses your phone’s location.':city?`Current city: ${currentCity.name}${currentCity.stale?' (last known location)':''}.`:'City unavailable. Allow location in the phone app, or enter a city name.';
   if(band){ctx.fillStyle=pal.bg;ctx.fillRect(0,184,200,44);}
   if(!band||footerPage==='zones')settings.places.forEach((p,i)=>{

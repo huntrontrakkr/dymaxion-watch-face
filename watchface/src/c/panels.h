@@ -15,6 +15,5 @@ bool panels_cycle(time_t now);
 // Records a wearer's flick, which smart rotation then leaves alone for a while.
 void panels_note_manual(time_t now);
 bool panels_shake_enabled(void);
-bool panels_light_only(void);
 int panels_flicks(void);
 int panels_refresh_minutes(void);

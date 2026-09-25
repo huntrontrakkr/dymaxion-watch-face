@@ -24,7 +24,7 @@
 static Window *s_window;
 static Layer *s_layer;
 static GBitmap *s_map;
-static GFont s_large,s_small,s_zone;
+static GFont s_small,s_zone;
 static uint8_t s_settings[SETTINGS_SIZE];
 static uint8_t s_palette[PALETTE_SIZE];
 static uint8_t s_city[CITY_SIZE]={1};
@@ -55,7 +55,6 @@ static time_t s_clock_minute;
 static uint32_t s_clock_started;
 static uint16_t s_clock_frame=UINT16_MAX;
 static TapState s_tap;
-static PanelLightState s_gesture_light;
 static bool s_accel_subscribed,s_backlight_subscribed;
 static void configure_shake(void);
 static int s_map_w,s_map_h;
@@ -239,7 +238,6 @@ static const uint8_t *clock_load_font(uint8_t code,int8_t *box_top){
 // them, the clock is drawn without the transition (Broad and Chamfer as Span).
 static void clock_configure(void){
   clock_release();
-  if(s_settings[FLAGS]&STACKED)return;
   const ClockFace *face=NULL;uint8_t style=s_display[1];
   if(style==2)face=&BROAD_FACE;
   else {
@@ -313,10 +311,9 @@ static void draw_system_time(GContext *ctx,const char *timebuf,int x,int y){
     text(ctx,timebuf[0]==' '?timebuf+1:timebuf,fonts_get_system_font(f->key),GRect(x,y+f->box_top,200,f->box_height),GTextAlignmentCenter,color(6));
   }
 }
-static int caption_width(const char *caption){return graphics_text_layout_get_content_size(caption,s_small,GRect(0,0,600,16),GTextOverflowModeFill,GTextAlignmentLeft).w;}
 static int status_width(const char *caption){return s_caps?caps_width(s_caps,caption):0;}
 static void clock_caption(char *out,size_t size,const char *date,const char *ampm,int width,time_t now,const char *separator,int (*measure)(const char *)){
-  char city[44]={0},prefix[24]={0},suffix[8]={0};
+  char city[44]={0},prefix[32]={0},suffix[8]={0};
   if(city_usable(s_city,now))snprintf(city,sizeof(city),"%.39s%s",(const char *)s_city+8,city_stale(s_city,now)?"?":"");
   if(!city[0]){snprintf(out,size,"%s%s%s",date,date[0]&&ampm[0]?separator:"",ampm);return;}
   if(date[0])snprintf(prefix,sizeof(prefix),"%s%s",date,separator);
@@ -331,9 +328,11 @@ static void draw_meridiem(GContext *ctx,const char *ampm,int x,int baseline);
 static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int x,int y,int alpha);
 // Where the clock goes, and the Dymaxion nameplate when it is on and fits
 // (a clock below the map moves down to make room for it).
+// The clock strip's height: 40 pixels for Chamfer and the system fonts, 46 otherwise.
+static int clock_height(void){return s_display[1]>=4?40:46;}
 static int clock_layout(int visible,bool *plate,int *px,int *py){
-  int h=(s_settings[FLAGS]&STACKED)?84:s_display[1]>=4?40:46;bool shown;int x,y;
-  int top=nameplate_layout(s_settings[MAP_Y],s_settings[TIME_Y],h,s_settings[FLAGS]&STACKED,visible,&shown,&x,&y);
+  int h=clock_height();bool shown;int x,y;
+  int top=nameplate_layout(s_settings[MAP_Y],s_settings[TIME_Y],h,visible,&shown,&x,&y);
   if(!(s_display[2]&DISPLAY_NAMEPLATE)){shown=false;top=clock_top_for_visible(s_settings[TIME_Y],h,visible);}
   if(plate){*plate=shown;if(shown){*px=x;*py=y;}}
   return top;
@@ -369,19 +368,12 @@ static void beside_update(bool target){
 }
 static GColor faded(GColor c,int alpha){return alpha>=1000?c:(GColor){.argb=mix_color(color(0).argb,c.argb,alpha)};}
 static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
-  int x=s_settings[TIME_X],w=(s_settings[FLAGS]&STACKED)?72:200;
-  int h=(s_settings[FLAGS]&STACKED)?84:s_display[1]>=4?40:46;
+  int x=s_settings[TIME_X],w=200,h=clock_height();
   int y=clock_layout(visible,NULL,NULL,NULL);
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(x,y,w,h),0,GCornerNone);
-  char timebuf[8],datebuf[96];int hour=local->tm_hour;if(!is_24()){hour%=12;if(!hour)hour=12;}
+  char timebuf[8];int hour=local->tm_hour;if(!is_24()){hour%=12;if(!hour)hour=12;}
   const char *ampm=is_24()?"":(local->tm_hour<12?"AM":"PM");
-  if(s_settings[FLAGS]&STACKED) {
-    snprintf(timebuf,sizeof(timebuf),leading_zero()?"%02d":"%d",hour);text(ctx,timebuf,s_large,GRect(x,y-14,w,44),GTextAlignmentCenter,color(6));
-    snprintf(timebuf,sizeof(timebuf),"%02d",local->tm_min);text(ctx,timebuf,s_large,GRect(x,y+21,w,44),GTextAlignmentCenter,color(6));
-    line(ctx,x+25,y+35,x+47,y+35,color(7));
-    clock_caption(datebuf,sizeof(datebuf),"",ampm,w-4,now," / ",caption_width);
-    text(ctx,datebuf,s_small,GRect(x,y+69,w,15),GTextAlignmentCenter,color(7));
-  }else {
+  {
     snprintf(timebuf,sizeof(timebuf),"%02d:%02d",hour,local->tm_min);
     if(hour<10&&!leading_zero())timebuf[0]=' ';
     uint8_t digits[4]={timebuf[0]==' '?10:timebuf[0]-'0',timebuf[1]-'0',timebuf[3]-'0',timebuf[4]-'0'};
@@ -600,9 +592,9 @@ static bool zones_in_panel(int visible){
   return false;
 }
 static void draw_status_line(GContext *ctx,struct tm *local,time_t now,const char *battery){
-  // AM/PM belongs to the clock when it can show it (Chamfer or stacked), which
-  // leaves the status line room for the city.
-  bool clock_ampm=(s_settings[FLAGS]&STACKED)||(s_display[1]==4&&!s_beside);
+  // AM/PM belongs to the clock when it can show it (Chamfer, with nothing
+  // beside it), which leaves the status line room for the city.
+  bool clock_ampm=s_display[1]==4&&!s_beside;
   char date[24],status[96];const char *ampm=is_24()||clock_ampm?"":(local->tm_hour<12?"AM":"PM");
   snprintf(date,sizeof(date),"%s %02d %s",(const char *[]){"Sun","Mon","Tue","Wed","Thu","Fri","Sat"}[local->tm_wday],local->tm_mday,
     (const char *[]){"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"}[local->tm_mon]);
@@ -629,7 +621,7 @@ static void draw_status_section(GContext *ctx,struct tm *local,time_t now){
 }
 static void update_beside(int visible){
   uint8_t when=(s_display[2]>>2)&3;
-  beside_update(s_caps&&zones_beside(s_display[1],s_settings[FLAGS]&STACKED,when,zone_position(),zones_in_panel(visible)));
+  beside_update(s_caps&&zones_beside(s_display[1],when,zone_position(),zones_in_panel(visible)));
 }
 // An animation frame: only the clock strip and/or the tray, plus whatever a
 // full frame draws over them afterwards (the tray where a low clock reaches
@@ -638,8 +630,7 @@ static void draw_parts(GContext *ctx,time_t now,struct tm *local,int visible){
   bool beside=s_beside,tray=s_parts&PART_TRAY;
   if(s_parts&PART_CLOCK){
     update_beside(visible);draw_time(ctx,local,now,visible);
-    int h=(s_settings[FLAGS]&STACKED)?84:s_display[1]>=4?40:46;
-    if(clock_layout(visible,NULL,NULL,NULL)+h>TRAY_Y)tray=true;
+    if(clock_layout(visible,NULL,NULL,NULL)+clock_height()>TRAY_Y)tray=true;
   }
   if(tray)draw_tray_section(ctx,now,local,visible);
   if(s_beside!=beside)draw_status_section(ctx,local,now);
@@ -722,30 +713,26 @@ static void pulse_on_zones(void){
   s_zones_shown=shown;
 }
 static uint64_t gesture_now(void){time_t seconds;uint16_t ms;time_ms(&seconds,&ms);return (uint64_t)seconds*1000+ms;}
-// Pebble's accelerometer events are distinct from touchscreen taps. The lit-only
-// option subscribes to motion only while the focused face has its light on.
+// Pebble's accelerometer events are distinct from touchscreen taps.
 static void tapped(AccelAxisType axis,int32_t direction) {
   if(!s_focused||!panels_shake_enabled())return;
   uint64_t now=gesture_now();
-  if(panels_light_only()&&!panel_light_ready(&s_gesture_light,light_is_on(),now))return;
   int page=panels_page();
   if(panel_tap(&s_tap,now,panels_flicks())&&panels_cycle(time(NULL))){panels_note_manual(time(NULL));tray_start(page);redraw();pulse_on_zones();}
 }
 static void backlight_changed(bool on){
-  panel_light_update(&s_gesture_light,on,gesture_now());
-  configure_shake();
   // A screen tap can light the watch even though watchfaces cannot receive it.
   if(on&&s_focused&&power_dark_paused(power(),local_hour(),quiet()))redraw();
 }
 static void configure_shake(void) {
-  bool observe_light=s_focused&&((panels_shake_enabled()&&panels_light_only())||((power()[0]&(POWER_NIGHT|POWER_QUIET_TIME))&&(power()[0]&POWER_DARK_PAUSE)));
+  // The backlight is watched only for Pause in the dark.
+  bool observe_light=s_focused&&(power()[0]&(POWER_NIGHT|POWER_QUIET_TIME))&&(power()[0]&POWER_DARK_PAUSE);
   if(observe_light!=s_backlight_subscribed){
-    s_gesture_light=(PanelLightState){0};
-    if(observe_light){backlight_service_subscribe(backlight_changed);panel_light_update(&s_gesture_light,light_is_on(),gesture_now());}
+    if(observe_light)backlight_service_subscribe(backlight_changed);
     else backlight_service_unsubscribe();
     s_backlight_subscribed=observe_light;
   }
-  bool wanted=s_focused&&panels_shake_enabled()&&(!panels_light_only()||s_gesture_light.on);
+  bool wanted=s_focused&&panels_shake_enabled();
   if(wanted==s_accel_subscribed)return;
   memset(&s_tap,0,sizeof(s_tap));
   if(wanted)accel_tap_service_subscribe(tapped);else accel_tap_service_unsubscribe();
@@ -838,7 +825,6 @@ static void init(void) {
     persist_write_data(3,s_display,DISPLAY_SIZE);
   uint8_t custom[PALETTE_SIZE];int palette_length=persist_read_data(4,custom,sizeof(custom));
   if(palette_valid(custom,palette_length))memcpy(s_palette,custom,PALETTE_SIZE);
-  s_large=fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_DRAFT_44));
   s_small=fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_DRAFT_12));
   s_zone=fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_DRAFT_18));
   ResHandle caps=resource_get_handle(RESOURCE_ID_TYPE_CAPS);size_t caps_length=resource_size(caps);
@@ -866,7 +852,7 @@ static void deinit(void) {
   tray_end();
   tick_timer_service_unsubscribe();unobstructed_area_service_unsubscribe();if(s_accel_subscribed)accel_tap_service_unsubscribe();if(s_backlight_subscribed)backlight_service_unsubscribe();battery_state_service_unsubscribe();connection_service_unsubscribe();app_message_deregister_callbacks();
   layer_destroy(s_layer);window_destroy(s_window);if(s_map)gbitmap_destroy(s_map);
-  fonts_unload_custom_font(s_large);fonts_unload_custom_font(s_small);fonts_unload_custom_font(s_zone);
+  fonts_unload_custom_font(s_small);fonts_unload_custom_font(s_zone);
   clock_release();free(s_caps);
 }
 int main(void) {init();app_event_loop();deinit();}

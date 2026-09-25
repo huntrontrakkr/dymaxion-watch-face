@@ -86,10 +86,9 @@ Saved stations stay selected when you travel. Use **Find nearby NOAA stations**
 to look again; coastal presets and custom stations remain available without
 location permission.
 
-To change bottom panels, flick your wrist twice within two seconds, settling
-between flicks. For an alternative, select **A window on the day → Panel gesture
-→ Light the screen, then flick once**. Wake the backlight, pause briefly, then
-flick once. This option listens for motion only while the light is on. Screen
+To change bottom panels, flick your wrist twice within two seconds, pausing
+briefly between flicks. One or three flicks are also available under **Bottom
+panels → Panel gesture**. Screen
 taps can wake Pebble's backlight, but Pebble does not currently give touchscreen
 events to watchfaces (buttons and touch stay with the system). Automatic
 rotation is also available, including **Smart**, which picks the page for you.

@@ -40,8 +40,8 @@ try{
     await lettering.selectOption(style);await page.waitForTimeout(40);assert.equal(await page.locator('#preview-error').textContent(),'','preview supports '+style);
   }
   await lettering.selectOption('chamfer');
-  await page.locator('#preset').selectOption('horizon');await page.locator('#stacked').check();await page.waitForTimeout(40);assert.equal(await page.locator('#preview-error').textContent(),'');
-  await page.locator('#stacked').uncheck();await page.locator('#preset').selectOption('meridian');
+  await page.locator('#preset').selectOption('horizon');await page.waitForTimeout(40);assert.equal(await page.locator('#preview-error').textContent(),'');
+  await page.locator('#preset').selectOption('meridian');
   await openSection('Places');
   let mode='ok',requests=0;
   await page.route('https://geocoding-api.open-meteo.com/**',async route=>{
@@ -73,7 +73,7 @@ try{
   mode='offline';await search.fill('Norfolk');await page.getByText('City search is unavailable.',{exact:false}).waitFor();
   await page.getByRole('listbox',{name:'Matching cities'}).getByRole('option').filter({hasText:'Norfolk'}).tap();assert.equal(await page.getByLabel('Label for place 1',{exact:true}).inputValue(),'ORF','offline city remains selectable by touch');
   await openSection('Bottom panels');await page.getByLabel('Starting panel',{exact:true}).selectOption('weather');
-  await page.getByLabel('Panel gesture',{exact:true}).selectOption('4');
+  await page.getByLabel('Panel gesture',{exact:true}).selectOption('3');
   await page.getByText('Weather & humidity',{exact:true}).click();
   const forecast=page.getByLabel('Forecast location',{exact:true});assert.equal(await forecast.inputValue(),'current');
   await forecast.selectOption('1');await page.waitForTimeout(40);assert.equal(await page.locator('#preview-error').textContent(),'');
@@ -91,6 +91,6 @@ try{
   assert(response.startsWith('pebblejs://close#'),'Save returns settings to Pebble');
   const saved=JSON.parse(decodeURIComponent(response.split('#')[1]));assert.equal(saved.places[0].label,'ORF');assert.equal(saved.places[0].icon,4);assert.equal(saved.theme,4);assert.equal(saved.footer.home,'weather');
   assert.equal(saved.footer.weather.place,'current');
-  assert.equal(saved.footer.flicks,4);
+  assert.equal(saved.footer.flicks,3);
   assert.deepEqual(errors,[]);console.log('PASS: phone settings, city search, offline fallback, race handling, native palette preview and save.');
 }finally{await browser.close();}
