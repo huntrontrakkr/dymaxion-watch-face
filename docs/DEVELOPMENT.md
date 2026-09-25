@@ -113,7 +113,8 @@ The eight lunar phases and Bluetooth rune are drawn at their final pixel size
 in `shared/` and packed into a native C table by `npm run generate:status`.
 Rounded broad numerals animate only during their 400 ms minute transition;
 there is no continuous animation or additional sensor.
-Run `pebble clean` before building after changes to AppMessage keys or resources.
+Run `pebble clean` before building after changes to the package version,
+AppMessage keys or resources, so the PBW includes the current metadata.
 
 Tests require a host C compiler (`cc`). Playwright may require its documented
 Linux runtime libraries. The current build has passed the core C/JavaScript
