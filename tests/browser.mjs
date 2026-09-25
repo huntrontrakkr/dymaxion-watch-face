@@ -85,7 +85,7 @@ try{
   handlers.webviewclosed({response:encodeURIComponent(JSON.stringify(litGesture))});
   assert.equal(messages.findLast(m=>m.FOOTER).FOOTER[52],4,'phone sends the backlight-gated gesture');
   assert.deepEqual(Array.from(messages[0].DISPLAY),[3,4,36,0,0,22,7,10],'a fresh install shows Chamfer figures, with default power and motion');
-  handlers.showConfiguration();assert.ok(opened.startsWith('data:text/html;charset=utf-8,'));
+  await handlers.showConfiguration();assert.ok(opened.startsWith('data:text/html;charset=utf-8,'));
   const mobile=await browser.newPage({viewport:{width:390,height:844}});mobile.on('pageerror',e=>errors.push(e.message));await mobile.goto(opened);
   await mobile.locator('details').evaluateAll(nodes=>nodes.forEach(d=>d.open=true));
   assert.equal(await mobile.locator('#theme option').count(),THEMES.filter(t=>!t.hidden).length);
@@ -110,7 +110,11 @@ try{
     assert.equal(JSON.parse(store.get('dymaxion-settings-v1')).theme,theme);
   }
   // An imported easter egg remains selectable in phone settings.
-  handlers.showConfiguration();const eggPhone=await browser.newPage();await eggPhone.goto(opened);
+  let fixes=0;context.navigator={geolocation:{getCurrentPosition:success=>{fixes++;success({coords:{latitude:36.85081,longitude:-76.28592}});}}};
+  await handlers.showConfiguration();const eggPhone=await browser.newPage();await eggPhone.goto(opened);
+  const position=await eggPhone.evaluate(()=>window.DYMAXION_CONFIG.position);
+  assert.equal(position.lat,36.851);assert.equal(position.lon,-76.286);
+  await handlers.showConfiguration();assert.equal(fixes,1,'configuration reuses the shared low-power location fix');
   const egg=THEMES.findIndex(t=>t.slug==='hot-dog-stand');
   assert.equal(await eggPhone.locator('#theme').inputValue(),String(egg));await eggPhone.close();
   const eggPage=await browser.newPage();eggPage.on('pageerror',e=>errors.push(e.message));

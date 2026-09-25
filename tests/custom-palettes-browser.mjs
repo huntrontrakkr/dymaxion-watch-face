@@ -71,7 +71,7 @@ try{
   assert.deepEqual(Array.from(packet.PALETTE),[...encodePalette(s)]);
   assert.deepEqual(Array.from(packet.FOOTER),[...encodeFooter(s)]);
   assert.equal(packet.SETTINGS[86],pebbleColor(s.customPalettes[0].marks[0]));
-  handlers.showConfiguration();
+  await handlers.showConfiguration();
   const phone=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:3});phone.on('pageerror',e=>errors.push(e.message));
   await phone.goto(opened);
   await phone.locator('details').evaluateAll(nodes=>nodes.forEach(d=>d.open=true));
@@ -92,7 +92,7 @@ try{
   const phoneSaved=JSON.parse(store.get('dymaxion-settings-v1'));
   assert.equal(phoneSaved.customPalettes[0].name,'Ocean & <draft>');assert.equal(phoneSaved.customPalettes[0].ink,'#FFFFAA');
   assert.deepEqual(Array.from(messages.findLast(m=>m.PALETTE).PALETTE),[...encodePalette(phoneSaved)]);
-  handlers.showConfiguration();await phone.goto(opened);
+  await handlers.showConfiguration();await phone.goto(opened);
   await phone.locator('details').evaluateAll(nodes=>nodes.forEach(d=>d.open=true));
   assert.equal(await phone.getByLabel('Palette name',{exact:true}).inputValue(),'Ocean & <draft>','palette names round trip through escaped inline configuration');
   phoneSaved.customPalette=null;handlers.webviewclosed({response:JSON.stringify(phoneSaved)});

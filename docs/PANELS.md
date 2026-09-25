@@ -201,12 +201,33 @@ service terms are in [NOTICE](../NOTICE).
 [NOAA CO-OPS](https://api.tidesandcurrents.noaa.gov/api/prod/) provides hourly
 harmonic predictions and high/low events. Requests use UTC and metric MLLW
 (mean lower low water); display conversion happens locally. Predictions refresh
-every six hours. Eleven presets cover selected U.S. coastal locations, Alaska,
-Hawaii and Puerto Rico. A custom harmonic station ID, label and IANA time zone
-can be entered. Choose a station explicitly; geographical proximity alone does
-not establish tidal equivalence. Subordinate stations that only supply high/low
-events cannot supply this hourly curve and show an unavailable state. These are
-astronomical predictions, not observed water levels or storm-surge forecasts.
+every six hours.
+
+When Tide is enabled or its settings are opened without a saved station, the
+phone suggests the closest reference (harmonic) station within 150 km. Up to
+five nearby alternatives show their names and straight-line distances. The
+[NOAA metadata API](https://api.tidesandcurrents.noaa.gov/mdapi/prod/) supplies
+the station catalog; subordinate stations are excluded because they cannot
+supply the hourly curve. Station details supply the standard UTC offset and
+daylight-saving flag, which are mapped to an IANA zone independently of the
+phone's own zone. Unsupported or missing time-zone metadata requires a manual
+choice. The short label remains editable.
+
+This is a setup default, saved as an ordinary fixed station. It never silently
+changes an existing station while travelling. **Find nearby NOAA stations**
+refreshes the alternatives; the user can choose a better match for their
+waterway. Proximity alone does not establish tidal equivalence. Without a
+nearby station, a network connection or location permission, eleven coastal
+presets and manual ID/label/time-zone entry remain available.
+
+Opening phone settings reuses the low-accuracy location fix shared with weather
+and city naming (up to fifteen minutes old). The data-URL settings page receives
+coordinates rounded to three decimal places; the coarser city-caption cache
+is not used for station ranking. No coordinates are sent to NOAA. Metadata is
+cached for seven days where browser storage is available, or for the current
+settings session otherwise. Finding a station adds no background polling or
+sensor work on the watch. These are astronomical predictions, not observed
+water levels or storm-surge forecasts.
 
 The phone caches 49 hourly samples per provider and the watch persists compact
 copies. A minute tick advances through those samples without fetching each

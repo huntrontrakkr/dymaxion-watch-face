@@ -25,7 +25,11 @@ function preview(){
   });
 }
 function changed(){preview();$('save-status').textContent='Changes ready to save';}
-const panelEditor=panelControls($('panel-controls'),()=>s,footer=>{const before=s.footer.home;s.footer=validateSettings({...s,footer},exists).footer;if(before!==s.footer.home)previewPage=s.footer.home;changed();});
+const panelEditor=panelControls($('panel-controls'),()=>s,footer=>{const before=s.footer.home;s.footer=validateSettings({...s,footer},exists).footer;if(before!==s.footer.home)previewPage=s.footer.home;changed();},{getPosition:async()=>{
+  const p=data.position,age=Date.now()-p?.fetched;
+  if(!p||!Number.isFinite(p.lat)||Math.abs(p.lat)>90||!Number.isFinite(p.lon)||Math.abs(p.lon)>180||!(age>=0&&age<15*60000))throw new Error('Phone location unavailable. Enable location for Pebble, then reopen settings. You can also choose a station manually.');
+  return {coords:{latitude:p.lat,longitude:p.lon}};
+}});
 const cityEditor=cityControls($('city-controls'),()=>s,location=>{s.location=validateSettings({...s,location},exists).location;changed();});
 const displayEditor=displayControls($('display-controls'),()=>s,value=>{s={...withClockDisplay(s,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,nameplate:value.nameplate};refresh();});
 for(const selector of ['[data-zone-times]','[data-zone-position]','[data-map-turn]'])$('place-clock-options').append($('display-controls').querySelector(selector).closest('label'));

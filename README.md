@@ -75,6 +75,14 @@ and daylight stay together; a saved city is an optional override. Upgrading keep
 existing choices: select **Weather & humidity → Forecast location → Current
 location** once if your previous version was set to a saved place.
 
+Enable **Tide** under **A window on the day** to suggest the nearest NOAA station
+with hourly predictions, within 150 km of your phone. **NOAA tides** shows nearby
+alternatives and distances; the station ID, short label and time zone fill in
+automatically. Choose the station that fits your waterway, then **Save to watch**.
+Saved stations stay selected when you travel. Use **Find nearby NOAA stations**
+to look again; coastal presets and custom stations remain available without
+location permission.
+
 To change bottom panels, flick your wrist twice within two seconds, settling
 between flicks. For an alternative, select **A window on the day → Panel gesture
 → Light the screen, then flick once**. Wake the backlight, pause briefly, then

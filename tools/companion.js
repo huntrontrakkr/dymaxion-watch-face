@@ -4,6 +4,7 @@ import {encodeSettings,zoneExists} from '../shared/protocol.js';
 import {encodeFooter,encodeEnvironment} from '../shared/panel-protocol.js';
 import {environmentService} from './environment-service.js';
 import {locationService} from './location-service.js';
+import {devicePosition} from './device-position.js';
 import {encodeCity} from '../shared/city.js';
 import {encodeDisplay} from '../shared/display.js';
 import {encodePalette} from '../shared/palette-protocol.js';
@@ -23,10 +24,14 @@ function flush(){
 }
 Pebble.addEventListener('ready',sync);
 Pebble.addEventListener('appmessage',sync);
-Pebble.addEventListener('showConfiguration',()=>{
+Pebble.addEventListener('showConfiguration',async()=>{
   let city=null;
   try{const cached=JSON.parse(localStorage.getItem('dymaxion-current-city-v1')||'null');if(cached&&Number.isFinite(cached.lat)&&Number.isFinite(cached.lon))city={name:cached.name,lat:cached.lat,lon:cached.lon};}catch{}
-  const config=JSON.stringify({settings,zoneNames:moment.tz.names(),city}).replace(/</g,'\\u003c');
+  // Data-URL configuration pages cannot reliably request location themselves.
+  // Reuse the phone's low-power fix, also shared by weather and city naming.
+  let position=null;
+  try{const p=await devicePosition();position={lat:+p.coords.latitude.toFixed(3),lon:+p.coords.longitude.toFixed(3),fetched:Date.now()};}catch{}
+  const config=JSON.stringify({settings,zoneNames:moment.tz.names(),city,position}).replace(/</g,'\\u003c');
   Pebble.openURL('data:text/html;charset=utf-8,'+encodeURIComponent(html.replace('__CONFIG__',()=>config)));
 });
 Pebble.addEventListener('webviewclosed',event=>{

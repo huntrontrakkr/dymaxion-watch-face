@@ -22,6 +22,12 @@ Tide predictions: NOAA CO-OPS (https://tidesandcurrents.noaa.gov/), hourly
 harmonic predictions relative to MLLW; not observed water levels.
 tests/fixtures/weather.json and tide-*.json contain provider responses captured
 on 2026-09-23 for New York / The Battery, with metadata in environment-meta.json.
+Nearby station lookup uses the NOAA CO-OPS Metadata API
+(https://api.tidesandcurrents.noaa.gov/mdapi/prod/). noaa-stations.json and
+noaa-station-details.json under tests/fixtures contain selected metadata fields
+retrieved on 2026-09-25. nearby-tide-*.json contain real predictions for
+Portsmouth, Norfolk Naval Shipyard (8638660), checked using example Norfolk
+coordinates; nearby-tide-meta.json records the capture time and station.
 The bottom chart and calendar design was studied from ForecasWatch 2 by Matt
 Rossman (https://github.com/mattrossman/forecaswatch2). Its code and assets are
 not bundled; this project's rendering and data pipeline are independent.

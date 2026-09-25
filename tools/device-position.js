@@ -3,7 +3,7 @@ function locate(){return new Promise((resolve,reject)=>{
   if(typeof navigator==='undefined'||!navigator.geolocation){reject(new Error('Location access is unavailable.'));return;}
   navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:false,maximumAge:MAX_AGE,timeout:10000});
 });}
-// City naming and weather share one coarse, on-demand fix. No location watch
+// City naming, weather and tide setup share one coarse, on-demand fix. No location watch
 // or high-accuracy GPS runs in the background.
 export function positionProvider({getPosition=locate,now=Date.now}={}){
   let cached=null,fetched=0,pending=null;

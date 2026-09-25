@@ -1,9 +1,10 @@
-import {PANEL_PAGES,TIDE_STATIONS,panelColors} from './panel-settings.js';
+import {PANEL_PAGES,panelColors} from './panel-settings.js';
 import {HOLIDAY_REGIONS} from './calendar.js';
+import {tideStationPicker} from './tide-station-picker.js';
 const clone=x=>JSON.parse(JSON.stringify(x));
 const get=(f,path)=>path.split('.').reduce((o,k)=>o[k],f);
 const set=(f,path,value)=>{const keys=path.split('.');keys.slice(0,-1).reduce((o,k)=>o[k],f)[keys.at(-1)]=value;};
-export function panelControls(root,getSettings,onChange){
+export function panelControls(root,getSettings,onChange,{getPosition}={}){
   const toggle=(path,title,note='')=>`<label class="toggle"><span>${title}${note?`<small>${note}</small>`:''}</span><input type="checkbox" data-panel="${path}" aria-label="${title}"></label>`;
   const select=(path,title,entries)=>`<label class="field">${title}<select data-panel="${path}" aria-label="${title}">${entries.map(([value,label])=>`<option value="${value}">${label}</option>`).join('')}</select></label>`;
   const number=(path,title,min,max,step=1)=>`<label class="field">${title}<input type="number" data-panel="${path}" aria-label="${title}" min="${min}" max="${max}" step="${step}"></label>`;
@@ -27,12 +28,18 @@ export function panelControls(root,getSettings,onChange){
     +toggle('weather.humidityLine','Humidity on the weather chart','A dotted line on a fixed 0–100% scale; the header gives the value.')+toggle('weather.rangeLabels','Show range labels')+toggle('weather.grid','Show a faint midline')+`</details></details>`
     +`<details><summary>Two-week calendar</summary>`+select('calendar.weekStart','First day of week',[[0,'Sunday'],[1,'Monday'],[6,'Saturday']])+select('calendar.weeks','Calendar weeks',[['current-next','This week and next'],['previous-current','Last week and this week']])
     +select('calendar.weekends','Weekend highlighting',[['sat-sun','Saturday and Sunday'],['fri-sat','Friday and Saturday'],['none','Off']])+select('calendar.holidays','Holiday highlighting',HOLIDAY_REGIONS.map(([id,name])=>[id,id==='us'?'United States — federal, observed dates':id==='none'?name:name+' — national public holidays']))+select('calendar.todayStyle','Today highlight',[['fill','Filled cell'],['outline','Outline']])+`</details>`
-    +`<details><summary>NOAA tides</summary><label class="field">Tide station<select data-station aria-label="Tide station"><option value="">Choose a station</option>${TIDE_STATIONS.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}<option value="custom">Custom NOAA harmonic station</option></select></label>`
-    +input('tide.station','NOAA station ID',7)+input('tide.label','Tide label',7)+input('tide.tz','Tide station time zone')+select('tide.unit','Tide height units',[['m','Meters relative to MLLW'],['ft','Feet relative to MLLW']])
+    +`<details data-tide-section><summary>NOAA tides</summary><div data-tide-picker></div><details data-tide-details><summary>Station details & custom station</summary>`
+    +input('tide.station','NOAA station ID',7)+input('tide.label','Tide label',7)+input('tide.tz','Tide station time zone')+`</details>`+select('tide.unit','Tide height units',[['m','Meters relative to MLLW'],['ft','Feet relative to MLLW']])
     +toggle('tide.zeroLine','Show tide zero line')+select('tide.scale','Tide scale',[['auto','Fit the prediction'],['fixed','Fixed bounds in selected units']])+`<div class="panel-pair">`+number('tide.min','Tide minimum',-100,99,.1)+number('tide.max','Tide maximum',-99,100,.1)+`</div>`
     +`<p class="micro">Hourly NOAA harmonic predictions, refreshed every six hours. H/L times use the station’s time zone. These are astronomical predictions, not observed water levels or storm surge. <a href="https://tidesandcurrents.noaa.gov/tide_predictions.html" target="_blank" rel="noreferrer">Find a NOAA station</a>.</p></details>`
     +`<details><summary>Panel colors</summary><div class="panel-pair"><span data-color-mode></span><button type="button" data-theme-colors>Use theme colors</button></div><div class="panel-color-grid">${[['temperature','Temperature'],['rain','Rain'],['humidity','Humidity'],['tide','Tide'],['saturday','Weekend'],['holiday','Holiday'],['today','Today']].map(([key,title])=>`<label class="field">${title}<input type="color" data-panel="colors.${key}" aria-label="${title} panel color"></label>`).join('')}</div><p class="micro">Panel colors follow the palette until you edit one. Custom colors stay with you when you change palettes. Every color snaps to Pebble’s 64-color palette.</p></details><p data-panel-error role="alert" class="notice error"></p>`;
   function commit(f,input){try{onChange(f);root.querySelector('[data-panel-error]').textContent='';input?.setCustomValidity('');refresh();}catch(e){root.querySelector('[data-panel-error]').textContent=e.message;if(input){input.setCustomValidity(e.message);input.reportValidity();}}}
+  const tidePicker=tideStationPicker(root.querySelector('[data-tide-picker]'),{
+    getTide:()=>getSettings().footer.tide,getPosition,
+    onSelect:station=>{const f=clone(getSettings().footer);Object.assign(f.tide,station);commit(f);},
+    onCustom:()=>{root.querySelector('[data-tide-details]').open=true;root.querySelector('[data-panel="tide.station"]').focus();}
+  });
+  root.querySelector('[data-tide-section]').ontoggle=e=>{if(e.target.open)tidePicker.suggest();};
   root.querySelectorAll('[data-panel]').forEach(el=>{
     el.oninput=()=>el.setCustomValidity('');
     el.onchange=()=>{
@@ -47,7 +54,6 @@ export function panelControls(root,getSettings,onChange){
     };
   });
   root.querySelector('[data-theme-colors]').onclick=()=>{const f=clone(getSettings().footer);f.colorMode='theme';commit(f);};
-  root.querySelector('[data-station]').onchange=e=>{if(e.target.value==='custom'){root.querySelector('[data-panel="tide.station"]').focus();return;}const f=clone(getSettings().footer),station=TIDE_STATIONS.find(s=>s.id===e.target.value);Object.assign(f.tide,station?{station:station.id,label:station.label,tz:station.tz}:{station:''});commit(f);};
   function refresh(){
     const settings=getSettings(),f=settings.footer;
     const shown={...f,colors:panelColors(settings)};
@@ -58,7 +64,8 @@ export function panelControls(root,getSettings,onChange){
     root.querySelector('[data-gesture-help]').textContent=f.flicks===4?'Light the screen using your usual watch gesture, let your wrist settle briefly, then flick once to change panels. Motion listening stops when the light goes out. If daylight keeps the backlight off, use another gesture mode or automatic rotation.':'Let your wrist settle between flicks. Screen taps only control Pebble’s backlight; Pebble does not currently deliver touchscreen input to watchfaces.';
     const home=root.querySelector('[data-panel="home"]');home.replaceChildren();f.pages.forEach(id=>home.add(new Option(PANEL_PAGES.find(([p])=>p===id)[1],id)));home.value=f.home;
     root.querySelector('[data-panel="weather.place"]').querySelectorAll('option').forEach(o=>{if(o.value!=='current')o.textContent=`Place ${+o.value+1} / ${settings.places[+o.value].name}`;});
-    root.querySelector('[data-station]').value=TIDE_STATIONS.some(s=>s.id===f.tide.station)?f.tide.station:f.tide.station?'custom':'';
+    tidePicker.refresh();
+    if(f.enabled&&f.pages.includes('tide'))tidePicker.suggest();
     const order=root.querySelector('[data-order]');order.replaceChildren();
     [...f.pages,...PANEL_PAGES.map(([id])=>id).filter(id=>!f.pages.includes(id))].forEach(id=>{
       const row=document.createElement('div');row.className='panel-order-row';const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=f.pages.includes(id);check.setAttribute('aria-label','Include '+PANEL_PAGES.find(([p])=>p===id)[1]);label.append(check,document.createTextNode(PANEL_PAGES.find(([p])=>p===id)[1]));row.append(label);

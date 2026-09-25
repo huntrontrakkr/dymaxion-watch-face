@@ -1,0 +1,52 @@
+{
+  "stations": [
+    {
+      "id": "8638660",
+      "name": "PORTSMOUTH, NORFOLK NAVAL SHIPYARD",
+      "tidal": true,
+      "greatlakes": false,
+      "state": "VA",
+      "timezone": "EST",
+      "timezonecorr": -5,
+      "observedst": true,
+      "lat": 36.8217,
+      "lng": -76.2933
+    },
+    {
+      "id": "8638671",
+      "name": "Lafayette River",
+      "tidal": true,
+      "greatlakes": false,
+      "state": "VA",
+      "timezone": "EST",
+      "timezonecorr": -5,
+      "observedst": true,
+      "lat": 36.884224,
+      "lng": -76.275856
+    },
+    {
+      "id": "1611347",
+      "name": "PORT ALLEN, HANAPEPE BAY, KAUAI ISLAND",
+      "tidal": true,
+      "greatlakes": false,
+      "state": "HI",
+      "timezone": "HAST",
+      "timezonecorr": -10,
+      "observedst": false,
+      "lat": 21.9033,
+      "lng": -159.592
+    },
+    {
+      "id": "9459881",
+      "name": "King Cove",
+      "tidal": true,
+      "greatlakes": false,
+      "state": "AK",
+      "timezone": "AKST",
+      "timezonecorr": -9,
+      "observedst": true,
+      "lat": 55.05989,
+      "lng": -162.32611
+    }
+  ]
+}
