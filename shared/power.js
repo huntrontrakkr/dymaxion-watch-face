@@ -4,8 +4,10 @@
 // 4-6 of the DISPLAY packet; the watch mirrors this in watchface/src/c/power.c.
 export const DAYLIGHT_MINUTES = [5, 10, 15, 30];
 export const NIGHT_DAYLIGHT_MINUTES = 120;
+// Animations stop at or below this battery percentage.
+export const LOW_BATTERY = [5, 10, 20, 30];
 export function defaultPower() {
-  return {daylightMinutes: 5, minuteAnimation: true, flourishes: true, night: false, nightStart: 22, nightEnd: 7, darkPause: false};
+  return {daylightMinutes: 5, minuteAnimation: true, flourishes: true, night: false, nightStart: 22, nightEnd: 7, darkPause: false, lowBattery: 10};
 }
 const hourOk = h => Number.isInteger(h) && h >= 0 && h < 24;
 export function validatePower(input) {
@@ -22,6 +24,10 @@ export function validatePower(input) {
     if (!DAYLIGHT_MINUTES.includes(input.daylightMinutes)) throw new Error('Invalid daylight update interval.');
     out.daylightMinutes = input.daylightMinutes;
   }
+  if (input.lowBattery !== undefined) {
+    if (!LOW_BATTERY.includes(input.lowBattery)) throw new Error('Invalid low-battery level.');
+    out.lowBattery = input.lowBattery;
+  }
   for (const key of ['nightStart', 'nightEnd']) {
     if (input[key] === undefined) continue;
     if (!hourOk(input[key])) throw new Error(`Invalid ${key}.`);
@@ -31,13 +37,14 @@ export function validatePower(input) {
 }
 // Byte 4: bits 0-1 index DAYLIGHT_MINUTES, bit 2 minute animation off, bit 3
 // pulse and swipes off, bit 4 night saver, bit 5 pause redraws in the dark.
-// Bytes 5 and 6: the night's first hour and the hour it ends.
+// Bytes 5 and 6: the night's first hour and the hour it ends. Byte 7: the
+// battery percentage at or below which nothing animates.
 export function encodePower(power) {
   const p = validatePower(power);
-  return [DAYLIGHT_MINUTES.indexOf(p.daylightMinutes) | (p.minuteAnimation ? 0 : 4) | (p.flourishes ? 0 : 8) | (p.night ? 16 : 0) | (p.darkPause ? 32 : 0), p.nightStart, p.nightEnd];
+  return [DAYLIGHT_MINUTES.indexOf(p.daylightMinutes) | (p.minuteAnimation ? 0 : 4) | (p.flourishes ? 0 : 8) | (p.night ? 16 : 0) | (p.darkPause ? 32 : 0), p.nightStart, p.nightEnd, p.lowBattery];
 }
-export function decodePower([bits, nightStart, nightEnd]) {
-  return {daylightMinutes: DAYLIGHT_MINUTES[bits & 3], minuteAnimation: !(bits & 4), flourishes: !(bits & 8), night: !!(bits & 16), nightStart, nightEnd, darkPause: !!(bits & 32)};
+export function decodePower([bits, nightStart, nightEnd, lowBattery]) {
+  return {daylightMinutes: DAYLIGHT_MINUTES[bits & 3], minuteAnimation: !(bits & 4), flourishes: !(bits & 8), night: !!(bits & 16), nightStart, nightEnd, darkPause: !!(bits & 32), lowBattery};
 }
 // Whether this hour falls in the night saver's hours (which may wrap past
 // midnight; the same start and end hour means all day).
@@ -61,3 +68,4 @@ export function sinceRelight(p, hour, minute) {
 export const minuteAnimationOn = (p, motion, hour) => motion && p.minuteAnimation && !isNight(p, hour);
 export const flourishesOn = (p, motion, hour) => motion && p.flourishes && !isNight(p, hour);
 export const darkPaused = (p, hour) => p.darkPause && isNight(p, hour);
+export const batteryAllowsMotion = (p, percent) => percent > p.lowBattery;

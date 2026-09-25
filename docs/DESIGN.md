@@ -183,7 +183,7 @@ status line shows the state either way.
 
 The selected place gets a one-second expanding ring on launch/settings changes.
 Its time block gets the same accent. Animation stops afterward and is suppressed
-at 20% battery or below. The browser also respects reduced-motion preferences.
+at 10% battery or below by default (**Stop animations at**). The browser also respects reduced-motion preferences.
 An optional wrist flick changes the bottom panel through Pebble's hardware tap
 detection, described in [bottom panels](PANELS.md). There is no accelerometer
 sampling and no touch handling. This version does not implement a 3D

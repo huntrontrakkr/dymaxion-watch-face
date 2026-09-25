@@ -166,7 +166,7 @@ manual name never carries a position. An older 48-byte packet is rejected, so
 the watch shows no city until the phone's next update.
 
 `DISPLAY` (10006) is eight bytes, persisted under key 3:
-`[3, style, options, background, power, night start, night end, 0]`.
+`[3, style, options, background, power, night start, night end, low battery]`.
 Style 0 selects Span, 2 selects
 rounded broad numerals, 4 Chamfer figures, and 5–8 Pebble system fonts (Leco 42,
 Bitham 42 Bold, Bitham 42 Light, Bitham 42 Medium Numbers) and 9 Leco Delta
@@ -190,7 +190,7 @@ flag bit `4 << n` of each empty pixel in `map-0.bin` byte 3, drawn in the
 palette's edge colour.
 Stacked time always uses Draft. Every horizontal style uses a temporary 400 ms
 minute-transition timer when the existing MOTION flag is enabled and battery is
-above 20%; it adds no sensor.
+above the low-battery level (byte 7); it adds no sensor.
 
 Bytes 4–6 are power and motion (`shared/power.js`, mirrored by `power.c`).
 Byte 4 bits 0–1 pick how often the map is reshaded for the moving sun: every 5,
@@ -202,8 +202,9 @@ past midnight; the same hour means all day) the map is reshaded every other
 hour, on even hours, and nothing animates. Bit 5, with the night saver, pauses
 redraws at night: the minute tick no longer redraws, and a wrist tap (the
 flick that turns on the backlight, which apps cannot read directly) brings the
-face up to date. Byte 7 is reserved and zero. The default is
-`[3, 4, 0, 0, 0, 22, 7, 0]`.
+face up to date. Byte 7 is the battery percentage at or below which nothing
+animates: 5, 10 (the default), 20 or 30. The default packet is
+`[3, 4, 0, 0, 0, 22, 7, 10]`.
 
 Four-byte version 2 packets load with default power and motion. For
 compatibility with the retired LCD/framing experiment, valid version 1

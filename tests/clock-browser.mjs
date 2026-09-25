@@ -130,7 +130,7 @@ try{
   assert(await flipsAtNextMinute(),'by day the minute change animates');
   await page.getByLabel('Night saver',{exact:true}).check();
   await page.getByLabel('Night saver from',{exact:true}).selectOption('0');await page.getByLabel('Night saver until',{exact:true}).selectOption('0');
-  assert.deepEqual(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).power,{daylightMinutes:5,minuteAnimation:true,flourishes:true,night:true,nightStart:0,nightEnd:0,darkPause:false});
+  assert.deepEqual(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).power,{daylightMinutes:5,minuteAnimation:true,flourishes:true,night:true,nightStart:0,nightEnd:0,darkPause:false,lowBattery:10});
   assert(!await flipsAtNextMinute(),'at night it does not');
   await page.getByLabel('Night saver',{exact:true}).uncheck();
   assert.deepEqual(errors,[]);console.log('PASS: actual and manual city captions, hourly lookup cache, 12-hour and stacked time, Span persistence, retired triangular display, system fonts, the map background, and place times beside the clock and on the map, and the nameplate.');

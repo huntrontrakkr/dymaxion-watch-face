@@ -62,6 +62,15 @@ static bool s_beside; // place times beside the clock this frame (or on their wa
 // clock making room for the place times beside it. One timer drives both
 // while either runs; none runs at rest.
 static AppTimer *s_motion_timer;
+// Partial redraws. The window's background is clear, so the screen keeps its
+// last frame between redraws: most redraws repaint everything, but animation
+// frames repaint only what moves, the clock strip (minute change, glide) or
+// the bottom tray (swipe), and everything else stays as it was.
+#define PART_CLOCK 1
+#define PART_TRAY 2
+static bool s_full=true;static uint8_t s_parts;
+static void redraw(void){s_full=true;layer_mark_dirty(s_layer);}
+static void redraw_part(uint8_t part){s_parts|=part;layer_mark_dirty(s_layer);}
 static bool s_tray_active;static int s_tray_from;static uint32_t s_tray_started;static uint8_t *s_tray_old;
 static bool s_beside_known,s_beside_to;static int s_beside_from,s_beside_p;static uint32_t s_beside_started;
 static MapTimeSpot s_map_spots[3];
@@ -161,7 +170,8 @@ static void clock_step(void *context){
     s_clock_timer=app_timer_register(remaining<33?remaining:33,clock_step,NULL);
     if(!s_clock_timer)s_clock_running=false;
   }
-  layer_mark_dirty(s_layer);
+  // Its frames also carry a tray swipe running alongside (motion_continue).
+  redraw_part(PART_CLOCK|(s_tray_active?PART_TRAY:0));
 }
 static bool leading_zero(void){return !(s_display[2]&2);}
 static void clock_prepare(struct tm *local,time_t now,bool animate){
@@ -172,7 +182,7 @@ static void clock_prepare(struct tm *local,time_t now,bool animate){
   time_t minute=now/60;
   if(s_clock_ready&&minute==s_clock_minute&&format==s_clock_24&&!memcmp(digits,s_clock_digits,4))return;
   bool smooth=animate&&s_clock_ready&&minute==s_clock_minute+1&&format==s_clock_24
-    &&s_focused&&power_minute_animation(power(),s_settings[FLAGS]&MOTION,local->tm_hour)&&s_battery.charge_percent>20;
+    &&s_focused&&power_minute_animation(power(),s_settings[FLAGS]&MOTION,local->tm_hour)&&power_battery_allows_motion(power(),s_battery.charge_percent);
   clock_stop();clock_flip_prepare(&s_clock_flip,s_clock_ready?s_clock_digits:digits,digits);
   memcpy(s_clock_digits,digits,4);s_clock_ready=true;s_clock_minute=minute;s_clock_24=format;s_clock_frame=UINT16_MAX;
   if(smooth&&s_clock_flip.changed_cells){
@@ -241,7 +251,7 @@ static void clock_configure(void){
   if(!face||!s_clock_memory||!s_clock_pixels){clock_release();return;}
   clock_flip_attach(&s_clock_flip,face,s_clock_memory);s_clock_face=face;
 }
-static void focus_changed(bool focused){s_focused=focused;clock_stop();s_clock_ready=false;if(focused)layer_mark_dirty(s_layer);}
+static void focus_changed(bool focused){s_focused=focused;clock_stop();s_clock_ready=false;if(focused)redraw();}
 static float lunar_sin(float degrees) {
   float turns=degrees/360.0f;
   turns-=(int32_t)turns;
@@ -321,8 +331,11 @@ static int clock_layout(int visible,bool *plate,int *px,int *py){
   if(plate){*plate=shown;if(shown){*px=x;*py=y;}}
   return top;
 }
-static bool motion_allowed(void){return power_flourishes(power(),s_settings[FLAGS]&MOTION,local_hour())&&s_battery.charge_percent>20&&s_focused;}
-static void motion_step(void *context){(void)context;s_motion_timer=NULL;layer_mark_dirty(s_layer);}
+static bool motion_allowed(void){return power_flourishes(power(),s_settings[FLAGS]&MOTION,local_hour())&&power_battery_allows_motion(power(),s_battery.charge_percent)&&s_focused;}
+static void motion_step(void *context){
+  (void)context;s_motion_timer=NULL;
+  redraw_part((s_tray_active?PART_TRAY:0)|(s_beside_p!=(s_beside_to?1000:0)?PART_CLOCK:0));
+}
 // While the minute animation runs, its redraws carry the transitions too:
 // one frame timer at a time, however many animations overlap.
 static void motion_continue(void){
@@ -524,7 +537,7 @@ static void map_times_place_now(void *context){
   if(spots.plate){int mx=s_settings[MAP_X],my=s_settings[MAP_Y];
     obstacles[count++]=(MapRect){(int16_t)(spots.plate_x-1-mx),(int16_t)(spots.plate_y-1-my),(int16_t)(spots.plate_x+WORDMARK_WIDTH-mx),(int16_t)(spots.plate_y+WORDMARK_HEIGHT-my)};}
   map_times_place(blocked,places,obstacles,count,spots.layout,spots.n,s_display[2]&ZONE_TIMES_TURN,blocked+MAP_TIMES_MASK_BYTES,s_map_spots);
-  free(blocked);layer_mark_dirty(s_layer);
+  free(blocked);redraw();
 }
 // Whether the cached placement matches the current inputs; if not, schedules it.
 static bool map_times_ready(time_t now,const MarkerSpots *spots){
@@ -580,9 +593,47 @@ static void draw_status_line(GContext *ctx,struct tm *local,time_t now,const cha
   caps_draw(s_caps,status,4,12,false,caps_span,&accent);
   caps_draw(s_caps,battery,195,12,true,caps_span,&ink);
 }
+// The bottom tray, with the chart's daylight: it follows the wearer's
+// position when the phone sent one, otherwise the forecast place.
+static void draw_tray_section(GContext *ctx,time_t now,struct tm *local,int visible){
+  static float daylight[3];int lat,lon;
+  if(city_usable(s_city,now)&&city_position(s_city,&lat,&lon))solar_place(lat,lon,daylight);
+  else solar_place_vector((const int8_t *)s_settings+HEADER_SIZE+panels_weather_place()*ZONE_SIZE+11,daylight);
+  draw_tray(ctx,now,local,visible,daylight);
+}
+static void draw_status_section(GContext *ctx,struct tm *local,time_t now){
+  graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(0,0,200,18),0,GCornerNone);
+  char battery[8];snprintf(battery,sizeof(battery),"%d%%",s_battery.charge_percent);
+  if(s_caps)draw_status_line(ctx,local,now,battery);
+  else text(ctx,battery,s_small,GRect(160,0,35,15),GTextAlignmentRight,color(6));
+  draw_moon_indicator(ctx,now);
+  draw_bluetooth_indicator(ctx);
+}
+static void update_beside(int visible){
+  uint8_t when=(s_display[2]>>2)&3;
+  beside_update(s_caps&&zones_beside(s_display[1],s_settings[FLAGS]&STACKED,when,zone_position(),zones_in_panel(visible)));
+}
+// An animation frame: only the clock strip and/or the tray, plus whatever a
+// full frame draws over them afterwards (the tray where a low clock reaches
+// it, the status line when AM/PM moves there with the glide).
+static void draw_parts(GContext *ctx,time_t now,struct tm *local,int visible){
+  bool beside=s_beside,tray=s_parts&PART_TRAY;
+  if(s_parts&PART_CLOCK){
+    update_beside(visible);draw_time(ctx,local,now,visible);
+    int h=(s_settings[FLAGS]&STACKED)?84:s_display[1]>=4?40:46;
+    if(clock_layout(visible,NULL,NULL,NULL)+h>TRAY_Y)tray=true;
+  }
+  if(tray)draw_tray_section(ctx,now,local,visible);
+  if(s_beside!=beside)draw_status_section(ctx,local,now);
+}
 static void update_proc(Layer *layer,GContext *ctx) {
   time_t now=time(NULL);struct tm local=*localtime(&now);
   graphics_context_set_antialiased(ctx,false);
+  if(!s_full&&s_parts&&!s_map_dirty){
+    draw_parts(ctx,now,&local,layer_get_unobstructed_bounds(layer).size.h);
+    s_parts=0;motion_continue();return;
+  }
+  s_full=false;s_parts=0;
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,layer_get_bounds(layer),0,GCornerNone);
   if(s_map_dirty){sun_update(now-now%300);rebuild_map();}
   int mx=s_settings[MAP_X],my=s_settings[MAP_Y];
@@ -625,33 +676,23 @@ static void update_proc(Layer *layer,GContext *ctx) {
   // The Dymaxion nameplate, in the accent color, when there is room.
   if(spots.plate){graphics_context_set_stroke_color(ctx,color(7));HullPen plate={ctx,0,0};nameplate_pixels(spots.plate_x,spots.plate_y,hull_pixel,&plate);}
   if(spots.you>=0)pixel_rows(ctx,HERE_GLYPH,HERE_SIZE,HERE_SIZE,mx+spots.layout[spots.you].x-HERE_SIZE/2,my+spots.layout[spots.you].y-HERE_SIZE/2,color(6));
-  beside_update(s_caps&&zones_beside(s_display[1],s_settings[FLAGS]&STACKED,when,zone_position(),panel_zones));
+  update_beside(visible);
   draw_time(ctx,&local,now,visible);
-  // Chart daylight follows the wearer's position when the phone sent one,
-  // otherwise the forecast place.
-  static float daylight[3];int lat,lon;
-  if(city_usable(s_city,now)&&city_position(s_city,&lat,&lon))solar_place(lat,lon,daylight);
-  else solar_place_vector((const int8_t *)s_settings+HEADER_SIZE+panels_weather_place()*ZONE_SIZE+11,daylight);
-  draw_tray(ctx,now,&local,visible,daylight);
-  graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(0,0,200,18),0,GCornerNone);
-  char battery[8];snprintf(battery,sizeof(battery),"%d%%",s_battery.charge_percent);
-  if(s_caps)draw_status_line(ctx,&local,now,battery);
-  else text(ctx,battery,s_small,GRect(160,0,35,15),GTextAlignmentRight,color(6));
-  draw_moon_indicator(ctx,now);
-  draw_bluetooth_indicator(ctx);
+  draw_tray_section(ctx,now,&local,visible);
+  draw_status_section(ctx,&local,now);
   motion_continue();
 }
 static void animation_step(void *context) {
-  s_animation=NULL;s_frame++;layer_mark_dirty(s_layer);
+  s_animation=NULL;s_frame++;redraw();
   if(s_frame<s_frames)s_animation=app_timer_register(PULSE_RING_MS,animation_step,NULL);
 }
 static void pulse(void) {
   if(s_animation){app_timer_cancel(s_animation);s_animation=NULL;}
   s_frame=s_frames=0;
-  if(power_flourishes(power(),s_settings[FLAGS]&MOTION,local_hour())&&s_battery.charge_percent>20&&s_settings[ENABLED]) {
+  if(power_flourishes(power(),s_settings[FLAGS]&MOTION,local_hour())&&power_battery_allows_motion(power(),s_battery.charge_percent)&&s_settings[ENABLED]) {
     for(int i=0;i<3;i++)if(s_settings[ENABLED]&(1<<i))s_frames+=4;
     s_animation=app_timer_register(PULSE_RING_MS,animation_step,NULL);}
-  layer_mark_dirty(s_layer);
+  redraw();
 }
 // The marker pulse plays once when the face opens and again only when the
 // bottom panel comes back round to the time zones, never on a timer or a
@@ -667,10 +708,10 @@ static void pulse_on_zones(void){
 static void tapped(AccelAxisType axis,int32_t direction) {
   time_t seconds;uint16_t ms;time_ms(&seconds,&ms);
   // Paused in the dark: a flick brings the face up to date as the light comes on.
-  if(power_dark_paused(power(),local_hour()))layer_mark_dirty(s_layer);
+  if(power_dark_paused(power(),local_hour()))redraw();
   if(!panels_shake_enabled())return;
   int page=panels_page();
-  if(panel_tap(&s_tap,(uint64_t)seconds*1000+ms,panels_flicks())&&panels_cycle(time(NULL))){tray_start(page);layer_mark_dirty(s_layer);pulse_on_zones();}
+  if(panel_tap(&s_tap,(uint64_t)seconds*1000+ms,panels_flicks())&&panels_cycle(time(NULL))){tray_start(page);redraw();pulse_on_zones();}
 }
 static void configure_shake(void) {
   bool wanted=panels_shake_enabled()||((power()[0]&POWER_NIGHT)&&(power()[0]&POWER_DARK_PAUSE));
@@ -694,20 +735,20 @@ static void tick(struct tm *local_time,TimeUnits changed) {
   else if(!(s_settings[FLAGS]&DAY_NIGHT)&&local_time->tm_min%5==0)sun_update(now-now%300);
   // Paused in the dark (night saver): the screen keeps its last frame until a
   // wrist flick, which also lights the backlight, redraws it.
-  if(!power_dark_paused(power(),local_time->tm_hour))layer_mark_dirty(s_layer);
+  if(!power_dark_paused(power(),local_time->tm_hour))redraw();
   int page=panels_page();if(panels_tick(now))tray_start(page);pulse_on_zones();
   if(s_clock_face)clock_prepare(local_time,now,true);
   int interval=panels_refresh_minutes();if(!(s_city[1]&1)&&interval>60)interval=60;
   if((now/60)%interval==0)request_sync();
 }
-static void obstruction_changed(AnimationProgress progress,void *context){layer_mark_dirty(s_layer);}
-static void obstruction_done(void *context){layer_mark_dirty(s_layer);}
+static void obstruction_changed(AnimationProgress progress,void *context){redraw();}
+static void obstruction_done(void *context){redraw();}
 static void battery_changed(BatteryChargeState state) {
   s_battery=state;
-  if(state.charge_percent<=20&&s_animation){app_timer_cancel(s_animation);s_animation=NULL;s_frame=s_frames=0;}
-  if(state.charge_percent<=20)clock_stop();
+  if(!power_battery_allows_motion(power(),state.charge_percent)&&s_animation){app_timer_cancel(s_animation);s_animation=NULL;s_frame=s_frames=0;}
+  if(!power_battery_allows_motion(power(),state.charge_percent))clock_stop();
   configure_shake();
-  layer_mark_dirty(s_layer);
+  redraw();
 }
 static BuzzState s_buzz;
 static void connection_changed(bool connected) {
@@ -715,10 +756,10 @@ static void connection_changed(bool connected) {
   if(connection_buzz(&s_buzz,connected,(uint32_t)time(NULL),s_settings[FLAGS])&&!quiet_time_is_active()){
     if(connected)vibes_short_pulse();else vibes_double_pulse();
   }
-  s_connected=connected;layer_mark_dirty(s_layer);if(connected)request_sync();
+  s_connected=connected;redraw();if(connected)request_sync();
 }
 static void received(DictionaryIterator *iter,void *context) {
-  bool changed=panels_receive(iter);
+  panels_receive(iter);
   Tuple *display=dict_find(iter,MESSAGE_KEY_DISPLAY);
   uint8_t next_display[DISPLAY_SIZE];
   if(display&&display->type==TUPLE_BYTE_ARRAY&&display_normalize(next_display,display->value->data,display->length)&&memcmp(s_display,next_display,DISPLAY_SIZE)){
@@ -734,7 +775,7 @@ static void received(DictionaryIterator *iter,void *context) {
   Tuple *t=dict_find(iter,MESSAGE_KEY_SETTINGS);
   if(t&&t->type==TUPLE_BYTE_ARRAY&&settings_valid(t->value->data,t->length)&&memcmp(s_settings,t->value->data,SETTINGS_SIZE)){
     clock_stop();s_clock_ready=false;
-    memcpy(s_settings,t->value->data,SETTINGS_SIZE);persist_write_data(1,s_settings,SETTINGS_SIZE);s_map_dirty=true;changed=true;
+    memcpy(s_settings,t->value->data,SETTINGS_SIZE);persist_write_data(1,s_settings,SETTINGS_SIZE);s_map_dirty=true;
     clock_configure();
   }
   Tuple *custom=dict_find(iter,MESSAGE_KEY_PALETTE);
@@ -742,17 +783,16 @@ static void received(DictionaryIterator *iter,void *context) {
     uint8_t candidate[PALETTE_SIZE];memcpy(candidate,custom->value->data,PALETTE_SIZE);
     if(candidate[PAL_THEME]==s_settings[THEME]&&memcmp(s_palette,candidate,PALETTE_SIZE)){
       clock_stop();s_clock_ready=false;
-      memcpy(s_palette,candidate,PALETTE_SIZE);persist_write_data(4,s_palette,PALETTE_SIZE);s_map_dirty=true;changed=true;
+      memcpy(s_palette,candidate,PALETTE_SIZE);persist_write_data(4,s_palette,PALETTE_SIZE);s_map_dirty=true;
     }
   }else if(!custom&&t&&t->type==TUPLE_BYTE_ARRAY&&settings_valid(t->value->data,t->length)&&s_palette[PAL_ENABLED]){
     // An older companion knows only presets. Do not leave a saved custom
     // palette active over its newly received preset settings.
-    memset(s_palette,0,PALETTE_SIZE);persist_delete(4);s_map_dirty=true;changed=true;
+    memset(s_palette,0,PALETTE_SIZE);persist_delete(4);s_map_dirty=true;
     clock_stop();s_clock_ready=false;
   }
-  if(changed)window_set_background_color(s_window,color(0));
   configure_shake();
-  layer_mark_dirty(s_layer);pulse_on_zones();
+  redraw();pulse_on_zones();
 }
 static void init(void) {
   panels_init();
@@ -775,7 +815,9 @@ static void init(void) {
   clock_configure();
   s_window=window_create();s_layer=layer_create(GRect(0,0,200,228));
   layer_set_update_proc(s_layer,update_proc);layer_add_child(window_get_root_layer(s_window),s_layer);
-  window_set_background_color(s_window,color(0));window_stack_push(s_window,false);
+  // Clear: the face paints every pixel itself on a full redraw, and animation
+  // frames rely on the screen keeping the rest of the last frame.
+  window_set_background_color(s_window,GColorClear);window_stack_push(s_window,false);
   s_battery=battery_state_service_peek();s_connected=connection_service_peek_pebble_app_connection();
   battery_state_service_subscribe(battery_changed);
   connection_service_subscribe((ConnectionHandlers){.pebble_app_connection_handler=connection_changed});

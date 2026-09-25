@@ -24,7 +24,7 @@ concept's Dymaxion map, a full-width clock, and a browser layout workshop.
   Optional stacked hours/minutes retain the earlier display cut.
 - A 400 ms minute transition for Chamfer and rounded broad numerals: only
   the map-scale triangles over changed figures shrink away to reveal the new time.
-  Motion stops at 20% battery or when **Brief animations** is disabled.
+  Motion stops at 10% battery (adjustable) or when **Brief animations** is disabled.
   See [minute transitions](docs/MINUTE-FLIP.md).
 - Pebble's own clock fonts as extra numeral styles: Leco, Bitham Bold, Bitham
   Light and Bitham Medium, with a pixel-exact workshop preview. Every style,

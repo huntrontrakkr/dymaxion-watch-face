@@ -11,8 +11,8 @@ static bool options_valid(const uint8_t *p){
 }
 bool display_valid(const uint8_t *p,size_t length){
   if(!p||p[1]>9)return false;
-  // Version 3 adds power and motion (power.h) in bytes 4-6; byte 7 is reserved.
-  if(length==DISPLAY_SIZE)return p[0]==3&&options_valid(p)&&!(p[4]&~0x3f)&&p[5]<24&&p[6]<24&&!p[7];
+  // Version 3 adds power and motion (power.h) in bytes 4-7.
+  if(length==DISPLAY_SIZE)return p[0]==3&&options_valid(p)&&!(p[4]&~0x3f)&&p[5]<24&&p[6]<24&&(p[7]==5||p[7]==10||p[7]==20||p[7]==30);
   if(length!=DISPLAY_LEGACY_SIZE)return false;
   // Version 2 byte 2: bit 1 no leading zero, bits 2-3 when place times also
   // show outside the panel, bits 4-5 where, bit 6 map times may turn, bit 7 the nameplate.
@@ -21,7 +21,7 @@ bool display_valid(const uint8_t *p,size_t length){
 }
 bool display_normalize(uint8_t out[DISPLAY_SIZE],const uint8_t *data,size_t length){
   if(!out||!display_valid(data,length))return false;
-  uint8_t in[DISPLAY_SIZE]={0,0,0,0,0,22,7,0}; // older packets: default power and motion
+  uint8_t in[DISPLAY_SIZE]={0,0,0,0,0,22,7,10}; // older packets: default power and motion
   memcpy(in,data,length);memcpy(out,in,DISPLAY_SIZE);
   if(out[1]==3)out[1]=2;
   if(out[1]==1)out[1]=4;

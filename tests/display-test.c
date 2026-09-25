@@ -18,7 +18,7 @@ int main(void){
     bool valid=!flags||(flags&3)==1||(flags&3)==2;
     assert(display_normalize(normalized,legacy,4)==valid);
     if(valid){
-      uint8_t expected[8]={3,style==1?4:style==3?2:style,grid&2,0,0,22,7,0};
+      uint8_t expected[8]={3,style==1?4:style==3?2:style,grid&2,0,0,22,7,10};
       assert(!memcmp(normalized,expected,8));
       assert(display_normalize(normalized,normalized,8));assert(!memcmp(normalized,expected,8));
     }
@@ -29,20 +29,20 @@ int main(void){
     uint8_t current[4]={2,4,options,0};
     bool valid=!(options&~0xfe)&&((options>>2)&3)<3&&((options>>4)&3)<3;
     assert(display_valid(current,4)==valid);
-    if(valid){assert(display_normalize(normalized,current,4));assert(!memcmp(normalized,(uint8_t[]){3,4,options,0,0,22,7,0},8));}
+    if(valid){assert(display_normalize(normalized,current,4));assert(!memcmp(normalized,(uint8_t[]){3,4,options,0,0,22,7,10},8));}
   }
   // Version 2 carries the map background in byte 3.
   for(int background=0;background<8;background++){
     uint8_t current[4]={2,4,2,background};
     assert(display_normalize(normalized,current,4)==(background<MAP_BACKGROUND_COUNT));
-    if(background<MAP_BACKGROUND_COUNT)assert(!memcmp(normalized,(uint8_t[]){3,4,2,background,0,22,7,0},8));
+    if(background<MAP_BACKGROUND_COUNT)assert(!memcmp(normalized,(uint8_t[]){3,4,2,background,0,22,7,10},8));
   }
-  // Version 3: power and motion in bytes 4-6, byte 7 reserved; 8 bytes only.
-  uint8_t v3[8]={3,4,2,1,0x3f,23,0,0};assert(display_valid(v3,8));assert(!display_valid(v3,4));
+  // Version 3: power and motion in bytes 4-7; 8 bytes only.
+  uint8_t v3[8]={3,4,2,1,0x3f,23,0,10};assert(display_valid(v3,8));assert(!display_valid(v3,4));
   assert(display_normalize(normalized,v3,8));assert(!memcmp(normalized,v3,8));
   v3[4]=0x40;assert(!display_valid(v3,8));v3[4]=0;
   v3[5]=24;assert(!display_valid(v3,8));v3[5]=22;v3[6]=24;assert(!display_valid(v3,8));v3[6]=7;
-  v3[7]=1;assert(!display_valid(v3,8));v3[7]=0;v3[0]=2;assert(!display_valid(v3,8));v3[0]=3;
+  for(int low=0;low<256;low++){v3[7]=low;assert(display_valid(v3,8)==(low==5||low==10||low==20||low==30));}v3[7]=10;v3[0]=2;assert(!display_valid(v3,8));v3[0]=3;
   v3[2]=1;assert(!display_valid(v3,8));
   return 0;
 }

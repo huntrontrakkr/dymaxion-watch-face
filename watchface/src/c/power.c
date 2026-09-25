@@ -9,4 +9,5 @@ int power_daylight_minutes(const uint8_t *p,int hour){return power_night(p,hour)
 bool power_relight(const uint8_t *p,bool day_night,int hour,int minute){return day_night&&(hour*60+minute)%power_daylight_minutes(p,hour)==0;}
 bool power_minute_animation(const uint8_t *p,bool motion,int hour){return motion&&!(p[0]&POWER_MINUTE_OFF)&&!power_night(p,hour);}
 bool power_flourishes(const uint8_t *p,bool motion,int hour){return motion&&!(p[0]&POWER_FLOURISHES_OFF)&&!power_night(p,hour);}
+bool power_battery_allows_motion(const uint8_t *p,int percent){return percent>p[3];}
 bool power_dark_paused(const uint8_t *p,int hour){return (p[0]&POWER_DARK_PAUSE)&&power_night(p,hour);}

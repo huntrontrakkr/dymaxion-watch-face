@@ -41,8 +41,10 @@ settings; existing explicit Span/triangle choices are preserved.
   immediately when the deadline has passed.
 - `Brief animations` controls the minute flips, the marker pulses, the tray
   swipe and the clock's glide beside the place times.
-  Native motion is suppressed at 20% battery or below; crossing that threshold
-  cancels an in-progress flip. The browser also honors reduced motion and settles
+  Native motion is suppressed at 10% battery or below by default (5, 10, 20 or
+  30%, **Stop animations at**); crossing that threshold
+  cancels an in-progress flip. Each frame after the first repaints only the clock
+  strip; the rest of the screen keeps the minute tick's frame. The browser also honors reduced motion and settles
   immediately when its page is hidden.
 - Launch, settings changes, and discontinuous time jumps show the correct time
   immediately. The browser schedules its idle clock refresh at minute boundaries.

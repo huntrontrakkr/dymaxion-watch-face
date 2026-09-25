@@ -114,7 +114,12 @@ disabled, when there is only one page or when panels are disabled.
 Other periodic work is kept small. The map is relit every five minutes by
 default, not every minute (the terminator moves about a pixel in that time);
 **Daylight updates** stretches that to 10, 15 or 30 minutes, the night saver to
-every other hour, and it stops entirely with day and night off. And the weather
+every other hour, and it stops entirely with day and night off. Animation
+frames repaint only what moves: the window's background is clear, so the
+screen keeps its last frame, and a minute change or the clock's glide repaints
+just the clock strip (plus the status line or tray where they overlap it), a
+tray swipe just the tray. The minute tick, the marker pulse, Quick View, a
+return to the face and any change of data or settings repaint everything. And the weather
 chart's sunrise/sunset shading and header time are cached until the chart
 window or the next event moves.
 
