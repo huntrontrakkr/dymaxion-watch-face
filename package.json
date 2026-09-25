@@ -15,7 +15,7 @@
     "generate:status": "node tools/generate-status-glyphs.mjs",
     "companion": "node tools/bundle-companion.mjs",
     "test": "node --test tests/*.test.mjs",
-    "test:browser": "node tests/browser.mjs && node tests/panels-browser.mjs && node tests/clock-browser.mjs && node tests/custom-palettes-browser.mjs && node tests/gallery-browser.mjs && node tests/tray-browser.mjs && node tests/config-browser.mjs && node tests/tide-stations-browser.mjs",
+    "test:browser": "node tests/browser.mjs && node tests/panels-browser.mjs && node tests/clock-browser.mjs && node tests/custom-palettes-browser.mjs && node tests/gallery-browser.mjs && node tests/tray-browser.mjs && node tests/config-browser.mjs && node tests/tide-stations-browser.mjs && node tests/preview-parity-browser.mjs",
     "gallery": "node tools/capture-gallery.mjs",
     "release:prepare": "node tools/prepare-release.mjs"
   },
