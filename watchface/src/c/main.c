@@ -542,7 +542,8 @@ static void map_times_place_now(void *context){
   time_t now=time(NULL);uint8_t key[19];MapTimePlace places[3];static MarkerSpots spots;
   marker_spots(now,layer_get_unobstructed_bounds(s_layer).size.h,&spots);map_times_inputs(now,key,places,&spots);
   memcpy(s_map_key,key,sizeof(key));s_map_key_valid=true;memset(s_map_spots,0,sizeof(s_map_spots));
-  uint8_t *blocked=calloc(2,MAP_TIMES_MASK_BYTES);if(!blocked)return;
+  // The map mask, then the placement's scratch (taken pixels, then leaders).
+  uint8_t *blocked=calloc(3,MAP_TIMES_MASK_BYTES);if(!blocked)return;
   ResHandle resource=resource_get_handle(RESOURCE_ID_MAP_LANDSCAPE);uint8_t row[MAP_TIMES_W*4];
   for(int y=0;y<MAP_TIMES_H;y++){
     if(resource_load_byte_range(resource,y*MAP_TIMES_W*4,row,sizeof(row))!=sizeof(row)){free(blocked);return;}

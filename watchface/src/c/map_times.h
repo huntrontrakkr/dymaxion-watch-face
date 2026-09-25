@@ -29,7 +29,7 @@ void map_time_pixels(const char *text,uint8_t orientation,int total,int size,int
 // the margin around it; draw it with its corners cut.
 MapRect map_time_hull(const MapTimeSpot *spot);
 void map_time_route(const MapPoint points[5],MapTimePixel pixel,void *context);
-// `blocked` marks map pixels; `taken` is scratch of MAP_TIMES_MASK_BYTES.
+// `blocked` marks map pixels; `taken` is scratch of 2*MAP_TIMES_MASK_BYTES.
 // `obstacles` are rectangles to keep clear of (your clearing, group hulls);
 // `markers` every glyph, which leaders crossing a hull must miss.
 void map_times_place(const uint8_t *blocked,const MapTimePlace places[3],const MapRect *obstacles,int obstacle_count,

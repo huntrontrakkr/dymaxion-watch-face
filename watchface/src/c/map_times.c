@@ -211,8 +211,9 @@ static const uint8_t ORDERS[6][3]={{0,1,2},{0,2,1},{1,0,2},{1,2,0},{2,0,1},{2,1,
 static void arrange(const uint8_t *blocked,const MapTimePlace places[3],const MapRect *obstacles,int obstacle_count,
   const MapMarker *markers,int marker_count,bool turn,uint8_t *taken,int size,MapTimeSpot out[3]){
   int32_t best_total=INT32_MAX;
-  // Leaders placed so far, a pixel wide either side. Static: Pebble app stacks are small.
-  static uint8_t wires[MAP_TIMES_MASK_BYTES];
+  // Leaders placed so far, a pixel wide either side: the second half of the
+  // caller's scratch, so it costs no static memory.
+  uint8_t *wires=taken+MAP_TIMES_MASK_BYTES;
   for(int o=0;o<6;o++){
     memset(taken,0,MAP_TIMES_MASK_BYTES);memset(wires,0,MAP_TIMES_MASK_BYTES);
     for(int i=0;i<3;i++)if(places[i].present)for(int dy=-HALO;dy<=HALO;dy++)for(int dx=-HALO;dx<=HALO;dx++)set_bit(taken,places[i].x+dx,places[i].y+dy);

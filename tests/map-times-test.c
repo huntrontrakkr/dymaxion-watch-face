@@ -8,7 +8,7 @@ static void print_pixel(void *context,int x,int y){(void)context;printf("%d,%d "
 // map-times-test map-0.bin turn clock24 reserve size  (x y ox0 oy0 ox1 oy1)x3  n (x0 y0 x1 y1)xn  m (x y half)xm
 // (x<0: absent). Prints each spot, then the drawn label and leader pixels of each.
 int main(int argc,char **argv){
-  static uint8_t map[MAP_TIMES_W*MAP_TIMES_H*4],blocked[MAP_TIMES_MASK_BYTES],taken[MAP_TIMES_MASK_BYTES];
+  static uint8_t map[MAP_TIMES_W*MAP_TIMES_H*4],blocked[MAP_TIMES_MASK_BYTES],taken[2*MAP_TIMES_MASK_BYTES];
   FILE *f=fopen(argv[1],"rb");assert(f);assert(fread(map,1,sizeof(map),f)==sizeof(map));fclose(f);
   for(int i=0;i<MAP_TIMES_W*MAP_TIMES_H;i++)if(map[i*4+3]&3)blocked[i>>3]|=1u<<(i&7);
   int a=2;bool turn=atoi(argv[a++]),clock24=atoi(argv[a++]),reserve=atoi(argv[a++]);int size=atoi(argv[a++]);MapTimePlace places[3];
