@@ -16,7 +16,7 @@ import {MOON_GLYPHS,moonFrame} from '../shared/moon.js';
 import {BLUETOOTH_ROWS,SUN_ROWS,SUN_HALO_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS} from '../shared/status-glyphs.js';
 import {drawPixelRows} from '../shared/pixels.js';
 import {BACKGROUND_BITS} from '../shared/map-background.js';
-import {nameplateLayout,NAMEPLATE_ROWS} from '../shared/nameplate.js';
+import {nameplateLayout,NAMEPLATE_ROWS,NAMEPLATE_HEIGHT} from '../shared/nameplate.js';
 import {zonesBeside,zonesOnMap,zoneColumn,zoneRow,zoneRowBaseline,tallPixels} from '../shared/zone-column.js';
 import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,MAP_TIME_SIZES} from '../shared/map-times.js';
 import {layoutMarkers} from '../shared/map-markers.js';
@@ -67,6 +67,7 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
   const {plate,clockTop:ty}=s.nameplate?nameplateLayout({mapY:my,timeY,height:th,visible:228}):{plate:null,clockTop:timeY};
   if(plate)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
+  if(plate&&plate.y<ty+th&&plate.y+NAMEPLATE_HEIGHT>ty)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
   const cityName=s.location.mode==='manual'?s.location.name:city?.name||'YOUR CITY',ampm=now.getHours()<12?'AM':'PM';
   const date=`${['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()]} ${two(now.getDate())} ${['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][now.getMonth()]}`;
   // The clock as the workshop draws it, with AM/PM beside Chamfer when nothing

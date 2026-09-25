@@ -326,6 +326,8 @@ static void clock_caption(char *out,size_t size,const char *date,const char *amp
 }
 static void draw_meridiem(GContext *ctx,const char *ampm,int x,int baseline);
 static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int x,int y,int alpha);
+static void nameplate_pixel(void *context,int x,int y){graphics_draw_pixel(context,GPoint(x,y));}
+static void draw_nameplate(GContext *ctx,int x,int y){graphics_context_set_stroke_color(ctx,color(7));nameplate_pixels(x,y,nameplate_pixel,ctx);}
 // Where the clock goes, and the Dymaxion nameplate when it is on and fits
 // (a clock below the map moves down to make room for it).
 // The clock strip's height: 40 pixels for Chamfer and the system fonts, 46 otherwise.
@@ -368,9 +370,13 @@ static void beside_update(bool target){
 }
 static GColor faded(GColor c,int alpha){return alpha>=1000?c:(GColor){.argb=mix_color(color(0).argb,c.argb,alpha)};}
 static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
-  int x=s_settings[TIME_X],w=200,h=clock_height();
-  int y=clock_layout(visible,NULL,NULL,NULL);
+  int x=s_settings[TIME_X],w=200,h=clock_height(),px=0,py=0;bool plate;
+  int y=clock_layout(visible,&plate,&px,&py);
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(x,y,w,h),0,GCornerNone);
+  // The strip is taller than the figures (46 pixels for Broad and Span), so it
+  // can reach the nameplate; the nameplate goes back on top. It never touches
+  // the figures themselves (nameplate.c keeps it clear of their ink).
+  if(plate&&py<y+h&&py+WORDMARK_HEIGHT>y)draw_nameplate(ctx,px,py);
   char timebuf[8];int hour=local->tm_hour;if(!is_24()){hour%=12;if(!hour)hour=12;}
   const char *ampm=is_24()?"":(local->tm_hour<12?"AM":"PM");
   {
@@ -683,7 +689,7 @@ static void update_proc(Layer *layer,GContext *ctx) {
   }
   // You: a bullseye one size up, in the clock's ink.
   // The Dymaxion nameplate, in the accent color, when there is room.
-  if(spots.plate){graphics_context_set_stroke_color(ctx,color(7));HullPen plate={ctx,0,0};nameplate_pixels(spots.plate_x,spots.plate_y,hull_pixel,&plate);}
+  if(spots.plate)draw_nameplate(ctx,spots.plate_x,spots.plate_y);
   if(spots.you>=0)pixel_rows(ctx,HERE_GLYPH,HERE_SIZE,HERE_SIZE,mx+spots.layout[spots.you].x-HERE_SIZE/2,my+spots.layout[spots.you].y-HERE_SIZE/2,color(6));
   update_beside(visible);
   draw_time(ctx,&local,now,visible);

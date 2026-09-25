@@ -24,7 +24,7 @@ import {PANEL_PAGES} from '../shared/panel-settings.js';
 import {cityControls} from '../shared/city-controls.js';
 import {cityIsUsable,cityHasPosition,clockCaption,mapPixel} from '../shared/city.js';
 import {layoutMarkers,markerClearance,hullPixels} from '../shared/map-markers.js';
-import {nameplateLayout,nameplateObstacle,NAMEPLATE_ROWS} from '../shared/nameplate.js';
+import {nameplateLayout,nameplateObstacle,NAMEPLATE_ROWS,NAMEPLATE_HEIGHT} from '../shared/nameplate.js';
 import {locationService} from '../tools/location-service.js';
 import {displayControls} from '../shared/display-controls.js';
 import {powerControls} from '../shared/power-controls.js';
@@ -323,6 +323,9 @@ function render(){
   const clockAmpm=settings.clockDisplay==='chamfer'&&!besideOn;
   const status=clockCaption(local.format('ddd DD MMM').toUpperCase(),city.toUpperCase(),use24()||clockAmpm?'':ampm,statusWidth(),t=>textWidth(watchTypeface.lining.small,t),'  ');
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
+  // The strip is taller than the figures (46 pixels for Broad and Span): put the
+  // nameplate back on top where it reaches (it never touches the figures).
+  if(plate&&plate.y<ty+th&&plate.y+NAMEPLATE_HEIGHT>ty)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
   if(!FLIP_FACES[settings.clockDisplay])minuteClock.reset();
   {
     const value=hourText(h,settings.leadingZero)+':'+two(minute);

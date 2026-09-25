@@ -16,17 +16,19 @@ download checksum and description. Rebble publication is deferred.
 
 ## Description
 
-A little world. A wider view.
+Dymaxion is a watch face built around Buckminster Fuller's Dymaxion map, which unfolds the globe into triangles so the continents stay in one connected piece.
 
-That curious map is a Dymaxion map: Earth unfolded into triangles, bringing its landmasses into one shared view. Buckminster “Bucky” Fuller, the designer and inventor known for geodesic domes, imagined a world that could do more with less. Developed with architect and cartographer Shoji Sadao, the map invites us to see the planet whole.
+The map shows live day and night. The shading follows the sun, city lights come on after dark, and a small sun marks where it is overhead.
 
-Dymaxion puts a little of that imagination on your wrist. Follow sunlight across the continents, watch city lights emerge after dark, and keep the places and people you care about in view.
+Keep three other time zones in view: in a bottom panel, beside the clock in regular or larger digits, or as labels right on the map in five sizes. Daylight-saving changes are handled for you, and each place has its own marker and color.
 
-Make it yours with 25 palettes, custom colors, eight clock styles and two compositions. Preview your choices right in the phone settings. Search for a city to fill its location and time zone automatically, or choose from more than 50 saved cities offline. Short labels, map glyphs and marker colors are yours to change.
+Bottom panels show world clocks, weather, a two-week calendar, humidity, NOAA tides or Pebble Health. Change panels with wrist flicks or on a timer, or let Smart rotation pick what matters now, like rain on the way or a turning tide.
 
-Keep three other time zones close, with daylight-saving changes handled for you. Choose bottom panels for world clocks, weather, a two-week calendar, humidity, NOAA tides or Pebble Health. Use wrist flicks, timed rotation or one quiet panel. Minute animations and battery-saving options are adjustable.
+Choose from 25 palettes or make your own, and from eight clock styles. The phone settings page shows a live preview. Search for any city, or pick from more than 50 saved cities offline.
 
-Weather follows your current location by default; allow location access in the Pebble phone app. A saved city is optional. For Pebble Time 2 / Emery. Search and weather need a connection; tides need a supported NOAA station. Health stays on the watch. Screenshot weather and device readings are examples. Open source, made to be explored.
+Battery options include how often the map reshades, a night mode that can follow your Quiet Time, and pausing redraws in the dark until the backlight comes on.
+
+For Pebble Time 2 (Emery). Weather follows your location by default; allow location access in the Pebble app. Search and weather need a connection, and tides need a NOAA station. Health data stays on the watch. Weather and device readings in the screenshots are examples. Open source.
 
 ## Submission assets
 

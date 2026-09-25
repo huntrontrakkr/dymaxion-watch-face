@@ -1,6 +1,7 @@
 import {chromium} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
+import {NAMEPLATE_ROWS} from '../shared/nameplate.js';
 const base=process.env.PREVIEW_URL||'http://127.0.0.1:5173',fixture=JSON.parse(readFileSync('tests/fixtures/city-norfolk.json'));
 const browser=await chromium.launch(),context=await browser.newContext({viewport:{width:1440,height:1100},timezoneId:'America/New_York',permissions:['geolocation'],geolocation:{latitude:36.8508,longitude:-76.2859}});
 context.setDefaultTimeout(10000);const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));let lookups=0;
@@ -132,6 +133,15 @@ try{
   assert.equal(await screen.getAttribute('data-nameplate'),'39,62','centred, its last row a pixel above the map');assert.notDeepEqual(await gap(),bareGap);
   assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).nameplate,true);
   await screen.screenshot({path:'test-results/nameplate.png'});
+  // Every pixel of the script stays visible, even under the taller 46-pixel
+  // Broad and Span clock strips.
+  const platePixels=()=>screen.evaluate((c,rows)=>{const d=c.getContext('2d').getImageData(0,0,200,228).data,[x,y]=c.dataset.nameplate.split(',').map(Number),out=new Set();
+    rows.forEach((row,r)=>[...row].forEach((p,k)=>{if(p==='#'){const i=((y+r)*200+x+k)*4;out.add(d[i]+','+d[i+1]+','+d[i+2]);}}));return [...out];},NAMEPLATE_ROWS);
+  const accent=await platePixels();assert.equal(accent.length,1,'the script in one color');
+  for(const style of ['broad','span','chamfer']){
+    await page.getByLabel('Numerical display',{exact:true}).selectOption(style);
+    assert.deepEqual(await platePixels(),accent,`${style}: the whole nameplate shows`);
+  }
   await page.getByRole('tab',{name:'Composition',exact:true}).click();await page.getByRole('button',{name:'Horizon',exact:true}).click();
   assert.equal(await screen.getAttribute('data-nameplate'),'39,124','Horizon: under the map');assert.equal(await screen.getAttribute('data-clock-top'),'140','the clock moves down six pixels for it');
   await screen.screenshot({path:'test-results/nameplate-horizon.png'});

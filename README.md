@@ -16,6 +16,8 @@ behind this watch. [Meet Fuller](https://www.bfi.org/about-fuller/) and
 · [**Open the workshop**](https://huntrontrakkr.github.io/dymaxion-watch-face/)
 · [**Explore 76 faces**](https://huntrontrakkr.github.io/dymaxion-watch-face/gallery.html)
 
+<img src="docs/screenshots/dymaxion-demo.gif" width="300" alt="Dymaxion in motion: a minute change, a day of sunlight sweeping across the map, panel swipes, and a run of palettes and clock styles">
+
 [![Eight Dymaxion watch faces at their native resolution](docs/screenshots/gallery-hero.png)](https://huntrontrakkr.github.io/dymaxion-watch-face/gallery.html)
 
 ## Make it yours
