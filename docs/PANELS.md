@@ -130,16 +130,33 @@ checked against each other; the workshop shows an example day marked DEMO.
 
 ## Changing pages and battery use
 
-Choose any one to five pages, reorder them, and select a starting page. A
-wrist flick changes the page: by default two quick flicks, because a single
-flick is also the watch's motion-backlight gesture and glancing at the watch in
-the dark should not change what it shows. One or three flicks can be chosen
-instead. Flicks use Pebble's accelerometer tap service, a hardware interrupt:
-nothing samples the accelerometer and the watch does not wake between flicks,
-so it stays on at any battery level. Taps closer than 250 ms are one flick (a
-flick can register on several axes); each further flick must follow within
-0.9 s, and a page change is followed by a one-second rest (`panel_tap`). The tap service unsubscribes when flicks are
-disabled, when there is only one page or when panels are disabled.
+Choose any one to five pages, reorder them, and select a starting page. Under
+**Panel gesture**, the default is two separate wrist flicks within two seconds.
+Let your wrist settle between them. One or three flicks are also available;
+saved choices are preserved on upgrade. These are motion events, not screen taps.
+
+The optional **Light the screen, then flick once** mode listens for motion only
+while the watchface is visible and its backlight is on. Wake the light normally,
+pause briefly, then flick once to change the panel. A 400 ms guard ignores motion
+around the moment the light turns on. It stops listening when the light turns
+off; it never keeps the light on or polls a sensor. In bright surroundings,
+Pebble's ambient-light setting may keep the backlight off, so use the ordinary
+flick modes or automatic rotation if you want to change panels in daylight.
+
+Flicks use Pebble's accelerometer tap service, without a continuous sample
+stream. Events closer than 250 ms count as one flick (a flick can register on
+several axes); each further flick must follow within two seconds. A page change
+is followed by a one-second rest (`panel_tap`). Motion listening stops when the
+watchface loses focus, flicks or panels are disabled, or only one page is selected.
+Partial gestures reset when settings change or the watchface loses focus.
+
+Pebble currently [reserves touchscreen events for watchapps](https://developer.repebble.com/guides/events-and-services/touch/),
+so a watchface cannot detect a double tap on the bottom bar. The watch's own
+[wake-on-touch setting](https://help.repebble.com/en/articles/15277496-backlight)
+can light the screen; a subsequent wrist flick can then change the panel in
+the new mode. Dymaxion subscribes to backlight state changes, never touchscreen
+events. With the night saver set to pause redraws, any backlight wake also brings
+the face up to date, including a touch or button that lights it.
 
 Other periodic work is kept small. The map is relit every five minutes by
 default, not every minute (the terminator moves about a pixel in that time);
@@ -216,12 +233,19 @@ Automated checks cover settings migration, packet validation, missing hourly
 values, current-location defaults, shared position fixes, permission failures,
 travel and time-zone changes, cache reuse/backoff, late responses, fractional-hour forecast locations,
 calendar parity between JavaScript and C across DST/leap/year boundaries, and
-the wrist-flick guard. Browser checks cover the default pages, live-response
-fixtures, page order, timed rotation, persistence, unit conversion and mobile
-layout. An earlier revision was verified in the Emery emulator (AppMessage
-delivery, rendered pages, and the since-replaced shake detector); the wrist-flick
-version has not yet run in the emulator or on hardware. Real requests were also checked
-for New York, Kathmandu and NOAA station 8518750 (The Battery).
+the wrist-flick and backlight guards. Browser checks cover the default pages,
+live-response fixtures, page order, timed rotation, persistence, unit conversion
+and mobile layout. Version 0.4.2 was verified in the native Emery emulator with
+injected button and motion events: waking the backlight preserves the panel,
+a later flick changes it, bursts and motion in darkness do not, the next wake
+rearms the guard, and double flicks 1.5 seconds apart work. Disabling motion
+preserves the panel, and gestures resume after the watch menu finishes closing.
+The night saver keeps its frame through a minute tick, then a button backlight
+wake updates the clock without motion. Screenshots verify the actual rendered
+footer and clock after each event. These checks do not simulate physical wrist
+sensitivity or screen touches.
+Real provider requests were also checked for New York, Kathmandu and NOAA
+station 8518750 (The Battery).
 
 The 0.4.1 current-location change was also checked in the Emery emulator with
 forecast packets, automatic city coordinates, a manual clock caption, unavailable

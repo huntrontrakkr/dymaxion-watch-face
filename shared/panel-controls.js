@@ -12,7 +12,8 @@ export function panelControls(root,getSettings,onChange){
   root.innerHTML=toggle('enabled','Enable bottom panels','Choose what appears below the map, one panel at a time.')
     +`<div class="panel-order" data-order></div>`
     +select('home','Starting panel',PANEL_PAGES)
-    +toggle('shake','Flick to change panels','A short wrist flick moves to the next panel.')+select('flicks','Flicks per panel change',[[2,'Two quick flicks — one flick only lights the screen'],[1,'One flick (also changes the panel when the backlight turns on)'],[3,'Three quick flicks']])
+    +toggle('shake','Flick to change panels','Uses wrist motion, not taps on the touchscreen.')+select('flicks','Panel gesture',[[4,'Light the screen, then flick once'],[2,'Two separate flicks, within 2 seconds'],[1,'One flick, including the gesture that lights the screen'],[3,'Three separate flicks, each within 2 seconds']])
+    +`<p class="micro" data-gesture-help></p>`
     +select('rotationMinutes','Automatic rotation',[[0,'Off — keep the panel until changed'],...[1,2,5,10,15,30,60].map(n=>[n,`Every ${n} minute${n===1?'':'s'}`])])
     +`<p class="micro">Choose up to five panels. Turn off flicks and rotation to keep one in place.</p>`
     +`<details><summary>Weather & humidity</summary>`+toggle('weather.enabled','Fetch weather','By default, weather follows your phone’s current location.')
@@ -53,6 +54,8 @@ export function panelControls(root,getSettings,onChange){
     root.querySelectorAll('[data-panel]').forEach(el=>{const value=get(shown,el.dataset.panel);if(el.type==='checkbox')el.checked=value;else el.value=value;});
     root.querySelector('[data-theme-colors]').disabled=f.colorMode==='theme';
     root.querySelector('[data-color-mode]').textContent=f.colorMode==='theme'?'Follows palette':'Custom colors';
+    root.querySelector('[data-panel="flicks"]').disabled=!f.enabled||!f.shake||f.pages.length<2;
+    root.querySelector('[data-gesture-help]').textContent=f.flicks===4?'Light the screen using your usual watch gesture, let your wrist settle briefly, then flick once to change panels. Motion listening stops when the light goes out. If daylight keeps the backlight off, use another gesture mode or automatic rotation.':'Let your wrist settle between flicks. Screen taps only control Pebble’s backlight; Pebble does not currently deliver touchscreen input to watchfaces.';
     const home=root.querySelector('[data-panel="home"]');home.replaceChildren();f.pages.forEach(id=>home.add(new Option(PANEL_PAGES.find(([p])=>p===id)[1],id)));home.value=f.home;
     root.querySelector('[data-panel="weather.place"]').querySelectorAll('option').forEach(o=>{if(o.value!=='current')o.textContent=`Place ${+o.value+1} / ${settings.places[+o.value].name}`;});
     root.querySelector('[data-station]').value=TIDE_STATIONS.some(s=>s.id===f.tide.station)?f.tide.station:f.tide.station?'custom':'';

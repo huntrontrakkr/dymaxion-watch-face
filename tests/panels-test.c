@@ -36,13 +36,15 @@ int main(int argc,char **argv){
   memcpy(copy,f,sizeof(f));copy[F_RAIN_MAX]=copy[F_RAIN_MAX+1]=0;assert(!footer_valid(copy,sizeof(f)));
   memcpy(copy,f,sizeof(f));for(int place=0;place<=3;place++){copy[F_WEATHER_PLACE]=place;assert(footer_valid(copy,sizeof(f)));}
   copy[F_WEATHER_PLACE]=4;assert(!footer_valid(copy,sizeof(f)));
+  memcpy(copy,f,sizeof(f));for(int mode=0;mode<=PANEL_GESTURE_LIT;mode++){copy[F_FLICKS]=mode;assert(footer_valid(copy,sizeof(f)));}
+  copy[F_FLICKS]=5;assert(!footer_valid(copy,sizeof(f)));
   memcpy(copy,w,sizeof(w));copy[32+2]=101;assert(!environment_valid(copy,sizeof(w),false));
   memcpy(copy,w,sizeof(w));copy[1]=50;assert(!environment_valid(copy,sizeof(w),false));
   memcpy(copy,t,sizeof(t));copy[48+2]=24;assert(!environment_valid(copy,sizeof(t),true));
   memcpy(copy,t,sizeof(t));copy[48]=0xff;copy[49]=0x7f;assert(!environment_valid(copy,sizeof(t),true));
   assert(environment_start_index(w,0)==-1);assert(environment_start_index(w,0xffffffff)==-1);
-  // Double flick (default): one flick only lights the screen; a flick's extra
-  // axis taps count once; a slow second flick starts over; two quick flicks change.
+  // Separate motion events count; axis bursts do not. A settled second flick
+  // at 1.5 seconds must work (the old 900 ms window incorrectly discarded it).
   TapState tap={0};uint64_t ms=10000;
   assert(!panel_tap(&tap,ms,2));assert(!panel_tap(&tap,ms+40,2));
   assert(!panel_tap(&tap,ms+=TAP_GAP_MS+100,2));
@@ -51,5 +53,19 @@ int main(int argc,char **argv){
   assert(!panel_tap(&tap,ms+=TAP_REST_MS,2));assert(panel_tap(&tap,ms+=600,2));
   TapState one={0};assert(panel_tap(&one,50000,1));assert(!panel_tap(&one,50100,1));assert(panel_tap(&one,51100,1));
   TapState three={0};ms=90000;assert(!panel_tap(&three,ms,3));assert(!panel_tap(&three,ms+=500,3));assert(panel_tap(&three,ms+=500,3));
+  TapState settled={0};assert(!panel_tap(&settled,10000,2));assert(panel_tap(&settled,11500,2));
+  assert(!panel_tap(&settled,12000,2));assert(!panel_tap(&settled,12500,2));assert(panel_tap(&settled,14500,2));
+  // A clock adjustment must not leave the gesture locked behind an old deadline.
+  assert(!panel_tap(&settled,1000,2));assert(panel_tap(&settled,2200,2));
+  PanelLightState light={0};
+  assert(!panel_light_ready(&light,false,10000));
+  assert(!panel_light_ready(&light,true,10010)); // motion delivered before on callback
+  panel_light_update(&light,true,10040); // same wake must not restart the guard
+  assert(!panel_light_ready(&light,true,10409));
+  assert(panel_light_ready(&light,true,10410));
+  assert(!panel_light_ready(&light,false,13000));
+  panel_light_update(&light,true,14000);assert(!panel_light_ready(&light,true,14001));
+  assert(panel_light_ready(&light,true,14400));
+  assert(!panel_light_ready(&light,true,500));assert(panel_light_ready(&light,true,900));
   puts("Native panel packets and wrist-flick guard passed.");return 0;
 }

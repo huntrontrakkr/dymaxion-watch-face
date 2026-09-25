@@ -75,6 +75,13 @@ and daylight stay together; a saved city is an optional override. Upgrading keep
 existing choices: select **Weather & humidity → Forecast location → Current
 location** once if your previous version was set to a saved place.
 
+To change bottom panels, flick your wrist twice within two seconds, settling
+between flicks. For an alternative, select **A window on the day → Panel gesture
+→ Light the screen, then flick once**. Wake the backlight, pause briefly, then
+flick once. This option listens for motion only while the light is on. Screen
+taps can wake Pebble's backlight, but Pebble does not currently give touchscreen
+events to watchfaces. Automatic rotation is also available.
+
 For a larger preview, use the [workshop](https://huntrontrakkr.github.io/dymaxion-watch-face/).
 Choose **Export settings**, then **Import settings from the workshop** in the
 phone settings, load the JSON and **Save to watch**. Gallery layouts use the

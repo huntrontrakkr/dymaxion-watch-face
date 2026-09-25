@@ -136,7 +136,7 @@ Useful choices, in order of likely effect on recurring app work:
    configured less often. Existing low-battery motion suppression already stops
    animation at or below 10% by default; the threshold is configurable.
 
-Night saver can also pause redraws until a wrist flick, but the minute callback
+Night saver can also pause redraws until the backlight comes on, but the minute callback
 still runs. Do not describe that setting as eliminating all wakes. Shake detection
 can still have a system sensor cost even though the app does not poll samples.
 The companion resends some unchanged packets during sync; reducing those is a

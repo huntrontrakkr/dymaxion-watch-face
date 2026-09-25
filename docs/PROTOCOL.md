@@ -106,7 +106,7 @@ declares the `health` capability) and nothing about it leaves the watch.
 | 46–49 | Two int16 tide bounds, hundredths of selected meters/feet |
 | 50 | Forecast source: saved place 0–2, or current phone location 3 (default since 0.4.1). Daylight follows that source; absent current-city coordinates use forecast daylight flags. |
 | 51 | Humidity line on the weather chart (0/1) |
-| 52 | Flicks per page change (1–3; 0 from older phones means 2) |
+| 52 | Panel gesture: 1–3 flicks, or 4 for one flick while the backlight is already on; 0 from older phones means 2. Mode 4 requires watchface 0.4.2 or later. |
 | 53–63 | Reserved zero |
 
 The phone resolves `footer.colorMode` (`theme` or `custom`) to explicit colors
@@ -202,9 +202,10 @@ pulse, tray swipe and clock glide; MOTION still turns them all off. Bit 4 is
 the night saver: from the hour in byte 5 until the hour in byte 6 (wrapping
 past midnight; the same hour means all day) the map is reshaded every other
 hour, on even hours, and nothing animates. Bit 5, with the night saver, pauses
-redraws at night: the minute tick no longer redraws, and a wrist tap (the
-flick that turns on the backlight, which apps cannot read directly) brings the
-face up to date. Byte 7 is the battery percentage at or below which nothing
+redraws at night: the minute tick no longer redraws, and a backlight-on event
+brings the face up to date, whether motion, a button or screen touch woke it.
+This uses Pebble's backlight service, without polling or touchscreen input.
+Byte 7 is the battery percentage at or below which nothing
 animates: 5, 10 (the default), 20 or 30. The default packet is
 `[3, 4, 0, 0, 0, 22, 7, 10]`.
 

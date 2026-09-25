@@ -29,10 +29,14 @@ try{
   await page.getByRole('button',{name:'Use theme colors',exact:true}).click();
   assert.equal(await page.getByLabel('Temperature panel color',{exact:true}).inputValue(),'#000000');
   assert.equal(await page.getByLabel('Rain panel color',{exact:true}).inputValue(),'#555555');
-  assert.equal(await page.getByLabel('Flicks per panel change',{exact:true}).inputValue(),'2','two flicks by default, so the backlight flick does not change panels');
-  await page.getByLabel('Flicks per panel change',{exact:true}).selectOption('3');
+  assert.equal(await page.getByLabel('Panel gesture',{exact:true}).inputValue(),'2','existing default remains two flicks');
+  await page.getByLabel('Panel gesture',{exact:true}).selectOption('4');
+  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).footer.flicks,4);
+  assert.match(await page.locator('[data-gesture-help]').textContent(),/listening stops when the light goes out/);
+  await page.getByLabel('Panel gesture',{exact:true}).selectOption('3');
   assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).footer.flicks,3);
   await page.getByLabel('Flick to change panels',{exact:true}).uncheck();await page.getByLabel('Automatic rotation',{exact:true}).selectOption('1');
+  assert(await page.getByLabel('Panel gesture',{exact:true}).isDisabled());
   await page.clock.fastForward(61000);assert.equal(await page.locator('#panel-preview-label').textContent(),'Weather');
   await page.getByLabel('Automatic rotation',{exact:true}).selectOption('0');
   await page.getByLabel('Starting panel',{exact:true}).selectOption('weather');

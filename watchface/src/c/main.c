@@ -55,7 +55,9 @@ static time_t s_clock_minute;
 static uint32_t s_clock_started;
 static uint16_t s_clock_frame=UINT16_MAX;
 static TapState s_tap;
-static bool s_accel_subscribed;
+static PanelLightState s_gesture_light;
+static bool s_accel_subscribed,s_backlight_subscribed;
+static void configure_shake(void);
 static int s_map_w,s_map_h;
 static bool s_beside; // place times beside the clock this frame (or on their way)
 // Transitions (transitions.c): the tray swiping to its next page, and the
@@ -251,7 +253,10 @@ static void clock_configure(void){
   if(!face||!s_clock_memory||!s_clock_pixels){clock_release();return;}
   clock_flip_attach(&s_clock_flip,face,s_clock_memory);s_clock_face=face;
 }
-static void focus_changed(bool focused){s_focused=focused;clock_stop();s_clock_ready=false;if(focused)redraw();}
+static void focus_changed(bool focused){
+  s_focused=focused;memset(&s_tap,0,sizeof(s_tap));
+  configure_shake();clock_stop();s_clock_ready=false;if(focused)redraw();
+}
 static float lunar_sin(float degrees) {
   float turns=degrees/360.0f;
   turns-=(int32_t)turns;
@@ -705,18 +710,31 @@ static void pulse_on_zones(void){
   if(shown&&!s_zones_shown)pulse();
   s_zones_shown=shown;
 }
-// A wrist flick changes panels. Pebble's tap service is a hardware interrupt,
-// so nothing samples the accelerometer or wakes the watch between flicks.
+static uint64_t gesture_now(void){time_t seconds;uint16_t ms;time_ms(&seconds,&ms);return (uint64_t)seconds*1000+ms;}
+// Pebble's accelerometer events are distinct from touchscreen taps. The lit-only
+// option subscribes to motion only while the focused face has its light on.
 static void tapped(AccelAxisType axis,int32_t direction) {
-  time_t seconds;uint16_t ms;time_ms(&seconds,&ms);
-  // Paused in the dark: a flick brings the face up to date as the light comes on.
-  if(power_dark_paused(power(),local_hour()))redraw();
-  if(!panels_shake_enabled())return;
+  if(!s_focused||!panels_shake_enabled())return;
+  uint64_t now=gesture_now();
+  if(panels_light_only()&&!panel_light_ready(&s_gesture_light,light_is_on(),now))return;
   int page=panels_page();
-  if(panel_tap(&s_tap,(uint64_t)seconds*1000+ms,panels_flicks())&&panels_cycle(time(NULL))){tray_start(page);redraw();pulse_on_zones();}
+  if(panel_tap(&s_tap,now,panels_flicks())&&panels_cycle(time(NULL))){tray_start(page);redraw();pulse_on_zones();}
+}
+static void backlight_changed(bool on){
+  panel_light_update(&s_gesture_light,on,gesture_now());
+  configure_shake();
+  // A screen tap can light the watch even though watchfaces cannot receive it.
+  if(on&&s_focused&&power_dark_paused(power(),local_hour()))redraw();
 }
 static void configure_shake(void) {
-  bool wanted=panels_shake_enabled()||((power()[0]&POWER_NIGHT)&&(power()[0]&POWER_DARK_PAUSE));
+  bool observe_light=s_focused&&((panels_shake_enabled()&&panels_light_only())||((power()[0]&POWER_NIGHT)&&(power()[0]&POWER_DARK_PAUSE)));
+  if(observe_light!=s_backlight_subscribed){
+    s_gesture_light=(PanelLightState){0};
+    if(observe_light){backlight_service_subscribe(backlight_changed);panel_light_update(&s_gesture_light,light_is_on(),gesture_now());}
+    else backlight_service_unsubscribe();
+    s_backlight_subscribed=observe_light;
+  }
+  bool wanted=s_focused&&panels_shake_enabled()&&(!panels_light_only()||s_gesture_light.on);
   if(wanted==s_accel_subscribed)return;
   memset(&s_tap,0,sizeof(s_tap));
   if(wanted)accel_tap_service_subscribe(tapped);else accel_tap_service_unsubscribe();
@@ -736,7 +754,7 @@ static void tick(struct tm *local_time,TimeUnits changed) {
   if(power_relight(power(),s_settings[FLAGS]&DAY_NIGHT,local_time->tm_hour,local_time->tm_min))s_map_dirty=true;
   else if(!(s_settings[FLAGS]&DAY_NIGHT)&&local_time->tm_min%5==0)sun_update(now-now%300);
   // Paused in the dark (night saver): the screen keeps its last frame until a
-  // wrist flick, which also lights the backlight, redraws it.
+  // backlight-on event redraws it, including a touch that wakes the backlight.
   if(!power_dark_paused(power(),local_time->tm_hour))redraw();
   int page=panels_page();if(panels_tick(now))tray_start(page);pulse_on_zones();
   if(s_clock_face)clock_prepare(local_time,now,true);
@@ -761,7 +779,7 @@ static void connection_changed(bool connected) {
   s_connected=connected;redraw();if(connected)request_sync();
 }
 static void received(DictionaryIterator *iter,void *context) {
-  panels_receive(iter);
+  if(panels_receive(iter))memset(&s_tap,0,sizeof(s_tap));
   Tuple *display=dict_find(iter,MESSAGE_KEY_DISPLAY);
   uint8_t next_display[DISPLAY_SIZE];
   if(display&&display->type==TUPLE_BYTE_ARRAY&&display_normalize(next_display,display->value->data,display->length)&&memcmp(s_display,next_display,DISPLAY_SIZE)){
@@ -834,7 +852,7 @@ static void deinit(void) {
   if(s_animation)app_timer_cancel(s_animation);
   if(s_motion_timer)app_timer_cancel(s_motion_timer);
   tray_end();
-  tick_timer_service_unsubscribe();unobstructed_area_service_unsubscribe();if(s_accel_subscribed)accel_tap_service_unsubscribe();battery_state_service_unsubscribe();connection_service_unsubscribe();app_message_deregister_callbacks();
+  tick_timer_service_unsubscribe();unobstructed_area_service_unsubscribe();if(s_accel_subscribed)accel_tap_service_unsubscribe();if(s_backlight_subscribed)backlight_service_unsubscribe();battery_state_service_unsubscribe();connection_service_unsubscribe();app_message_deregister_callbacks();
   layer_destroy(s_layer);window_destroy(s_window);if(s_map)gbitmap_destroy(s_map);
   fonts_unload_custom_font(s_large);fonts_unload_custom_font(s_small);fonts_unload_custom_font(s_zone);
   clock_release();free(s_caps);

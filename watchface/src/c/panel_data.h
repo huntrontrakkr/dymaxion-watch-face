@@ -14,12 +14,19 @@ bool environment_valid(const uint8_t *p,unsigned length,bool tide);
 int environment_start_index(const uint8_t *p,uint32_t now);
 typedef struct {int year,month,day,weekday;bool today,holiday,weekend;} CalendarCell;
 void panel_calendar(int year,int month,int day,int weekday,const uint8_t *config,CalendarCell out[14]);
-// Wrist flicks change panels. A flick can raise a tap on several axes, so taps
+enum { PANEL_GESTURE_LIT=4 };
+// Motion events change panels. A flick can raise a tap on several axes, so taps
 // closer than TAP_SAME_MS are one flick; `required` flicks (1-3), each within
 // TAP_GAP_MS of the last, change the page, then TAP_REST_MS passes before the
 // next count. One flick alone is also the watch's motion-backlight gesture.
 #define TAP_SAME_MS 250
-#define TAP_GAP_MS 900
+#define TAP_GAP_MS 2000
 #define TAP_REST_MS 1000
 typedef struct {uint64_t last,rest;uint8_t count;} TapState;
 bool panel_tap(TapState *state,uint64_t now_ms,int required);
+// Ignore the motion which woke the backlight, including events delivered before
+// its on-callback. No timer or sampling loop is needed to arm the next gesture.
+#define PANEL_LIGHT_SETTLE_MS 400
+typedef struct {uint64_t since;bool on;} PanelLightState;
+void panel_light_update(PanelLightState *state,bool on,uint64_t now_ms);
+bool panel_light_ready(PanelLightState *state,bool on,uint64_t now_ms);
