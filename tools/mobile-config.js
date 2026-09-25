@@ -9,7 +9,9 @@ import {paletteFor} from '../shared/palette-settings.js';
 import {citySearch} from '../shared/place-search.js';
 import {renderConfigPreview} from './config-preview.js';
 import {PANEL_PAGES} from '../shared/panel-settings.js';
+import {quoteOfTheDay} from '../shared/fuller-quotes.js';
 const $=id=>document.getElementById(id),data=window.DYMAXION_CONFIG;
+{const q=quoteOfTheDay();$('fuller-quote').textContent=q.text;$('fuller-source').textContent=q.source;}
 const exists=zone=>data.zoneNames.indexOf(zone)>=0;
 let s=validateSettings(data.settings||defaults(),exists);
 let searches=[],previewPage=s.footer.home,evening=false,previewFrame=0;
