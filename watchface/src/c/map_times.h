@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "map_markers.h"
-// Place times on the map (shared/map-times.js): tiny 3x5, 3x6 or 3x7 figures in the
+// Place times on the map (shared/map-times.js): tiny 3x5 to 4x8 figures in the
 // nearest open gap of the net, joined to the place glyph by a leader of flat
 // and 45-degree runs. Masks are 200x104 bits, bit i = y*200+x, LSB first.
 #define MAP_TIMES_W 200
@@ -10,8 +10,8 @@
 #define MAP_TIMES_MASK_BYTES (MAP_TIMES_W*MAP_TIMES_H/8)
 #define MAP_TIME_TEXT 12
 enum {MAP_TIME_H,MAP_TIME_V};
-// Figure sizes: 3x5, 3x6 and 3x7 (Map time size in the settings).
-enum {MAP_TIME_SMALL,MAP_TIME_MEDIUM,MAP_TIME_LARGE};
+// Figure sizes: 3x5, 3x6, 3x7, 3x8 and 4x8 (Map time size in the settings).
+enum {MAP_TIME_SMALL,MAP_TIME_MEDIUM,MAP_TIME_LARGE,MAP_TIME_XLARGE,MAP_TIME_WIDE};
 // `own`: the rectangle the place's leader may cross freely (its clearing, or its group's hull).
 typedef struct {bool present;int16_t x,y;char template_text[MAP_TIME_TEXT];MapRect own;} MapTimePlace;
 // A placed label, and its leader's corner points: glyph centre, exit, two

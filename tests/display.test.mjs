@@ -32,7 +32,7 @@ test('display preferences migrate, validate, and travel separately from the stab
   assert.throws(()=>validateSettings({...s,zonePosition:'top'},zoneExists));
   assert.equal(defaults().nameplate,false,'the nameplate is off by default');
   assert.equal(defaults().mapTimeSize,'medium','map times use the 3×6 figures by default');
-  assert.deepEqual(['small','medium','large'].map(mapTimeSize=>encodeDisplay({...defaults(),mapTimeSize,mapBackground:'lines'})[3]),[2|4,2,2|8],'bits 2-3: 1 small, 0 medium, 2 large');
+  assert.deepEqual(['small','medium','large','xlarge','wide'].map(mapTimeSize=>encodeDisplay({...defaults(),mapTimeSize,mapBackground:'lines'})[3]),[2|4,2,2|8,2|12,2|16],'bits 2-4: 1 small, 0 medium, 2 large, 3 extra large, 4 wide');
   assert.throws(()=>validateSettings({...s,mapTimeSize:'huge'},zoneExists));
   assert.deepEqual([...encodeDisplay({...defaults(),nameplate:true})],[3,4,164,0,0,22,7,10],'bit 7: the Dymaxion nameplate');
   assert.equal(validateSettings({...s,zoneTimes:'always'},zoneExists).zoneTimes,'always');

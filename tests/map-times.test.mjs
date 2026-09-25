@@ -5,7 +5,7 @@ import {mkdirSync,readFileSync} from 'node:fs';
 import {makeMap} from '../shared/map.js';
 import {PLACES} from '../shared/settings.js';
 import {layoutMarkers,markerClearance} from '../shared/map-markers.js';
-import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,tinyWidth,TINY_FONTS,TINY_CHARS,MAP_TIME_SMALL,MAP_TIME_MEDIUM,MAP_TIME_LARGE,MAP_TIME_SIZES} from '../shared/map-times.js';
+import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,tinyWidth,TINY_FONTS,TINY_CHARS,MAP_TIME_SMALL,MAP_TIME_MEDIUM,MAP_TIME_LARGE,MAP_TIME_XLARGE,MAP_TIME_WIDE,MAP_TIME_SIZES} from '../shared/map-times.js';
 const m=makeMap(),bytes=readFileSync('watchface/resources/maps/map-0.bin'),blocked=(x,y)=>!!(bytes[(y*200+x)*4+3]&3);
 const pos=label=>m.project(...(({lat,lon})=>[lat,lon])(PLACES.find(p=>p.label===label))).map(Math.round);
 // Placement inputs as the watch and workshop build them: grouped marker
@@ -23,7 +23,7 @@ test('the watch places, draws and leads map times exactly as the workshop does',
   execFileSync('cc',['-std=c11','-O2','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/map-times-test.c','watchface/src/c/map_times.c','-o','test-results/map-times-test']);
   // Markers laid out as drawn (grouped where close), with and without you.
   const YOU=[null,{x:124,y:48},{x:92,y:34}];
-  for(const set of SETS)for(const turn of [0,1])for(const [clock24,reserve] of [[1,0],[0,1]])for(const you of YOU)for(const size of [MAP_TIME_SMALL,MAP_TIME_MEDIUM,MAP_TIME_LARGE]){
+  for(const set of SETS)for(const turn of [0,1])for(const [clock24,reserve] of [[1,0],[0,1]])for(const you of YOU)for(const size of [MAP_TIME_SMALL,MAP_TIME_MEDIUM,MAP_TIME_LARGE,MAP_TIME_XLARGE,MAP_TIME_WIDE]){
     const {places,obstacles,markers}=inputs(set,you,!!clock24,!!reserve);
     const args=[turn,clock24,reserve,size,...places.flatMap(p=>p?[p.x,p.y,p.own.x0,p.own.y0,p.own.x1,p.own.y1]:[-1,-1,0,0,0,0]),
       obstacles.length,...obstacles.flatMap(r=>[r.x0,r.y0,r.x1,r.y1]),markers.length,...markers.flatMap(m=>[m.x,m.y,m.half])];
@@ -43,9 +43,9 @@ test('the watch places, draws and leads map times exactly as the workshop does',
 });
 test('labels sit in open ground, clear of each other, near their places',()=>{
   // Small figures stay within about 55 pixels even in crowded Europe; the
-  // taller ones may travel further (about 75) to find room.
-  const LIMIT=[280,400,400];
-  for(const size of [MAP_TIME_SMALL,MAP_TIME_MEDIUM,MAP_TIME_LARGE])for(const set of SETS)for(const turn of [false,true]){
+  // taller ones may travel further (about 75, the wide ones about 95) to find room.
+  const LIMIT=[280,400,400,400,500];
+  for(const size of [MAP_TIME_SMALL,MAP_TIME_MEDIUM,MAP_TIME_LARGE,MAP_TIME_XLARGE,MAP_TIME_WIDE])for(const set of SETS)for(const turn of [false,true]){
     const {places,obstacles,markers}=inputs(set,null,false,true);
     const spots=placeMapTimes(places,blocked,200,104,{turn,obstacles,markers,size}),seen=new Set();
     spots.forEach((s,i)=>{
@@ -84,21 +84,21 @@ test('leaders meet square and centred: straight out of the glyph, straight into 
     });
   }
 });
-test('tiny figures: legible 3×5, 3×6 and 3×7 sets; times keep the template width',()=>{
+test('tiny figures: legible 3×5 to 4×8 sets; times keep the template width',()=>{
   for(const {height,glyphs} of TINY_FONTS){
     for(const c of TINY_CHARS){const g=glyphs[c];assert.equal(g.length,height);assert(g.every(r=>r.length===g[0].length&&/^[.#]+$/.test(r)));}
     const digits=[...'0123456789'].map(c=>glyphs[c].join(''));assert.equal(new Set(digits).size,10,'every figure distinct');
-    for(const c of TINY_CHARS)assert.equal(glyphs[c][0].length,TINY_FONTS[0].glyphs[c][0].length,'both sizes share widths, so templates fit either');
+    if(glyphs['0'][0].length===3)for(const c of TINY_CHARS)assert.equal(glyphs[c][0].length,TINY_FONTS[0].glyphs[c][0].length,'the narrow sizes share widths');
   }
-  assert.deepEqual(TINY_FONTS.map(f=>f.height),[5,6,7]);
+  assert.deepEqual(TINY_FONTS.map(f=>f.height),[5,6,7,8,8]);
   assert.equal(tinyWidth('12:34'),17);
-  for(let h=0;h<24;h++)for(const clock24 of [true,false])for(const delta of [-1,0,1])
-    assert(tinyWidth(mapTimeText({hour:h,minute:59,clock24,delta}))<=tinyWidth(mapTimeTemplate(clock24,true)));
+  for(let size=0;size<TINY_FONTS.length;size++)for(let h=0;h<24;h++)for(const clock24 of [true,false])for(const delta of [-1,0,1])
+    assert(tinyWidth(mapTimeText({hour:h,minute:59,clock24,delta}),size)<=tinyWidth(mapTimeTemplate(clock24,true),size),'every time fits its template at every size');
   assert.equal(mapTimeText({hour:13,minute:5,clock24:false,delta:1}),'01:05P +1');assert.equal(mapTimeText({hour:0,minute:0,clock24:true,stale:true}),'00:00 ?');
 });
 test('map time size is the wearer\'s choice: every label uses it',()=>{
-  assert.deepEqual(MAP_TIME_SIZES,['small','medium','large']);assert.deepEqual(TINY_FONTS.map(f=>f.height),[5,6,7]);
-  for(const size of [MAP_TIME_SMALL,MAP_TIME_MEDIUM,MAP_TIME_LARGE])for(const set of SETS){
+  assert.deepEqual(MAP_TIME_SIZES,['small','medium','large','xlarge','wide']);assert.deepEqual(TINY_FONTS.map(f=>f.height),[5,6,7,8,8]);
+  for(const size of [MAP_TIME_SMALL,MAP_TIME_MEDIUM,MAP_TIME_LARGE,MAP_TIME_XLARGE,MAP_TIME_WIDE])for(const set of SETS){
     const {places,obstacles,markers}=inputs(set,null,false,true);
     placeMapTimes(places,blocked,200,104,{obstacles,markers,size}).forEach((s,i)=>{if(!places[i])return;assert(s,`${set[i]} finds a gap at size ${size}`);assert.equal(s.size,size);});
   }

@@ -518,8 +518,12 @@ static void marker_spots(time_t now,int visible,MarkerSpots *s){
   }
 }
 // Placement inputs from this frame's marker layout.
-// Map time size from DISPLAY byte 3 (display.h): code 0 medium, 1 small, 2 large.
-static int map_time_size(void){int c=DISPLAY_MAP_TIME_CODE(s_display);return c==1?MAP_TIME_SMALL:c==2?MAP_TIME_LARGE:MAP_TIME_MEDIUM;}
+// Map time size from DISPLAY byte 3 (display.h): code 0 medium, 1 small, 2 large,
+// 3 extra large, 4 wide.
+static int map_time_size(void){
+  static const uint8_t SIZES[MAP_TIME_SIZE_CODES]={MAP_TIME_MEDIUM,MAP_TIME_SMALL,MAP_TIME_LARGE,MAP_TIME_XLARGE,MAP_TIME_WIDE};
+  int c=DISPLAY_MAP_TIME_CODE(s_display);return c<MAP_TIME_SIZE_CODES?SIZES[c]:MAP_TIME_MEDIUM;
+}
 static void map_times_inputs(time_t now,uint8_t key[19],MapTimePlace places[3],const MarkerSpots *spots){
   bool clock24=is_24(),turn=s_display[2]&ZONE_TIMES_TURN;int here=local_offset_minutes(now);memset(key,0,18);
   for(int i=0;i<3;i++){

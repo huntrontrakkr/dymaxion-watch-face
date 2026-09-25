@@ -185,9 +185,9 @@ Chamfer or a system font (styles 4–9); Broad and Span fill the strip. On the
 map, the watch places each time itself (`map_times.c`, mirrored by
 `shared/map-times.js`) whenever places, the clock format, turning or a place's
 day-offset reservation change; nothing extra travels from the phone. Labels
-use the figure size chosen in Map time size: 3×5, 3×6 (the default) or 3×7
-pixels, carried in byte 3 bits 2–3 (0 medium, 1 small, 2 large; older packets
-read as medium). Every label uses it and goes wherever it fits. Byte 2 bit 1 turns the leading zero off (the first digit slot stays blank for
+use the figure size chosen in Map time size: 3×5, 3×6 (the default), 3×7, 3×8
+or 4×8 pixels, carried in byte 3 bits 2–4 (0 medium, 1 small, 2 large, 3 extra
+large, 4 wide; older packets read as medium). Every label uses it and goes wherever it fits. Byte 2 bit 1 turns the leading zero off (the first digit slot stays blank for
 hours under ten). Bit 1 is clear in every older packet, so the zero stays on. Byte 3 bits 0–1 select the
 map background: 0 none, 1 triangle points, 2 triangle lines, 3 fine triangle
 points (the lattice split twice). Background *n* is
