@@ -1,7 +1,7 @@
 {
   "name": "dymaxion",
   "author": "huntrontrakkr",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "license": "Apache-2.0",
   "private": true,
   "dependencies": {},
@@ -27,7 +27,8 @@
         {"type":"font","name":"FONT_DRAFT_12","file":"fonts/DymaxionDraftMicro.ttf","characterRegex":"[A-Za-z0-9 .,:%+/?-]"},
         {"type":"raw","name":"CLOCK_CHAMFER","file":"data/clock-chamfer.bin"},
         {"type":"raw","name":"CLOCK_GLYPHS","file":"data/clock-glyphs.bin"},
-        {"type":"raw","name":"TYPE_CAPS","file":"data/caps.bin"}
+        {"type":"raw","name":"TYPE_CAPS","file":"data/caps.bin"},
+        {"type":"bitmap","name":"MENU_ICON","file":"images/menu-icon.png","menuIcon":true}
       ]
     }
   }

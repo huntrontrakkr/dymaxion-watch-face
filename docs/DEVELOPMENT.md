@@ -75,11 +75,11 @@ pebble install --phone <phone-ip>
 ```
 
 The installable file is `watchface/build/watchface.pbw`. Target: Emery only,
-200×228 pixels, 64 colors. SDK 4.33.1 reports 100,924 bytes of resources and a
-61,303-byte code/static-RAM footprint, leaving 69,769 bytes for the heap before
+200×228 pixels, 64 colors. For version 0.4.3, SDK 4.33.1 reports 101,173 bytes of resources and a
+61,987-byte code/static-RAM footprint, leaving 69,085 bytes for the heap before
 runtime allocations. The map bitmap and active clock resources use that heap.
-These figures are unchanged in version 0.4.0. The new settings preview runs on
-the phone and adds no watch rendering or sensor activity.
+The selector icon adds 249 resource bytes and no app RAM compared with 0.4.2.
+The settings preview runs on the phone and adds no watch rendering or sensor activity.
 See the [native power profile](POWER-PROFILE.md) for measured rendering
 costs, the animation optimization, and the assumptions behind the battery model.
 
@@ -109,11 +109,16 @@ Typography preparation is separate. The Draft and Span generator verifies every 
 uv run --with fonttools==4.60.0 --with freetype-py==2.5.1 --with pillow==11.3.0 --with cairosvg==2.8.2 tools/generate-draft.py
 uv run --with fonttools==4.60.0 --with freetype-py==2.5.1 tools/prepare-watch-type.py
 uv run --with pillow==11.3.0 tools/generate-wordmark.py
+uv run --with pillow==11.3.0 tools/generate-menu-icon.py
 npm run companion
 ```
 
 The eight lunar phases and Bluetooth rune are drawn at their final pixel size
 in `shared/` and packed into a native C table by `npm run generate:status`.
+The watch selector uses `watchface/resources/images/menu-icon.png`, a transparent
+25×25 faceted globe in blue and amber. Its pixel master lives in
+`tools/generate-menu-icon.py`; the manifest marks it as `menuIcon`. It is a static
+launcher resource and adds no watchface drawing or sensor work.
 Rounded broad numerals animate only during their 400 ms minute transition;
 there is no continuous animation or additional sensor.
 Run `pebble clean` before building after changes to the package version,
