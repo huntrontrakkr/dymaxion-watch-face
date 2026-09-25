@@ -8,5 +8,10 @@
 // Byte 3: 0 none, 1 triangle points, 2 triangle lines, 3 fine triangle points;
 // background n is flag bit 4<<n in the map data.
 #define MAP_BACKGROUND_COUNT 4
+// Version 3 byte 3 bits 2-3: the map time size, 0 medium (3x6), 1 small
+// (3x5), 2 large (3x7); older packets read as medium.
+#define MAP_TIME_SIZE_CODES 3
+#define DISPLAY_MAP_BACKGROUND(d) ((d)[3]&3)
+#define DISPLAY_MAP_TIME_CODE(d) (((d)[3]>>2)&3)
 bool display_valid(const uint8_t *data,size_t length);
 bool display_normalize(uint8_t out[DISPLAY_SIZE],const uint8_t *data,size_t length);

@@ -1,10 +1,11 @@
-// Place times on the map: tiny 3×6 (or, when crowded, 3×5) pixel figures, placed in the nearest
+// Place times on the map: tiny 3×5, 3×6 or 3×7 pixel figures, placed in the nearest
 // open gap of the unfolded net and joined to the place's glyph by an outlined
 // leader of flat and 45° runs with sharp corners. The watch runs the same
 // steps in watchface/src/c/map_times.c; tests compare the two.
-// Two sizes: 3×6 figures when every label fits comfortably, 3×5 when the
-// arrangement is crowded (placeMapTimes picks; every label shares a size).
-export const MAP_TIME_SMALL = 0, MAP_TIME_LARGE = 1;
+// Three sizes of figure, chosen in the settings (Map time size): 3×5, 3×6
+// (the default) and 3×7. They share widths, so a label's template fits any.
+export const MAP_TIME_SMALL = 0, MAP_TIME_MEDIUM = 1, MAP_TIME_LARGE = 2;
+export const MAP_TIME_SIZES = ['small', 'medium', 'large'];
 export const TINY_FONTS = Object.freeze([
   {height: 5, glyphs: Object.freeze({
   '0': ['###', '#.#', '#.#', '#.#', '###'], '1': ['.#.', '##.', '.#.', '.#.', '###'],
@@ -25,13 +26,24 @@ export const TINY_FONTS = Object.freeze([
   'P': ['##.', '#.#', '#.#', '##.', '#..', '#..'], '+': ['...', '.#.', '###', '.#.', '...', '...'],
   '-': ['...', '...', '###', '...', '...', '...'], '?': ['##.', '..#', '..#', '.#.', '...', '.#.'],
   ' ': ['.', '.', '.', '.', '.', '.']
-})}
+})},
+  {height: 7, glyphs: Object.freeze({
+    '0': ['.#.', '#.#', '#.#', '#.#', '#.#', '#.#', '.#.'], '1': ['.#.', '##.', '.#.', '.#.', '.#.', '.#.', '.#.'],
+    '2': ['.#.', '#.#', '..#', '..#', '.#.', '#..', '###'], '3': ['##.', '..#', '..#', '.#.', '..#', '..#', '##.'],
+    '4': ['#.#', '#.#', '#.#', '###', '..#', '..#', '..#'], '5': ['###', '#..', '#..', '##.', '..#', '..#', '##.'],
+    '6': ['.##', '#..', '#..', '##.', '#.#', '#.#', '.#.'], '7': ['###', '..#', '..#', '.#.', '.#.', '.#.', '.#.'],
+    '8': ['.#.', '#.#', '#.#', '.#.', '#.#', '#.#', '.#.'], '9': ['.#.', '#.#', '#.#', '.##', '..#', '..#', '##.'],
+    ':': ['.', '.', '#', '.', '#', '.', '.'], 'A': ['.#.', '#.#', '#.#', '###', '#.#', '#.#', '#.#'],
+    'P': ['##.', '#.#', '#.#', '##.', '#..', '#..', '#..'], '+': ['...', '...', '.#.', '###', '.#.', '...', '...'],
+    '-': ['...', '...', '...', '###', '...', '...', '...'], '?': ['##.', '..#', '..#', '.#.', '.#.', '...', '.#.'],
+    ' ': ['.', '.', '.', '.', '.', '.', '.']
+  })}
 ]);
-export const TINY_GLYPHS = TINY_FONTS[MAP_TIME_LARGE].glyphs, TINY_HEIGHT = TINY_FONTS[MAP_TIME_LARGE].height;
+export const TINY_GLYPHS = TINY_FONTS[MAP_TIME_MEDIUM].glyphs, TINY_HEIGHT = TINY_FONTS[MAP_TIME_MEDIUM].height;
 export const TINY_CHARS = '0123456789:AP+-? ';
 export const MAP_TIME_ORIENTATIONS = ['horizontal', 'turn'];
 const H = 0, V = 1, HALO = 3, MARGIN = 1, TURN_PENALTY = 20, TIME_GLYPHS = 5;
-export const tinyWidth = (text, size = MAP_TIME_LARGE) => [...text].reduce((w, c, i) => w + TINY_FONTS[size].glyphs[c][0].length + (i ? 1 : 0), 0);
+export const tinyWidth = (text, size = MAP_TIME_MEDIUM) => [...text].reduce((w, c, i) => w + TINY_FONTS[size].glyphs[c][0].length + (i ? 1 : 0), 0);
 // The text a place shows, and the widest it can get (its placement template):
 // HH:MM, A/P in 12-hour time, and a day offset when its offset differs from
 // the watch's, so the label never outgrows its gap.
@@ -44,7 +56,7 @@ export const mapTimeTemplate = (clock24, reserveDay) => '00:00' + (clock24 ? '' 
 // Glyph boxes relative to the label origin. Turned labels read bottom to top;
 // `total` (the template's width) keeps the first figure in place when the text
 // is shorter than its template.
-export function tinyLayout(text, orientation, total, size = MAP_TIME_LARGE) {
+export function tinyLayout(text, orientation, total, size = MAP_TIME_MEDIUM) {
   total ??= tinyWidth(text, size);
   const glyphs = [], {height, glyphs: set} = TINY_FONTS[size];let x = 0;
   for (const c of text) {
@@ -54,7 +66,7 @@ export function tinyLayout(text, orientation, total, size = MAP_TIME_LARGE) {
   }
   return glyphs;
 }
-export function tinyPixels(text, orientation, total, size = MAP_TIME_LARGE) {
+export function tinyPixels(text, orientation, total, size = MAP_TIME_MEDIUM) {
   total ??= tinyWidth(text, size);
   const out = [];
   for (const g of tinyLayout(text, orientation, total, size)) {
@@ -189,14 +201,10 @@ function placeOne(p, taken, blocked, width, height, turn, markers, size) {
 // location's clearing, group hulls) and `markers` every glyph {x, y, half},
 // which leaders crossing a hull must miss.
 export const MAP_TIME_ORDERS = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
-// The large figures are kept when every label finds a gap with a leader of
-// ordinary length (cost under COMFORTABLE, about 55 pixels); otherwise the
-// whole arrangement uses the small figures.
-export const COMFORTABLE = 280;
-export function placeMapTimes(places, blocked, width, height, options = {}) {
-  const large = arrange(places, blocked, width, height, options, MAP_TIME_LARGE);
-  const fits = places.every((p, i) => !p || (large[i] && large[i].cost < COMFORTABLE));
-  return fits ? large : arrange(places, blocked, width, height, options, MAP_TIME_SMALL);
+// `size` is MAP_TIME_SMALL, MAP_TIME_MEDIUM or MAP_TIME_LARGE; every label
+// uses it, going wherever it fits.
+export function placeMapTimes(places, blocked, width, height, {size = MAP_TIME_MEDIUM, ...options} = {}) {
+  return arrange(places, blocked, width, height, options, size);
 }
 function arrange(places, blocked, width, height, {turn = false, obstacles = [], markers = []}, size) {
   let best = null;

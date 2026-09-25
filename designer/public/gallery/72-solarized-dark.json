@@ -43,6 +43,7 @@
   "zonePosition": "right",
   "mapTimesTurn": false,
   "nameplate": true,
+  "mapTimeSize": "medium",
   "power": {
     "daylightMinutes": 5,
     "minuteAnimation": true,

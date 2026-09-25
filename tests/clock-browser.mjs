@@ -140,6 +140,16 @@ try{
   await page.getByRole('tab',{name:'Composition',exact:true}).click();await page.getByRole('button',{name:'Horizon',exact:true}).click();
   assert.equal(await screen.getAttribute('data-clock-top'),'134','without it Horizon is unchanged');
   await page.getByRole('button',{name:'Meridian',exact:true}).click();
+  // Map time size: medium by default; the choice is saved and reaches the watch's packet.
+  await page.getByRole('tab',{name:'Character',exact:true}).click();
+  const times=await page.getByLabel('Place times',{exact:true}).inputValue(),where=await page.getByLabel('Place times position',{exact:true}).inputValue();
+  if(times==='panel')await page.getByLabel('Place times',{exact:true}).selectOption('when-hidden');
+  await page.getByLabel('Place times position',{exact:true}).selectOption('map');
+  assert.equal(await page.getByLabel('Map time size',{exact:true}).inputValue(),'medium');
+  await page.getByLabel('Map time size',{exact:true}).selectOption('large');
+  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).mapTimeSize,'large');
+  await page.getByLabel('Map time size',{exact:true}).selectOption('medium');
+  await page.getByLabel('Place times position',{exact:true}).selectOption(where);await page.getByLabel('Place times',{exact:true}).selectOption(times);
   // Night saver: with the night covering every hour (same start and end), minute changes do not animate.
   await page.getByRole('tab',{name:'Character',exact:true}).click();
   const flipsAtNextMinute=async()=>{const wait=await page.evaluate(()=>60000-Date.now()%60000);await page.clock.runFor(wait+100);return await screen.getAttribute('data-clock-animating')==='true';};

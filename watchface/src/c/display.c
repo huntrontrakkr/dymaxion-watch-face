@@ -9,10 +9,15 @@
 static bool options_valid(const uint8_t *p){
   return !(p[2]&~0xfe)&&((p[2]>>2)&3)<ZONE_TIMES_COUNT&&((p[2]>>4)&3)<ZONE_POSITION_COUNT&&p[3]<MAP_BACKGROUND_COUNT;
 }
+// Version 3 byte 3 also carries the map time size (bits 2-3).
+static bool v3_options_valid(const uint8_t *p){
+  return !(p[2]&~0xfe)&&((p[2]>>2)&3)<ZONE_TIMES_COUNT&&((p[2]>>4)&3)<ZONE_POSITION_COUNT&&
+    (p[3]&3)<MAP_BACKGROUND_COUNT&&((p[3]>>2)&3)<MAP_TIME_SIZE_CODES&&!(p[3]&~0x0f);
+}
 bool display_valid(const uint8_t *p,size_t length){
   if(!p||p[1]>9)return false;
   // Version 3 adds power and motion (power.h) in bytes 4-7.
-  if(length==DISPLAY_SIZE)return p[0]==3&&options_valid(p)&&!(p[4]&~0x7f)&&p[5]<24&&p[6]<24&&(p[7]==5||p[7]==10||p[7]==20||p[7]==30);
+  if(length==DISPLAY_SIZE)return p[0]==3&&v3_options_valid(p)&&!(p[4]&~0x7f)&&p[5]<24&&p[6]<24&&(p[7]==5||p[7]==10||p[7]==20||p[7]==30);
   if(length!=DISPLAY_LEGACY_SIZE)return false;
   // Version 2 byte 2: bit 1 no leading zero, bits 2-3 when place times also
   // show outside the panel, bits 4-5 where, bit 6 map times may turn, bit 7 the nameplate.

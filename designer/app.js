@@ -31,7 +31,7 @@ import {powerControls} from '../shared/power-controls.js';
 import {sinceRelight,minuteAnimationOn,flourishesOn} from '../shared/power.js';
 import {TRAY_MS,TRAY_Y,TRAY_H,traySlide,slideRow,besideProgress,besideShift,columnAlpha,mixColor} from '../shared/transitions.js';
 import {zoneColumn,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
-import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels} from '../shared/map-times.js';
+import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,MAP_TIME_SIZES} from '../shared/map-times.js';
 import {minuteFlipClock,drawFlipPixels,FLIP_FACES,flipOffset} from '../shared/minute-flip.js';
 
 const $=id=>document.getElementById(id),zoneExists=tz=>!!moment.tz.zone(tz);
@@ -69,7 +69,7 @@ let currentCity={name:'Norfolk',sample:true,lat:36.9,lon:-76.3};
 const cityLocation=locationService({getSettings:()=>settings,storage:localStorage,send:city=>{currentCity=city;render();}});
 const cityEditor=cityControls($('city-controls'),()=>settings,value=>{settings=validateSettings({...settings,location:value},zoneExists);save();},()=>cityLocation.refresh());
 const powerEditor=powerControls($('power-controls'),()=>settings,power=>{settings={...settings,power};sync();save();});
-const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,nameplate:value.nameplate};sync();save();});
+const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,mapTimeSize:value.mapTimeSize,nameplate:value.nameplate};sync();save();});
 const paletteEditor=paletteControls($('palette-controls'),()=>settings,patch=>{settings=validateSettings({...settings,...patch},zoneExists);sync();save();});
 const environment=environmentService({getSettings:()=>settings,storage:localStorage,send:(kind,data)=>{liveData[kind]=data;render();}});
 const panelEditor=panelControls($('panel-controls'),()=>settings,footer=>{
@@ -244,8 +244,8 @@ function markerSpots(){
 function drawMapTimes(now,local,mx,my,pal,markers){
   const [w,h]=MAP_SIZE,clock24=use24();
   const places=settings.places.map((p,i)=>{const m=markers.places[i];return m&&{x:m.x,y:m.y,own:m.own,template:mapTimeTemplate(clock24,moment(now).tz(p.tz).utcOffset()!==local.utcOffset())};});
-  const {obstacles}=markers,key=JSON.stringify([places,obstacles,markers.markers,settings.mapTimesTurn]);
-  if(key!==mapTimesCache.key)mapTimesCache={key,spots:placeMapTimes(places,(x,y)=>!!(mapPixels[(y*w+x)*4+3]&3),w,h,{turn:settings.mapTimesTurn,obstacles,markers:markers.markers})};
+  const {obstacles}=markers,key=JSON.stringify([places,obstacles,markers.markers,settings.mapTimesTurn,settings.mapTimeSize]);
+  if(key!==mapTimesCache.key)mapTimesCache={key,spots:placeMapTimes(places,(x,y)=>!!(mapPixels[(y*w+x)*4+3]&3),w,h,{turn:settings.mapTimesTurn,obstacles,markers:markers.markers,size:MAP_TIME_SIZES.indexOf(settings.mapTimeSize)})};
   const spots=mapTimesCache.spots,px=(x,y,c)=>{ctx.fillStyle=c;ctx.fillRect(mx+x,my+y,1,1);};
   // Outlined leaders first, then their lines and the tiny times in each place's color.
   spots.forEach(s=>{if(s){ctx.fillStyle=pal.bg;for(const [x,y] of routePixels(s.points))ctx.fillRect(mx+x-1,my+y-1,3,3);}});

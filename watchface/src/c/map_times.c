@@ -5,27 +5,33 @@
 #define MARGIN 1
 #define TURN_PENALTY 20
 #define TIME_GLYPHS 5
-// Two sizes (shared/map-times.js): 3x6 figures when every label fits
-// comfortably, 3x5 when the arrangement is crowded. Rows as bit masks, bit 2 =
-// left pixel of a 3-wide glyph; the small set leaves its sixth row empty.
-#define TINY_MAX_H 6
-static const int TINY_HEIGHT[2]={5,6};
+// Three sizes (shared/map-times.js): 3x5, 3x6 and 3x7 figures, chosen in the
+// settings. Rows as bit masks, bit 2 = left pixel of a 3-wide glyph; shorter
+// sets leave their last rows empty.
+#define TINY_MAX_H 7
+static const int TINY_HEIGHT[3]={5,6,7};
 static int centre(int w){return (w-1)>>1;}
 typedef struct {char c;uint8_t w,rows[TINY_MAX_H];} Tiny;
 static const Tiny TINY_SMALL[]={
-  {'0',3,{7,5,5,5,7,0}},{'1',3,{2,6,2,2,7,0}},{'2',3,{7,1,7,4,7,0}},{'3',3,{7,1,3,1,7,0}},{'4',3,{5,5,7,1,1,0}},
-  {'5',3,{7,4,7,1,7,0}},{'6',3,{7,4,7,5,7,0}},{'7',3,{7,1,1,2,2,0}},{'8',3,{7,5,7,5,7,0}},{'9',3,{7,5,7,1,7,0}},
-  {':',1,{0,1,0,1,0,0}},{'A',3,{2,5,7,5,5,0}},{'P',3,{6,5,6,4,4,0}},{'+',3,{0,2,7,2,0,0}},{'-',3,{0,0,7,0,0,0}},
-  {'?',3,{6,1,2,0,2,0}},{' ',1,{0,0,0,0,0,0}}
+  {'0',3,{7,5,5,5,7,0,0}},{'1',3,{2,6,2,2,7,0,0}},{'2',3,{7,1,7,4,7,0,0}},{'3',3,{7,1,3,1,7,0,0}},{'4',3,{5,5,7,1,1,0,0}},
+  {'5',3,{7,4,7,1,7,0,0}},{'6',3,{7,4,7,5,7,0,0}},{'7',3,{7,1,1,2,2,0,0}},{'8',3,{7,5,7,5,7,0,0}},{'9',3,{7,5,7,1,7,0,0}},
+  {':',1,{0,1,0,1,0,0,0}},{'A',3,{2,5,7,5,5,0,0}},{'P',3,{6,5,6,4,4,0,0}},{'+',3,{0,2,7,2,0,0,0}},{'-',3,{0,0,7,0,0,0,0}},
+  {'?',3,{6,1,2,0,2,0,0}},{' ',1,{0,0,0,0,0,0,0}}
+};
+static const Tiny TINY_MEDIUM[]={
+  {'0',3,{7,5,5,5,5,7,0}},{'1',3,{2,6,2,2,2,7,0}},{'2',3,{7,1,1,7,4,7,0}},{'3',3,{7,1,3,1,1,7,0}},{'4',3,{5,5,5,7,1,1,0}},
+  {'5',3,{7,4,7,1,1,7,0}},{'6',3,{7,4,7,5,5,7,0}},{'7',3,{7,1,1,2,2,2,0}},{'8',3,{7,5,7,5,5,7,0}},{'9',3,{7,5,5,7,1,7,0}},
+  {':',1,{0,1,0,0,1,0,0}},{'A',3,{2,5,5,7,5,5,0}},{'P',3,{6,5,5,6,4,4,0}},{'+',3,{0,2,7,2,0,0,0}},{'-',3,{0,0,7,0,0,0,0}},
+  {'?',3,{6,1,1,2,0,2,0}},{' ',1,{0,0,0,0,0,0,0}}
 };
 static const Tiny TINY_LARGE[]={
-  {'0',3,{7,5,5,5,5,7}},{'1',3,{2,6,2,2,2,7}},{'2',3,{7,1,1,7,4,7}},{'3',3,{7,1,3,1,1,7}},{'4',3,{5,5,5,7,1,1}},
-  {'5',3,{7,4,7,1,1,7}},{'6',3,{7,4,7,5,5,7}},{'7',3,{7,1,1,2,2,2}},{'8',3,{7,5,7,5,5,7}},{'9',3,{7,5,5,7,1,7}},
-  {':',1,{0,1,0,0,1,0}},{'A',3,{2,5,5,7,5,5}},{'P',3,{6,5,5,6,4,4}},{'+',3,{0,2,7,2,0,0}},{'-',3,{0,0,7,0,0,0}},
-  {'?',3,{6,1,1,2,0,2}},{' ',1,{0,0,0,0,0,0}}
+  {'0',3,{2,5,5,5,5,5,2}},{'1',3,{2,6,2,2,2,2,2}},{'2',3,{2,5,1,1,2,4,7}},{'3',3,{6,1,1,2,1,1,6}},{'4',3,{5,5,5,7,1,1,1}},
+  {'5',3,{7,4,4,6,1,1,6}},{'6',3,{3,4,4,6,5,5,2}},{'7',3,{7,1,1,2,2,2,2}},{'8',3,{2,5,5,2,5,5,2}},{'9',3,{2,5,5,3,1,1,6}},
+  {':',1,{0,0,1,0,1,0,0}},{'A',3,{2,5,5,7,5,5,5}},{'P',3,{6,5,5,6,4,4,4}},{'+',3,{0,0,2,7,2,0,0}},{'-',3,{0,0,0,7,0,0,0}},
+  {'?',3,{6,1,1,2,2,0,2}},{' ',1,{0,0,0,0,0,0,0}}
 };
 static const Tiny *tiny(char c,int size){
-  const Tiny *set=size==MAP_TIME_LARGE?TINY_LARGE:TINY_SMALL;int n=sizeof(TINY_LARGE)/sizeof(TINY_LARGE[0]);
+  const Tiny *set=size==MAP_TIME_LARGE?TINY_LARGE:size==MAP_TIME_MEDIUM?TINY_MEDIUM:TINY_SMALL;int n=sizeof(TINY_LARGE)/sizeof(TINY_LARGE[0]);
   for(int i=0;i<n;i++)if(set[i].c==c)return &set[i];
   return &set[15];
 }
@@ -190,12 +196,8 @@ static void arrange(const uint8_t *blocked,const MapTimePlace places[3],const Ma
     if(total<best_total){best_total=total;memcpy(out,result,sizeof(result));}
   }
 }
-// The large figures stay when every label finds a gap with a leader of
-// ordinary length (cost under MAP_TIME_COMFORTABLE); otherwise all go small.
+// Every label uses the chosen size and goes wherever it fits.
 void map_times_place(const uint8_t *blocked,const MapTimePlace places[3],const MapRect *obstacles,int obstacle_count,
-  const MapMarker *markers,int marker_count,bool turn,uint8_t *taken,MapTimeSpot out[3]){
-  arrange(blocked,places,obstacles,obstacle_count,markers,marker_count,turn,taken,MAP_TIME_LARGE,out);
-  for(int i=0;i<3;i++)if(places[i].present&&(!out[i].ok||out[i].cost>=MAP_TIME_COMFORTABLE)){
-    arrange(blocked,places,obstacles,obstacle_count,markers,marker_count,turn,taken,MAP_TIME_SMALL,out);return;
-  }
+  const MapMarker *markers,int marker_count,bool turn,int size,uint8_t *taken,MapTimeSpot out[3]){
+  arrange(blocked,places,obstacles,obstacle_count,markers,marker_count,turn,taken,size,out);
 }

@@ -16,7 +16,7 @@ import {drawPixelRows} from '../shared/pixels.js';
 import {BACKGROUND_BITS} from '../shared/map-background.js';
 import {nameplateLayout,NAMEPLATE_ROWS} from '../shared/nameplate.js';
 import {zonesBeside,zonesOnMap,zoneColumn,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
-import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels} from '../shared/map-times.js';
+import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,MAP_TIME_SIZES} from '../shared/map-times.js';
 import {layoutMarkers} from '../shared/map-markers.js';
 
 const pixels=Uint8Array.from(atob(mapBase64),c=>c.charCodeAt(0)),signed=new Int8Array(pixels.buffer),map=makeMap();
@@ -52,7 +52,7 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
   const spots=layoutMarkers(points,w,h);
   if(onMap){
     const templates=spots.map((point,j)=>({...point,template:mapTimeTemplate(clock24,times[enabled[j].i].h!==local.h)}));
-    const labels=placeMapTimes(templates,(x,y)=>!!(pixels[(y*w+x)*4+3]&3),w,h,{turn:s.mapTimesTurn});
+    const labels=placeMapTimes(templates,(x,y)=>!!(pixels[(y*w+x)*4+3]&3),w,h,{turn:s.mapTimesTurn,size:MAP_TIME_SIZES.indexOf(s.mapTimeSize)});
     labels.forEach((label,j)=>{if(!label)return;const {p,i}=enabled[j],t=times[i],color=markColor(p,s,i);
       for(const [x,y]of routePixels(label.points)){ctx.fillStyle=pal.bg;ctx.fillRect(mx+x-1,my+y-1,3,3);}
       ctx.fillStyle=color;for(const [x,y]of routePixels(label.points))ctx.fillRect(mx+x,my+y,1,1);

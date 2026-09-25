@@ -76,7 +76,7 @@ static void redraw_part(uint8_t part){s_parts|=part;layer_mark_dirty(s_layer);}
 static bool s_tray_active;static int s_tray_from;static uint32_t s_tray_started;static uint8_t *s_tray_old;
 static bool s_beside_known,s_beside_to;static int s_beside_from,s_beside_p;static uint32_t s_beside_started;
 static MapTimeSpot s_map_spots[3];
-static uint8_t s_map_key[18];
+static uint8_t s_map_key[19];
 static bool s_map_key_valid;
 static AppTimer *s_map_timer;
 // Power and motion (power.c): DISPLAY bytes 4-6.
@@ -125,7 +125,7 @@ static void rebuild_map(void) {
         if((s_settings[FLAGS]&DAY_NIGHT)&&light>-6500&&light<6500)night=((x+y)&1)?light<6500:light<-6500;
         c=p[kind+(night?2:0)];
         if((s_settings[FLAGS]&EDGES)&&(r[3]&4))c=p[5];
-      }else if(s_display[3]&&(r[3]&(4<<s_display[3])))c=p[5]; // map background, in the edge colour
+      }else if(DISPLAY_MAP_BACKGROUND(s_display)&&(r[3]&(4<<DISPLAY_MAP_BACKGROUND(s_display))))c=p[5]; // map background, in the edge colour
       data[y*stride+x]=c;
     }
   }
@@ -518,7 +518,9 @@ static void marker_spots(time_t now,int visible,MarkerSpots *s){
   }
 }
 // Placement inputs from this frame's marker layout.
-static void map_times_inputs(time_t now,uint8_t key[18],MapTimePlace places[3],const MarkerSpots *spots){
+// Map time size from DISPLAY byte 3 (display.h): code 0 medium, 1 small, 2 large.
+static int map_time_size(void){int c=DISPLAY_MAP_TIME_CODE(s_display);return c==1?MAP_TIME_SMALL:c==2?MAP_TIME_LARGE:MAP_TIME_MEDIUM;}
+static void map_times_inputs(time_t now,uint8_t key[19],MapTimePlace places[3],const MarkerSpots *spots){
   bool clock24=is_24(),turn=s_display[2]&ZONE_TIMES_TURN;int here=local_offset_minutes(now);memset(key,0,18);
   for(int i=0;i<3;i++){
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;int k=spots->index[i];bool present=k>=0,reserve=present&&zone_offset(z,now)!=here;
@@ -528,11 +530,11 @@ static void map_times_inputs(time_t now,uint8_t key[18],MapTimePlace places[3],c
   }
   const MapMarker *you=spots->you>=0?&spots->layout[spots->you]:NULL;
   key[12]=clock24;key[13]=turn;key[14]=you?you->x:0xff;key[15]=you?you->y:0xff;
-  key[16]=spots->plate;key[17]=spots->plate?(uint8_t)(spots->plate_y-s_settings[MAP_Y]+32):0;
+  key[16]=spots->plate;key[17]=spots->plate?(uint8_t)(spots->plate_y-s_settings[MAP_Y]+32):0;key[18]=map_time_size();
 }
 static void map_times_place_now(void *context){
   (void)context;s_map_timer=NULL;
-  time_t now=time(NULL);uint8_t key[18];MapTimePlace places[3];static MarkerSpots spots;
+  time_t now=time(NULL);uint8_t key[19];MapTimePlace places[3];static MarkerSpots spots;
   marker_spots(now,layer_get_unobstructed_bounds(s_layer).size.h,&spots);map_times_inputs(now,key,places,&spots);
   memcpy(s_map_key,key,sizeof(key));s_map_key_valid=true;memset(s_map_spots,0,sizeof(s_map_spots));
   uint8_t *blocked=calloc(2,MAP_TIMES_MASK_BYTES);if(!blocked)return;
@@ -545,12 +547,12 @@ static void map_times_place_now(void *context){
   MapRect obstacles[MAP_MARKERS_MAX+1];int count=spots.n;memcpy(obstacles,spots.own,sizeof(MapRect)*spots.n);
   if(spots.plate){int mx=s_settings[MAP_X],my=s_settings[MAP_Y];
     obstacles[count++]=(MapRect){(int16_t)(spots.plate_x-1-mx),(int16_t)(spots.plate_y-1-my),(int16_t)(spots.plate_x+WORDMARK_WIDTH-mx),(int16_t)(spots.plate_y+WORDMARK_HEIGHT-my)};}
-  map_times_place(blocked,places,obstacles,count,spots.layout,spots.n,s_display[2]&ZONE_TIMES_TURN,blocked+MAP_TIMES_MASK_BYTES,s_map_spots);
+  map_times_place(blocked,places,obstacles,count,spots.layout,spots.n,s_display[2]&ZONE_TIMES_TURN,map_time_size(),blocked+MAP_TIMES_MASK_BYTES,s_map_spots);
   free(blocked);redraw();
 }
 // Whether the cached placement matches the current inputs; if not, schedules it.
 static bool map_times_ready(time_t now,const MarkerSpots *spots){
-  uint8_t key[18];MapTimePlace places[3];map_times_inputs(now,key,places,spots);
+  uint8_t key[19];MapTimePlace places[3];map_times_inputs(now,key,places,spots);
   if(s_map_key_valid&&!memcmp(key,s_map_key,sizeof(key)))return true;
   if(!s_map_timer)s_map_timer=app_timer_register(10,map_times_place_now,NULL);
   return false;
@@ -787,7 +789,7 @@ static void received(DictionaryIterator *iter,void *context) {
   uint8_t next_display[DISPLAY_SIZE];
   if(display&&display->type==TUPLE_BYTE_ARRAY&&display_normalize(next_display,display->value->data,display->length)&&memcmp(s_display,next_display,DISPLAY_SIZE)){
     clock_stop();s_clock_ready=false;
-    if(s_display[3]!=next_display[3])s_map_dirty=true;
+    if(DISPLAY_MAP_BACKGROUND(s_display)!=DISPLAY_MAP_BACKGROUND(next_display))s_map_dirty=true;
     memcpy(s_display,next_display,DISPLAY_SIZE);persist_write_data(3,s_display,DISPLAY_SIZE);
     clock_configure();
   }

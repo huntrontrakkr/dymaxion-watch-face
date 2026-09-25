@@ -4,6 +4,7 @@ import {defaultFooter,validateFooter} from './panel-settings.js';
 import {validateLocation} from './city.js';
 import {DISPLAY_STYLES} from './display.js';
 import {defaultPower,validatePower} from './power.js';
+import {MAP_TIME_SIZES} from './map-times.js';
 import {MAP_BACKGROUNDS} from './map-background.js';
 import {ZONE_TIMES,ZONE_POSITIONS} from './zone-column.js';
 import {SYSTEM_CLOCKS} from './system-clock.js';
@@ -62,7 +63,7 @@ const LEGACY_PRESETS=[{
 }];
 export function defaults() {
   return {version:1,markerSet:2,theme:0,customPalettes:[],customPalette:null,format:1,dayNight:true,edges:false,lights:true,motion:true,sun:true,moonIndicator:true,connectionBuzz:'disconnect',
-    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',leadingZero:true,mapBackground:'none',zoneTimes:'when-hidden',zonePosition:'map',mapTimesTurn:false,nameplate:false,power:defaultPower(),location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
+    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',leadingZero:true,mapBackground:'none',zoneTimes:'when-hidden',zonePosition:'map',mapTimesTurn:false,nameplate:false,mapTimeSize:'medium',power:defaultPower(),location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
 }
 // Quick View: a clock the peek would cover moves up to sit just above it,
 // never into the status line (clock_top_for_visible in settings.c).
@@ -139,6 +140,8 @@ export function validateSettings(input,zoneExists) {
   if(input.nameplate!==undefined&&typeof input.nameplate!=='boolean')throw new Error('Invalid nameplate.');
   out.nameplate=input.nameplate??false;
   out.power=validatePower(input.power);
+  if(input.mapTimeSize!==undefined&&!MAP_TIME_SIZES.includes(input.mapTimeSize))throw new Error('Invalid map time size.');
+  out.mapTimeSize=input.mapTimeSize??'medium';
   const position=(key,pos)=>{
     if(!Array.isArray(pos)||pos.length!==2||!pos.every(Number.isFinite))throw new Error('Invalid position.');
     return clampPosition(out,key,pos);
