@@ -16,19 +16,19 @@ download checksum and description. Rebble publication is deferred.
 
 ## Description
 
-I've always liked Buckminster Fuller's Dymaxion map. It folds the whole planet out into triangles so the continents stay in one piece, and I wanted it on my wrist.
+A watch face built on Buckminster Fuller's Dymaxion projection, which unfolds the globe onto the faces of an icosahedron and keeps the continents as a single connected landmass.
 
-The map lights up with real daylight. You can watch the night side creep across it, and city lights come on after dark.
+The map is shaded from the sun's actual position, so the terminator moves across it through the day, and city lights appear on the night side. The subsolar point is marked.
 
-I keep a few time zones for friends and family. They can sit in the panel at the bottom, next to the clock, or right on the map beside their cities.
+Up to three additional time zones can be shown in the bottom panel, beside the main clock, or as labels placed on the map near each city. Daylight saving is handled per zone.
 
-The bottom panel can also show the weather, a two-week calendar, humidity, tides (US NOAA stations) or Pebble Health. Flick your wrist to switch, put it on a timer, or turn on Smart and it'll show the rain before it gets to you.
+The bottom panel also offers weather, a two-week calendar, humidity, NOAA tide predictions and Pebble Health data. It can change on a wrist flick, on a timer, or automatically based on conditions such as approaching rain or a turning tide.
 
-There are 25 color palettes, or make your own, and eight clock styles. The settings page on your phone previews everything before you save.
+Twenty-five palettes are included, custom palettes can be defined, and there are eight clock typefaces. The phone settings page renders an exact preview before anything is sent to the watch.
 
-It's easy on the battery. The map only redraws every few minutes, and you can have it rest at night or during Quiet Time.
+The map is redrawn at a configurable interval rather than every minute, and an optional night mode reduces redraws further, including during Quiet Time.
 
-Pebble Time 2 only for now. Weather uses your phone's location. Health data never leaves the watch. The weather in the screenshots is sample data. It's open source, and bug reports are welcome.
+Requires Pebble Time 2. Weather uses the phone's location. Health data stays on the watch. Weather shown in the screenshots is sample data. Source code is available on GitHub.
 
 ## Submission assets
 
