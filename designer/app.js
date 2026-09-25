@@ -30,7 +30,7 @@ import {displayControls} from '../shared/display-controls.js';
 import {powerControls} from '../shared/power-controls.js';
 import {sinceRelight,minuteAnimationOn,flourishesOn} from '../shared/power.js';
 import {TRAY_MS,TRAY_Y,TRAY_H,traySlide,slideRow,besideProgress,besideShift,columnAlpha,mixColor} from '../shared/transitions.js';
-import {zoneColumn,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
+import {zoneColumn,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline,tallPixels} from '../shared/zone-column.js';
 import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,MAP_TIME_SIZES} from '../shared/map-times.js';
 import {minuteFlipClock,drawFlipPixels,FLIP_FACES,flipOffset} from '../shared/minute-flip.js';
 
@@ -69,7 +69,7 @@ let currentCity={name:'Norfolk',sample:true,lat:36.9,lon:-76.3};
 const cityLocation=locationService({getSettings:()=>settings,storage:localStorage,send:city=>{currentCity=city;render();}});
 const cityEditor=cityControls($('city-controls'),()=>settings,value=>{settings=validateSettings({...settings,location:value},zoneExists);save();},()=>cityLocation.refresh());
 const powerEditor=powerControls($('power-controls'),()=>settings,power=>{settings={...settings,power};sync();save();});
-const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,mapTimeSize:value.mapTimeSize,nameplate:value.nameplate};sync();save();});
+const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,mapTimeSize:value.mapTimeSize,zoneTimesTall:value.zoneTimesTall,nameplate:value.nameplate};sync();save();});
 const paletteEditor=paletteControls($('palette-controls'),()=>settings,patch=>{settings=validateSettings({...settings,...patch},zoneExists);sync();save();});
 const environment=environmentService({getSettings:()=>settings,storage:localStorage,send:(kind,data)=>{liveData[kind]=data;render();}});
 const panelEditor=panelControls($('panel-controls'),()=>settings,footer=>{
@@ -340,8 +340,10 @@ function render(){
       const font=watchTypeface.lining.small,shown=settings.places.map((p,i)=>[p,i]).filter(([p])=>p.on);
       shown.forEach(([p,i],row)=>{
         const there=moment(now).tz(p.tz),delta=Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000);
-        const r=zoneRow({label:p.label,hour:there.hours(),minute:there.minutes(),clock24:use24(),delta,side:settings.zonePosition},t=>textWidth(font,t)),base=ty+zoneRowBaseline(row,shown.length);
-        drawBitmapText(ctx,font,r.label,tx+r.labelX,base,fade(markColor(p,settings,i)));drawBitmapText(ctx,font,r.time,tx+r.timeX,base,fade(pal.ink));
+        const r=zoneRow({label:p.label,hour:there.hours(),minute:there.minutes(),clock24:use24(),delta,side:settings.zonePosition},t=>textWidth(font,t)),base=ty+zoneRowBaseline(row,shown.length,settings.zoneTimesTall);
+        drawBitmapText(ctx,font,r.label,tx+r.labelX,base,fade(markColor(p,settings,i)));
+        if(settings.zoneTimesTall){ctx.fillStyle=fade(pal.ink);for(const [x,y] of tallPixels(r.time))ctx.fillRect(tx+r.timeX+x,base+y,1,1);}
+        else drawBitmapText(ctx,font,r.time,tx+r.timeX,base,fade(pal.ink));
         drawBitmapText(ctx,font,r.suffix,tx+r.suffixX,base,fade(pal.accent));drawBitmapText(ctx,font,r.day,tx+r.dayX,base,fade(pal.accent));
       });
     }else if(!besideOn&&style==='chamfer'&&!use24())drawBitmapText(ctx,watchTypeface.lining.small,ampm,tx+167,ty+9,pal.accent);

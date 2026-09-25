@@ -28,9 +28,36 @@ export function zonesBeside(settings, panelShowsZones) {
 export const zonesOnMap = (settings, panelShowsZones) => settings.zonePosition === 'map' && elsewhere(settings, panelShowsZones);
 // Baseline of row `index` of `count`, relative to the strip top: rows are
 // centred on the figures, which run from y 2 to 37.
-export function zoneRowBaseline(index, count) {
-  const {pitch, glyphHeight, top, height} = ZONE_COLUMN, block = glyphHeight + pitch * (count - 1);
+// Tall times (the Tall place times option) use TALL_FIGURES, 10 pixels high,
+// on rows 13 apart, so three rows fill the strip exactly.
+export function zoneRowBaseline(index, count, tall = false) {
+  const {top} = ZONE_COLUMN, pitch = tall ? 13 : ZONE_COLUMN.pitch, glyphHeight = tall ? TALL_HEIGHT : ZONE_COLUMN.glyphHeight, height = tall ? 36 : ZONE_COLUMN.height;
+  const block = glyphHeight + pitch * (count - 1);
   return top + Math.floor((height - block) / 2) + index * pitch + glyphHeight;
+}
+// Tall figures for the times beside the clock: the status-line figures drawn
+// 10 pixels high with the same shapes and the same advances (6, the colon 3),
+// so a row keeps its width. Labels, day offsets and A/P stay in the capitals
+// on the same baseline.
+export const TALL_HEIGHT = 10;
+export const TALL_FIGURES = Object.freeze({
+  '0': ['.###.', '#...#', '#...#', '#...#', '#...#', '#...#', '#...#', '#...#', '#...#', '.###.'], '1': ['..#..', '.##..', '#.#..', '..#..', '..#..', '..#..', '..#..', '..#..', '..#..', '.###.'],
+  '2': ['.###.', '#...#', '....#', '....#', '...#.', '..#..', '.#...', '#....', '#....', '#####'], '3': ['####.', '....#', '....#', '....#', '.###.', '....#', '....#', '....#', '....#', '####.'],
+  '4': ['...#.', '..##.', '.#.#.', '.#.#.', '#..#.', '#..#.', '#####', '...#.', '...#.', '...#.'], '5': ['#####', '#....', '#....', '#....', '####.', '....#', '....#', '....#', '....#', '####.'],
+  '6': ['.###.', '#....', '#....', '#....', '####.', '#...#', '#...#', '#...#', '#...#', '.###.'], '7': ['#####', '....#', '....#', '...#.', '...#.', '..#..', '..#..', '.#...', '.#...', '.#...'],
+  '8': ['.###.', '#...#', '#...#', '#...#', '.###.', '#...#', '#...#', '#...#', '#...#', '.###.'], '9': ['.###.', '#...#', '#...#', '#...#', '#...#', '.####', '....#', '....#', '....#', '.###.'],
+  ':': ['.', '.', '#', '.', '.', '.', '.', '#', '.', '.']
+});
+export const TALL_ADVANCE = Object.freeze({':': 3});
+// Pixels of a time in tall figures, relative to (x, baseline).
+export function tallPixels(text) {
+  const out = [];let x = 0;
+  for (const c of text) {
+    const rows = TALL_FIGURES[c];
+    if (rows) rows.forEach((row, y) => [...row].forEach((p, px) => { if (p === '#') out.push([x + px, y - TALL_HEIGHT]); }));
+    x += TALL_ADVANCE[c] ?? 6;
+  }
+  return out;
 }
 // One row: the label with its day offset ("+1") right after it, then the time
 // and A/P in fixed slots flush right, so the times line up in one column.

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {mkdirSync,readFileSync} from 'node:fs';
-import {ZONE_TIMES,ZONE_POSITIONS,zoneColumn,zoneColumnFits,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
+import {ZONE_TIMES,ZONE_POSITIONS,zoneColumn,zoneColumnFits,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline,tallPixels,TALL_FIGURES,TALL_HEIGHT} from '../shared/zone-column.js';
 import {textWidth} from '../shared/type.js';
 import {SYSTEM_CLOCKS} from '../shared/system-clock.js';
 import fonts from '../assets/type/system-clock.json' with {type:'json'};
@@ -25,6 +25,12 @@ test('the watch lays out place times beside the clock exactly as the workshop do
     const s={stacked,clockDisplay:STYLE_CODES[style]??'none',zoneTimes:mode,zonePosition};rules+=`${+zonesBeside(s,shown)}${+zonesOnMap(s,shown)}`;}
   assert.equal(native[rows.length+1],rules);
   assert.equal(native[rows.length+2],`${zoneColumn('left').shift} ${zoneColumn('right').shift}`);
+  assert.equal(native[rows.length+3].trim(),[1,2,3].flatMap(n=>Array.from({length:n},(_,i)=>zoneRowBaseline(i,n,true))).join(' '),'tall baselines');
+  ['01:23','45:67','89:00'].forEach((t,i)=>{
+    const [pixels,advance]=native[rows.length+4+i].split('|');
+    assert.equal(pixels.trim(),tallPixels(t).map(p=>p.join(',')).join(' '),t+' tall pixels');
+    assert.equal(Number(advance),27,t+' keeps the capitals\' advance');
+  });
 });
 test('rows fit the column on either side, clear of the shifted figures, on the figures\' rows',()=>{
   assert.deepEqual(ZONE_POSITIONS,['left','right','map']);
@@ -52,4 +58,7 @@ test('rows fit the column on either side, clear of the shifted figures, on the f
   }
   assert(zoneColumnFits('chamfer')&&!zoneColumnFits('broad')&&!zoneColumnFits('span'));
   for(const n of [1,2,3]){assert(zoneRowBaseline(0,n)-7>=2);assert(zoneRowBaseline(n-1,n)<=38);}
+  for(const n of [1,2,3]){assert(zoneRowBaseline(0,n,true)-TALL_HEIGHT>=2,'tall rows start below the status line');assert(zoneRowBaseline(n-1,n,true)<=38,'and end above the map');}
+  for(const [c,g] of Object.entries(TALL_FIGURES)){assert.equal(g.length,TALL_HEIGHT,c);assert(g.every(r=>r.length===g[0].length&&/^[.#]+$/.test(r)),c);}
+  assert.equal(new Set([...'0123456789'].map(c=>TALL_FIGURES[c].join(''))).size,10,'every tall figure distinct');
 });

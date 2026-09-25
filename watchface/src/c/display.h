@@ -14,5 +14,7 @@
 #define MAP_TIME_SIZE_CODES 5
 #define DISPLAY_MAP_BACKGROUND(d) ((d)[3]&3)
 #define DISPLAY_MAP_TIME_CODE(d) (((d)[3]>>2)&7)
+// Byte 3 bit 5: tall figures for the place times beside the clock.
+#define DISPLAY_ZONE_TALL(d) (((d)[3]&32)!=0)
 bool display_valid(const uint8_t *data,size_t length);
 bool display_normalize(uint8_t out[DISPLAY_SIZE],const uint8_t *data,size_t length);

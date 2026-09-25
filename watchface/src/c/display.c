@@ -12,7 +12,7 @@ static bool options_valid(const uint8_t *p){
 // Version 3 byte 3 also carries the map time size (bits 2-4).
 static bool v3_options_valid(const uint8_t *p){
   return !(p[2]&~0xfe)&&((p[2]>>2)&3)<ZONE_TIMES_COUNT&&((p[2]>>4)&3)<ZONE_POSITION_COUNT&&
-    (p[3]&3)<MAP_BACKGROUND_COUNT&&((p[3]>>2)&7)<MAP_TIME_SIZE_CODES&&!(p[3]&~0x1f);
+    (p[3]&3)<MAP_BACKGROUND_COUNT&&((p[3]>>2)&7)<MAP_TIME_SIZE_CODES&&!(p[3]&~0x3f);
 }
 bool display_valid(const uint8_t *p,size_t length){
   if(!p||p[1]>9)return false;

@@ -15,7 +15,7 @@ import {BLUETOOTH_ROWS,SUN_ROWS} from '../shared/status-glyphs.js';
 import {drawPixelRows} from '../shared/pixels.js';
 import {BACKGROUND_BITS} from '../shared/map-background.js';
 import {nameplateLayout,NAMEPLATE_ROWS} from '../shared/nameplate.js';
-import {zonesBeside,zonesOnMap,zoneColumn,zoneRow,zoneRowBaseline} from '../shared/zone-column.js';
+import {zonesBeside,zonesOnMap,zoneColumn,zoneRow,zoneRowBaseline,tallPixels} from '../shared/zone-column.js';
 import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,MAP_TIME_SIZES} from '../shared/map-times.js';
 import {layoutMarkers} from '../shared/map-markers.js';
 
@@ -67,8 +67,10 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
   if(s.stacked){drawBitmapText(ctx,font.lining.large,hourText(clock24?local.h:local.h%12||12,s.leadingZero).trim(),tx+36,ty+30,pal.ink,'center');drawBitmapText(ctx,font.lining.large,two(local.m),tx+36,ty+65,pal.ink,'center');}
   else drawFlipPixels(ctx,clockMask(time(local),s.clockDisplay),tx+(beside?zoneColumn(s.zonePosition).shift:0),ty+flipOffset(s.clockDisplay),{ink:pal.ink,background:pal.bg});
   if(beside)enabled.forEach(({p,i},row)=>{
-    const t=times[i],r=zoneRow({label:p.label,hour:t.h,minute:t.m,clock24,delta:Math.round((t.day-local.day)/86400000),side:s.zonePosition},text=>[...text].reduce((n,c)=>n+(font.lining.small[c]||font.lining.small['?']).a,0)),base=ty+zoneRowBaseline(row,enabled.length);
-    drawBitmapText(ctx,font.lining.small,r.label,tx+r.labelX,base,markColor(p,s,i));drawBitmapText(ctx,font.lining.small,r.time,tx+r.timeX,base,pal.ink);
+    const t=times[i],r=zoneRow({label:p.label,hour:t.h,minute:t.m,clock24,delta:Math.round((t.day-local.day)/86400000),side:s.zonePosition},text=>[...text].reduce((n,c)=>n+(font.lining.small[c]||font.lining.small['?']).a,0)),base=ty+zoneRowBaseline(row,enabled.length,s.zoneTimesTall);
+    drawBitmapText(ctx,font.lining.small,r.label,tx+r.labelX,base,markColor(p,s,i));
+    if(s.zoneTimesTall){ctx.fillStyle=pal.ink;for(const [x,y] of tallPixels(r.time))ctx.fillRect(tx+r.timeX+x,base+y,1,1);}
+    else drawBitmapText(ctx,font.lining.small,r.time,tx+r.timeX,base,pal.ink);
   });
   if(s.footer.enabled){ctx.fillStyle=pal.bg;ctx.fillRect(0,184,200,44);}
   if(panelZones)enabled.forEach(({p,i})=>{const [x,y]=s.zones[i],t=times[i],ink=markColor(p,s,i);ctx.fillStyle=pal.bg;ctx.fillRect(x,y,60,36);

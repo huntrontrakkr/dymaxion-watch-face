@@ -31,7 +31,7 @@ const panelEditor=panelControls($('panel-controls'),()=>s,footer=>{const before=
   return {coords:{latitude:p.lat,longitude:p.lon}};
 }});
 const cityEditor=cityControls($('city-controls'),()=>s,location=>{s.location=validateSettings({...s,location},exists).location;changed();});
-const displayEditor=displayControls($('display-controls'),()=>s,value=>{s={...withClockDisplay(s,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,mapTimeSize:value.mapTimeSize,nameplate:value.nameplate};refresh();});
+const displayEditor=displayControls($('display-controls'),()=>s,value=>{s={...withClockDisplay(s,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,mapTimeSize:value.mapTimeSize,zoneTimesTall:value.zoneTimesTall,nameplate:value.nameplate};refresh();});
 for(const selector of ['[data-zone-times]','[data-zone-position]','[data-map-turn]'])$('place-clock-options').append($('display-controls').querySelector(selector).closest('label'));
 $('place-clock-options').append($('display-controls').querySelector('[data-zone-note]'));
 const powerEditor=powerControls($('power-controls'),()=>s,power=>{s=validateSettings({...s,power},exists);refresh();});

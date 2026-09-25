@@ -464,6 +464,7 @@ static int caps_measure(const char *text,const void *font){return caps_width(fon
 // Up to three places stacked beside the clock: label in the place's color with
 // its day offset, time in ink, A/P and day offset in the accent
 // (shared/zone-column.js).
+static void tall_plot(int x,int y,void *context){graphics_draw_pixel(context,GPoint(x,y));}
 static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int x,int y,int alpha){
   int count=0,row=0;
   for(int i=0;i<3;i++)if(s_settings[ENABLED]&(1<<i))count++;
@@ -473,10 +474,11 @@ static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int
     struct tm zone=zone_time(z,now,local,&delta,&stale);char label[8];
     snprintf(label,sizeof(label),"%.7s",(const char *)z);
     ZoneRow r;zone_row(&r,label,zone.tm_hour,zone.tm_min,is_24(),delta,stale,zone_position()==ZONE_POSITION_RIGHT,caps_measure,s_caps);
-    int base=y+zone_row_baseline(row++,count);
+    bool tall=DISPLAY_ZONE_TALL(s_display);int base=y+zone_row_baseline(row++,count,tall);
     CapsPen mark={ctx,faded(mark_color(i),alpha)},ink={ctx,faded(color(6),alpha)},accent={ctx,faded(color(7),alpha)};
     caps_draw(s_caps,r.label,x+r.label_x,base,false,caps_span,&mark);
-    caps_draw(s_caps,r.time,x+r.time_x,base,false,caps_span,&ink);
+    if(tall){graphics_context_set_stroke_color(ctx,ink.color);zone_tall_draw(r.time,x+r.time_x,base,tall_plot,ctx);}
+    else caps_draw(s_caps,r.time,x+r.time_x,base,false,caps_span,&ink);
     caps_draw(s_caps,r.suffix,x+r.suffix_x,base,false,caps_span,&accent);
     caps_draw(s_caps,r.day,x+r.day_x,base,false,caps_span,&accent);
   }

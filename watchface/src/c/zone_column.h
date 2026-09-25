@@ -23,5 +23,11 @@ bool zones_beside(uint8_t style,bool stacked,uint8_t zone_times,uint8_t position
 bool zones_on_map(uint8_t zone_times,uint8_t position,bool panel_shows_zones);
 // How far the clock strip moves: right for a left column, left for a right one.
 static inline int zone_clock_shift(bool right){return right?-ZONE_COLUMN_SHIFT:ZONE_COLUMN_SHIFT;}
-int zone_row_baseline(int index,int count);
+int zone_row_baseline(int index,int count,bool tall);
+// Tall figures (Tall place times): 10 pixels high, same advances as the
+// capitals (6, the colon 3). Calls plot for each lit pixel of a time drawn
+// from (x, baseline); returns the advance.
+#define ZONE_TALL_HEIGHT 10
+typedef void (*ZoneTallPlot)(int x,int y,void *context);
+int zone_tall_draw(const char *text,int x,int baseline,ZoneTallPlot plot,void *context);
 void zone_row(ZoneRow *row,const char *label,int hour,int minute,bool clock24,int delta,bool stale,bool right,ZoneMeasure measure,const void *font);

@@ -8,10 +8,32 @@ bool zones_beside(uint8_t style,bool stacked,uint8_t zone_times,uint8_t position
   return elsewhere(zone_times,panel_shows_zones);
 }
 bool zones_on_map(uint8_t zone_times,uint8_t position,bool panel_shows_zones){return position==ZONE_POSITION_MAP&&elsewhere(zone_times,panel_shows_zones);}
-// Rows 14 pixels apart, centred on the figures (y 2-37 of the strip).
-int zone_row_baseline(int index,int count){
-  int block=7+14*(count-1);
-  return 2+(35-block)/2+index*14+7;
+// Rows 14 pixels apart, centred on the figures (y 2-37 of the strip); tall
+// rows 13 apart, centred in y 2-38.
+int zone_row_baseline(int index,int count,bool tall){
+  int pitch=tall?13:14,glyph=tall?ZONE_TALL_HEIGHT:7,block=glyph+pitch*(count-1);
+  return 2+((tall?36:35)-block)/2+index*pitch+glyph;
+}
+// Tall figures, one byte per row, bit 4 the leftmost column (shared/zone-column.js).
+static const uint8_t TALL[10][ZONE_TALL_HEIGHT]={
+  {0x0e,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x0e},
+  {0x04,0x0c,0x14,0x04,0x04,0x04,0x04,0x04,0x04,0x0e},
+  {0x0e,0x11,0x01,0x01,0x02,0x04,0x08,0x10,0x10,0x1f},
+  {0x1e,0x01,0x01,0x01,0x0e,0x01,0x01,0x01,0x01,0x1e},
+  {0x02,0x06,0x0a,0x0a,0x12,0x12,0x1f,0x02,0x02,0x02},
+  {0x1f,0x10,0x10,0x10,0x1e,0x01,0x01,0x01,0x01,0x1e},
+  {0x0e,0x10,0x10,0x10,0x1e,0x11,0x11,0x11,0x11,0x0e},
+  {0x1f,0x01,0x01,0x02,0x02,0x04,0x04,0x08,0x08,0x08},
+  {0x0e,0x11,0x11,0x11,0x0e,0x11,0x11,0x11,0x11,0x0e},
+  {0x0e,0x11,0x11,0x11,0x11,0x0f,0x01,0x01,0x01,0x0e}};
+int zone_tall_draw(const char *text,int x,int baseline,ZoneTallPlot plot,void *context){
+  int start=x;
+  for(;*text;text++){
+    if(*text==':'){plot(x,baseline-8,context);plot(x,baseline-3,context);x+=3;continue;}
+    if(*text>='0'&&*text<='9')for(int y=0;y<ZONE_TALL_HEIGHT;y++)for(int b=0;b<5;b++)if(TALL[*text-'0'][y]&(16>>b))plot(x+b,baseline-ZONE_TALL_HEIGHT+y,context);
+    x+=6;
+  }
+  return x-start;
 }
 // The label with its day offset right after it; time and A/P in fixed slots
 // flush right, so the times line up in one column.
