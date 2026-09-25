@@ -183,7 +183,7 @@ static void clock_prepare(struct tm *local,time_t now,bool animate){
   if(s_clock_ready&&minute==s_clock_minute&&format==s_clock_24&&!memcmp(digits,s_clock_digits,4))return;
   bool smooth=animate&&s_clock_ready&&minute==s_clock_minute+1&&format==s_clock_24
     &&s_focused&&power_minute_animation(power(),s_settings[FLAGS]&MOTION,local->tm_hour)&&power_battery_allows_motion(power(),s_battery.charge_percent);
-  clock_stop();clock_flip_prepare(&s_clock_flip,s_clock_ready?s_clock_digits:digits,digits);
+  clock_stop();clock_flip_prepare(&s_clock_flip,smooth?s_clock_digits:digits,digits);
   memcpy(s_clock_digits,digits,4);s_clock_ready=true;s_clock_minute=minute;s_clock_24=format;s_clock_frame=UINT16_MAX;
   if(smooth&&s_clock_flip.changed_cells){
     s_clock_started=clock_milliseconds();s_clock_timer=app_timer_register(33,clock_step,NULL);s_clock_running=s_clock_timer!=NULL;

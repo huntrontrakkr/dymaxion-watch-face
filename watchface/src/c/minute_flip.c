@@ -58,7 +58,7 @@ bool chamfer_face_init(ClockFace *f,const uint8_t *data,size_t length){
 
 void clock_flip_attach(ClockFlip *flip,const ClockFace *face,uint8_t *memory){
   size_t mask=(size_t)clock_pixels(face)/8;
-  *flip=(ClockFlip){face,memory,memory+mask,memory+2*mask,memory+2*mask+face->cell_count,0,0};
+  *flip=(ClockFlip){face,memory,memory+mask,memory+2*mask,memory+2*mask+face->cell_count,0,0,0,0,0,0};
 }
 void clock_mask(const ClockFace *f,const uint8_t digits[4],uint8_t *bits){
   memset(bits,0,(size_t)clock_pixels(f)/8);
@@ -85,15 +85,26 @@ void clock_flip_prepare(ClockFlip *flip,const uint8_t before[4],const uint8_t af
   if(max>min)for(int id=0;id<f->cell_count;id++)if(flip->active[id]){
     f->cell(f,id,&c);flip->delay[id]=(80*(c.cx-min)+(max-min)/2)/(max-min);
   }
+  // Tile ownership includes blank pixels around a changed stroke. Bound the
+  // complete tiles once, rather than searching the whole strip every frame.
+  flip->x0=CLOCK_WIDTH;flip->y0=f->height;flip->x1=flip->y1=0;
+  if(flip->changed_cells)for(int y=0;y<f->height;y++)for(int x=0;x<CLOCK_WIDTH;x++){
+    if(!flip->active[f->owner(f,x,y)])continue;
+    if(x<flip->x0)flip->x0=x;
+    if(y<flip->y0)flip->y0=y;
+    if(x>=flip->x1)flip->x1=x+1;
+    if(y>=flip->y1)flip->y1=y+1;
+  }
 }
 // Each changed tile holds the old face, then shrinks to its centroid,
 // uncovering the new face. Tiles without a changed pixel stay still.
 void clock_flip_sample(const ClockFlip *flip,uint16_t elapsed,uint8_t *pixels){
-  const ClockFace *f=flip->face;const int W=CLOCK_WIDTH,H=f->height;
-  memset(pixels,0,clock_frame_bytes(f));
-  for(int i=0;i<W*H;i++)if(bit(flip->after,i))set_pixel(pixels,i,1);
+  const ClockFace *f=flip->face;const int W=CLOCK_WIDTH;
+  // Expand four mask bits straight into four two-bit pixels, including ground.
+  static const uint8_t expand[16]={0,1,4,5,16,17,20,21,64,65,68,69,80,81,84,85};
+  for(size_t i=0;i<clock_frame_bytes(f);i++)pixels[i]=expand[(flip->after[i>>1]>>((i&1)*4))&15];
   if(elapsed>=CLOCK_FLIP_MS||!flip->changed_cells)return;
-  for(int y=0;y<H;y++)for(int x=0;x<W;x++){
+  for(int y=flip->y0;y<flip->y1;y++)for(int x=flip->x0;x<flip->x1;x++){
     int at=y*W+x,id=f->owner(f,x,y);if(!flip->active[id])continue;
     int local=(int)elapsed-flip->delay[id];if(local>=320)continue;
     int phase=local<=0?0:local*32/320;
@@ -101,7 +112,7 @@ void clock_flip_sample(const ClockFlip *flip,uint16_t elapsed,uint8_t *pixels){
     int scale=CLOCK_SCALES[phase];if(!scale)continue;
     ClockCell c;f->cell(f,id,&c);
     int32_t sx=c.cx+(x*256+128-c.cx)*1024/scale,sy=c.cy+(y*256+128-c.cy)*1024/scale;
-    if(sx<0||sx>=W*256||sy<0||sy>=H*256)continue;
+    if(sx<0||sx>=W*256||sy<0||sy>=f->height*256)continue;
     sx>>=8;sy>>=8;if(f->owner(f,sx,sy)!=id)continue;
     set_pixel(pixels,at,bit(flip->before,sy*W+sx));
   }

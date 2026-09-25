@@ -56,9 +56,13 @@ settings; existing explicit Span/triangle choices are preserved.
   also load one font's figures (817–903 bytes) from the `clock-glyphs.bin`
   resource; if the heap cannot hold them, the watch draws the time from the
   firmware font without the transition (Leco Delta as plain Leco), and the watch finds a pixel's tile by
-  binary search over per-row runs instead of a lookup table. This keeps the app
-  image inside Pebble's 64 KB process limit. The map bitmap is reused during
+  binary search over per-row runs instead of a lookup table. The runs avoid an
+  additional full-strip ownership table. The map bitmap is reused during
   animation frames.
+- Native samples expand the destination mask with a packed lookup and only
+  inspect the bounds of the changing tiles, computed once per transition.
+  These bounds include the tiles' blank pixels, so the shrink stays identical.
+  See [the native power profile](POWER-PROFILE.md) for the measured CPU savings.
 
 ## Sources and verification
 
@@ -75,7 +79,9 @@ minutes, hour carries, midnight, and 12-hour rollovers, in every style.
 disabled motion, idle behavior, time scrubbing, and the responsive replay study.
 Workshop captures, real speed and 4× slower:
 `output/meridian/minute-shrink.gif`, `output/meridian/minute-shrink-slow.gif`.
-The shrink has not yet been run in the Emery emulator or on hardware.
+The shrink has been verified in the Emery emulator in all eight styles,
+including overlapping motion, Quick View and power-saving paths. Hardware
+battery consumption has not been measured; see [the profile](POWER-PROFILE.md).
 
 `output/minute-flip-study/` records the retired hinge flip: its replayable study
 (`minute-flip.html`, built with `node output/minute-flip-study/build.mjs`) and

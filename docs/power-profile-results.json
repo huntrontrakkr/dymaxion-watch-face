@@ -1,0 +1,398 @@
+{
+  "date": "2026-09-24",
+  "baseline_commit": "bc47a2527b61132578bb07c10bbde28747454fdd",
+  "sdk": "4.33.1",
+  "qemu": "10.1.5-pebble14",
+  "machine": "pebble-emery",
+  "cpu": "cortex-m33",
+  "clock_style": "Chamfer (default)",
+  "sample_ms": [
+    0,
+    33,
+    66,
+    99,
+    132,
+    165,
+    198,
+    231,
+    264,
+    297,
+    330,
+    363,
+    396,
+    400
+  ],
+  "counter_scope": "Translated ARM Thumb instructions in app address range; firmware execution excluded. Counts are work, not cycles or energy.",
+  "baseline_elf_sha256": "4c0fae37e55a8dc3d00436bb0afb1a568d3d7af22ed84137fe26c5e2762cc952",
+  "optimized_elf_sha256": "2b9fedd451455a6e6104868bd0d4fda5432be8fe4995b239948d951bf904da58",
+  "baseline": [
+    {
+      "case": "baseline-idle",
+      "instructions": 0,
+      "unmapped_blocks": 0,
+      "calls": {}
+    },
+    {
+      "case": "baseline-kernel",
+      "instructions": 11705240,
+      "unmapped_blocks": 0,
+      "calls": {
+        "app:clock_flip_prepare": 1,
+        "app:clock_flip_sample": 14
+      }
+    },
+    {
+      "case": "baseline-rollover",
+      "instructions": 15264828,
+      "unmapped_blocks": 0,
+      "calls": {
+        "app:clock_flip_prepare": 1,
+        "app:clock_flip_sample": 14
+      }
+    }
+  ],
+  "optimized": [
+    {
+      "case": "optimized-full",
+      "instructions": 169148,
+      "unmapped_blocks": 0,
+      "calls": {
+        "app:received": 1,
+        "app:update_proc": 1
+      }
+    },
+    {
+      "case": "optimized-idle",
+      "instructions": 0,
+      "unmapped_blocks": 0,
+      "calls": {}
+    },
+    {
+      "case": "optimized-kernel",
+      "instructions": 6548474,
+      "unmapped_blocks": 0,
+      "calls": {
+        "app:clock_flip_prepare": 1,
+        "app:clock_flip_sample": 14
+      }
+    },
+    {
+      "case": "optimized-map",
+      "instructions": 828574,
+      "unmapped_blocks": 0,
+      "calls": {
+        "app:received": 1,
+        "app:update_proc": 1
+      }
+    },
+    {
+      "case": "optimized-rollover",
+      "instructions": 12858292,
+      "unmapped_blocks": 0,
+      "calls": {
+        "app:clock_flip_prepare": 1,
+        "app:clock_flip_sample": 14
+      }
+    }
+  ],
+  "ambiguous_block_lengths": 0,
+  "verification": {
+    "core_tests_passed": 68,
+    "native_build": "pass",
+    "native_cases": [
+      {
+        "case": "default-minute",
+        "captured_frames": 9,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "broad-minute",
+        "captured_frames": 11,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "span-minute",
+        "captured_frames": 11,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "leco-minute",
+        "captured_frames": 10,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "bitham-bold-minute",
+        "captured_frames": 11,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "bitham-light-minute",
+        "captured_frames": 10,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "bitham-medium-minute",
+        "captured_frames": 10,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "leco-delta-minute",
+        "captured_frames": 11,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "beside-left-show",
+        "captured_frames": 12,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "beside-left-hide",
+        "captured_frames": 19,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "beside-left-overlap-minute",
+        "captured_frames": 15,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "beside-right-horizon-show",
+        "captured_frames": 10,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "beside-right-horizon-hide",
+        "captured_frames": 22,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "beside-right-horizon-overlap-minute",
+        "captured_frames": 14,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "quick-view-show",
+        "captured_frames": 5,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "quick-view-minute",
+        "captured_frames": 9,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "quick-view-hide",
+        "captured_frames": 4,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "low-clock-minute",
+        "captured_frames": 9,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "midnight-minute",
+        "captured_frames": 11,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "animation-off",
+        "captured_frames": 2,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "night-saver",
+        "captured_frames": 2,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "low-battery",
+        "captured_frames": 3,
+        "settled_pixels_different_from_full_redraw": 0
+      },
+      {
+        "case": "animation-restored",
+        "captured_frames": 11,
+        "settled_pixels_different_from_full_redraw": 0
+      }
+    ],
+    "pre_push": {
+      "core_tests_passed": 68,
+      "web_build": "pass",
+      "native_clean_build": "pass",
+      "browser_suites": [
+        "browser.mjs",
+        "panels-browser.mjs",
+        "clock-browser.mjs",
+        "custom-palettes-browser.mjs",
+        "minute-flip-browser.mjs"
+      ],
+      "differential": {
+        "reference_commit": "bc47a2527b61132578bb07c10bbde28747454fdd",
+        "styles": 8,
+        "time_formats": [
+          12,
+          24
+        ],
+        "transitions": 23152,
+        "exact_frame_comparisons": 252384,
+        "adjacent_minute_samples_ms": [
+          0,
+          1,
+          80,
+          160,
+          240,
+          320,
+          399,
+          400,
+          65535
+        ],
+        "selected_transition_samples_ms": "Every integer from 0 through 401",
+        "sanitizers": [
+          "address",
+          "undefined",
+          "leak"
+        ],
+        "errors": 0
+      },
+      "native_cases_passed": 23,
+      "native_binary_matches_profiled_sha256": true,
+      "native_cases": [
+        {
+          "case": "default-minute",
+          "captured_frames": 9,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "broad-minute",
+          "captured_frames": 11,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "span-minute",
+          "captured_frames": 10,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "leco-minute",
+          "captured_frames": 11,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "bitham-bold-minute",
+          "captured_frames": 10,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "bitham-light-minute",
+          "captured_frames": 11,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "bitham-medium-minute",
+          "captured_frames": 10,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "leco-delta-minute",
+          "captured_frames": 11,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "beside-left-show",
+          "captured_frames": 7,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "beside-left-hide",
+          "captured_frames": 22,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "beside-left-overlap-minute",
+          "captured_frames": 13,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "beside-right-horizon-show",
+          "captured_frames": 5,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "beside-right-horizon-hide",
+          "captured_frames": 19,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "beside-right-horizon-overlap-minute",
+          "captured_frames": 13,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "quick-view-show",
+          "captured_frames": 5,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "quick-view-minute",
+          "captured_frames": 9,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "quick-view-hide",
+          "captured_frames": 4,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "low-clock-minute",
+          "captured_frames": 9,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "midnight-minute",
+          "captured_frames": 11,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "animation-off",
+          "captured_frames": 2,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "night-saver",
+          "captured_frames": 2,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "low-battery",
+          "captured_frames": 3,
+          "settled_pixels_different_from_full_redraw": 0
+        },
+        {
+          "case": "animation-restored",
+          "captured_frames": 10,
+          "settled_pixels_different_from_full_redraw": 0
+        }
+      ]
+    }
+  },
+  "energy_model": {
+    "frequency_hz_assumed": 192000000,
+    "active_current_ma_proxy": 7.36,
+    "cycles_per_instruction_assumed": [
+      1,
+      4
+    ],
+    "transitions_per_day_assumed": 1440,
+    "ordinary_kernel_mah_per_day": [
+      0.10040993466666666,
+      0.40163973866666663
+    ],
+    "rollover_kernel_mah_per_day_if_repeated_every_minute": [
+      0.19716047733333333,
+      0.7886419093333333
+    ],
+    "entire_animation_window_cpu_awake_mah_per_day": 1.1776,
+    "capacity_mah_example_only": 200
+  }
+}

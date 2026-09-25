@@ -144,13 +144,11 @@ pebble install --phone <phone-ip>
 ```
 
 The installable file is `watchface/build/watchface.pbw`. Target: Emery only,
-200×228 pixels, 64 colors. Before the Meridian revision, SDK 4.33.1 reported
-92,670 bytes of resources and a 62,845-byte static RAM footprint; the map bitmap
-adds about 22 KB of heap. Meridian adds 3,952 bytes of raw resources (Chamfer
-masters and transition lattice, status-line capitals), which load into the heap only
-when used, and moves the minute-transition buffers from static memory to the heap. An
-ARM cross-compile of the app sources measures 19,635 fewer static bytes than
-before; the SDK's own report for this revision is still to be taken.
+200×228 pixels, 64 colors. SDK 4.33.1 reports 100,924 bytes of resources and a
+61,151-byte code/static-RAM footprint, leaving 69,921 bytes for the heap before
+runtime allocations. The map bitmap and active clock resources use that heap.
+See the [native power profile](docs/POWER-PROFILE.md) for measured rendering
+costs, the animation optimization, and the assumptions behind the battery model.
 
 The project also remains compatible with opening the `watchface` folder in the
 [Pebble Browser Emulator](https://github.com/huntrontrakkr/pebble-browser-emulator).
@@ -188,13 +186,13 @@ there is no continuous animation or additional sensor.
 Run `pebble clean` before building after changes to AppMessage keys or resources.
 
 Tests require a host C compiler (`cc`). Playwright may require its documented
-Linux runtime libraries. Native verification before the Meridian revision used
-the Emery SDK emulator: installation, both layouts, AppMessage settings, bottom
-panels, shake cycling and low-battery suppression. The Meridian revision was
-verified with host C tests (Chamfer minute-transition frames from the packed resource
-and status-line capitals, both pixel-for-pixel against the browser), a strict
-Cortex-M3 compile of every native source, and the browser suites; it has not yet
-been run in the SDK emulator.
+Linux runtime libraries. The current build has passed the core C/JavaScript
+tests, browser suites and native Emery SDK emulator checks. The optimized
+minute renderer also matches the previous renderer pixel-for-pixel across
+252,384 sampled frames under memory and undefined-behavior sanitizers.
+The [verification report](docs/POWER-PROFILE.md#method-and-validation) covers
+all clock styles, partial redraws, overlapping animations, Quick View and
+power-saving paths.
 Physical hardware and an actual phone webview have not been tested.
 
 | Source | Responsibility |

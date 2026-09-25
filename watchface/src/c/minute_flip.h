@@ -26,6 +26,7 @@ typedef struct {
   const ClockFace *face;
   uint8_t *before,*after,*active,*delay;
   uint16_t changed_cells;uint8_t changed_slots;
+  uint8_t x0,y0,x1,y1; // Exclusive bounds of all pixels owned by changing tiles.
 } ClockFlip;
 extern const ClockFace BROAD_FACE;
 bool chamfer_face_init(ClockFace *face,const uint8_t *data,size_t length);
