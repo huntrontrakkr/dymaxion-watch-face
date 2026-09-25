@@ -188,8 +188,9 @@ day-offset reservation change; nothing extra travels from the phone. Labels
 use the figure size chosen in Map time size: 3×5, 3×6 (the default), 3×7, 3×8,
 4×8 or 5×10 pixels, carried in byte 3 bits 2–4 (0 medium, 1 small, 2 large, 3 extra
 large, 4 wide, 5 largest; older packets read as medium). Every label uses it where it fits;
-a label with no room steps down one size at a time rather than going missing. Labels and
-leaders are outlined in the background colour, and a leader keeps a pixel clear of other
+a label with no room steps down one size at a time rather than going missing. Leaders are
+outlined in the background colour and each label sits in a hull (its box and
+margin, corners cut, cleared to the background; `map_time_hull`), and a leader keeps a pixel clear of other
 leaders even inside a group's clearing. Byte 3 bit 5 draws the place times beside the clock in
 tall figures, 6×10 pixels on rows 13 apart, instead of the 7-pixel capitals
 (`zone_tall_draw` in `zone_column.c`); labels, A/P and day offsets stay in the

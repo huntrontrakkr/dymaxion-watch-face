@@ -575,8 +575,8 @@ static void map_outline(void *context,int x,int y){MapPen *p=context;graphics_fi
 // Outlined leaders first, then their lines and the tiny times, in each place's color.
 static void draw_map_times(GContext *ctx,time_t now,const struct tm *local,int mx,int my,const MarkerSpots *spots){
   if(!map_times_ready(now,spots))return;
-  // Leaders and figures are outlined first, so map lines and background dots
-  // never touch them.
+  // Leaders are outlined and each time gets a hull (a cleared box, corners cut)
+  // first, so map lines and background dots never touch them.
   char text[3][MAP_TIME_TEXT];
   graphics_context_set_fill_color(ctx,color(0));
   for(int i=0;i<3;i++)if(s_map_spots[i].ok){
@@ -585,7 +585,9 @@ static void draw_map_times(GContext *ctx,time_t now,const struct tm *local,int m
     map_time_text(text[i],zone.tm_hour,zone.tm_min,is_24(),delta,stale);
     MapPen pen={ctx,mx,my,NULL};
     map_time_route(s->points,map_outline,&pen);
-    map_time_pixels(text[i],s->orientation,s->total,s->size,s->x,s->y,map_outline,&pen);
+    MapRect h=map_time_hull(s);int w=h.x1-h.x0+1,hh=h.y1-h.y0+1;
+    graphics_fill_rect(ctx,GRect(mx+h.x0+1,my+h.y0,w-2,hh),0,GCornerNone);
+    graphics_fill_rect(ctx,GRect(mx+h.x0,my+h.y0+1,w,hh-2),0,GCornerNone);
   }
   for(int i=0;i<3;i++)if(s_map_spots[i].ok){
     const MapTimeSpot *s=&s_map_spots[i];

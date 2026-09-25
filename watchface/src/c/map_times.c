@@ -77,6 +77,10 @@ static int layout(const char *text,uint8_t orientation,int total,int size,Box *b
   }
   return n;
 }
+MapRect map_time_hull(const MapTimeSpot *s){
+  int h=TINY_HEIGHT[s->size],w=s->orientation==MAP_TIME_V?h:s->total,hh=s->orientation==MAP_TIME_V?s->total:h;
+  return (MapRect){(int16_t)(s->x-MARGIN),(int16_t)(s->y-MARGIN),(int16_t)(s->x+w-1+MARGIN),(int16_t)(s->y+hh-1+MARGIN)};
+}
 void map_time_pixels(const char *text,uint8_t orientation,int total,int size,int x,int y,MapTimePixel pixel,void *context){
   Box boxes[MAP_TIME_TEXT];int n=layout(text,orientation,total,size,boxes);
   for(int i=0;i<n;i++){const Tiny *g=tiny(text[i],size);

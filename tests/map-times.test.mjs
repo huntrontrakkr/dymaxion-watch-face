@@ -5,7 +5,7 @@ import {mkdirSync,readFileSync} from 'node:fs';
 import {makeMap} from '../shared/map.js';
 import {PLACES} from '../shared/settings.js';
 import {layoutMarkers,markerClearance} from '../shared/map-markers.js';
-import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,tinyWidth,TINY_FONTS,TINY_CHARS,MAP_TIME_SMALL,MAP_TIME_MEDIUM,MAP_TIME_LARGE,MAP_TIME_XLARGE,MAP_TIME_WIDE,MAP_TIME_HUGE,MAP_TIME_SIZES} from '../shared/map-times.js';
+import {labelHull,hullRect,placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,tinyWidth,TINY_FONTS,TINY_CHARS,MAP_TIME_SMALL,MAP_TIME_MEDIUM,MAP_TIME_LARGE,MAP_TIME_XLARGE,MAP_TIME_WIDE,MAP_TIME_HUGE,MAP_TIME_SIZES} from '../shared/map-times.js';
 const m=makeMap(),bytes=readFileSync('watchface/resources/maps/map-0.bin'),blocked=(x,y)=>!!(bytes[(y*200+x)*4+3]&3);
 const pos=label=>m.project(...(({lat,lon})=>[lat,lon])(PLACES.find(p=>p.label===label))).map(Math.round);
 // Placement inputs as the watch and workshop build them: grouped marker
@@ -34,10 +34,11 @@ test('the watch places, draws and leads map times exactly as the workshop does',
       if(!s){assert.equal(native[line++],'-',label);return;}
       assert.equal(native[line++],[s.orientation,s.x,s.y,s.cost,s.total,s.size,...s.points.map(p=>p.join(','))].join(' '),label);
       const text=mapTimeText({hour:i===2?1:13,minute:i*7,clock24:!!clock24,delta:i-1});
-      const [nText,nPixels,nLeader]=native[line++].split('|');
+      const [nText,nPixels,nLeader,nHull]=native[line++].split('|');
       assert.equal(nText,text);
       assert.equal(nPixels.trim(),tinyPixels(text,s.orientation,s.total,s.size).map(([x,y])=>`${s.x+x},${s.y+y}`).join(' '),label+' pixels');
       assert.equal(nLeader.trim(),routePixels(s.points).map(p=>p.join(',')).join(' '),label+' leader');
+      const hull=labelHull(s);assert.equal(nHull,[hull.x0,hull.y0,hull.x1,hull.y1].join(' '),label+' hull');
     });
   }
 });
@@ -56,6 +57,7 @@ test('labels sit in open ground, clear of each other, near their places',()=>{
         for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)assert(!blocked(px+dx,py+dy),'a pixel of open ground around every figure');
         assert(!seen.has(px+','+py),'labels never overlap');seen.add(px+','+py);
       }
+      for(const [x,y] of hullRect(labelHull(s)))assert(!blocked(x,y)&&x>=0&&y>=0&&x<200&&y<104,'the hull behind a time covers only open ground');
       if(!turn)assert.equal(s.orientation,0);
       assert(s.cost<LIMIT[size],`${set[i]} at size ${size}: within reach even in crowded Europe (${s.cost})`);
     });

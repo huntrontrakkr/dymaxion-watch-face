@@ -18,7 +18,7 @@ import {drawPixelRows} from '../shared/pixels.js';
 import {BACKGROUND_BITS} from '../shared/map-background.js';
 import {nameplateLayout,NAMEPLATE_ROWS,NAMEPLATE_HEIGHT} from '../shared/nameplate.js';
 import {zonesBeside,zonesOnMap,zoneColumn,zoneRow,zoneRowBaseline,tallPixels} from '../shared/zone-column.js';
-import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,MAP_TIME_SIZES} from '../shared/map-times.js';
+import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,labelHull,hullRect,MAP_TIME_SIZES} from '../shared/map-times.js';
 import {layoutMarkers,markerClearance} from '../shared/map-markers.js';
 
 const pixels=Uint8Array.from(atob(mapBase64),c=>c.charCodeAt(0)),signed=new Int8Array(pixels.buffer),map=makeMap();
@@ -62,7 +62,7 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
     labels.forEach((label,j)=>{if(!label)return;const {p,i}=enabled[j],t=times[i],color=markColor(p,s,i);
       for(const [x,y]of routePixels(label.points)){ctx.fillStyle=pal.bg;ctx.fillRect(mx+x-1,my+y-1,3,3);}
       const figures=tinyPixels(mapTimeText({hour:t.h,minute:t.m,clock24,delta:Math.round((t.day-local.day)/86400000)}),label.orientation,label.total,label.size);
-      ctx.fillStyle=pal.bg;for(const [x,y]of figures)ctx.fillRect(mx+label.x+x-1,my+label.y+y-1,3,3);
+      ctx.fillStyle=pal.bg;for(const [x,y]of hullRect(labelHull(label)))ctx.fillRect(mx+x,my+y,1,1);
       ctx.fillStyle=color;for(const [x,y]of routePixels(label.points))ctx.fillRect(mx+x,my+y,1,1);
       for(const [x,y]of figures)ctx.fillRect(mx+label.x+x,my+label.y+y,1,1);
     });

@@ -25,6 +25,9 @@ void map_time_text(char out[MAP_TIME_TEXT],int hour,int minute,bool clock24,int 
 void map_time_template(char out[MAP_TIME_TEXT],bool clock24,bool reserve_day);
 // Calls `pixel` for each lit pixel of `text` laid out at (x, y).
 void map_time_pixels(const char *text,uint8_t orientation,int total,int size,int x,int y,MapTimePixel pixel,void *context);
+// The hull behind a placed label (shared/map-times.js labelHull): its box and
+// the margin around it; draw it with its corners cut.
+MapRect map_time_hull(const MapTimeSpot *spot);
 void map_time_route(const MapPoint points[5],MapTimePixel pixel,void *context);
 // `blocked` marks map pixels; `taken` is scratch of MAP_TIMES_MASK_BYTES.
 // `obstacles` are rectangles to keep clear of (your clearing, group hulls);

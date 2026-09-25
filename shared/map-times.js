@@ -109,6 +109,18 @@ export function tinyPixels(text, orientation, total, size = MAP_TIME_MEDIUM) {
   }
   return out;
 }
+// The hull behind a placed label, like a marker group's: its template's box
+// and the pixel of margin placement keeps open, corners cut, cleared to the
+// background so map lines and dots never touch the figures.
+export function labelHull({x, y, orientation, total, size}) {
+  const h = TINY_FONTS[size].height, [w, hh] = orientation === V ? [h, total] : [total, h];
+  return {x0: x - MARGIN, y0: y - MARGIN, x1: x + w - 1 + MARGIN, y1: y + hh - 1 + MARGIN};
+}
+export function hullRect({x0, y0, x1, y1}) {
+  const out = [];
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if ((x !== x0 && x !== x1) || (y !== y0 && y !== y1)) out.push([x, y]);
+  return out;
+}
 // Leaders meet square and centred. They leave the glyph straight out from
 // the middle of a side (4 pixels from its centre, just past the clearing) and
 // arrive straight on, one pixel short of the time, at a port: the middle row

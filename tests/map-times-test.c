@@ -30,7 +30,7 @@ int main(int argc,char **argv){
     printf("%d %d %d %d %d %d",s.orientation,s.x,s.y,(int)s.cost,s.total,s.size);for(int k=0;k<5;k++)printf(" %d,%d",s.points[k].x,s.points[k].y);printf("\n");
     char text[MAP_TIME_TEXT];map_time_text(text,i==2?1:13,i*7,clock24,i-1,false);printf("%s|",text);
     map_time_pixels(text,s.orientation,s.total,s.size,s.x,s.y,print_pixel,NULL);printf("|");
-    map_time_route(s.points,print_pixel,NULL);printf("\n");
+    map_time_route(s.points,print_pixel,NULL);MapRect h=map_time_hull(&s);printf("|%d %d %d %d\n",h.x0,h.y0,h.x1,h.y1);
   }
   return 0;
 }
