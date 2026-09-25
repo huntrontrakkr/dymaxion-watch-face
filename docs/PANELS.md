@@ -19,9 +19,11 @@ Its side-label strip grows from measured text width; hour-label frequency comes
 from available chart width, and Emery gets distinct major/minor ticks. Those
 layout principles are adapted here to our much shorter 44-pixel panel.
 
-Range labels and hour labels share an original four-pixel-wide,
-seven-pixel-high numeral cut, with compact minus signs, decimal points and A/P
-marks, in the ink color rather than the series color. Headings and calendar
+Hour labels use an original four-pixel-wide, seven-pixel-high numeral cut
+with A/P marks. The range labels up the left edge use a narrow companion cut,
+the same seven pixels tall but three wide (the 1 two), with a two-pixel minus
+and a one-pixel decimal point, so the scale costs little of the chart's width.
+Both are drawn in the ink color rather than the series color. Headings and calendar
 dates use Draft Micro's lining capitals, the same cut as the status line, so
 every panel figure sits on the baseline. All text is whole pixels, with no
 font scaling or antialiasing.
@@ -38,9 +40,10 @@ edges fall at the actual sunrise and sunset (-0.833°), and the header's RISE/SE
 time comes from the same calculation (`shared/solar.js`,
 `watchface/src/c/solar.c`), so the label and the shading always agree.
 
-The left gutter measures both range labels, allowing two pixels of outer padding
-and three before the plot. A normal two-digit temperature scale needs 14 pixels
-instead of the old fixed 29. Negative values and tide decimals reserve their
+The left gutter measures both range labels, allowing one pixel of outer padding
+and two before the plot. A normal two-digit temperature scale needs 10 pixels
+(14 with the wider figures, 29 in the first design); a three-digit heart-rate
+scale needs 12. Negative values and tide decimals reserve their
 actual width; hiding range labels reduces the inset to two pixels.
 
 With a two-digit range, the plot is 184 × 22 pixels rather than 167 × 20, about

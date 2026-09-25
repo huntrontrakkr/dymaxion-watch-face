@@ -60,13 +60,16 @@ static GColor dim(GColor c,GColor ground){
   uint8_t out=0xc0;for(int shift=0;shift<6;shift+=2){int a=(c.argb>>shift)&3,b=(ground.argb>>shift)&3;out|=(a+(b>a)-(b<a))<<shift;}
   return (GColor){.argb=out};
 }
-static void axis_label(GContext *ctx,const char *text,int x,int y,GColor ink){
+static void glyph_label(GContext *ctx,const char *text,int x,int y,GColor ink,const ChartGlyph *(*lookup)(char)){
   graphics_context_set_stroke_color(ctx,ink);
-  while(*text){const ChartGlyph *glyph=chart_glyph(*text++);
+  while(*text){const ChartGlyph *glyph=lookup(*text++);
     for(int row=0;row<7;row++)for(int col=0;col<glyph->width;col++)if(glyph->rows[row]&(1u<<(glyph->width-1-col)))graphics_draw_pixel(ctx,GPoint(x+col,y+row));
     x+=glyph->width+1;
   }
 }
+static void axis_label(GContext *ctx,const char *text,int x,int y,GColor ink){glyph_label(ctx,text,x,y,ink,chart_glyph);}
+// The narrow scale figures up the chart's left edge.
+static void range_label(GContext *ctx,ChartLayout layout,const char *text,int y,GColor ink){glyph_label(ctx,text,chart_range_left(layout,text),y,ink,chart_range_glyph);}
 static void storage_write(int key,const uint8_t *p,int n){for(int i=0;i<n;i+=240)persist_write_data(key+i/240,p+i,MIN(240,n-i));}
 static bool storage_read(int key,uint8_t *p,int n){for(int i=0;i<n;i+=240)if(persist_read_data(key+i/240,p+i,MIN(240,n-i))!=MIN(240,n-i))return false;return true;}
 void panels_init(void){
@@ -197,8 +200,8 @@ static void graph_draw(GContext *ctx,time_t now){
     dotted_line(ctx,chart_x(layout,i-1),chart_y(p[32+(start+i-1)*8+2]*10,0,1000),chart_x(layout,i),chart_y(p[32+(start+i)*8+2]*10,0,1000),custom(F_HUMID_COLOR));
   for(int i=1;i<count;i++)line(ctx,chart_x(layout,i-1),chart_y(metric(p,start+i-1,tide,humidity),lo,hi),chart_x(layout,i),chart_y(metric(p,start+i,tide,humidity),lo,hi),ink);
   if(s_footer[F_RANGE_LABELS]){
-    axis_label(ctx,upper,layout.left-3-chart_text_width(upper),layout.top,color(6));
-    axis_label(ctx,lower,layout.left-3-chart_text_width(lower),layout.bottom-6,color(6));
+    range_label(ctx,layout,upper,layout.top,color(6));
+    range_label(ctx,layout,lower,layout.bottom-6,color(6));
   }
   line(ctx,layout.left,layout.axis,layout.right,layout.axis,color(5));
   for(int i=0;i<count;i++){
@@ -256,8 +259,8 @@ static void health_draw(GContext *ctx,time_t now,const struct tm *local){
   for(int i=0;i<v.bar_count;i++)if(v.bar_h[i])rect(ctx,v.bar_x[i],v.bar_y[i],v.bar_w[i],v.bar_h[i],custom(F_RAIN_COLOR));
   for(int i=1;i<HEALTH_HOURS;i++)if(v.pulse[i-1]>=0&&v.pulse[i]>=0)line(ctx,chart_x(l,i-1),v.pulse[i-1],chart_x(l,i),v.pulse[i],custom(F_TEMP_COLOR));
   if(s_footer[F_RANGE_LABELS]){
-    axis_label(ctx,v.upper,l.left-3-chart_text_width(v.upper),l.top,color(6));
-    axis_label(ctx,v.lower,l.left-3-chart_text_width(v.lower),l.bottom-6,color(6));
+    range_label(ctx,l,v.upper,l.top,color(6));
+    range_label(ctx,l,v.lower,l.bottom-6,color(6));
   }
   line(ctx,l.left,l.axis,l.right,l.axis,color(5));
   char value[12];
