@@ -203,3 +203,8 @@ test('native packet reader validates JS packets and rejects truncated or corrupt
   execFileSync('cc',['-std=c11','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/settings-test.c','watchface/src/c/settings.c','-o','test-results/settings-test']);
   execFileSync('test-results/settings-test',['test-results/meridian.bin','test-results/horizon.bin']);
 });
+test('the drawer\'s day and night glyphs never look like a place marker',()=>{
+  const shapes=MARKERS.map(m=>m.rows.join(''));
+  for(const rows of DAY_NIGHT_ROWS){assert.equal(rows.length,5);assert(!shapes.includes(rows.join('')),rows.join('/'));}
+  assert.notEqual(DAY_NIGHT_ROWS[0].join(''),DAY_NIGHT_ROWS[1].join(''));
+});

@@ -14,10 +14,12 @@ export const BLUETOOTH_ROWS=[
   '...#...'
 ];
 
-// Small circles are drawn by hand at five pixels, not scaled vector circles.
+// Night and day beside each name in the time-zone drawer: a crescent moon and
+// the map's sun (SUN_ROWS below), so neither can be mistaken for a place's
+// own marker (the Point and Ring markers are a filled and an open circle).
 export const DAY_NIGHT_ROWS=[
-  ['.###.','#...#','#...#','#...#','.###.'],
-  ['.###.','#####','#####','#####','.###.']
+  ['..###','.##..','.#...','.##..','..###'],
+  ['#.#.#','.###.','#####','.###.','#.#.#']
 ];
 export const MARKER_HALO_ROWS=['..###..','.#####.','#######','#######','#######','.#####.','..###..'];
 // The subsolar point: a small sun, a 3×3 orb with eight single-pixel rays, as
