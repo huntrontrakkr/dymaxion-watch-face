@@ -39,8 +39,8 @@
   "clockDisplay": "chamfer",
   "leadingZero": true,
   "mapBackground": "none",
-  "zoneTimes": "panel",
-  "zonePosition": "left",
+  "zoneTimes": "when-hidden",
+  "zonePosition": "map",
   "mapTimesTurn": false,
   "nameplate": false,
   "power": {

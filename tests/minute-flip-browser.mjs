@@ -47,7 +47,7 @@ try {
     await page.clock.runFor(250);assert.equal(await screen.getAttribute('data-clock-animating'),'false',id+' settles within 400 ms');
   }
   // Beside the place times the clock shifts left and still animates.
-  await page.getByLabel('Numerical display',{exact:true}).selectOption('chamfer');await page.getByLabel('Place times',{exact:true}).selectOption('always');
+  await page.getByLabel('Numerical display',{exact:true}).selectOption('chamfer');await page.getByLabel('Place times',{exact:true}).selectOption('always');await page.getByLabel('Place times position',{exact:true}).selectOption('left');
   assert.equal(await screen.getAttribute('data-zones-beside'),'true');
   {const start=await clock();await page.clock.runFor(await page.evaluate(()=>60000-Date.now()%60000)+2);
   assert.equal(await screen.getAttribute('data-clock-animating'),'true','beside: the minute animates');

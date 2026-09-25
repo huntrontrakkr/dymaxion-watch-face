@@ -23,7 +23,9 @@ on the day.
   place colors and chart colors.
 - **Two compositions.** Meridian places the clock above the map; Horizon
   places it below. Move the map and place labels, or put extra times beside
-  the clock or directly on the map.
+  the clock or directly on the map. By default, extra times appear on the map
+  whenever the bottom panel is showing something else or covered by
+  Quick View; they disappear from the map when the bottom clocks are visible.
 - **Six bottom panels.** Time zones, weather, a two-week calendar, humidity,
   NOAA tide predictions, and Pebble Health. Choose up to five, their order,
   colors, units and scales. Switch with optional wrist flicks, timed rotation,

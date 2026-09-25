@@ -33,7 +33,7 @@ test('night saver: every other hour, no animations, optional pause in the dark',
   assert.equal(sinceRelight({...defaultPower(),daylightMinutes:30},3,17),17);
 });
 test('power settings validate and travel in the display packet',()=>{
-  assert.deepEqual([...encodeDisplay({...defaults(),power:{...defaultPower(),daylightMinutes:15,minuteAnimation:false,night:true,darkPause:true,nightStart:23,nightEnd:6,lowBattery:20}})],[3,4,0,0,2|4|16|32,23,6,20]);
+  assert.deepEqual([...encodeDisplay({...defaults(),power:{...defaultPower(),daylightMinutes:15,minuteAnimation:false,night:true,darkPause:true,nightStart:23,nightEnd:6,lowBattery:20}})],[3,4,36,0,2|4|16|32,23,6,20]);
   assert.deepEqual(validateSettings({...defaults(),power:undefined},zoneExists).power,defaultPower(),'older files get the defaults');
   assert.throws(()=>validatePower({daylightMinutes:7}));assert.throws(()=>validatePower({nightStart:24}));assert.throws(()=>validatePower({night:'yes'}));assert.throws(()=>validatePower({lowBattery:15}));
 });

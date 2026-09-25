@@ -4,6 +4,12 @@ The bottom 44 pixels (rows 184–227) show one page at a time. The map, large cl
 Moon and Bluetooth indicator keep their existing positions. The **Panels** tab
 in the workshop and the offline phone settings expose the same controls.
 
+By default, the three place times also appear on the map whenever another
+bottom page is selected or Quick View covers the bottom clocks. They disappear
+from the map when those clocks return. The main clock stays centered. Change
+**Place times** and **Place times position** in **Character** to choose another
+arrangement; previously saved choices are preserved.
+
 The reference was [ForecasWatch 2](https://github.com/mattrossman/forecaswatch2),
 including its native Emery screenshot, calendar renderer and configuration.
 Its colored temperature/rain chart, night treatment, highlighted today and

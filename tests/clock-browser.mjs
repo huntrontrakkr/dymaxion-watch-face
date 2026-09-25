@@ -64,14 +64,30 @@ try{
     await screen.screenshot({path:`test-results/map-background-${id}.png`});
   }
   await page.getByLabel('Map background',{exact:true}).selectOption('none');await page.clock.runFor(3000);assert.deepEqual(await mapBlock(),plain);
-  // Place times beside the clock: off by default, on while another panel shows
-  // (or Quick View covers the band) in when-hidden, always in always.
+  // Default: map times only when the bottom zone clocks are not visible.
   await page.getByRole('tab',{name:'Composition',exact:true}).click();await page.getByRole('button',{name:'Meridian',exact:true}).click();
   await page.getByRole('tab',{name:'Character',exact:true}).click();await page.getByLabel('Numerical display',{exact:true}).selectOption('chamfer');
   const beside=()=>screen.getAttribute('data-zones-beside');
-  assert.equal(await page.getByLabel('Place times',{exact:true}).inputValue(),'panel');assert.equal(await beside(),'false');
-  await page.getByLabel('Place times',{exact:true}).selectOption('when-hidden');
+  assert.equal(await page.getByLabel('Place times',{exact:true}).inputValue(),'when-hidden');assert.equal(await beside(),'false');
+  assert.equal(await page.getByLabel('Place times position',{exact:true}).inputValue(),'map');
   assert.equal(await page.locator('#panel-preview-label').textContent(),'Time zones');assert.equal(await beside(),'false','zones page: times stay in the panel');
+  assert.equal(await screen.getAttribute('data-zones-on-map'),'false','visible bottom clocks are not duplicated on the map');
+  await page.clock.runFor(600);
+  const centeredClock=await screen.evaluate(c=>[...c.getContext('2d').getImageData(0,22,200,40).data]);
+  const mapWithoutTimes=await mapBlock();
+  await page.locator('#next-panel').click();await page.clock.runFor(600);
+  assert.equal(await screen.getAttribute('data-zones-on-map'),'true','weather page: default times appear on the map');
+  assert.equal(await beside(),'false');assert.equal(await screen.getAttribute('data-beside-progress'),'0');
+  assert.deepEqual(await screen.evaluate(c=>[...c.getContext('2d').getImageData(0,22,200,40).data]),centeredClock,'the main clock stays centered');
+  assert.notDeepEqual(await mapBlock(),mapWithoutTimes,'the map contains the alternate readouts');
+  await screen.screenshot({path:'test-results/default-map-times-weather.png'});
+  for(let n=0;n<6&&await page.locator('#panel-preview-label').textContent()!=='Time zones';n++)await page.locator('#next-panel').click();
+  assert.equal(await screen.getAttribute('data-zones-on-map'),'false','returning to the zone panel removes the map readouts');
+  await page.locator('#quick-view').check();assert.equal(await screen.getAttribute('data-zones-on-map'),'true','Quick View hides the bottom clocks');
+  assert.equal(await beside(),'false');await page.locator('#quick-view').uncheck();
+  assert.equal(await screen.getAttribute('data-zones-on-map'),'false');
+  // Explicit beside-the-clock choices still work with the same visibility rule.
+  await page.getByLabel('Place times position',{exact:true}).selectOption('left');
   const column=(x=0)=>screen.evaluate((c,x)=>[...c.getContext('2d').getImageData(x,22,70,40).data],x);const empty=await column();
   assert.equal(await page.getByLabel('Place times position',{exact:true}).inputValue(),'left');
   await page.locator('#next-panel').click();assert.notEqual(await page.locator('#panel-preview-label').textContent(),'Time zones');

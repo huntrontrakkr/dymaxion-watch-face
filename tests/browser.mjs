@@ -81,7 +81,7 @@ try{
     Pebble:{addEventListener:(name,fn)=>handlers[name]=fn,openURL:url=>opened=url,sendAppMessage:(message,success)=>{messages.push(message);success();}}};
   vm.runInNewContext(readFileSync('watchface/src/pkjs/index.js','utf8'),context);
   handlers.ready();assert.equal(messages[0].SETTINGS.length,PACKET_SIZE);
-  assert.deepEqual(Array.from(messages[0].DISPLAY),[3,4,0,0,0,22,7,10],'a fresh install shows Chamfer figures, with default power and motion');
+  assert.deepEqual(Array.from(messages[0].DISPLAY),[3,4,36,0,0,22,7,10],'a fresh install shows Chamfer figures, with default power and motion');
   handlers.showConfiguration();assert.ok(opened.startsWith('data:text/html;charset=utf-8,'));
   const mobile=await browser.newPage({viewport:{width:390,height:844}});mobile.on('pageerror',e=>errors.push(e.message));await mobile.goto(opened);
   assert.equal(await mobile.locator('#theme option').count(),THEMES.length);
@@ -136,10 +136,10 @@ try{
   assert.match(await study.locator('[data-family="span"] .figure-status').textContent(),/no oldstyle/);
   await study.screenshot({path:'test-results/type-study.png',fullPage:true});
   handlers.webviewclosed({response:encodeURIComponent(JSON.stringify({...defaults(),theme:3,clockDisplay:'span',location:{mode:'manual',name:'Norfolk'}}))});assert.equal(messages.findLast(m=>m.SETTINGS).SETTINGS[1],3);
-  assert.deepEqual(Array.from(messages.findLast(m=>m.DISPLAY).DISPLAY),[3,0,0,0,0,22,7,10]);
+  assert.deepEqual(Array.from(messages.findLast(m=>m.DISPLAY).DISPLAY),[3,0,36,0,0,22,7,10]);
   const city=Array.from(messages.findLast(m=>m.CITY).CITY);assert.equal(city.length,52);assert.equal(city[1],1,'a manual city carries no position');assert.deepEqual(city.slice(48),[0,0,0,0]);assert.equal(String.fromCharCode(...city.slice(8,15)),'Norfolk');
   handlers.webviewclosed({response:encodeURIComponent(JSON.stringify({...defaults(),theme:3,power:{daylightMinutes:30,minuteAnimation:true,flourishes:false,night:true,nightStart:23,nightEnd:6,darkPause:true,lowBattery:10}}))});
-  assert.deepEqual(Array.from(messages.findLast(m=>m.DISPLAY).DISPLAY),[3,4,0,0,3|8|16|32,23,6,10],'power and motion reach the watch');
+  assert.deepEqual(Array.from(messages.findLast(m=>m.DISPLAY).DISPLAY),[3,4,36,0,3|8|16|32,23,6,10],'power and motion reach the watch');
   const count=messages.filter(m=>m.SETTINGS).length;handlers.webviewclosed({response:'CANCELLED'});handlers.webviewclosed({response:'%broken'});assert.equal(messages.filter(m=>m.SETTINGS).length,count);
   assert.equal(JSON.parse(store.get('dymaxion-settings-v1')).theme,3);
   assert.deepEqual(errors,[]);console.log('PASS: two layouts, desktop/mobile controls, persistence, import/export, offline configuration and companion bridge.');
