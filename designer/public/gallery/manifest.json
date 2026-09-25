@@ -913,6 +913,84 @@
       "timezone": "America/New_York",
       "image": "70-sandstone.png",
       "preset": "70-sandstone.json"
+    },
+    {
+      "id": "71-solarized-dark",
+      "theme": "Solarized Dark",
+      "themeId": 23,
+      "layout": "meridian",
+      "clock": "chamfer",
+      "panel": "zones",
+      "variant": 0,
+      "when": "2026-09-24T16:34:20Z",
+      "timezone": "America/New_York",
+      "image": "71-solarized-dark.png",
+      "preset": "71-solarized-dark.json"
+    },
+    {
+      "id": "72-solarized-dark",
+      "theme": "Solarized Dark",
+      "themeId": 23,
+      "layout": "horizon",
+      "clock": "bitham-medium",
+      "panel": "tide",
+      "variant": 1,
+      "when": "2026-09-24T04:42:20Z",
+      "timezone": "America/New_York",
+      "image": "72-solarized-dark.png",
+      "preset": "72-solarized-dark.json"
+    },
+    {
+      "id": "73-solarized-dark",
+      "theme": "Solarized Dark",
+      "themeId": 23,
+      "layout": "meridian",
+      "clock": "leco-delta",
+      "panel": "health",
+      "variant": 2,
+      "when": "2026-09-24T23:59:20Z",
+      "timezone": "America/New_York",
+      "image": "73-solarized-dark.png",
+      "preset": "73-solarized-dark.json"
+    },
+    {
+      "id": "74-solarized-light",
+      "theme": "Solarized Light",
+      "themeId": 24,
+      "layout": "meridian",
+      "clock": "chamfer",
+      "panel": "zones",
+      "variant": 0,
+      "when": "2026-09-24T16:34:20Z",
+      "timezone": "America/New_York",
+      "image": "74-solarized-light.png",
+      "preset": "74-solarized-light.json"
+    },
+    {
+      "id": "75-solarized-light",
+      "theme": "Solarized Light",
+      "themeId": 24,
+      "layout": "horizon",
+      "clock": "span",
+      "panel": "zones",
+      "variant": 1,
+      "when": "2026-09-24T04:42:20Z",
+      "timezone": "America/New_York",
+      "image": "75-solarized-light.png",
+      "preset": "75-solarized-light.json"
+    },
+    {
+      "id": "76-solarized-light",
+      "theme": "Solarized Light",
+      "themeId": 24,
+      "layout": "meridian",
+      "clock": "broad",
+      "panel": "weather",
+      "variant": 2,
+      "when": "2026-09-24T20:16:20Z",
+      "timezone": "America/New_York",
+      "image": "76-solarized-light.png",
+      "preset": "76-solarized-light.json"
     }
   ]
 }

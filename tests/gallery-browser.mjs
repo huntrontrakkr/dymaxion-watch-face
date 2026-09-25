@@ -18,8 +18,8 @@ try{
   await page.waitForFunction(count=>document.querySelector('#count').textContent===`${count} of ${count} faces`,GALLERY_COUNT);
   assert.equal(await page.locator('.face').count(),GALLERY_COUNT);
   assert.equal(await page.locator('#face-total').textContent(),String(GALLERY_COUNT));
-  assert.equal(await page.locator('#palette-total').textContent(),String(THEMES.length));
-  for(const [id,count] of [['palette',THEMES.length+1],['layout',3],['clock',9],['panel',7]])assert.equal(await page.locator('#'+id+' option').count(),count);
+  assert.equal(await page.locator('#palette-total').textContent(),String(THEMES.filter(t=>!t.hidden).length));
+  for(const [id,count] of [['palette',THEMES.filter(t=>!t.hidden).length+1],['layout',3],['clock',9],['panel',7]])assert.equal(await page.locator('#'+id+' option').count(),count);
   await page.locator('.face img').evaluateAll(images=>Promise.all(images.map(i=>{i.loading='eager';return i.decode();})));
   assert(await page.locator('.face img').evaluateAll(images=>images.every(i=>i.naturalWidth===200&&i.naturalHeight===228)));
   await page.locator('#palette').selectOption('Solstice');

@@ -268,5 +268,65 @@
         "nightCoastline": 4.008609356613959
       }
     }
+  },
+  {
+    "name": "Solarized Dark",
+    "modes": {
+      "normal": {
+        "textMinimum": 4.58042412491462,
+        "dayCoastline": 8.590275113515066,
+        "nightCoastline": 2.685658792719313
+      },
+      "protan": {
+        "textMinimum": 3.73973949908326,
+        "dayCoastline": 8.396385524107139,
+        "nightCoastline": 2.6358700245614917
+      },
+      "deutan": {
+        "textMinimum": 5.195335658987568,
+        "dayCoastline": 8.694830399760862,
+        "nightCoastline": 2.7161859099403793
+      },
+      "tritan": {
+        "textMinimum": 3.9979827698116686,
+        "dayCoastline": 8.482633763592371,
+        "nightCoastline": 2.654230985382365
+      },
+      "grayscale": {
+        "textMinimum": 4.58042412491462,
+        "dayCoastline": 8.590275113515064,
+        "nightCoastline": 2.6856587927193125
+      }
+    }
+  },
+  {
+    "name": "Solarized Light",
+    "modes": {
+      "normal": {
+        "textMinimum": 5.02330212866808,
+        "dayCoastline": 3.5342559547996353,
+        "nightCoastline": 2.685658792719313
+      },
+      "protan": {
+        "textMinimum": 5.749400472170212,
+        "dayCoastline": 3.2173303656851164,
+        "nightCoastline": 2.6358700245614917
+      },
+      "deutan": {
+        "textMinimum": 4.445367684614347,
+        "dayCoastline": 3.7598295402545436,
+        "nightCoastline": 2.7161859099403793
+      },
+      "tritan": {
+        "textMinimum": 4.90752114304873,
+        "dayCoastline": 3.35038083713981,
+        "nightCoastline": 2.654230985382365
+      },
+      "grayscale": {
+        "textMinimum": 5.023302128668082,
+        "dayCoastline": 3.534255954799635,
+        "nightCoastline": 2.6856587927193125
+      }
+    }
   }
 ]

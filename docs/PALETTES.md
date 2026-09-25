@@ -4,6 +4,11 @@ Choose a palette in the workshop's **Character** tab or the phone's **Theme**
 selector. All colors are authored directly on Pebble's 64-color RGB222 grid.
 These are color treatments; the pixel typefaces and map geometry stay the same.
 
+Solarized Dark and Solarized Light adapt [Ethan Schoonover’s Solarized](https://ethanschoonover.com/solarized/)
+to the watch: teal and cream, olive continents, copper and blue annotations.
+These are RGB222 interpretations, rather than exact reproductions of its
+16-color palette; the main figures keep enough contrast at watch resolution.
+
 ## Custom palettes
 
 In **Character → Custom palettes**, choose **New custom palette** to copy the

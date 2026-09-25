@@ -4,7 +4,7 @@ import {mkdirSync,writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import assert from 'node:assert/strict';
 import {galleryConfigs,GALLERY_SEED} from './gallery-configs.mjs';
-import {THEMES} from '../shared/palettes.js';
+import {THEMES,PUBLIC_THEME_IDS} from '../shared/palettes.js';
 import {contrast,VISION_MODES} from './color-vision.mjs';
 
 const directory=new URL('../designer/public/gallery/',import.meta.url);
@@ -45,11 +45,11 @@ try{
   const canonical=theme=>entries.find(e=>e.themeId===theme&&e.variant===0);
   // Keep the original contact sheet's URL and examples intact as the gallery grows.
   await sheet('gallery-64.png',entries.slice(0,64),8,'Dymaxion / 64 ways to see the world','21 palettes · 8 clock styles · 6 panels · Meridian & Horizon · sample data');
-  await sheet('gallery-all.png',entries,8,`Dymaxion / ${entries.length} ways to see the world`,`${THEMES.length} palettes · 8 clock styles · 6 panels · Meridian & Horizon · sample data`);
+  await sheet('gallery-all.png',entries,8,`Dymaxion / ${entries.length} ways to see the world`,`${PUBLIC_THEME_IDS.length} palettes · 8 clock styles · 6 panels · Meridian & Horizon · sample data`);
   await sheet('gallery-hero.png',[canonical(14),canonical(15),canonical(16),entries.find(e=>e.themeId===0&&e.variant===1),canonical(17),canonical(18),canonical(19),canonical(20)],4,'A little world. A wider view.','Dymaxion for Pebble Time 2 · actual 200 × 228 pixel renders · preview data');
   await sheet('new-palettes.png',entries.filter(e=>e.themeId>=14&&e.themeId<=20&&e.variant===0),4,'Seven new perspectives','Red Atlantic · cool daylight / warm nights · color and shape at watch resolution');
   await sheet('bright-land-palettes.png',[canonical(21),canonical(22)],2,'Light land. Deep oceans.','Lagoon & Sandstone · land stays brighter than water, day and night');
-  const review=THEMES.slice(14).map(theme=>({name:theme.name,modes:Object.fromEntries(VISION_MODES.map(mode=>[mode,{
+  const review=THEMES.slice(14).filter(theme=>!theme.hidden).map(theme=>({name:theme.name,modes:Object.fromEntries(VISION_MODES.map(mode=>[mode,{
     textMinimum:Math.min(...[theme.ink,theme.accent,...theme.marks,...Object.values(theme.panelColors)].map(color=>contrast(color,theme.bg,mode))),
     dayCoastline:contrast(theme.land,theme.ocean,mode),nightCoastline:contrast(theme.nightLand,theme.nightOcean,mode)}]))}));
   writeFileSync(new URL('../new-palette-contrast.json',screenshots),JSON.stringify(review,null,2)+'\n');

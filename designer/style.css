@@ -37,3 +37,5 @@
 
 .theme-name{display:block;font-size:12px;font-weight:500}
 .theme-note{display:block;margin-top:6px;color:var(--dim);font-size:11px;line-height:1.5}
+
+#themes [hidden]{display:none}

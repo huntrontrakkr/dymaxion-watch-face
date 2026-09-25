@@ -8,14 +8,14 @@ import {zoneExists,encodeSettings} from '../shared/protocol.js';
 import {DISPLAY_STYLES} from '../shared/display.js';
 import {PANEL_PAGES} from '../shared/panel-settings.js';
 
-test('gallery recipes are reproducible, importable, and cover every palette, clock and panel',()=>{
+test('gallery recipes are reproducible, importable, and cover every public palette, clock and panel',()=>{
   const entries=galleryConfigs();
   assert.equal(entries.length,GALLERY_COUNT);
   assert.deepEqual(entries,galleryConfigs(GALLERY_SEED));
   assert.notDeepEqual(entries,galleryConfigs(GALLERY_SEED+1));
   const values=key=>new Set(entries.map(e=>e[key]));
   assert.equal(values('id').size,GALLERY_COUNT);
-  assert.deepEqual(values('theme'),new Set(THEMES.map(t=>t.name)));
+  assert.deepEqual(values('theme'),new Set(THEMES.filter(t=>!t.hidden).map(t=>t.name)));
   assert.deepEqual(values('clock'),new Set(DISPLAY_STYLES));
   assert.deepEqual(values('panel'),new Set(PANEL_PAGES.map(p=>p[0])));
   assert.deepEqual(values('layout'),new Set(['meridian','horizon']));

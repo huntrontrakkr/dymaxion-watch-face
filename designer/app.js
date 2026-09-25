@@ -55,6 +55,12 @@ document.addEventListener('visibilitychange',()=>{minuteClock.reset();if(!docume
 reducedMotion.addEventListener('change',()=>{minuteClock.reset();render();});
 const STORAGE='dymaxion-workshop-v1';
 try {const saved=localStorage.getItem(STORAGE);if(saved)settings=validateSettings(JSON.parse(saved),zoneExists);}catch{notice('Saved settings could not be read. The default composition is loaded.');}
+const paletteLink=new URLSearchParams(location.search).get('palette');
+const linkedTheme=THEMES.findIndex(theme=>theme.slug&&theme.slug===paletteLink);
+if(linkedTheme>=0){
+  settings.theme=linkedTheme;settings.customPalette=null;
+  const url=new URL(location.href);url.searchParams.delete('palette');history.replaceState(null,'',url);
+}
 let footerPage=settings.footer.home,panelChanged=Date.now(),environmentMode='sample',liveData={};
 let currentCity={name:'Norfolk',sample:true,lat:36.9,lon:-76.3};
 const cityLocation=locationService({getSettings:()=>settings,storage:localStorage,send:city=>{currentCity=city;render();}});
@@ -157,7 +163,10 @@ markerGallery();
 function sync(){
   for(const key of ['dayNight','edges','lights','sun','motion','stacked','moonIndicator'])$(key).checked=settings[key];
   $('format').value=settings.format;$('connectionBuzz').value=settings.connectionBuzz;$('mapBackground').value=settings.mapBackground;
-  document.querySelectorAll('[data-theme]').forEach(b=>b.setAttribute('aria-pressed',String(settings.customPalette===null&&+b.dataset.theme===settings.theme)));
+  document.querySelectorAll('[data-theme]').forEach(b=>{
+    const id=+b.dataset.theme;b.hidden=!!THEMES[id].hidden&&id!==settings.theme;
+    b.setAttribute('aria-pressed',String(settings.customPalette===null&&id===settings.theme));
+  });
   const current=activePreset(settings);document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.preset===current)));
   positionFields();placesUI();panelEditor.refresh();cityEditor.refresh();displayEditor.refresh();powerEditor.refresh();paletteEditor.refresh();
 }
@@ -402,6 +411,7 @@ $('import').onclick=()=>$('import-file').click();$('import-file').onchange=async
 $('reset').onclick=()=>{settings=defaults();footerPage=settings.footer.home;offset=0;$('scrub').value=0;sync();save();};
 
 sync();
+if(linkedTheme>=0)save();
 function nextMinute(){setTimeout(()=>{if(!document.hidden)render();nextMinute();},60000-Date.now()%60000+1);}
 try{const response=await fetch(`${import.meta.env.BASE_URL}maps/map-0.bin`);if(!response.ok)throw new Error('Map data could not be loaded.');mapPixels=new Uint8Array(await response.arrayBuffer());if(mapPixels.length!==MAP_SIZE[0]*MAP_SIZE[1]*4)throw new Error('Map data is incomplete.');const typeResponse=await fetch(`${import.meta.env.BASE_URL}type/proofs.json`);if(!typeResponse.ok)throw new Error('Watch typography could not be loaded.');const type=await typeResponse.json();watchTypeface=type.draft;watchSpan=type.span;render();nextMinute();}
 catch(e){notice(e.message,true);}

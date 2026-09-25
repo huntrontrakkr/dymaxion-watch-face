@@ -84,14 +84,17 @@ try{
   assert.deepEqual(Array.from(messages[0].DISPLAY),[3,4,36,0,0,22,7,10],'a fresh install shows Chamfer figures, with default power and motion');
   handlers.showConfiguration();assert.ok(opened.startsWith('data:text/html;charset=utf-8,'));
   const mobile=await browser.newPage({viewport:{width:390,height:844}});mobile.on('pageerror',e=>errors.push(e.message));await mobile.goto(opened);
-  assert.equal(await mobile.locator('#theme option').count(),THEMES.length);
+  assert.equal(await mobile.locator('#theme option').count(),THEMES.filter(t=>!t.hidden).length);
+  assert.equal(await mobile.locator('#theme option').filter({hasText:'Hot Dog Stand'}).count(),0);
   // Power and motion on the phone: the night hours and dark pause wait for the night saver.
   assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isDisabled());
   await mobile.getByLabel('Night saver',{exact:true}).check();assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isEnabled());
   await mobile.getByLabel('Night saver',{exact:true}).uncheck();
   for(let theme=4;theme<THEMES.length;theme++){
-    await mobile.locator('#theme').selectOption(String(theme));
-    assert.equal((await mobile.getByLabel('Color for place 1',{exact:true}).inputValue()).toUpperCase(),THEMES[theme].marks[0]);
+    if(!THEMES[theme].hidden){
+      await mobile.locator('#theme').selectOption(String(theme));
+      assert.equal((await mobile.getByLabel('Color for place 1',{exact:true}).inputValue()).toUpperCase(),THEMES[theme].marks[0]);
+    }
     const colored=defaults();colored.theme=theme;colored.places[0].color='#AA5500';
     handlers.webviewclosed({response:encodeURIComponent(JSON.stringify(colored))});
     const packet=messages.findLast(m=>m.SETTINGS).SETTINGS;
@@ -99,9 +102,22 @@ try{
     assert.equal(packet[16+72+70],pebbleColor(THEMES[theme].marks[1]));
     const colors=panelColors(colored),footer=messages.findLast(m=>m.FOOTER).FOOTER;
     assert.deepEqual(Array.from(footer).slice(21,29),PANEL_COLOR_ROLES.map(k=>pebbleColor(colors[k])));
-    assert.equal((await mobile.getByLabel('Temperature panel color',{exact:true}).inputValue()).toUpperCase(),colors.temperature);
+    if(!THEMES[theme].hidden)assert.equal((await mobile.getByLabel('Temperature panel color',{exact:true}).inputValue()).toUpperCase(),colors.temperature);
     assert.equal(JSON.parse(store.get('dymaxion-settings-v1')).theme,theme);
   }
+  // An imported easter egg remains selectable in phone settings.
+  handlers.showConfiguration();const eggPhone=await browser.newPage();await eggPhone.goto(opened);
+  const egg=THEMES.findIndex(t=>t.slug==='hot-dog-stand');
+  assert.equal(await eggPhone.locator('#theme').inputValue(),String(egg));await eggPhone.close();
+  const eggPage=await browser.newPage();eggPage.on('pageerror',e=>errors.push(e.message));
+  await eggPage.goto(base+'?palette=hot-dog-stand');
+  await eggPage.getByRole('tab',{name:'Character',exact:true}).click();
+  assert.equal(await eggPage.getByRole('button',{name:'Hot Dog Stand',exact:true}).getAttribute('aria-pressed'),'true');
+  await eggPage.reload();await eggPage.getByRole('tab',{name:'Character',exact:true}).click();
+  assert.equal(await eggPage.getByRole('button',{name:'Hot Dog Stand',exact:true}).getAttribute('aria-pressed'),'true');
+  await eggPage.locator('#screen').screenshot({path:'test-results/hot-dog-stand.png'});
+  await eggPage.getByRole('button',{name:'Airocean',exact:true}).click();
+  assert(await eggPage.getByRole('button',{name:'Hot Dog Stand',exact:true}).isHidden());await eggPage.close();
   await mobile.locator('#preset').selectOption('horizon');await mobile.locator('#theme').selectOption('1');
   await mobile.locator('#stacked').check();
   assert.equal(await mobile.locator('#stacked').isChecked(),true);
