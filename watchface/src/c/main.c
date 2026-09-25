@@ -410,7 +410,7 @@ static void draw_zones(GContext *ctx,time_t now,struct tm *local,int visible) {
     graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(x,y,60,36),0,GCornerNone);
     int delta;bool stale;struct tm zone=zone_time(z,now,local,&delta,&stale);
     int hour=zone.tm_hour;char label[8],hours[8],day[4];
-    bool glyph=custom_palette()?s_palette[PAL_ZONE_GLYPHS]:PALETTE_ZONE_GLYPHS[s_settings[THEME]];
+    bool glyph=DISPLAY_PLACE_ICONS(s_display);
     snprintf(label,sizeof(label),"%.5s",(const char *)z);
     while(strlen(label)>0&&graphics_text_layout_get_content_size(label,s_small,GRect(0,0,200,16),GTextOverflowModeFill,GTextAlignmentLeft).w>(glyph?28:34))
       label[strlen(label)-1]=0;

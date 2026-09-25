@@ -45,6 +45,6 @@ int main(void){
   for(int low=0;low<256;low++){v3[7]=low;assert(display_valid(v3,8)==(low==5||low==10||low==20||low==30));}v3[7]=10;v3[0]=2;assert(!display_valid(v3,8));v3[0]=3;
   v3[2]=1;assert(!display_valid(v3,8));
   // Byte 3: bits 0-1 background, bits 2-4 map time size (0 medium, 1 small, 2 large, 3 extra large, 4 wide).
-  v3[2]=2;for(int b=0;b<256;b++){v3[3]=b;assert(display_valid(v3,8)==(((b>>2)&7)<5&&!(b&~0x3f)));}v3[3]=1;
+  v3[2]=2;for(int b=0;b<256;b++){v3[3]=b;assert(display_valid(v3,8)==(((b>>2)&7)<5&&!(b&~0x7f)));}v3[3]=1;
   return 0;
 }

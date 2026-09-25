@@ -15,7 +15,8 @@ export const MAP_TIME_SIZE_CODES=['medium','small','large','xlarge','wide'];
 // 7 shows the Dymaxion nameplate; bit 0 is retired. Byte 3: bits 0-1 index
 // MAP_BACKGROUNDS, bits 2-4 the map time size (0 medium 3×6, 1 small 3×5,
 // 2 large 3×7, 3 extra large 3×8, 4 wide 4×8; older packets read as medium),
-// bit 5 tall place times beside the clock. Bytes 4-6 are power and motion (shared/power.js). The watch
+// bit 5 tall place times beside the clock, bit 6 hides the place icons in the
+// time-zone drawer (clear in older packets, so icons show). Bytes 4-6 are power and motion (shared/power.js). The watch
 // still loads 4-byte version 1 and 2 packets, with default power and motion.
 export function encodeDisplay(settings){
   const style=DISPLAY_CODES[settings.clockDisplay],background=MAP_BACKGROUNDS.indexOf(settings.mapBackground??'none'),zones=ZONE_TIMES.indexOf(settings.zoneTimes??'panel');
@@ -24,5 +25,5 @@ export function encodeDisplay(settings){
   if(zones<0)throw new Error('Invalid place-time placement.');
   const position=ZONE_POSITIONS.indexOf(settings.zonePosition??'left');
   if(position<0)throw new Error('Invalid place-time position.');
-  return new Uint8Array([3,style,(settings.leadingZero===false?2:0)|zones<<2|position<<4|(settings.mapTimesTurn?64:0)|(settings.nameplate?128:0),background|MAP_TIME_SIZE_CODES.indexOf(settings.mapTimeSize??'medium')<<2|(settings.zoneTimesTall?32:0),...encodePower(settings.power)]);
+  return new Uint8Array([3,style,(settings.leadingZero===false?2:0)|zones<<2|position<<4|(settings.mapTimesTurn?64:0)|(settings.nameplate?128:0),background|MAP_TIME_SIZE_CODES.indexOf(settings.mapTimeSize??'medium')<<2|(settings.zoneTimesTall?32:0)|(settings.placeIcons===false?64:0),...encodePower(settings.power)]);
 }

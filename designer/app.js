@@ -69,7 +69,7 @@ let currentCity={name:'Norfolk',sample:true,lat:36.9,lon:-76.3};
 const cityLocation=locationService({getSettings:()=>settings,storage:localStorage,send:city=>{currentCity=city;render();}});
 const cityEditor=cityControls($('city-controls'),()=>settings,value=>{settings=validateSettings({...settings,location:value},zoneExists);save();},()=>cityLocation.refresh());
 const powerEditor=powerControls($('power-controls'),()=>settings,power=>{settings={...settings,power};sync();save();});
-const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,mapTimeSize:value.mapTimeSize,zoneTimesTall:value.zoneTimesTall,nameplate:value.nameplate};sync();save();});
+const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,mapTimeSize:value.mapTimeSize,zoneTimesTall:value.zoneTimesTall,placeIcons:value.placeIcons,nameplate:value.nameplate};sync();save();});
 const paletteEditor=paletteControls($('palette-controls'),()=>settings,patch=>{settings=validateSettings({...settings,...patch},zoneExists);sync();save();});
 const environment=environmentService({getSettings:()=>settings,storage:localStorage,send:(kind,data)=>{liveData[kind]=data;render();}});
 const panelEditor=panelControls($('panel-controls'),()=>settings,footer=>{
@@ -359,8 +359,8 @@ function render(){
     const delta=Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000);
     const ink=markColor(p,settings,i);
     ctx.fillStyle=pal.bg;ctx.fillRect(x,y,60,36);drawPixelRows(ctx,DAY_NIGHT_ROWS[+(dot(direction(p.lat,p.lon),sun)>=0)],x+1,y+5,ink);
-    if(pal.zoneGlyphs)drawMarkerPixels(ctx,p.icon,x+10,y+7,ink);
-    paintText(fitLabel(watchTypeface.text.small,p.label,pal.zoneGlyphs?28:34),x+(pal.zoneGlyphs?16:9),y+12,11,ink);if(delta)paintText((delta>0?'+':'')+delta,x+60,y+12,11,pal.accent,'right');
+    if(settings.placeIcons)drawMarkerPixels(ctx,p.icon,x+10,y+7,ink);
+    paintText(fitLabel(watchTypeface.text.small,p.label,settings.placeIcons?28:34),x+(settings.placeIcons?16:9),y+12,11,ink);if(delta)paintText((delta>0?'+':'')+delta,x+60,y+12,11,pal.accent,'right');
     paintText(two(time.h)+':'+two(time.m),x+2,y+31,16,pal.ink);if(!use24())paintText(time.ampm[0],x+53,y+30,11,pal.accent);
     if(pulseNow()?.place===i)strokeLine(x,y+35,x+59,y+35,ink);
   });

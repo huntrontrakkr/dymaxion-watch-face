@@ -45,6 +45,7 @@
   "nameplate": false,
   "mapTimeSize": "medium",
   "zoneTimesTall": false,
+  "placeIcons": true,
   "power": {
     "daylightMinutes": 5,
     "minuteAnimation": true,

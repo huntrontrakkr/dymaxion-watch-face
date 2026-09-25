@@ -190,7 +190,10 @@ or 4×8 pixels, carried in byte 3 bits 2–4 (0 medium, 1 small, 2 large, 3 extr
 large, 4 wide; older packets read as medium). Every label uses it and goes wherever it fits. Byte 3 bit 5 draws the place times beside the clock in
 tall figures, 6×10 pixels on rows 13 apart, instead of the 7-pixel capitals
 (`zone_tall_draw` in `zone_column.c`); labels, A/P and day offsets stay in the
-capitals, each a pixel closer so a 12-hour row with a day offset still fits. Byte 2 bit 1 turns the leading zero off (the first digit slot stays blank for
+capitals, each a pixel closer so a 12-hour row with a day offset still fits.
+Byte 3 bit 6 hides the place icons beside the names in the time-zone drawer;
+it is clear in older packets, so icons show. (The palette packet's glyph byte
+is still sent but no longer read.) Byte 2 bit 1 turns the leading zero off (the first digit slot stays blank for
 hours under ten). Bit 1 is clear in every older packet, so the zero stays on. Byte 3 bits 0–1 select the
 map background: 0 none, 1 triangle points, 2 triangle lines, 3 fine triangle
 points (the lattice split twice). Background *n* is

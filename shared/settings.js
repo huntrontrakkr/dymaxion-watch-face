@@ -63,7 +63,7 @@ const LEGACY_PRESETS=[{
 }];
 export function defaults() {
   return {version:1,markerSet:2,theme:0,customPalettes:[],customPalette:null,format:1,dayNight:true,edges:false,lights:true,motion:true,sun:true,moonIndicator:true,connectionBuzz:'disconnect',
-    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',leadingZero:true,mapBackground:'none',zoneTimes:'when-hidden',zonePosition:'map',mapTimesTurn:false,nameplate:false,mapTimeSize:'medium',zoneTimesTall:false,power:defaultPower(),location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
+    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',leadingZero:true,mapBackground:'none',zoneTimes:'when-hidden',zonePosition:'map',mapTimesTurn:false,nameplate:false,mapTimeSize:'medium',zoneTimesTall:false,placeIcons:true,power:defaultPower(),location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
 }
 // Quick View: a clock the peek would cover moves up to sit just above it,
 // never into the status line (clock_top_for_visible in settings.c).
@@ -144,6 +144,10 @@ export function validateSettings(input,zoneExists) {
   out.mapTimeSize=input.mapTimeSize??'medium';
   if(input.zoneTimesTall!==undefined&&typeof input.zoneTimesTall!=='boolean')throw new Error('Invalid tall place times.');
   out.zoneTimesTall=input.zoneTimesTall??false;
+  // Place icons beside the names in the time-zone drawer: the wearer's choice,
+  // on unless turned off (it used to follow the theme).
+  if(input.placeIcons!==undefined&&typeof input.placeIcons!=='boolean')throw new Error('Invalid place icons.');
+  out.placeIcons=input.placeIcons??true;
   const position=(key,pos)=>{
     if(!Array.isArray(pos)||pos.length!==2||!pos.every(Number.isFinite))throw new Error('Invalid position.');
     return clampPosition(out,key,pos);

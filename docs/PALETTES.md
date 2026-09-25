@@ -28,8 +28,8 @@ there to apply changes. **Export settings** in the designer includes the whole
 palette library; import that JSON in either interface to transfer or restore it.
 Per-place colors and the panels' **Custom colors** setting take priority over
 palette defaults. Choose **Use theme color(s)** in those controls to inherit the
-active palette again. Map glyphs beside city names can also be enabled in a
-custom palette, independently of its base preset.
+active palette again. Place icons in the time-zone drawer are a Display setting
+of their own (on by default), not part of any palette.
 
 The companion sends only the active colors to the watch in an 18-byte `PALETTE`
 packet, alongside the existing `SETTINGS`, `FOOTER`, and `DISPLAY` packets in one

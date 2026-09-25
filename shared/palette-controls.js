@@ -16,7 +16,6 @@ export function paletteControls(root,getSettings,onChange){
     <div data-editor hidden><label class="field">Palette name<input type="text" data-name aria-label="Palette name" maxlength="32"></label>
     <div class="palette-preview" aria-label="Current palette colors"></div>
     ${groups.map(([title,fields],i)=>`${i?`<details><summary>${title}</summary>`:''}<div class="palette-colors">${fields.map(([path,label])=>`<label class="field">${label}<input type="color" data-color="${path}" aria-label="Palette ${label.toLowerCase()}"><output data-value="${path}"></output></label>`).join('')}</div>${i?'</details>':''}`).join('')}
-    <label class="toggle"><span>Show map glyphs beside city names</span><input type="checkbox" data-glyphs aria-label="Show map glyphs beside city names"></label>
     <p class="micro">Colors snap to the watch’s 64 colors. Individual place and panel color choices take priority.</p>
     </div><p class="micro" data-summary></p><p data-error class="notice error" role="alert"></p>`;
   const saved=root.querySelector('[data-saved]'),name=root.querySelector('[data-name]');
@@ -40,7 +39,6 @@ export function paletteControls(root,getSettings,onChange){
   };
   name.oninput=()=>name.setCustomValidity('');name.onchange=()=>edit('name',name.value.trim(),name);
   root.querySelectorAll('[data-color]').forEach(input=>input.oninput=()=>edit(input.dataset.color,input.value,input));
-  root.querySelector('[data-glyphs]').onchange=event=>edit('zoneGlyphs',event.target.checked);
   function refresh(){
     const s=getSettings(),custom=s.customPalette!=null,p=paletteFor(s);
     saved.replaceChildren(new Option('Use preset colors',''),...s.customPalettes.map((p,i)=>new Option(p.name,String(i))));
@@ -49,7 +47,7 @@ export function paletteControls(root,getSettings,onChange){
     root.querySelector('[data-new]').disabled=s.customPalettes.length>=MAX_CUSTOM_PALETTES;
     root.querySelector('[data-summary]').textContent=custom?'Saved with your composition. Export settings to back up or share your palettes.':`Start from ${p.name}, then change any color. Your saved palettes stay available when you try a preset.`;
     if(!custom){name.setCustomValidity('');return;}
-    name.value=p.name;root.querySelector('[data-glyphs]').checked=p.zoneGlyphs;
+    name.value=p.name;
     for(const input of root.querySelectorAll('[data-color]')){
       input.value=get(p,input.dataset.color);root.querySelector(`[data-value="${input.dataset.color}"]`).textContent=input.value.toUpperCase();
     }

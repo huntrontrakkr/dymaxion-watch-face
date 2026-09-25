@@ -30,7 +30,6 @@ try{
   await page.getByLabel('Palette night ocean',{exact:true}).fill('#000000');
   await page.getByText('Places & small indicators',{exact:true}).click();
   await page.getByLabel('Palette place 1 default',{exact:true}).fill('#ffffaa');
-  await page.getByLabel('Show map glyphs beside city names',{exact:true}).check();
   await page.getByText('Chart & calendar defaults',{exact:true}).click();
   await page.getByLabel('Palette rain',{exact:true}).fill('#aaffff');
   let s=await saved();assert.equal(s.customPalettes[0].panelColors.rain,'#AAFFFF');

@@ -74,7 +74,7 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
   });
   if(s.footer.enabled){ctx.fillStyle=pal.bg;ctx.fillRect(0,184,200,44);}
   if(panelZones)enabled.forEach(({p,i})=>{const [x,y]=s.zones[i],t=times[i],ink=markColor(p,s,i);ctx.fillStyle=pal.bg;ctx.fillRect(x,y,60,36);
-    if(pal.zoneGlyphs)drawMarkerPixels(ctx,p.icon,x+5,y+7,ink);
+    if(s.placeIcons)drawMarkerPixels(ctx,p.icon,x+5,y+7,ink);
     drawBitmapText(ctx,font.text.small,fitLabel(font.text.small,p.label),x+12,y+12,ink);
     drawBitmapText(ctx,font.lining.zone,`${two(clock24?t.h:t.h%12||12)}:${two(t.m)}`,x+2,y+31,pal.ink);
   });
