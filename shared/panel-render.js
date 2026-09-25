@@ -58,10 +58,11 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       const n=values[0],title=tide?`${series.label} ${(n/100).toFixed(1)}${f.tide.unit.toUpperCase()}`:humidity?`RH ${Math.round(n/10)}%`:`${series.label} ${Math.round(n/10)}${w.temperatureUnit.toUpperCase()}${w.humidityLine?` RH ${samples[0].humidity}%`:''}`;
       const first=tide?series.high:series.rise,second=tide?series.low:series.set,usefirst=first>=now/1000&&(second<now/1000||first<second),event=usefirst?first:second;
       const stale=series.error||now/1000-series.fetched>(tide?12*3600:w.refreshMinutes*120);
-      // Sunrise and sunset come from the daylight place (the wearer's location,
-      // else the forecast place), the same source as the chart's night shading.
-      const sun=!tide&&data.daylight?nextSunEvent(Math.floor(now/1000),data.daylight):null,local=t=>{const d=new Date(t*1000);return d.getHours()*60+d.getMinutes();};
-      let right=series.demo?'DEMO':stale?'OLD':tide?(event>=now/1000?`${usefirst?'H':'L'} ${timeLabel(usefirst?series.highMinute:series.lowMinute)}`:''):w.solarTimes&&sun?`${sun.rise?'RISE':'SET'} ${timeLabel(local(sun.time))}`:'';
+      // Current-location solar times use the main clock. Saved-city times are
+      // already localized by the provider, just like their chart hour labels.
+      const sun=!tide&&w.place==='current'&&data.daylight?nextSunEvent(Math.floor(now/1000),data.daylight):null,local=t=>{const d=new Date(t*1000);return d.getHours()*60+d.getMinutes();};
+      const solar=sun?`${sun.rise?'RISE':'SET'} ${timeLabel(local(sun.time))}`:event>=now/1000?`${usefirst?'RISE':'SET'} ${timeLabel(usefirst?series.riseMinute:series.setMinute)}`:'';
+      let right=series.demo?'DEMO':stale?'OLD':tide?(event>=now/1000?`${usefirst?'H':'L'} ${timeLabel(usefirst?series.highMinute:series.lowMinute)}`:''):w.solarTimes?solar:'';
       if(!right&&!tide&&!humidity&&w.precipitation!=='off')right=w.precipitation==='probability'?`RAIN ${Math.max(...samples.map(p=>p.probability))}%`:`MAX ${(Math.max(...samples.map(p=>p.rain))/10/(w.rainUnit==='in'?25.4:1)).toFixed(w.rainUnit==='in'?2:1)}${w.rainUnit.toUpperCase()}`;
       text(title,4,191);text(right,196,191,pal.accent,'right');
       const upper=axisValue(hi,tide),lower=axisValue(lo,tide),layout=chartLayout(upper,lower,samples.length,w.rangeLabels,axisTextWidth(clock24?'23':'12A'));
@@ -71,8 +72,9 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       const rain=!tide&&!humidity&&w.precipitation!=='off',rainInk=dimColor(c.rain,pal.bg),bottom=layout.bottom,plotHeight=bottom-layout.top+1;
       const x=i=>chartX(layout,i),y=n=>chartY(n,lo,hi,layout.top,bottom);
       // Daylight per pixel column: the sun's altitude at that moment and place.
-      if(!tide&&w.daylight&&data.daylight)for(let xx=layout.left;xx<=layout.right;xx++){
-        const t=series.start+window.start*3600+Math.trunc((xx-layout.left)*(samples.length-1)*3600/(layout.right-layout.left)),day=sunUp(t,data.daylight);
+      if(!tide&&w.daylight)for(let xx=layout.left;xx<=layout.right;xx++){
+        const hour=(xx-layout.left)*(samples.length-1)/(layout.right-layout.left);
+        const t=series.start+window.start*3600+Math.trunc(hour*3600),day=data.daylight?sunUp(t,data.daylight):samples[Math.floor(hour)].day;
         rect(xx,layout.daylight,1,1,day?pal.accent:pal.edge);
         if(!day&&xx%4===0)for(let yy=layout.top+2;yy<=bottom;yy+=4)rect(xx,yy,1,1,pal.edge);
       }

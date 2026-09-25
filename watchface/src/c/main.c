@@ -595,13 +595,13 @@ static void draw_status_line(GContext *ctx,struct tm *local,time_t now,const cha
   caps_draw(s_caps,status,4,12,false,caps_span,&accent);
   caps_draw(s_caps,battery,195,12,true,caps_span,&ink);
 }
-// The bottom tray, with the chart's daylight: it follows the wearer's
-// position when the phone sent one, otherwise the forecast place.
+// The chart's daylight follows its forecast source. When the current position
+// is unavailable, panels use the forecast's day/night samples.
 static void draw_tray_section(GContext *ctx,time_t now,struct tm *local,int visible){
-  static float daylight[3];int lat,lon;
-  if(city_usable(s_city,now)&&city_position(s_city,&lat,&lon))solar_place(lat,lon,daylight);
-  else solar_place_vector((const int8_t *)s_settings+HEADER_SIZE+panels_weather_place()*ZONE_SIZE+11,daylight);
-  draw_tray(ctx,now,local,visible,daylight);
+  static float daylight[3];int lat,lon,place=panels_weather_place();const float *position=NULL;
+  if(place<3){solar_place_vector((const int8_t *)s_settings+HEADER_SIZE+place*ZONE_SIZE+11,daylight);position=daylight;}
+  else if(city_usable(s_city,now)&&city_position(s_city,&lat,&lon)){solar_place(lat,lon,daylight);position=daylight;}
+  draw_tray(ctx,now,local,visible,position);
 }
 static void draw_status_section(GContext *ctx,struct tm *local,time_t now){
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(0,0,200,18),0,GCornerNone);

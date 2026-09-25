@@ -259,11 +259,11 @@ function statusWidth(){return settings.moonIndicator?126:140;}
 function use24(){return settings.format===1||(settings.format===0&&!new Intl.DateTimeFormat(undefined,{hour:'numeric'}).resolvedOptions().hour12);}
 const two=n=>String(n).padStart(2,'0');
 function clockParts(date){let h=date.hours();return {h:use24()?h:h%12||12,m:date.minutes(),ampm:h<12?'AM':'PM'};}
-// Chart day/night follows the wearer's location when the phone knows it,
-// otherwise the forecast place.
+// Weather and daylight always refer to the same place.
 function daylightPlace(){
-  if(settings.location.mode==='auto'&&cityHasPosition(currentCity))return direction(currentCity.lat,currentCity.lon);
-  const place=settings.places[settings.footer.weather.place];return direction(place.lat,place.lon);
+  const source=settings.footer.weather.place;
+  const place=source==='current'?(environmentMode==='live'?liveData.weather?.place:cityHasPosition(currentCity)?currentCity:null):settings.places[source];
+  return place?direction(place.lat,place.lon):null;
 }
 function render(){
   if(!mapPixels.length||!watchTypeface||!watchSpan)return;
@@ -353,7 +353,7 @@ function render(){
   if(band)drawFooter(ctx,settings,footerPage,{...(environmentMode==='sample'?sampleEnvironment(+now):liveData),palette:pal,daylight:daylightPlace()},+now,watchTypeface.lining.small,use24());
   trayCompose(band);
   $('panel-preview-label').textContent=settings.footer.enabled?PANEL_PAGES.find(([id])=>id===footerPage)[1]:'Time zones';
-  $('data-state').textContent=environmentMode==='sample'?'Example curves for layout preview. Live data is available below.':`Live forecast for ${settings.places[settings.footer.weather.place].name}. ${liveData.weather?.error?'Weather update unavailable; cached data is marked OLD.':''} ${liveData.tide?.error?'NOAA update unavailable.':''}`;
+  $('data-state').textContent=environmentMode==='sample'?'Example curves for layout preview. Live data is available below.':`Forecast source: ${settings.footer.weather.place==='current'?'your current location':settings.places[settings.footer.weather.place].name}. ${liveData.weather?.error?'Weather update unavailable; check location permission and connection. Cached data is marked OLD.':''} ${liveData.tide?.error?'NOAA update unavailable.':''}`;
   ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,18);
   drawBitmapText(ctx,watchTypeface.lining.small,status,4,12,pal.accent);drawBitmapText(ctx,watchTypeface.lining.small,'86%',195,12,pal.ink,'right');
   drawMoonIndicator(now);drawBluetoothIndicator();

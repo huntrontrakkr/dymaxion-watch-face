@@ -15,8 +15,8 @@ export function panelControls(root,getSettings,onChange){
     +toggle('shake','Flick to change panels','A short wrist flick moves to the next panel.')+select('flicks','Flicks per panel change',[[2,'Two quick flicks — one flick only lights the screen'],[1,'One flick (also changes the panel when the backlight turns on)'],[3,'Three quick flicks']])
     +select('rotationMinutes','Automatic rotation',[[0,'Off — keep the panel until changed'],...[1,2,5,10,15,30,60].map(n=>[n,`Every ${n} minute${n===1?'':'s'}`])])
     +`<p class="micro">Choose up to five panels. Turn off flicks and rotation to keep one in place.</p>`
-    +`<details><summary>Weather & humidity</summary>`+toggle('weather.enabled','Fetch weather','Open-Meteo forecast for one of your configured places.')
-    +select('weather.place','Forecast location',[[0,'Place 1'],[1,'Place 2'],[2,'Place 3']])+select('horizon','Chart horizon',[[12,'12 hours'],[24,'24 hours'],[48,'48 hours']])
+    +`<details><summary>Weather & humidity</summary>`+toggle('weather.enabled','Fetch weather','By default, weather follows your phone’s current location.')
+    +select('weather.place','Forecast location',[['current','Current location · follows your phone'],[0,'Place 1'],[1,'Place 2'],[2,'Place 3']])+`<p class="micro">Current location uses the phone’s location permission and clock time zone. Choosing a saved city is optional. A manually entered clock city name only changes that caption.</p>`+select('horizon','Chart horizon',[[12,'12 hours'],[24,'24 hours'],[48,'48 hours']])
     +select('weather.temperatureUnit','Temperature units',[['c','Celsius'],['f','Fahrenheit']])+select('weather.precipitation','Rain overlay',[['off','Off'],['probability','Precipitation probability'],['amount','Precipitation amount']])
     +select('weather.rainUnit','Rain amount units',[['mm','Millimeters'],['in','Inches']])+toggle('weather.daylight','Daylight strip & night shading')+toggle('weather.solarTimes','Next sunrise or sunset','Turn off to show peak rain probability or rate in the weather heading.')
     +select('weather.refreshMinutes','Weather refresh',[[30,'30 minutes'],[60,'1 hour'],[120,'2 hours'],[180,'3 hours']])
@@ -36,6 +36,7 @@ export function panelControls(root,getSettings,onChange){
     el.oninput=()=>el.setCustomValidity('');
     el.onchange=()=>{
       const f=clone(getSettings().footer),path=el.dataset.panel,old=get(f,path);let value=el.type==='checkbox'?el.checked:typeof old==='number'?Number(el.value):el.value;
+      if(path==='weather.place')value=el.value==='current'?'current':Number(el.value);
       if(path.startsWith('colors.')){if(f.colorMode!=='custom')f.colors={...panelColors(getSettings())};f.colorMode='custom';}
       if(path==='tide.station'||path==='tide.label')value=value.trim().toUpperCase();if(path==='tide.tz')value=value.trim();
       set(f,path,value);
@@ -53,7 +54,7 @@ export function panelControls(root,getSettings,onChange){
     root.querySelector('[data-theme-colors]').disabled=f.colorMode==='theme';
     root.querySelector('[data-color-mode]').textContent=f.colorMode==='theme'?'Follows palette':'Custom colors';
     const home=root.querySelector('[data-panel="home"]');home.replaceChildren();f.pages.forEach(id=>home.add(new Option(PANEL_PAGES.find(([p])=>p===id)[1],id)));home.value=f.home;
-    root.querySelector('[data-panel="weather.place"]').querySelectorAll('option').forEach((o,i)=>o.textContent=`Place ${i+1} / ${settings.places[i].name}`);
+    root.querySelector('[data-panel="weather.place"]').querySelectorAll('option').forEach(o=>{if(o.value!=='current')o.textContent=`Place ${+o.value+1} / ${settings.places[+o.value].name}`;});
     root.querySelector('[data-station]').value=TIDE_STATIONS.some(s=>s.id===f.tide.station)?f.tide.station:f.tide.station?'custom':'';
     const order=root.querySelector('[data-order]');order.replaceChildren();
     [...f.pages,...PANEL_PAGES.map(([id])=>id).filter(id=>!f.pages.includes(id))].forEach(id=>{

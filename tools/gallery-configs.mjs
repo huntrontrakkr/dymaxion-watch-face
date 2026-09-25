@@ -19,6 +19,8 @@ export function galleryConfigs(seed=GALLERY_SEED){
     const theme=index===0?0:PUBLIC_THEME_IDS[Math.floor((index-1)/3)];
     const variant=index===0?0:(index-1)%3;
     let settings=defaults(),layout='meridian';settings.theme=theme;
+    // Preserve the saved September 2026 recipes as new-install defaults evolve.
+    settings.footer.weather.place=0;
     let when=index===0?'2026-09-24T16:38:20Z':'2026-09-24T16:34:20Z';
     if(variant){
       const order=theme*2+variant-1;

@@ -34,6 +34,8 @@ int main(int argc,char **argv){
   memcpy(copy,f,sizeof(f));copy[F_ORDER+1]=copy[F_ORDER];assert(!footer_valid(copy,sizeof(f)));
   memcpy(copy,f,sizeof(f));copy[F_SHAKE]=2;assert(!footer_valid(copy,sizeof(f)));
   memcpy(copy,f,sizeof(f));copy[F_RAIN_MAX]=copy[F_RAIN_MAX+1]=0;assert(!footer_valid(copy,sizeof(f)));
+  memcpy(copy,f,sizeof(f));for(int place=0;place<=3;place++){copy[F_WEATHER_PLACE]=place;assert(footer_valid(copy,sizeof(f)));}
+  copy[F_WEATHER_PLACE]=4;assert(!footer_valid(copy,sizeof(f)));
   memcpy(copy,w,sizeof(w));copy[32+2]=101;assert(!environment_valid(copy,sizeof(w),false));
   memcpy(copy,w,sizeof(w));copy[1]=50;assert(!environment_valid(copy,sizeof(w),false));
   memcpy(copy,t,sizeof(t));copy[48+2]=24;assert(!environment_valid(copy,sizeof(t),true));

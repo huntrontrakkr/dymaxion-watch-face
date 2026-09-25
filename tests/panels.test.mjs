@@ -34,6 +34,7 @@ test('provider data keeps real units, timestamps and gaps instead of drawing fal
 });
 test('environment refresh caches, rate limits failures and discards responses for a previous location',async()=>{
   let s=defaults(),now=meta.capturedAt,calls=0,fail=false;const messages=[],store=new Map();
+  s.footer.weather.place=0;
   s.footer.tide={...s.footer.tide,...meta.station};
   const service=environmentService({getSettings:()=>s,now:()=>now,storage:{getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v)},send:(kind,data)=>messages.push({kind,data}),getJSON:async url=>{calls++;if(fail)throw new Error('Offline');return url.includes('open-meteo')?rawWeather:url.includes('interval=hilo')?extrema:hourly;}});
   // The tide panel is optional; with it in the rotation, NOAA predictions are fetched.

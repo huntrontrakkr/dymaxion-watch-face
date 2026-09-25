@@ -1,9 +1,7 @@
 import {CITY_REFRESH,cityIsUsable,cityText,reverseCity} from '../shared/city.js';
 import {requestJSON} from './environment-service.js';
-export function devicePosition(){return new Promise((resolve,reject)=>{
-  if(typeof navigator==='undefined'||!navigator.geolocation){reject(new Error('Location access is unavailable.'));return;}
-  navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:false,maximumAge:15*60000,timeout:10000});
-});}
+import {devicePosition} from './device-position.js';
+export {devicePosition} from './device-position.js';
 export function locationService({getSettings,send,storage,getPosition=devicePosition,getJSON=requestJSON,now=Date.now}){
   const key='dymaxion-current-city-v1';let cached=null,pending=null,retryAfter=0,generation=0,mode='';
   try{const saved=JSON.parse(storage.getItem(key)||'null');if(cityIsUsable(saved,now())&&!saved.manual&&saved.name===cityText(saved.name))cached=saved;}catch{}

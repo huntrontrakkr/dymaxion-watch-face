@@ -16,7 +16,7 @@ bool footer_valid(const uint8_t *p,unsigned length){
   int rain=(uint16_t)read_i16(p+F_RAIN_MAX),tlo=read_i16(p+F_TIDE_MIN),thi=read_i16(p+F_TIDE_MAX);
   if(rain<1||rain>1000||p[F_TIDE_FIXED]>1||tlo< -10000||thi>10000||thi-tlo<10)return false;
   // Flick count 1-3; 0 is a footer saved before the setting existed (two flicks).
-  if(p[F_WEATHER_PLACE]>2||p[F_HUMID_LINE]>1||p[F_FLICKS]>3)return false;
+  if(p[F_WEATHER_PLACE]>3||p[F_HUMID_LINE]>1||p[F_FLICKS]>3)return false;
   for(int i=53;i<FOOTER_SIZE;i++)if(p[i])return false;
   return true;
 }

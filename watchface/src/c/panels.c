@@ -160,10 +160,13 @@ static void graph_draw(GContext *ctx,time_t now){
   else if(tide&&event>=(uint32_t)now){
     char timebuf[16];clock_label(timebuf,sizeof(timebuf),(uint16_t)read_i16(p+24+(usefirst?0:2)));
     snprintf(right,sizeof(right),"%s %s",usefirst?"H":"L",timebuf);
-  }else if(!tide&&s_footer[F_SOLAR]&&s_daylight){
+  }else if(!tide&&s_footer[F_SOLAR]&&s_daylight&&s_footer[F_WEATHER_PLACE]==3){
     // Sunrise and sunset at the daylight place, the same source as the shading.
     bool rise;time_t sun=next_sun_event((uint32_t)now,&rise);
     if(sun){struct tm *t=localtime(&sun);char timebuf[16];clock_label(timebuf,sizeof(timebuf),t->tm_hour*60+t->tm_min);snprintf(right,sizeof(right),"%s %s",rise?"RISE":"SET",timebuf);}
+  }else if(!tide&&s_footer[F_SOLAR]&&event>=(uint32_t)now){
+    char timebuf[16];clock_label(timebuf,sizeof(timebuf),(uint16_t)read_i16(p+20+(usefirst?0:2)));
+    snprintf(right,sizeof(right),"%s %s",usefirst?"RISE":"SET",timebuf);
   }
   if(!right[0]&&!tide&&!humidity&&s_footer[F_RAIN]){
     int peak=0;for(int i=0;i<count;i++){const uint8_t *sample=p+32+(start+i)*8;int rain=s_footer[F_RAIN]==1?sample[3]:(uint16_t)read_i16(sample+4);peak=MAX(peak,rain);}
@@ -177,10 +180,11 @@ static void graph_draw(GContext *ctx,time_t now){
   int plot_height=layout.bottom-layout.top+1;
   GColor ink=custom(tide?F_TIDE_COLOR:humidity?F_HUMID_COLOR:F_TEMP_COLOR),rain_ink=dim(custom(F_RAIN_COLOR),color(0));
   // Daylight per pixel column: the sun's altitude at that moment and place.
-  if(!tide&&s_footer[F_DAYLIGHT]&&s_daylight){
-    daylight_columns(read_u32(p+8)+(uint32_t)start*3600,count,layout.left,layout.right);
+  if(!tide&&s_footer[F_DAYLIGHT]){
+    if(s_daylight)daylight_columns(read_u32(p+8)+(uint32_t)start*3600,count,layout.left,layout.right);
     for(int xx=layout.left;xx<=layout.right;xx++){
-      bool day=(s_columns.day[xx/8]>>(xx%8))&1;
+      int sample=(xx-layout.left)*(count-1)/(layout.right-layout.left);
+      bool day=s_daylight?(s_columns.day[xx/8]>>(xx%8))&1:p[32+(start+sample)*8+6];
       rect(ctx,xx,layout.daylight,1,1,day?color(7):color(5));
       if(!day&&xx%4==0)for(int y=layout.top+2;y<=layout.bottom;y+=4)rect(ctx,xx,y,1,1,color(5));
     }

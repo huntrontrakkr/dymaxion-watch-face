@@ -26,7 +26,7 @@ Make it yours with 25 palettes, custom colors, eight clock styles and two compos
 
 Keep three other time zones close, with daylight-saving changes handled for you. Choose bottom panels for world clocks, weather, a two-week calendar, humidity, NOAA tides or Pebble Health. Use wrist flicks, timed rotation or one quiet panel. Minute animations and battery-saving options are adjustable.
 
-For Pebble Time 2 / Emery. Search and weather need a connection; tides need a supported NOAA station. Health stays on the watch. Screenshot weather and device readings are examples. Open source, made to be explored.
+Weather follows your current location by default; allow location access in the Pebble phone app. A saved city is optional. For Pebble Time 2 / Emery. Search and weather need a connection; tides need a supported NOAA station. Health stays on the watch. Screenshot weather and device readings are examples. Open source, made to be explored.
 
 ## Submission assets
 

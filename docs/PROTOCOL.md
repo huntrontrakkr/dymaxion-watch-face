@@ -104,7 +104,7 @@ declares the `health` capability) and nothing about it leaves the watch.
 | 43–44 | Rain scale maximum, uint16 tenths of mm/hour |
 | 45 | Fixed tide range |
 | 46–49 | Two int16 tide bounds, hundredths of selected meters/feet |
-| 50 | Forecast place (0–2), the charts' daylight fallback without a position |
+| 50 | Forecast source: saved place 0–2, or current phone location 3 (default since 0.4.1). Daylight follows that source; absent current-city coordinates use forecast daylight flags. |
 | 51 | Humidity line on the weather chart (0/1) |
 | 52 | Flicks per page change (1–3; 0 from older phones means 2) |
 | 53–63 | Reserved zero |

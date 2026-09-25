@@ -76,7 +76,9 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
     drawBitmapText(ctx,font.text.small,fitLabel(font.text.small,p.label),x+12,y+12,ink);
     drawBitmapText(ctx,font.lining.zone,`${two(clock24?t.h:t.h%12||12)}:${two(t.m)}`,x+2,y+31,pal.ink);
   });
-  if(s.footer.enabled)drawFooter(ctx,s,page,{...sampleEnvironment(+now),palette:pal,daylight:direction(s.places[s.footer.weather.place].lat,s.places[s.footer.weather.place].lon)},+now,font.lining.small,clock24);
+  const forecastPlace=s.footer.weather.place==='current'?city:s.places[s.footer.weather.place];
+  const daylight=Number.isFinite(forecastPlace?.lat)&&Number.isFinite(forecastPlace?.lon)?direction(forecastPlace.lat,forecastPlace.lon):null;
+  if(s.footer.enabled)drawFooter(ctx,s,page,{...sampleEnvironment(+now),palette:pal,daylight},+now,font.lining.small,clock24);
   ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,18);
   const cityName=s.location.mode==='manual'?s.location.name:city?.name||'YOUR CITY';
   drawBitmapText(ctx,font.lining.small,`${['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()]} ${two(now.getDate())} ${cityName.toUpperCase().slice(0,10)}`,4,12,pal.accent);

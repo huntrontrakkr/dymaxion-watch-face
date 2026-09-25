@@ -69,6 +69,12 @@ choose the right region, and fill its coordinates and time zone automatically.
 Suggested three-letter labels remain editable. More than 50 saved cities work
 offline; search, weather, tides and automatic city lookup need a connection.
 
+Weather follows your phone's current location by default, using the main clock's
+time zone. Allow location access in the Pebble app. Temperature, rain, humidity
+and daylight stay together; a saved city is an optional override. Upgrading keeps
+existing choices: select **Weather & humidity → Forecast location → Current
+location** once if your previous version was set to a saved place.
+
 For a larger preview, use the [workshop](https://huntrontrakkr.github.io/dymaxion-watch-face/).
 Choose **Export settings**, then **Import settings from the workshop** in the
 phone settings, load the JSON and **Save to watch**. Gallery layouts use the

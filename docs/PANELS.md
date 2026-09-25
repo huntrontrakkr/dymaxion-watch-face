@@ -40,11 +40,13 @@ peak. Humidity joins the same chart as a dotted line in the humidity color on
 its own fixed 0–100% scale (it has no range labels; the header reads it out),
 so temperature, humidity, rain and daylight share one timeline. It can be turned
 off in the weather settings. Tides stay on their own panel. Night carries a dotted field and a grey daylight strip, shaded per pixel
-column from the sun's altitude at the wearer's position (the phone's rounded
-location; the forecast place when there is none, such as a manual city). The
-edges fall at the actual sunrise and sunset (-0.833°), and the header's RISE/SET
-time comes from the same calculation (`shared/solar.js`,
-`watchface/src/c/solar.c`), so the label and the shading always agree.
+column from the sun's altitude at the forecast position. Weather defaults to
+the phone's current location; a saved city can be selected instead. With a
+position available, the edges use sunrise and sunset altitude (-0.833°).
+Without a current-city position, the watch uses the forecast's hourly daylight
+flags. Current-location RISE/SET times use the main clock; saved-city times use
+the forecast's own time zone. Provider sunrise/sunset times also serve as the
+fallback when the city position is unavailable.
 
 The left gutter measures both range labels, allowing one pixel of outer padding
 and two before the plot. A normal two-digit temperature scale needs 10 pixels
@@ -83,7 +85,7 @@ Native Emery screenshots, with actual forecast and NOAA response data:
 | Page | Display | Configuration |
 | --- | --- | --- |
 | Time zones | Existing three place clocks | Places and layout controls remain available |
-| Weather | One chart: temperature line, dotted humidity line (fixed 0–100%), dimmed precipitation bars, daylight strip/night dots; header gives temperature, humidity and next rise/set | Place, °C/°F, 12/24/48 hours, probability/amount/off, mm/in, rain scale, automatic/fixed temperature range, refresh interval |
+| Weather | One chart: temperature line, dotted humidity line (fixed 0–100%), dimmed precipitation bars, daylight strip/night dots; header gives temperature, humidity and next rise/set | Current location (default) or saved city, °C/°F, 12/24/48 hours, probability/amount/off, mm/in, rain scale, automatic/fixed temperature range, refresh interval |
 | Calendar | Weekday labels and fourteen dates, with today highlighted | Sunday (default), Monday or Saturday start; previous/current or current/next week; weekend pattern in one weekend color; optional public holidays for the United States (federal, observed dates), Canada, Mexico, the United Kingdom (England and Wales), Germany, France or Australia; filled/outlined today |
 | Humidity | Relative humidity alone (not in the default rotation; the weather chart carries it) | Fixed 0–100% or fitted range; uses the weather location and cache |
 | Tide | Predicted water-height curve and next high/low time (optional: not in the default rotation; switch it on in the panel list. NOAA predictions are fetched only while it is included) | NOAA station, station time zone, meters/feet, automatic/fixed scale, zero line |
@@ -164,8 +166,18 @@ role. The face remains a watchface.
 
 [Open-Meteo](https://open-meteo.com/en/docs) provides temperature, relative
 humidity, precipitation probability/amount, daylight flags, sunrise and sunset.
-It uses the explicit latitude/longitude and IANA zone of the selected place.
-No GPS permission or API key is required. The default refresh is one hour;
+By default it uses the phone's current coordinates, rounded to about 100 m,
+and the phone's IANA time zone. Location access is required in this mode; no API
+key is needed. City naming and weather share a coarse, on-demand location fix,
+cached for fifteen minutes. There is no continuous location tracking. Weather
+asks for a fix only when its forecast needs refreshing and does not depend on
+reverse city lookup succeeding. A manual main-clock city name is just a caption.
+
+A saved city can be selected instead and needs no location permission for
+weather. Existing saved selections are preserved on upgrade; choose **Weather
+& humidity → Forecast location → Current location** to switch. If location
+access fails, valid current-location weather remains marked **OLD**; no saved
+city is silently substituted. The default refresh is one hour;
 30 minutes, two hours and three hours are available. Data attribution and
 service terms are in [NOTICE](../NOTICE).
 
@@ -201,7 +213,8 @@ The companion never supplies those examples to the watch.
 ## Verification
 
 Automated checks cover settings migration, packet validation, missing hourly
-values, cache reuse/backoff, late responses, fractional-hour forecast locations,
+values, current-location defaults, shared position fixes, permission failures,
+travel and time-zone changes, cache reuse/backoff, late responses, fractional-hour forecast locations,
 calendar parity between JavaScript and C across DST/leap/year boundaries, and
 the wrist-flick guard. Browser checks cover the default pages, live-response
 fixtures, page order, timed rotation, persistence, unit conversion and mobile
@@ -209,6 +222,10 @@ layout. An earlier revision was verified in the Emery emulator (AppMessage
 delivery, rendered pages, and the since-replaced shake detector); the wrist-flick
 version has not yet run in the emulator or on hardware. Real requests were also checked
 for New York, Kathmandu and NOAA station 8518750 (The Battery).
+
+The 0.4.1 current-location change was also checked in the Emery emulator with
+forecast packets, automatic city coordinates, a manual clock caption, unavailable
+weather and restored data. All AppMessages were acknowledged and each state rendered.
 
 Physical wrist-motion sensitivity, power consumption and phone webview behavior
 still need hardware testing. The [accelerometer API](https://developer.repebble.com/docs/c/Foundation/Event_Service/AccelerometerService/)

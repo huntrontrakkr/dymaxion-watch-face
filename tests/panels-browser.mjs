@@ -4,10 +4,10 @@ import assert from 'node:assert/strict';
 const fixture=name=>JSON.parse(readFileSync(`tests/fixtures/${name}.json`));
 const meta=fixture('environment-meta'),base=process.env.PREVIEW_URL||'http://127.0.0.1:5173';
 mkdirSync('test-results',{recursive:true});
-const browser=await chromium.launch();const page=await browser.newPage({viewport:{width:1440,height:1200},timezoneId:'America/New_York'});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const browser=await chromium.launch();const page=await browser.newPage({viewport:{width:1440,height:1200},timezoneId:'America/New_York',geolocation:{latitude:36.85,longitude:-76.29},permissions:['geolocation']});const errors=[];page.on('pageerror',e=>errors.push(e.message));
 try{
   await page.clock.install({time:new Date(meta.capturedAt)});
-  await page.route('https://api.open-meteo.com/**',route=>route.fulfill({json:fixture('weather'),headers:{'access-control-allow-origin':'*'}}));
+  await page.route('https://api.open-meteo.com/**',route=>{const url=new URL(route.request().url());assert.equal(url.searchParams.get('latitude'),'36.85');assert.equal(url.searchParams.get('longitude'),'-76.29');return route.fulfill({json:fixture('weather'),headers:{'access-control-allow-origin':'*'}});});
   await page.route('https://api.tidesandcurrents.noaa.gov/**',route=>route.fulfill({json:fixture(route.request().url().includes('interval=hilo')?'tide-extrema':'tide-hourly'),headers:{'access-control-allow-origin':'*'}}));
   await page.goto(base);await page.waitForFunction(()=>document.querySelector('#preview-time').textContent.includes('LIVE'));await page.locator('#reset').click();
   for(const [id,label]of [['zones','Time zones'],['weather','Weather'],['calendar','Two-week calendar'],['health','Health']]){
@@ -36,6 +36,10 @@ try{
   await page.clock.fastForward(61000);assert.equal(await page.locator('#panel-preview-label').textContent(),'Weather');
   await page.getByLabel('Automatic rotation',{exact:true}).selectOption('0');
   await page.getByLabel('Starting panel',{exact:true}).selectOption('weather');
+  await page.getByText('Weather & humidity',{exact:true}).click();
+  assert.equal(await page.getByLabel('Forecast location',{exact:true}).inputValue(),'current');
+  await page.getByLabel('Forecast location',{exact:true}).selectOption('1');
+  await page.getByLabel('Forecast location',{exact:true}).selectOption('current');
   await page.getByRole('button',{name:'Load live data',exact:true}).click();await page.waitForFunction(()=>!!localStorage.getItem('dymaxion-environment-weather'));
   await page.locator('#screen').screenshot({path:'test-results/panel-weather-live.png'});
   await page.getByText('NOAA tides',{exact:true}).click();await page.getByLabel('Tide station',{exact:true}).selectOption('8518750');
