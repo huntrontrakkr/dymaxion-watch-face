@@ -1,0 +1,152 @@
+{
+  "version": 1,
+  "markerSet": 2,
+  "theme": 0,
+  "customPalettes": [],
+  "customPalette": null,
+  "format": 1,
+  "dayNight": true,
+  "edges": false,
+  "lights": true,
+  "motion": true,
+  "sun": true,
+  "moonIndicator": true,
+  "connectionBuzz": "disconnect",
+  "orientation": 0,
+  "stacked": false,
+  "time": [
+    0,
+    22
+  ],
+  "map": [
+    0,
+    73
+  ],
+  "zones": [
+    [
+      4,
+      189
+    ],
+    [
+      70,
+      189
+    ],
+    [
+      136,
+      189
+    ]
+  ],
+  "clockDisplay": "broad",
+  "leadingZero": true,
+  "mapBackground": "none",
+  "zoneTimes": "panel",
+  "zonePosition": "left",
+  "mapTimesTurn": true,
+  "nameplate": false,
+  "power": {
+    "daylightMinutes": 5,
+    "minuteAnimation": true,
+    "flourishes": true,
+    "night": false,
+    "nightStart": 22,
+    "nightEnd": 7,
+    "darkPause": false,
+    "lowBattery": 10
+  },
+  "location": {
+    "mode": "auto",
+    "name": ""
+  },
+  "footer": {
+    "enabled": true,
+    "pages": [
+      "zones",
+      "weather",
+      "calendar",
+      "health"
+    ],
+    "home": "weather",
+    "rotationMinutes": 0,
+    "shake": true,
+    "flicks": 2,
+    "horizon": 12,
+    "weather": {
+      "enabled": true,
+      "place": 0,
+      "temperatureUnit": "c",
+      "precipitation": "amount",
+      "rainUnit": "mm",
+      "rainMax": 5,
+      "daylight": true,
+      "solarTimes": true,
+      "grid": false,
+      "rangeLabels": true,
+      "humidityLine": true,
+      "temperatureScale": "auto",
+      "temperatureMin": -10,
+      "temperatureMax": 40,
+      "humidityScale": "percent",
+      "refreshMinutes": 60
+    },
+    "calendar": {
+      "weekStart": 1,
+      "weeks": "current-next",
+      "weekends": "sat-sun",
+      "holidays": "none",
+      "todayStyle": "outline"
+    },
+    "tide": {
+      "station": "9755371",
+      "label": "SANJUAN",
+      "tz": "America/Puerto_Rico",
+      "unit": "m",
+      "zeroLine": true,
+      "scale": "auto",
+      "min": -1,
+      "max": 3
+    },
+    "colorMode": "theme",
+    "colors": {
+      "temperature": "#FFAA55",
+      "rain": "#55AAFF",
+      "humidity": "#00FFAA",
+      "tide": "#55AAFF",
+      "saturday": "#55AAFF",
+      "sunday": "#FF55AA",
+      "holiday": "#FFAA55",
+      "today": "#FFFFFF"
+    }
+  },
+  "places": [
+    {
+      "label": "SFO",
+      "name": "San Francisco",
+      "tz": "America/Los_Angeles",
+      "lat": 37.7749,
+      "lon": -122.4194,
+      "icon": 2,
+      "color": "#FF55FF",
+      "on": true
+    },
+    {
+      "label": "PAR",
+      "name": "Paris",
+      "tz": "Europe/Paris",
+      "lat": 48.8566,
+      "lon": 2.3522,
+      "icon": 4,
+      "color": null,
+      "on": true
+    },
+    {
+      "label": "TYO",
+      "name": "Tokyo",
+      "tz": "Asia/Tokyo",
+      "lat": 35.6762,
+      "lon": 139.6503,
+      "icon": 2,
+      "color": null,
+      "on": true
+    }
+  ]
+}

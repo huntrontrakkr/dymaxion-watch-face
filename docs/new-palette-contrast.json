@@ -1,0 +1,212 @@
+[
+  {
+    "name": "TWA Atlantic",
+    "modes": {
+      "normal": {
+        "textMinimum": 8.355110008176368,
+        "dayCoastline": 7.751338479421059,
+        "nightCoastline": 6.520827553779134
+      },
+      "protan": {
+        "textMinimum": 8.614481005645155,
+        "dayCoastline": 10.945091137600324,
+        "nightCoastline": 7.48551244274419
+      },
+      "deutan": {
+        "textMinimum": 8.20762956956072,
+        "dayCoastline": 6.4849031661551475,
+        "nightCoastline": 6.003059809631963
+      },
+      "tritan": {
+        "textMinimum": 7.347768874091983,
+        "dayCoastline": 6.669402798956972,
+        "nightCoastline": 6.08486711458009
+      },
+      "grayscale": {
+        "textMinimum": 8.355110008176366,
+        "dayCoastline": 7.751338479421059,
+        "nightCoastline": 6.520827553779134
+      }
+    }
+  },
+  {
+    "name": "Solstice",
+    "modes": {
+      "normal": {
+        "textMinimum": 9.842032711345267,
+        "dayCoastline": 6.109217598402614,
+        "nightCoastline": 9.842032711345267
+      },
+      "protan": {
+        "textMinimum": 7.703528862323,
+        "dayCoastline": 5.615506628458474,
+        "nightCoastline": 7.703528862323
+      },
+      "deutan": {
+        "textMinimum": 10.107264725718483,
+        "dayCoastline": 6.2692087700042585,
+        "nightCoastline": 10.107264725718483
+      },
+      "tritan": {
+        "textMinimum": 8.218399456166559,
+        "dayCoastline": 5.233746064823583,
+        "nightCoastline": 8.218399456166559
+      },
+      "grayscale": {
+        "textMinimum": 9.842032711345267,
+        "dayCoastline": 6.109217598402614,
+        "nightCoastline": 9.842032711345267
+      }
+    }
+  },
+  {
+    "name": "Porcelain",
+    "modes": {
+      "normal": {
+        "textMinimum": 8.639929928905667,
+        "dayCoastline": 8.754698353251369,
+        "nightCoastline": 6.165262926060856
+      },
+      "protan": {
+        "textMinimum": 8.04678840501099,
+        "dayCoastline": 8.075402848407906,
+        "nightCoastline": 5.561506716690096
+      },
+      "deutan": {
+        "textMinimum": 9.080840330929885,
+        "dayCoastline": 8.16194844869112,
+        "nightCoastline": 6.249377807281949
+      },
+      "tritan": {
+        "textMinimum": 8.294357571101783,
+        "dayCoastline": 8.208440128973441,
+        "nightCoastline": 5.77248766794997
+      },
+      "grayscale": {
+        "textMinimum": 8.639929928905667,
+        "dayCoastline": 8.754698353251369,
+        "nightCoastline": 6.165262926060856
+      }
+    }
+  },
+  {
+    "name": "Verdigris",
+    "modes": {
+      "normal": {
+        "textMinimum": 8.02696826568187,
+        "dayCoastline": 7.593761758790683,
+        "nightCoastline": 8.355110008176368
+      },
+      "protan": {
+        "textMinimum": 7.924532342100903,
+        "dayCoastline": 7.523096373615917,
+        "nightCoastline": 8.614481005645155
+      },
+      "deutan": {
+        "textMinimum": 7.988600025632901,
+        "dayCoastline": 7.6409204489770115,
+        "nightCoastline": 8.20762956956072
+      },
+      "tritan": {
+        "textMinimum": 7.7399776001373395,
+        "dayCoastline": 7.031785800940345,
+        "nightCoastline": 7.347768874091983
+      },
+      "grayscale": {
+        "textMinimum": 8.02696826568187,
+        "dayCoastline": 7.593761758790683,
+        "nightCoastline": 8.355110008176366
+      }
+    }
+  },
+  {
+    "name": "Ultraviolet",
+    "modes": {
+      "normal": {
+        "textMinimum": 9.903099682566223,
+        "dayCoastline": 6.526212776021888,
+        "nightCoastline": 6.304818470874041
+      },
+      "protan": {
+        "textMinimum": 10.230869553303254,
+        "dayCoastline": 7.229307893955431,
+        "nightCoastline": 4.367035566545017
+      },
+      "deutan": {
+        "textMinimum": 9.702123034257493,
+        "dayCoastline": 6.045236029622349,
+        "nightCoastline": 6.9053487404012035
+      },
+      "tritan": {
+        "textMinimum": 10.109992825306584,
+        "dayCoastline": 6.538201112911532,
+        "nightCoastline": 5.247009784937253
+      },
+      "grayscale": {
+        "textMinimum": 9.903099682566223,
+        "dayCoastline": 6.526212776021888,
+        "nightCoastline": 6.304818470874041
+      }
+    }
+  },
+  {
+    "name": "Signal",
+    "modes": {
+      "normal": {
+        "textMinimum": 13.28730514590469,
+        "dayCoastline": 19.555999999999997,
+        "nightCoastline": 7.455177810447525
+      },
+      "protan": {
+        "textMinimum": 9.62808291459425,
+        "dayCoastline": 18.136814336,
+        "nightCoastline": 7.45517678815492
+      },
+      "deutan": {
+        "textMinimum": 11.444057504273962,
+        "dayCoastline": 18.922727423999998,
+        "nightCoastline": 7.455175824288167
+      },
+      "tritan": {
+        "textMinimum": 10.369879580172624,
+        "dayCoastline": 18.449869392,
+        "nightCoastline": 7.455177810447524
+      },
+      "grayscale": {
+        "textMinimum": 13.28730514590469,
+        "dayCoastline": 19.555999999999997,
+        "nightCoastline": 7.455177810447525
+      }
+    }
+  },
+  {
+    "name": "Dusk Rose",
+    "modes": {
+      "normal": {
+        "textMinimum": 7.632848034012187,
+        "dayCoastline": 4.864131095552082,
+        "nightCoastline": 6.526212776021888
+      },
+      "protan": {
+        "textMinimum": 7.350872968951121,
+        "dayCoastline": 5.457180979433725,
+        "nightCoastline": 7.229307893955431
+      },
+      "deutan": {
+        "textMinimum": 7.70084519801455,
+        "dayCoastline": 4.348106567158358,
+        "nightCoastline": 6.045236029622349
+      },
+      "tritan": {
+        "textMinimum": 7.059255433036373,
+        "dayCoastline": 4.714352456395803,
+        "nightCoastline": 6.538201112911532
+      },
+      "grayscale": {
+        "textMinimum": 7.632848034012185,
+        "dayCoastline": 4.864131095552082,
+        "nightCoastline": 6.526212776021888
+      }
+    }
+  }
+]

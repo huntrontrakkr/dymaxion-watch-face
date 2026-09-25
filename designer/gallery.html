@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f1efe6">
+  <meta name="description" content="64 Dymaxion watch faces for Pebble Time 2. Explore 21 palettes, eight clock styles and six panels, then download a layout to make your own.">
+  <title>64 perspectives — Dymaxion</title>
+</head>
+<body>
+  <header>
+    <a class="brand" href="./" aria-label="Dymaxion workshop"><img src="./brand/dymaxion-wordmark.svg" width="248" height="34" alt="Dymaxion"><span>A WRIST GEOSCOPE</span></a>
+    <nav aria-label="Main navigation"><a href="./">Open the workshop ↗</a><a href="https://github.com/huntrontrakkr/dymaxion-watch-face/releases/latest">Get the watch face ↗</a></nav>
+  </header>
+  <main>
+    <section class="intro">
+      <div><p class="eyebrow">ONE PLANET. MANY PERSPECTIVES.</p><h1>64 ways to see<br>your world.</h1></div>
+      <div class="intro-copy"><p>Twenty-one palettes. Eight clocks. A place for your people,<br class="desktop"> and a small window on the day.</p><p>Download a layout, then choose <strong>Import</strong> in the workshop or phone settings to make it yours.</p></div>
+    </section>
+    <form class="filters" aria-label="Filter watch faces">
+      <label>Palette<select id="palette"><option value="">All palettes</option></select></label>
+      <label>Composition<select id="layout"><option value="">Both compositions</option></select></label>
+      <label>Clock<select id="clock"><option value="">Every clock</option></select></label>
+      <label>Bottom panel<select id="panel"><option value="">Every panel</option></select></label>
+      <button type="reset">Clear filters</button>
+    </form>
+    <div class="gallery-note"><p id="count" role="status">Loading the gallery…</p><p>Actual watch-resolution renders. Weather, tides, Health and status values are examples.</p></div>
+    <p id="error" role="alert" hidden>The gallery could not load. Please reload, or <a href="https://github.com/huntrontrakkr/dymaxion-watch-face/blob/main/docs/screenshots/gallery-64.png">see all 64 faces on GitHub</a>.</p>
+    <noscript><p><a href="https://github.com/huntrontrakkr/dymaxion-watch-face/blob/main/docs/screenshots/gallery-64.png">View the full contact sheet</a>, or enable JavaScript to browse and download layouts.</p></noscript>
+    <section id="gallery" aria-label="Watch face gallery"></section>
+    <p id="empty" hidden>No faces match that combination. Try clearing a filter.</p>
+  </main>
+  <footer><span>DYMAXION / A PERSONAL PLANETARY INSTRUMENT</span><a href="https://github.com/huntrontrakkr/dymaxion-watch-face">Source, credits & documentation ↗</a></footer>
+  <script type="module" src="./gallery.js"></script>
+</body>
+</html>

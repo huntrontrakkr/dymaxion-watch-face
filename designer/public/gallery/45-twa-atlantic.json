@@ -1,0 +1,153 @@
+{
+  "version": 1,
+  "markerSet": 2,
+  "theme": 14,
+  "customPalettes": [],
+  "customPalette": null,
+  "format": 1,
+  "dayNight": true,
+  "edges": false,
+  "lights": true,
+  "motion": true,
+  "sun": true,
+  "moonIndicator": false,
+  "connectionBuzz": "disconnect",
+  "orientation": 0,
+  "stacked": false,
+  "time": [
+    0,
+    134
+  ],
+  "map": [
+    0,
+    24
+  ],
+  "zones": [
+    [
+      4,
+      189
+    ],
+    [
+      70,
+      189
+    ],
+    [
+      136,
+      189
+    ]
+  ],
+  "clockDisplay": "bitham-bold",
+  "leadingZero": true,
+  "mapBackground": "none",
+  "zoneTimes": "always",
+  "zonePosition": "right",
+  "mapTimesTurn": false,
+  "nameplate": false,
+  "power": {
+    "daylightMinutes": 5,
+    "minuteAnimation": true,
+    "flourishes": true,
+    "night": false,
+    "nightStart": 22,
+    "nightEnd": 7,
+    "darkPause": false,
+    "lowBattery": 10
+  },
+  "location": {
+    "mode": "auto",
+    "name": ""
+  },
+  "footer": {
+    "enabled": true,
+    "pages": [
+      "zones",
+      "tide",
+      "weather",
+      "calendar",
+      "health"
+    ],
+    "home": "tide",
+    "rotationMinutes": 0,
+    "shake": true,
+    "flicks": 2,
+    "horizon": 24,
+    "weather": {
+      "enabled": true,
+      "place": 0,
+      "temperatureUnit": "c",
+      "precipitation": "amount",
+      "rainUnit": "mm",
+      "rainMax": 5,
+      "daylight": true,
+      "solarTimes": true,
+      "grid": false,
+      "rangeLabels": true,
+      "humidityLine": false,
+      "temperatureScale": "auto",
+      "temperatureMin": -10,
+      "temperatureMax": 40,
+      "humidityScale": "percent",
+      "refreshMinutes": 60
+    },
+    "calendar": {
+      "weekStart": 1,
+      "weeks": "current-next",
+      "weekends": "sat-sun",
+      "holidays": "none",
+      "todayStyle": "fill"
+    },
+    "tide": {
+      "station": "8724580",
+      "label": "KEYWEST",
+      "tz": "America/New_York",
+      "unit": "m",
+      "zeroLine": true,
+      "scale": "auto",
+      "min": -1,
+      "max": 3
+    },
+    "colorMode": "theme",
+    "colors": {
+      "temperature": "#FFAA55",
+      "rain": "#55AAFF",
+      "humidity": "#00FFAA",
+      "tide": "#55AAFF",
+      "saturday": "#55AAFF",
+      "sunday": "#FF55AA",
+      "holiday": "#FFAA55",
+      "today": "#FFFFFF"
+    }
+  },
+  "places": [
+    {
+      "label": "PAR",
+      "name": "Paris",
+      "tz": "Europe/Paris",
+      "lat": 48.8566,
+      "lon": 2.3522,
+      "icon": 0,
+      "color": null,
+      "on": true
+    },
+    {
+      "label": "HNL",
+      "name": "Honolulu",
+      "tz": "Pacific/Honolulu",
+      "lat": 21.3099,
+      "lon": -157.8581,
+      "icon": 1,
+      "color": "#FFAAAA",
+      "on": true
+    },
+    {
+      "label": "BER",
+      "name": "Berlin",
+      "tz": "Europe/Berlin",
+      "lat": 52.52,
+      "lon": 13.405,
+      "icon": 2,
+      "color": "#FFFFAA",
+      "on": true
+    }
+  ]
+}

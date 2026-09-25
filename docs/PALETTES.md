@@ -53,6 +53,13 @@ network requests, or bitmap resources.
 | 11 | Teal & Rose | Dark teal ocean, light rose land, white figures |
 | 12 | Amber Terminal | Black ground, amber figures, ivory land |
 | 13 | Polar | White ground, navy figures, cyan land and deep teal ocean |
+| 14 | TWA Atlantic | Red seas, white continents, silver-gray land at night |
+| 15 | Solstice | Green land and blue water by day, amber land and warm lights at night |
+| 16 | Porcelain | White ground, navy land, periwinkle water and ivory nights |
+| 17 | Verdigris | Forest ground, mint and teal daylight, coral and burgundy nights |
+| 18 | Ultraviolet | Black ground, lilac figures, plum seas and rose nights |
+| 19 | Signal | White ground, black figures and water, yellow land, blue annotations |
+| 20 | Dusk Rose | Rose paper, plum figures, ivory land and lilac nights |
 
 DaVinci takes its material cues from Leonardo's pen-and-ink drawings, including
 [Notes on the wind](https://www.rct.uk/collection/912672/notes-on-the-wind).
@@ -66,6 +73,19 @@ and the red stripes, white fuselage, and silver surfaces seen in a
 It is an original color treatment inspired by those objects; no logo or artwork
 has been copied into the face.
 
+TWA Atlantic reverses the original TWA palette's map emphasis: red belongs to
+the ocean, with white daylight continents and gray night continents. Solstice
+uses the same solar terminator to shift cool green/blue daylight into warm
+amber land and pale gold lights. Verdigris, Porcelain and Ultraviolet also use
+distinct day/night hues. These follow sunlight at each map pixel, independently
+of the wearer's local time; enable **Day/night shading** to see both treatments.
+
+![Seven new palettes at native watch resolution](screenshots/new-palettes.png)
+
+The [64-face gallery](https://huntrontrakkr.github.io/dymaxion-watch-face/gallery.html)
+includes three configurations for each of the 21 palettes, plus the default face.
+Each image has an importable settings file.
+
 `shared/palettes.js` is the palette source. Every theme includes the daylight
 and night map colors, lettering, annotations, three default place colors, moon
 shadow, and a retired inactive-segment color, still carried in the palette
@@ -76,10 +96,8 @@ custom panel colors are retained until **Use theme colors** is selected.
 
 The original IDs and default selection are retained. The generators export the
 native theme count, watch palette tables and moon colors; the companion bundles the same definitions for offline configuration.
-The six additions and matching label glyphs increase the native static footprint
-by 220 bytes compared with the eight-palette build. The README records the
-current total, including later chart refinements. The palette additions
-add no timers, graphics resources, or network requests.
+The palette additions add no timers, graphics resources, or network requests.
+Current native build measurements are in the [development guide](DEVELOPMENT.md).
 
 ## Color-vision review
 
@@ -103,8 +121,12 @@ Tests require at least 7:1 for the clock, captions, default place labels and
 panel colors against the background, and 3:1 between map land and ocean on
 both sides of the terminator, in every preview mode. The text target follows
 [W3C's enhanced contrast guidance](https://www.w3.org/WAI/WCAG22/Understanding/contrast-enhanced.html).
-The lowest measured text contrast is 7.46:1; the lowest coastline contrast is
-3.35:1. Results are recorded in `output/accessibility-palettes/contrast.json`.
+For the six palettes from High Visibility through Polar, the lowest measured
+text contrast is 7.46:1 and coastline contrast is 3.35:1, recorded in
+`output/accessibility-palettes/contrast.json`. The seven palettes from TWA
+Atlantic through Dusk Rose meet the same checks: their minima are 7.06:1 for
+text and 4.35:1 for coastlines, recorded in [the new palette report](new-palette-contrast.json).
+All thirteen repeat each map glyph beside its city label.
 These are checks of the authored colors, not a WCAG certification of the watch.
 Custom colors can reduce contrast, so the figures apply to preset defaults.
 

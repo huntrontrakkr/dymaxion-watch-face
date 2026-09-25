@@ -1,0 +1,152 @@
+{
+  "version": 1,
+  "markerSet": 2,
+  "theme": 2,
+  "customPalettes": [],
+  "customPalette": null,
+  "format": 2,
+  "dayNight": true,
+  "edges": false,
+  "lights": true,
+  "motion": true,
+  "sun": false,
+  "moonIndicator": true,
+  "connectionBuzz": "disconnect",
+  "orientation": 0,
+  "stacked": false,
+  "time": [
+    0,
+    22
+  ],
+  "map": [
+    0,
+    73
+  ],
+  "zones": [
+    [
+      4,
+      189
+    ],
+    [
+      70,
+      189
+    ],
+    [
+      136,
+      189
+    ]
+  ],
+  "clockDisplay": "bitham-light",
+  "leadingZero": true,
+  "mapBackground": "fine-points",
+  "zoneTimes": "always",
+  "zonePosition": "left",
+  "mapTimesTurn": true,
+  "nameplate": true,
+  "power": {
+    "daylightMinutes": 5,
+    "minuteAnimation": true,
+    "flourishes": true,
+    "night": false,
+    "nightStart": 22,
+    "nightEnd": 7,
+    "darkPause": false,
+    "lowBattery": 10
+  },
+  "location": {
+    "mode": "auto",
+    "name": ""
+  },
+  "footer": {
+    "enabled": true,
+    "pages": [
+      "zones",
+      "health",
+      "weather",
+      "calendar"
+    ],
+    "home": "health",
+    "rotationMinutes": 0,
+    "shake": true,
+    "flicks": 2,
+    "horizon": 24,
+    "weather": {
+      "enabled": true,
+      "place": 0,
+      "temperatureUnit": "f",
+      "precipitation": "probability",
+      "rainUnit": "mm",
+      "rainMax": 5,
+      "daylight": true,
+      "solarTimes": true,
+      "grid": false,
+      "rangeLabels": true,
+      "humidityLine": true,
+      "temperatureScale": "auto",
+      "temperatureMin": -10,
+      "temperatureMax": 40,
+      "humidityScale": "percent",
+      "refreshMinutes": 60
+    },
+    "calendar": {
+      "weekStart": 0,
+      "weeks": "current-next",
+      "weekends": "sat-sun",
+      "holidays": "none",
+      "todayStyle": "fill"
+    },
+    "tide": {
+      "station": "1612340",
+      "label": "HONOLUL",
+      "tz": "Pacific/Honolulu",
+      "unit": "m",
+      "zeroLine": true,
+      "scale": "auto",
+      "min": -1,
+      "max": 3
+    },
+    "colorMode": "theme",
+    "colors": {
+      "temperature": "#FFAA55",
+      "rain": "#55AAFF",
+      "humidity": "#00FFAA",
+      "tide": "#55AAFF",
+      "saturday": "#55AAFF",
+      "sunday": "#FF55AA",
+      "holiday": "#FFAA55",
+      "today": "#FFFFFF"
+    }
+  },
+  "places": [
+    {
+      "label": "DEL",
+      "name": "Delhi",
+      "tz": "Asia/Kolkata",
+      "lat": 28.6139,
+      "lon": 77.209,
+      "icon": 4,
+      "color": null,
+      "on": true
+    },
+    {
+      "label": "AKL",
+      "name": "Auckland",
+      "tz": "Pacific/Auckland",
+      "lat": -36.8509,
+      "lon": 174.7645,
+      "icon": 4,
+      "color": "#AA0055",
+      "on": true
+    },
+    {
+      "label": "UTC",
+      "name": "Greenwich",
+      "tz": "Etc/UTC",
+      "lat": 51.4769,
+      "lon": 0,
+      "icon": 0,
+      "color": null,
+      "on": true
+    }
+  ]
+}

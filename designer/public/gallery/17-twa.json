@@ -1,0 +1,152 @@
+{
+  "version": 1,
+  "markerSet": 2,
+  "theme": 5,
+  "customPalettes": [],
+  "customPalette": null,
+  "format": 1,
+  "dayNight": true,
+  "edges": false,
+  "lights": true,
+  "motion": true,
+  "sun": true,
+  "moonIndicator": true,
+  "connectionBuzz": "disconnect",
+  "orientation": 0,
+  "stacked": false,
+  "time": [
+    0,
+    22
+  ],
+  "map": [
+    0,
+    73
+  ],
+  "zones": [
+    [
+      4,
+      189
+    ],
+    [
+      70,
+      189
+    ],
+    [
+      136,
+      189
+    ]
+  ],
+  "clockDisplay": "chamfer",
+  "leadingZero": true,
+  "mapBackground": "none",
+  "zoneTimes": "panel",
+  "zonePosition": "left",
+  "mapTimesTurn": false,
+  "nameplate": false,
+  "power": {
+    "daylightMinutes": 5,
+    "minuteAnimation": true,
+    "flourishes": true,
+    "night": false,
+    "nightStart": 22,
+    "nightEnd": 7,
+    "darkPause": false,
+    "lowBattery": 10
+  },
+  "location": {
+    "mode": "auto",
+    "name": ""
+  },
+  "footer": {
+    "enabled": true,
+    "pages": [
+      "zones",
+      "weather",
+      "calendar",
+      "health"
+    ],
+    "home": "zones",
+    "rotationMinutes": 0,
+    "shake": true,
+    "flicks": 2,
+    "horizon": 24,
+    "weather": {
+      "enabled": true,
+      "place": 0,
+      "temperatureUnit": "c",
+      "precipitation": "probability",
+      "rainUnit": "mm",
+      "rainMax": 5,
+      "daylight": true,
+      "solarTimes": true,
+      "grid": false,
+      "rangeLabels": true,
+      "humidityLine": true,
+      "temperatureScale": "auto",
+      "temperatureMin": -10,
+      "temperatureMax": 40,
+      "humidityScale": "percent",
+      "refreshMinutes": 60
+    },
+    "calendar": {
+      "weekStart": 0,
+      "weeks": "current-next",
+      "weekends": "sat-sun",
+      "holidays": "none",
+      "todayStyle": "fill"
+    },
+    "tide": {
+      "station": "",
+      "label": "TIDE",
+      "tz": "America/New_York",
+      "unit": "m",
+      "zeroLine": true,
+      "scale": "auto",
+      "min": -1,
+      "max": 3
+    },
+    "colorMode": "theme",
+    "colors": {
+      "temperature": "#FFAA55",
+      "rain": "#55AAFF",
+      "humidity": "#00FFAA",
+      "tide": "#55AAFF",
+      "saturday": "#55AAFF",
+      "sunday": "#FF55AA",
+      "holiday": "#FFAA55",
+      "today": "#FFFFFF"
+    }
+  },
+  "places": [
+    {
+      "label": "NYC",
+      "name": "New York",
+      "tz": "America/New_York",
+      "lat": 40.7128,
+      "lon": -74.006,
+      "icon": 1,
+      "color": null,
+      "on": true
+    },
+    {
+      "label": "LON",
+      "name": "London",
+      "tz": "Europe/London",
+      "lat": 51.5074,
+      "lon": -0.1278,
+      "icon": 2,
+      "color": null,
+      "on": true
+    },
+    {
+      "label": "TYO",
+      "name": "Tokyo",
+      "tz": "Asia/Tokyo",
+      "lat": 35.6762,
+      "lon": 139.6503,
+      "icon": 0,
+      "color": null,
+      "on": true
+    }
+  ]
+}
