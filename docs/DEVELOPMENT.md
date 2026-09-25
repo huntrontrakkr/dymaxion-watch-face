@@ -167,4 +167,3 @@ bounds, and [the protocol notes](PROTOCOL.md) for the
 watch/phone contract. The default seed is January 2026; the companion refreshes
 it with the current time and IANA data on connection. Its next eight transitions
 keep each remote clock working offline. Expired transition caches show `?`.
-
