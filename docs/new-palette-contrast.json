@@ -208,5 +208,65 @@
         "nightCoastline": 6.526212776021888
       }
     }
+  },
+  {
+    "name": "Lagoon",
+    "modes": {
+      "normal": {
+        "textMinimum": 11.133065593668569,
+        "dayCoastline": 7.593761758790683,
+        "nightCoastline": 7.716605032749269
+      },
+      "protan": {
+        "textMinimum": 9.759735875724349,
+        "dayCoastline": 7.523096373615917,
+        "nightCoastline": 8.33024006932317
+      },
+      "deutan": {
+        "textMinimum": 12.014524047190852,
+        "dayCoastline": 7.6409204489770115,
+        "nightCoastline": 7.312396492545
+      },
+      "tritan": {
+        "textMinimum": 10.12225931259104,
+        "dayCoastline": 7.031785800940345,
+        "nightCoastline": 7.725395073479991
+      },
+      "grayscale": {
+        "textMinimum": 11.133065593668569,
+        "dayCoastline": 7.593761758790683,
+        "nightCoastline": 7.716605032749269
+      }
+    }
+  },
+  {
+    "name": "Sandstone",
+    "modes": {
+      "normal": {
+        "textMinimum": 11.133065593668569,
+        "dayCoastline": 7.148612348175563,
+        "nightCoastline": 4.00860935661396
+      },
+      "protan": {
+        "textMinimum": 9.759735875724349,
+        "dayCoastline": 6.831373315020525,
+        "nightCoastline": 3.346931367927264
+      },
+      "deutan": {
+        "textMinimum": 12.014524047190852,
+        "dayCoastline": 7.014167784842335,
+        "nightCoastline": 4.444568160504501
+      },
+      "tritan": {
+        "textMinimum": 10.12225931259104,
+        "dayCoastline": 6.9137775551183,
+        "nightCoastline": 3.9683915085462904
+      },
+      "grayscale": {
+        "textMinimum": 11.133065593668569,
+        "dayCoastline": 7.148612348175563,
+        "nightCoastline": 4.008609356613959
+      }
+    }
   }
 ]

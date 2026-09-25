@@ -7,6 +7,9 @@ try{
   const response=await fetch(new URL('./gallery/manifest.json',document.baseURI));
   if(!response.ok)throw new Error('Gallery unavailable');
   const {entries}=await response.json(),cards=[];
+  document.getElementById('face-total').textContent=entries.length;
+  document.getElementById('palette-total').textContent=new Set(entries.map(entry=>entry.theme)).size;
+  document.title=`${entries.length} perspectives — Dymaxion`;
   for(const field of fields){
     const key=field==='palette'?'theme':field;
     for(const value of new Set(entries.map(entry=>entry[key])))document.getElementById(field).add(new Option(field==='palette'?value:label(value),value));

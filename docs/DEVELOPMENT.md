@@ -33,7 +33,7 @@ the chart conventions, station coverage, caching and interaction details.
 
 ## Reproduce the gallery
 
-With the workshop running, capture all 64 native-size screens and their
+With the workshop running, capture all native-size screens and their
 importable settings, plus the README sheets:
 
 ```sh
@@ -42,8 +42,8 @@ npm run gallery
 # For another server, set PREVIEW_URL=http://127.0.0.1:4174/ before the command.
 ```
 
-`tools/gallery-configs.mjs` uses a fixed seed, dates and time zone. It covers
-every palette, clock and panel, using safe compositions with varied places and
+`tools/gallery-configs.mjs` uses a fixed seed, dates and time zone. It creates three examples per palette plus the default face, preserving earlier
+IDs when palettes are appended. It covers every clock and panel, using safe compositions with varied places and
 display options. `tools/capture-gallery.mjs` freezes each preview's clock,
 captures the actual 200×228 canvas and rejects non-RGB222 pixels. Weather,
 tides, Health and status values are examples. The files in
@@ -74,9 +74,9 @@ pebble install --phone <phone-ip>
 
 The installable file is `watchface/build/watchface.pbw`. Target: Emery only,
 200×228 pixels, 64 colors. SDK 4.33.1 reports 100,924 bytes of resources and a
-61,255-byte code/static-RAM footprint, leaving 69,817 bytes for the heap before
+61,287-byte code/static-RAM footprint, leaving 69,785 bytes for the heap before
 runtime allocations. The map bitmap and active clock resources use that heap.
-The seven new palettes add 104 bytes to the previous build's static footprint;
+Lagoon and Sandstone add 32 bytes to the 0.3.1 build's static footprint;
 resources are unchanged.
 See the [native power profile](POWER-PROFILE.md) for measured rendering
 costs, the animation optimization, and the assumptions behind the battery model.

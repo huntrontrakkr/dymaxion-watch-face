@@ -7,14 +7,15 @@ import {zoneColumnFits} from '../shared/zone-column.js';
 import {zoneExists} from '../shared/protocol.js';
 
 export const GALLERY_SEED=0x44594d41;
+export const GALLERY_COUNT=1+3*THEMES.length;
 const slug=s=>s.toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 export function galleryConfigs(seed=GALLERY_SEED){
   let state=seed>>>0;
   const random=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296;};
   const pick=values=>values[Math.floor(random()*values.length)];
   const entries=[];
-  for(let index=0;index<64;index++){
-    const theme=index===0?0:Math.floor((index-1)/3)%THEMES.length;
+  for(let index=0;index<GALLERY_COUNT;index++){
+    const theme=index===0?0:Math.floor((index-1)/3);
     const variant=index===0?0:(index-1)%3;
     let settings=defaults(),layout='meridian';settings.theme=theme;
     let when=index===0?'2026-09-24T16:38:20Z':'2026-09-24T16:34:20Z';

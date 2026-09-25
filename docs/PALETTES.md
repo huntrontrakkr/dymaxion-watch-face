@@ -60,6 +60,8 @@ network requests, or bitmap resources.
 | 18 | Ultraviolet | Black ground, lilac figures, plum seas and rose nights |
 | 19 | Signal | White ground, black figures and water, yellow land, blue annotations |
 | 20 | Dusk Rose | Rose paper, plum figures, ivory land and lilac nights |
+| 21 | Lagoon | Pale aqua land over deep teal seas; quieter turquoise land over black at night |
+| 22 | Sandstone | Cream land over charcoal seas; burnt-orange land over black at night |
 
 DaVinci takes its material cues from Leonardo's pen-and-ink drawings, including
 [Notes on the wind](https://www.rct.uk/collection/912672/notes-on-the-wind).
@@ -83,8 +85,15 @@ of the wearer's local time; enable **Day/night shading** to see both treatments.
 
 ![Seven new palettes at native watch resolution](screenshots/new-palettes.png)
 
-The [64-face gallery](https://huntrontrakkr.github.io/dymaxion-watch-face/gallery.html)
-includes three configurations for each of the 21 palettes, plus the default face.
+Lagoon and Sandstone keep land brighter than the ocean on both sides of the
+terminator. Lagoon pairs pale aqua with deep teal; Sandstone pairs cream with
+charcoal. Both soften the continents at night over black water, retaining
+clear coastlines without a bright night glow.
+
+![Lagoon and Sandstone at native watch resolution](screenshots/bright-land-palettes.png)
+
+The [70-face gallery](https://huntrontrakkr.github.io/dymaxion-watch-face/gallery.html)
+includes three configurations for each of the 23 palettes, plus the default face.
 Each image has an importable settings file.
 
 `shared/palettes.js` is the palette source. Every theme includes the daylight
@@ -124,10 +133,10 @@ both sides of the terminator, in every preview mode. The text target follows
 [W3C's enhanced contrast guidance](https://www.w3.org/WAI/WCAG22/Understanding/contrast-enhanced.html).
 For the six palettes from High Visibility through Polar, the lowest measured
 text contrast is 7.46:1 and coastline contrast is 3.35:1, recorded in
-`output/accessibility-palettes/contrast.json`. The seven palettes from TWA
-Atlantic through Dusk Rose meet the same checks: their minima are 7.06:1 for
+`output/accessibility-palettes/contrast.json`. The nine palettes from TWA
+Atlantic through Sandstone meet the same checks: their minima are 7.06:1 for
 text and 3.35:1 for coastlines, recorded in [the new palette report](new-palette-contrast.json).
-All thirteen repeat each map glyph beside its city label.
+All fifteen repeat each map glyph beside its city label.
 These are checks of the authored colors, not a WCAG certification of the watch.
 Custom colors can reduce contrast, so the figures apply to preset defaults.
 

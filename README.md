@@ -6,7 +6,7 @@ on the day.
 
 [**Download the watch face**](https://github.com/huntrontrakkr/dymaxion-watch-face/releases/latest/download/dymaxion.pbw)
 · [**Open the workshop**](https://huntrontrakkr.github.io/dymaxion-watch-face/)
-· [**Explore 64 faces**](https://huntrontrakkr.github.io/dymaxion-watch-face/gallery.html)
+· [**Explore 70 faces**](https://huntrontrakkr.github.io/dymaxion-watch-face/gallery.html)
 
 [![Eight Dymaxion watch faces at their native resolution](docs/screenshots/gallery-hero.png)](https://huntrontrakkr.github.io/dymaxion-watch-face/gallery.html)
 
@@ -17,7 +17,7 @@ on the day.
 - **Your time, and theirs.** A full-width clock and three independent IANA
   time zones, including daylight saving and fractional-hour offsets. A `+1`
   beside a place means tomorrow there; `−1` means yesterday.
-- **21 palettes, eight clocks.** Original pixel lettering, Pebble system
+- **23 palettes, eight clocks.** Original pixel lettering, Pebble system
   numerals, an optional script nameplate, and light, dark and high-contrast
   palettes. Create up to 12 of your own, with independent day/night shades,
   place colors and chart colors.
@@ -32,11 +32,11 @@ on the day.
   and battery in the top line. Optional 400 ms minute transitions, separate
   motion controls, adjustable daylight updates, and a night saver.
 
-The [64-face gallery](https://huntrontrakkr.github.io/dymaxion-watch-face/gallery.html)
+The [70-face gallery](https://huntrontrakkr.github.io/dymaxion-watch-face/gallery.html)
 covers every palette, clock style and panel, with downloadable settings for
 every image. All previews use the actual 200×228, 64-color renderer. Weather,
 tides, Health and device-status values shown in the gallery are examples.
-[View the complete contact sheet](docs/screenshots/gallery-64.png).
+[View the complete contact sheet](docs/screenshots/gallery-all.png).
 
 ## Install and configure
 

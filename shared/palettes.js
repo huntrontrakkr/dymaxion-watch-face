@@ -52,7 +52,15 @@ export const THEMES = [
   {name:'Dusk Rose',description:'Rose paper and ivory land, giving way to plum and lavender.',
     bg:'#FFAAAA',ocean:'#AA5555',land:'#FFFFAA',nightOcean:'#550055',nightLand:'#AAAAFF',
     edge:'#550055',ink:'#550055',accent:'#000055',marks:['#000055','#550000','#550055'],moonShadow:'#AA5555',inactive:'#AA5555',zoneGlyphs:true,
-    panelColors:{temperature:'#550000',rain:'#000055',humidity:'#550055',tide:'#000055',saturday:'#000055',sunday:'#550000',holiday:'#000000',today:'#550055'}}
+    panelColors:{temperature:'#550000',rain:'#000055',humidity:'#550055',tide:'#000055',saturday:'#000055',sunday:'#550000',holiday:'#000000',today:'#550055'}},
+  {name:'Lagoon',description:'Pale aqua continents above deep teal seas, with quieter turquoise land at night.',
+    bg:'#000000',ocean:'#005555',land:'#AAFFFF',nightOcean:'#000000',nightLand:'#55AAAA',
+    edge:'#005555',ink:'#FFFFFF',accent:'#FFFFAA',marks:['#AAFFFF','#FFAAAA','#FFFFAA'],moonShadow:'#005555',inactive:'#005555',zoneGlyphs:true,
+    panelColors:{temperature:'#FFAA55',rain:'#AAFFFF',humidity:'#AAFFAA',tide:'#AAFFFF',saturday:'#AAFFFF',sunday:'#FFAAAA',holiday:'#FFFFAA',today:'#FFFFFF'}},
+  {name:'Sandstone',description:'Cream continents above charcoal seas, settling into burnt orange after dark.',
+    bg:'#000000',ocean:'#555555',land:'#FFFFAA',nightOcean:'#000000',nightLand:'#AA5500',
+    edge:'#000000',ink:'#FFFFAA',accent:'#FFFFFF',marks:['#FFFFFF','#FFAA55','#AAFFFF'],moonShadow:'#555555',inactive:'#555555',zoneGlyphs:true,
+    panelColors:{temperature:'#FFAA55',rain:'#AAFFFF',humidity:'#FFFFAA',tide:'#AAFFFF',saturday:'#AAFFFF',sunday:'#FFAA55',holiday:'#FFFFFF',today:'#FFFFAA'}}
 ];
 
 // Background, shadow, and illuminated pixels for the small phase glyphs.

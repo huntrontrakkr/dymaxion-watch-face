@@ -835,6 +835,84 @@
       "timezone": "America/New_York",
       "image": "64-dusk-rose.png",
       "preset": "64-dusk-rose.json"
+    },
+    {
+      "id": "65-lagoon",
+      "theme": "Lagoon",
+      "themeId": 21,
+      "layout": "meridian",
+      "clock": "chamfer",
+      "panel": "zones",
+      "variant": 0,
+      "when": "2026-09-24T16:34:20Z",
+      "timezone": "America/New_York",
+      "image": "65-lagoon.png",
+      "preset": "65-lagoon.json"
+    },
+    {
+      "id": "66-lagoon",
+      "theme": "Lagoon",
+      "themeId": 21,
+      "layout": "horizon",
+      "clock": "chamfer",
+      "panel": "zones",
+      "variant": 1,
+      "when": "2026-09-24T04:42:20Z",
+      "timezone": "America/New_York",
+      "image": "66-lagoon.png",
+      "preset": "66-lagoon.json"
+    },
+    {
+      "id": "67-lagoon",
+      "theme": "Lagoon",
+      "themeId": 21,
+      "layout": "meridian",
+      "clock": "leco",
+      "panel": "weather",
+      "variant": 2,
+      "when": "2026-09-24T23:59:20Z",
+      "timezone": "America/New_York",
+      "image": "67-lagoon.png",
+      "preset": "67-lagoon.json"
+    },
+    {
+      "id": "68-sandstone",
+      "theme": "Sandstone",
+      "themeId": 22,
+      "layout": "meridian",
+      "clock": "chamfer",
+      "panel": "zones",
+      "variant": 0,
+      "when": "2026-09-24T16:34:20Z",
+      "timezone": "America/New_York",
+      "image": "68-sandstone.png",
+      "preset": "68-sandstone.json"
+    },
+    {
+      "id": "69-sandstone",
+      "theme": "Sandstone",
+      "themeId": 22,
+      "layout": "horizon",
+      "clock": "bitham-bold",
+      "panel": "calendar",
+      "variant": 1,
+      "when": "2026-09-24T04:42:20Z",
+      "timezone": "America/New_York",
+      "image": "69-sandstone.png",
+      "preset": "69-sandstone.json"
+    },
+    {
+      "id": "70-sandstone",
+      "theme": "Sandstone",
+      "themeId": 22,
+      "layout": "meridian",
+      "clock": "bitham-light",
+      "panel": "humidity",
+      "variant": 2,
+      "when": "2026-09-24T10:08:20Z",
+      "timezone": "America/New_York",
+      "image": "70-sandstone.png",
+      "preset": "70-sandstone.json"
     }
   ]
 }
