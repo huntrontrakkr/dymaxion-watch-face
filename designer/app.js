@@ -57,7 +57,7 @@ const minuteClock=minuteFlipClock({invalidate:()=>render()});
 document.addEventListener('visibilitychange',()=>{minuteClock.reset();stopMotion();if(!document.hidden)render();});
 reducedMotion.addEventListener('change',()=>{minuteClock.reset();render();});
 const STORAGE='dymaxion-workshop-v1';
-try {const saved=localStorage.getItem(STORAGE);if(saved)settings=validateSettings(JSON.parse(saved),zoneExists);}catch{notice('Saved settings could not be read. The default composition is loaded.');}
+try {const saved=localStorage.getItem(STORAGE);if(saved)settings=validateSettings(JSON.parse(saved),zoneExists);}catch{notice('Saved settings could not be read, so the defaults are loaded.');}
 const paletteLink=new URLSearchParams(location.search).get('palette');
 const linkedTheme=THEMES.findIndex(theme=>theme.slug&&theme.slug===paletteLink);
 if(linkedTheme>=0){
@@ -84,7 +84,7 @@ $('live-data').onclick=()=>{environmentMode='live';environment.refresh();render(
 
 function notice(message,error=false){$('notice').textContent=message;$('notice').classList.toggle('error',error);}
 function save(){
-  try{settings=validateSettings(settings,zoneExists);localStorage.setItem(STORAGE,JSON.stringify(settings));$('save-state').textContent='SAVED LOCALLY';notice('Your composition is saved in this browser.');}
+  try{settings=validateSettings(settings,zoneExists);localStorage.setItem(STORAGE,JSON.stringify(settings));$('save-state').textContent='SAVED LOCALLY';notice('Your settings are saved in this browser.');}
   catch(e){$('save-state').textContent='NOT SAVED';notice(e.message,true);}
   cacheKey='';render();
 }
@@ -368,7 +368,7 @@ function render(){
   if(band)drawFooter(ctx,settings,footerPage,{...(environmentMode==='sample'?sampleEnvironment(+now):liveData),palette:pal,daylight:daylightPlace()},+now,watchTypeface.lining.small,use24());
   trayCompose(band);
   $('panel-preview-label').textContent=settings.footer.enabled?PANEL_PAGES.find(([id])=>id===footerPage)[1]:'Time zones';
-  $('data-state').textContent=environmentMode==='sample'?'Example curves for layout preview. Live data is available below.':`Forecast source: ${settings.footer.weather.place==='current'?'your current location':settings.places[settings.footer.weather.place].name}. ${liveData.weather?.error?'Weather update unavailable; check location permission and connection. Cached data is marked OLD.':''} ${liveData.tide?.error?'NOAA update unavailable.':''}`;
+  $('data-state').textContent=environmentMode==='sample'?'Showing sample data. Load live data to see real readings.':`Forecast source: ${settings.footer.weather.place==='current'?'your current location':settings.places[settings.footer.weather.place].name}. ${liveData.weather?.error?'Weather update unavailable; check location permission and connection. Cached data is marked OLD.':''} ${liveData.tide?.error?'NOAA update unavailable.':''}`;
   ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,18);
   drawBitmapText(ctx,watchTypeface.lining.small,status,4,12,pal.accent);drawBitmapText(ctx,watchTypeface.lining.small,'86%',195,12,pal.ink,'right');
   drawMoonIndicator(now);drawBluetoothIndicator();

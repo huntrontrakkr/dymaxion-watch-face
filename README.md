@@ -1,51 +1,44 @@
 # Dymaxion
 
-A little world on your wrist, for **Pebble Time 2 / Emery**. Follow the sunlight
-across the continents, watch cities light up after dark, and keep your people
-and places close.
-
-That unusual map is a **Dymaxion map**: a globe unfolded across triangular faces
-to show Earth as a connected whole. Buckminster “Bucky” Fuller, the designer and
-inventor known for geodesic domes, developed it with Shoji Sadao. Fuller's ideas
-about doing more with less—and thinking about the whole planet—are the spark
-behind this watch. [Meet Fuller](https://www.bfi.org/about-fuller/) and
-[explore the map](https://www.bfi.org/about-fuller/big-ideas/dymaxion-map/).
+A watch face for **Pebble Time 2 / Emery** built on Buckminster Fuller's
+Dymaxion map, which unfolds the globe onto the twenty faces of an icosahedron
+without splitting a continent. Fuller called it a deck plan of Spaceship Earth.
+The map is shaded by the real sun, city lights come on over the night side, and
+up to three other time zones sit beside it. Fuller developed the final version
+of the map with Shoji Sadao; see [the Dymaxion map](https://www.bfi.org/about-fuller/big-ideas/dymaxion-map/)
+and [Fuller](https://www.bfi.org/about-fuller/) at the Buckminster Fuller Institute.
 
 [**Get it on the Pebble Appstore**](https://apps.repebble.com/6d7f75de20c3406198a5abd6)
 · [**Download the watch face**](https://github.com/huntrontrakkr/dymaxion-watch-face/releases/latest/download/dymaxion.pbw)
 · [**Open the workshop**](https://huntrontrakkr.github.io/dymaxion-watch-face/)
-· [**Explore 76 faces**](https://huntrontrakkr.github.io/dymaxion-watch-face/gallery.html)
+· [**Browse 76 faces**](https://huntrontrakkr.github.io/dymaxion-watch-face/gallery.html)
 
 <img src="docs/screenshots/dymaxion-demo.gif" width="300" alt="Dymaxion in motion: a minute change, a day of sunlight sweeping across the map, panel swipes, and a run of palettes and clock styles">
 
 [![Eight Dymaxion watch faces at their native resolution](docs/screenshots/gallery-hero.png)](https://huntrontrakkr.github.io/dymaxion-watch-face/gallery.html)
 
-## Make it yours
+## Features
 
-- **One connected world.** Solar day/night shading, night-side city lights,
-  a moving sun, and small map markers for the places that matter to you.
-- **Your time, and theirs.** A full-width clock and three independent IANA
-  time zones, including daylight saving and fractional-hour offsets. A `+1`
-  beside a place means tomorrow there; `−1` means yesterday.
-- **25 palettes, eight clocks.** Original pixel lettering, Pebble system
-  numerals, an optional script nameplate, and light, dark and high-contrast
-  palettes. Create up to 12 of your own, with independent day/night shades,
-  place colors and chart colors.
-- **Two compositions.** Meridian places the clock above the map; Horizon
-  places it below. Move the map and place labels, or put extra times beside
-  the clock or directly on the map. By default, extra times appear on the map
-  whenever the bottom panel is showing something else or covered by
-  Quick View; they disappear from the map when the bottom clocks are visible.
-- **Six bottom panels.** Time zones, weather, a two-week calendar, humidity,
-  NOAA tide predictions, and Pebble Health. Choose up to five, their order,
-  colors, units and scales. Switch with optional wrist flicks, timed rotation,
-  **smart rotation** (the tray shows what matters now: rain on the way, a
-  turning tide, a walk, the morning's calendar), or leave one in place. Health data stays on the watch.
-- **Small details, considered.** Current city, date, lunar phase, Bluetooth
-  and battery in the top line. Optional 400 ms minute transitions, separate
-  motion controls, adjustable daylight updates, and a night saver for set
-  hours or the watch's Quiet Time that can hold the screen still until the
-  backlight comes on.
+- **Map.** Day and night shading from the sun's position, city lights on the
+  night side, a marker where the sun is overhead, and a marker for each place.
+- **Time zones.** Up to three places with their own IANA time zones, including
+  daylight saving and fractional-hour offsets. Show them in the bottom panel,
+  beside the clock (in regular or larger digits), or as labels on the map in
+  five sizes. `+1` beside a place means tomorrow there; `−1` means yesterday.
+- **Palettes and clocks.** 25 palettes, up to 12 of your own, and eight clock
+  styles: three drawn for this screen, four of Pebble's system fonts, and Leco
+  Delta, a variant of Leco with corners cut to the map's 60-degree angles. An
+  optional Dymaxion nameplate sits between the clock and the map.
+- **Layouts.** Meridian puts the clock above the map; Horizon puts it below.
+- **Bottom panels.** Time zones, weather, a two-week calendar, humidity, NOAA
+  tide predictions and Pebble Health. Choose up to five and their order,
+  colors, units and scales. Change them with wrist flicks, on a timer, or with
+  **Smart** rotation, which picks the page that matters now (rain on the way,
+  a turning tide, a walk, the morning's calendar). Health data stays on the
+  watch.
+- **Battery.** The map is reshaded at an interval you choose, animations can
+  be turned off, and a night saver (for set hours or the watch's Quiet Time)
+  reshades less often and can hold the screen until the backlight comes on.
 
 The [76-face gallery](https://huntrontrakkr.github.io/dymaxion-watch-face/gallery.html)
 covers the public palettes, clock styles and panels, with downloadable settings for

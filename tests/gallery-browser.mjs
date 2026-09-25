@@ -14,7 +14,7 @@ try{
   await page.goto(base);
   const saved={...defaults(),theme:5};
   await page.evaluate(s=>localStorage.setItem('dymaxion-workshop-v1',JSON.stringify(s)),saved);
-  await page.getByRole('link',{name:'Explore watch faces'}).click();
+  await page.getByRole('link',{name:'Browse the gallery'}).click();
   await page.waitForFunction(count=>document.querySelector('#count').textContent===`${count} of ${count} faces`,GALLERY_COUNT);
   assert.equal(await page.locator('.face').count(),GALLERY_COUNT);
   assert.equal(await page.locator('#face-total').textContent(),String(GALLERY_COUNT));
