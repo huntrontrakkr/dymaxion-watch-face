@@ -54,7 +54,7 @@ network requests, or bitmap resources.
 | 12 | Amber Terminal | Black ground, amber figures, ivory land |
 | 13 | Polar | White ground, navy figures, cyan land and deep teal ocean |
 | 14 | TWA Atlantic | Red seas, white continents, silver-gray land at night |
-| 15 | Solstice | Green land and blue water by day, amber land and warm lights at night |
+| 15 | Solstice | Green land and blue water by day, burnt-orange land and warm lights at night |
 | 16 | Porcelain | White ground, navy land, periwinkle water and ivory nights |
 | 17 | Verdigris | Forest ground, mint and teal daylight, coral and burgundy nights |
 | 18 | Ultraviolet | Black ground, lilac figures, plum seas and rose nights |
@@ -76,7 +76,8 @@ has been copied into the face.
 TWA Atlantic reverses the original TWA palette's map emphasis: red belongs to
 the ocean, with white daylight continents and gray night continents. Solstice
 uses the same solar terminator to shift cool green/blue daylight into warm
-amber land and pale gold lights. Verdigris, Porcelain and Ultraviolet also use
+burnt-orange land and pale gold lights. Its night water deepens to black so the
+darker brown-orange coastlines remain distinct. Verdigris, Porcelain and Ultraviolet also use
 distinct day/night hues. These follow sunlight at each map pixel, independently
 of the wearer's local time; enable **Day/night shading** to see both treatments.
 
@@ -125,7 +126,7 @@ For the six palettes from High Visibility through Polar, the lowest measured
 text contrast is 7.46:1 and coastline contrast is 3.35:1, recorded in
 `output/accessibility-palettes/contrast.json`. The seven palettes from TWA
 Atlantic through Dusk Rose meet the same checks: their minima are 7.06:1 for
-text and 4.35:1 for coastlines, recorded in [the new palette report](new-palette-contrast.json).
+text and 3.35:1 for coastlines, recorded in [the new palette report](new-palette-contrast.json).
 All thirteen repeat each map glyph beside its city label.
 These are checks of the authored colors, not a WCAG certification of the watch.
 Custom colors can reduce contrast, so the figures apply to preset defaults.

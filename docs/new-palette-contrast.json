@@ -35,27 +35,27 @@
       "normal": {
         "textMinimum": 9.842032711345267,
         "dayCoastline": 6.109217598402614,
-        "nightCoastline": 9.842032711345267
+        "nightCoastline": 4.00860935661396
       },
       "protan": {
         "textMinimum": 7.703528862323,
         "dayCoastline": 5.615506628458474,
-        "nightCoastline": 7.703528862323
+        "nightCoastline": 3.346931367927264
       },
       "deutan": {
         "textMinimum": 10.107264725718483,
         "dayCoastline": 6.2692087700042585,
-        "nightCoastline": 10.107264725718483
+        "nightCoastline": 4.444568160504501
       },
       "tritan": {
         "textMinimum": 8.218399456166559,
         "dayCoastline": 5.233746064823583,
-        "nightCoastline": 8.218399456166559
+        "nightCoastline": 3.9683915085462904
       },
       "grayscale": {
         "textMinimum": 9.842032711345267,
         "dayCoastline": 6.109217598402614,
-        "nightCoastline": 9.842032711345267
+        "nightCoastline": 4.008609356613959
       }
     }
   },
