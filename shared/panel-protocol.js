@@ -2,12 +2,14 @@ import {HOLIDAY_REGIONS} from './calendar.js';
 import {pebbleColor} from './settings.js';
 import {PANEL_PAGES,PANEL_COLOR_ROLES,panelColors} from './panel-settings.js';
 import {environmentIsValid} from './panel-data.js';
+// Byte 9: rotation minutes, or ROTATE_SMART for smart rotation (shared/smart-tray.js).
+export const ROTATE_SMART=255;
 export const FOOTER_SIZE=64,WEATHER_SIZE=424,TIDE_SIZE=244;
 const ids=PANEL_PAGES.map(([id])=>id);
 export function encodeFooter(s){
   const f=s.footer,w=f.weather,c=f.calendar,t=f.tide,b=new Uint8Array(FOOTER_SIZE),v=new DataView(b.buffer);
   b.set([1,+f.enabled,f.pages.length,ids.indexOf(f.home),...Array.from({length:5},(_,i)=>f.pages[i]?ids.indexOf(f.pages[i]):255)]);
-  b[9]=f.rotationMinutes;b[10]=f.horizon;b[11]=+(w.temperatureUnit==='f');b[12]=['off','probability','amount'].indexOf(w.precipitation);
+  b[9]=f.rotationMinutes==='smart'?ROTATE_SMART:f.rotationMinutes;b[10]=f.horizon;b[11]=+(w.temperatureUnit==='f');b[12]=['off','probability','amount'].indexOf(w.precipitation);
   b[13]=+w.daylight;b[14]=+w.grid;b[15]=+w.solarTimes;b[16]=c.weekStart;b[17]=+(c.weeks==='previous-current');b[18]=['sat-sun','fri-sat','none'].indexOf(c.weekends);b[19]=HOLIDAY_REGIONS.findIndex(([id])=>id===c.holidays);b[20]=+(c.todayStyle==='outline');
   const colors=panelColors(s);PANEL_COLOR_ROLES.forEach((role,i)=>b[21+i]=pebbleColor(colors[role]));
   b[29]=+(w.temperatureScale==='fixed');b[30]=+(w.humidityScale==='auto');v.setInt16(31,Math.round(w.temperatureMin*10),true);v.setInt16(33,Math.round(w.temperatureMax*10),true);

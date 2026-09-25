@@ -143,6 +143,21 @@ off; it never keeps the light on or polls a sensor. In bright surroundings,
 Pebble's ambient-light setting may keep the backlight off, so use the ordinary
 flick modes or automatic rotation if you want to change panels in daylight.
 
+**Smart rotation** (Automatic rotation → Smart) changes the page without being
+asked, to what matters now. On each minute tick the watch checks data it already
+holds, and the first rule that applies to an enabled page wins: weather when rain
+is likely (50% or more in the next three hours, or half a millimetre an hour in
+amount mode); the tide within 45 minutes of a high or low; Health after 600 steps
+in the last ten minutes; the calendar (or weather) from 06:00 to 09:00; otherwise
+the starting panel. A flick keeps its page for ten minutes before smart rotation
+resumes. Steps are read only when Health is one of the pages. The rules live in
+`shared/smart-tray.js` and `smart_tray.c`, checked against each other.
+
+Pebble does not deliver button presses or touches to watchfaces: the firmware
+routes every button to the system (Back only dismisses a timeline peek) and
+reserves the touch service for watchapps. Wrist flicks, the backlight's state and
+the face's own data are the inputs a watchface has.
+
 Flicks use Pebble's accelerometer tap service, without a continuous sample
 stream. Events closer than 250 ms count as one flick (a flick can register on
 several axes); each further flick must follow within two seconds. A page change

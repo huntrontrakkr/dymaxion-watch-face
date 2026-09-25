@@ -4,11 +4,12 @@
 #include "caps.h"
 #include "solar.h"
 #include "health.h"
+#include "smart_tray.h"
 #include "generated/footer_defaults.h"
 #define MIN(a,b) ((a)<(b)?(a):(b))
 #define MAX(a,b) ((a)>(b)?(a):(b))
 static uint8_t s_footer[FOOTER_SIZE],s_weather[WEATHER_SIZE],s_tide[TIDE_SIZE],s_page;
-static time_t s_changed;
+static time_t s_changed,s_manual; // last page change; last flick (smart rotation holds it)
 static GFont s_font;
 static const uint8_t *s_caps;
 static const float *s_daylight;
@@ -98,7 +99,48 @@ bool panels_cycle(time_t now){
   int index=0;for(int i=0;i<s_footer[F_COUNT];i++)if(s_footer[F_ORDER+i]==s_page)index=i;
   s_page=s_footer[F_ORDER+(index+1)%s_footer[F_COUNT]];s_changed=now;return true;
 }
-bool panels_tick(time_t now){return s_footer[F_ROTATE]&&now-s_changed>=s_footer[F_ROTATE]*60?panels_cycle(now):false;}
+// Smart rotation inputs from the data already on the watch (-1 when unknown):
+// the highest rain chance over the next SMART_HOURS (or 100 for half a
+// millimetre an hour in amount mode), minutes to the next tide turn, and steps
+// in the last ten minutes.
+static int smart_rain(time_t now){
+  const uint8_t *p=s_weather;int start=environment_start_index(p,now),peak=-1;
+  if(!s_footer[F_WEATHER_ON]||!s_footer[F_RAIN]||start<0||(p[2]&2)||(uint32_t)now>read_u32(p+4)+s_footer[F_REFRESH]*120)return -1;
+  for(int i=start;i<p[1]&&i<start+SMART_HOURS;i++){
+    const uint8_t *sample=p+32+i*8;
+    int chance=s_footer[F_RAIN]==1?sample[3]:(uint16_t)read_i16(sample+4)>=5?100:0;
+    if(chance>peak)peak=chance;
+  }
+  return peak;
+}
+static int smart_tide(time_t now){
+  const uint8_t *p=s_tide;
+  if(!s_footer[F_TIDE_ON]||!p[1]||(uint32_t)now>read_u32(p+4)+12*3600)return -1;
+  uint32_t best=0;for(int i=0;i<2;i++){uint32_t t=read_u32(p+12+i*4);if(t>=(uint32_t)now&&(!best||t<best))best=t;}
+  return best?(int)((best-(uint32_t)now)/60):-1;
+}
+static int smart_steps(time_t now){
+#if defined(PBL_HEALTH)
+  if(!(health_service_metric_accessible(HealthMetricStepCount,now-600,now)&HealthServiceAccessibilityMaskAvailable))return -1;
+  return (int)health_service_sum(HealthMetricStepCount,now-600,now);
+#else
+  (void)now;return -1;
+#endif
+}
+// Timed rotation cycles every F_ROTATE minutes; smart rotation shows what
+// matters now (smart_tray.c), leaving a flicked-to page alone for SMART_HOLD.
+bool panels_tick(time_t now){
+  if(s_footer[F_ROTATE]!=ROTATE_SMART)return s_footer[F_ROTATE]&&now-s_changed>=s_footer[F_ROTATE]*60?panels_cycle(now):false;
+  if(!s_footer[F_ENABLED]||s_footer[F_COUNT]<2||now-s_manual<SMART_HOLD)return false;
+  SmartInputs in={s_footer+F_ORDER,s_footer[F_COUNT],s_footer[F_HOME],localtime(&now)->tm_hour,smart_rain(now),smart_tide(now),-1};
+  // Steps are read only when a Health page could be chosen.
+  for(int i=0;i<in.count;i++)if(in.pages[i]==PANEL_HEALTH)in.recent_steps=smart_steps(now);
+  int page=smart_page(&in);
+  if(page==s_page)return false;
+  s_page=page;s_changed=now;return true;
+}
+// A flick: the page the wearer chose holds against smart rotation for a while.
+void panels_note_manual(time_t now){s_manual=now;}
 int panels_weather_place(void){return s_footer[F_WEATHER_PLACE];}
 bool panels_light_only(void){return s_footer[F_FLICKS]==PANEL_GESTURE_LIT;}
 int panels_flicks(void){return panels_light_only()?1:s_footer[F_FLICKS]?s_footer[F_FLICKS]:2;}

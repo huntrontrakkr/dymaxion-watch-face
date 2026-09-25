@@ -15,6 +15,8 @@ int environment_start_index(const uint8_t *p,uint32_t now);
 typedef struct {int year,month,day,weekday;bool today,holiday,weekend;} CalendarCell;
 void panel_calendar(int year,int month,int day,int weekday,const uint8_t *config,CalendarCell out[14]);
 enum { PANEL_GESTURE_LIT=4 };
+// Byte F_ROTATE: minutes between pages, or ROTATE_SMART (smart_tray.h).
+#define ROTATE_SMART 255
 // Motion events change panels. A flick can raise a tap on several axes, so taps
 // closer than TAP_SAME_MS are one flick; `required` flicks (1-3), each within
 // TAP_GAP_MS of the last, change the page, then TAP_REST_MS passes before the

@@ -18,6 +18,7 @@ import {CITIES} from '../shared/cities.js';
 import {panelControls} from '../shared/panel-controls.js';
 import {drawFooter} from '../shared/panel-render.js';
 import {sampleEnvironment} from '../shared/panel-data.js';
+import {smartPage,smartInputs,SMART_HOLD} from '../shared/smart-tray.js';
 import {environmentService} from '../tools/environment-service.js';
 import {PANEL_PAGES} from '../shared/panel-settings.js';
 import {cityControls} from '../shared/city-controls.js';
@@ -63,7 +64,7 @@ if(linkedTheme>=0){
   settings.theme=linkedTheme;settings.customPalette=null;
   const url=new URL(location.href);url.searchParams.delete('palette');history.replaceState(null,'',url);
 }
-let footerPage=settings.footer.home,panelChanged=Date.now(),environmentMode='sample',liveData={};
+let smartKey='',manualAt=0,footerPage=settings.footer.home,panelChanged=Date.now(),environmentMode='sample',liveData={};
 let currentCity={name:'Norfolk',sample:true,lat:36.9,lon:-76.3};
 const cityLocation=locationService({getSettings:()=>settings,storage:localStorage,send:city=>{currentCity=city;render();}});
 const cityEditor=cityControls($('city-controls'),()=>settings,value=>{settings=validateSettings({...settings,location:value},zoneExists);save();},()=>cityLocation.refresh());
@@ -76,7 +77,7 @@ const panelEditor=panelControls($('panel-controls'),()=>settings,footer=>{
   settings=validateSettings(candidate,zoneExists);if(previous!==settings.footer.home||!settings.footer.pages.includes(footerPage))footerPage=settings.footer.home;
   panelChanged=Date.now();save();if(environmentMode==='live')environment.refresh();
 });
-function nextPanel(){const pages=settings.footer.pages;trayStart();footerPage=pages[(pages.indexOf(footerPage)+1)%pages.length];panelChanged=Date.now();if(footerPage==='zones')startPulse();render();}
+function nextPanel(){const pages=settings.footer.pages;manualAt=Date.now();trayStart();footerPage=pages[(pages.indexOf(footerPage)+1)%pages.length];panelChanged=Date.now();if(footerPage==='zones')startPulse();render();}
 $('next-panel').onclick=nextPanel;
 $('sample-data').onclick=()=>{environmentMode='sample';render();};
 $('live-data').onclick=()=>{environmentMode='live';environment.refresh();render();};
@@ -269,8 +270,19 @@ function render(){
   if(!mapPixels.length||!watchTypeface||!watchSpan)return;
   if(animation&&(!motionOn()||performance.now()-animation>=PULSE_MS*pulseOrder.length))animation=0;
   if(!settings.footer.pages.includes(footerPage))footerPage=settings.footer.home;
-  if(settings.footer.enabled&&settings.footer.rotationMinutes&&Date.now()-panelChanged>=settings.footer.rotationMinutes*60000){trayStart();footerPage=settings.footer.pages[(settings.footer.pages.indexOf(footerPage)+1)%settings.footer.pages.length];panelChanged=Date.now();if(footerPage==='zones')startPulse();}
   const now=new Date(Date.now()+offset*3600000),local=moment(now),sun=sunDirection(new Date(Math.floor(+now/60000)*60000-sinceRelight(settings.power,moment(now).hours(),moment(now).minutes())*60000)),pal=paletteFor(settings);
+  if(settings.footer.enabled&&typeof settings.footer.rotationMinutes==='number'&&settings.footer.rotationMinutes&&Date.now()-panelChanged>=settings.footer.rotationMinutes*60000){trayStart();footerPage=settings.footer.pages[(settings.footer.pages.indexOf(footerPage)+1)%settings.footer.pages.length];panelChanged=Date.now();if(footerPage==='zones')startPulse();}
+  // Smart rotation: once a preview minute, the page that matters now, leaving a
+  // page chosen with Next bottom panel alone for SMART_HOLD (as a flick on the watch).
+  if(settings.footer.enabled&&settings.footer.rotationMinutes==='smart'&&Date.now()-manualAt>=SMART_HOLD*1000){
+    const key=Math.floor(+now/60000)+'|'+settings.footer.pages+'|'+settings.footer.home;
+    if(key!==smartKey){
+      smartKey=key;
+      const pick=smartPage(smartInputs(settings,environmentMode==='sample'?sampleEnvironment(+now):liveData,+now,local.hours()));
+      canvas.dataset.smartPage=pick;
+      if(pick!==footerPage){trayStart();footerPage=pick;panelChanged=Date.now();if(pick==='zones')startPulse();}
+    }
+  }
   ctx.clearRect(0,0,200,228);ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,228);
   const m=makeMap(),[mx,my]=settings.map,cached=mapImage(now,pal,sun);
   ctx.drawImage(cached.canvas,mx,my);

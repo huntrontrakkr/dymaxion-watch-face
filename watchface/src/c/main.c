@@ -720,7 +720,7 @@ static void tapped(AccelAxisType axis,int32_t direction) {
   uint64_t now=gesture_now();
   if(panels_light_only()&&!panel_light_ready(&s_gesture_light,light_is_on(),now))return;
   int page=panels_page();
-  if(panel_tap(&s_tap,now,panels_flicks())&&panels_cycle(time(NULL))){tray_start(page);redraw();pulse_on_zones();}
+  if(panel_tap(&s_tap,now,panels_flicks())&&panels_cycle(time(NULL))){panels_note_manual(time(NULL));tray_start(page);redraw();pulse_on_zones();}
 }
 static void backlight_changed(bool on){
   panel_light_update(&s_gesture_light,on,gesture_now());

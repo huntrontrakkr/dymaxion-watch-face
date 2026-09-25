@@ -36,7 +36,7 @@ export function validateFooter(input,zoneExists,quantize){
   // 1-3 are gesture counts; 4 is one flick after the backlight is already on.
   bool(f,'enabled');bool(f,'shake');choice(f,'flicks',[1,2,3,4]);
   if(!Array.isArray(f.pages)||!f.pages.length||f.pages.length>5||new Set(f.pages).size!==f.pages.length||f.pages.some(p=>!PANEL_PAGES.some(([id])=>id===p)))throw new Error('Choose one to five different bottom panels.');
-  choice(f,'home',f.pages);choice(f,'rotationMinutes',[0,1,2,5,10,15,30,60]);choice(f,'horizon',[12,24,48]);
+  choice(f,'home',f.pages);choice(f,'rotationMinutes',[0,1,2,5,10,15,30,60,'smart']);choice(f,'horizon',[12,24,48]);
   const w=f.weather,c=f.calendar,t=f.tide;
   for(const k of ['enabled','daylight','solarTimes','grid','rangeLabels','humidityLine'])bool(w,k);
   choice(w,'place',['current',0,1,2]);choice(w,'temperatureUnit',['c','f']);choice(w,'precipitation',['off','probability','amount']);choice(w,'rainUnit',['mm','in']);

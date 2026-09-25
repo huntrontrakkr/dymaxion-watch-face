@@ -15,7 +15,7 @@ export function panelControls(root,getSettings,onChange,{getPosition}={}){
     +select('home','Starting panel',PANEL_PAGES)
     +toggle('shake','Flick to change panels','Uses wrist motion, not taps on the touchscreen.')+select('flicks','Panel gesture',[[4,'Light the screen, then flick once'],[2,'Two separate flicks, within 2 seconds'],[1,'One flick, including the gesture that lights the screen'],[3,'Three separate flicks, each within 2 seconds']])
     +`<p class="micro" data-gesture-help></p>`
-    +select('rotationMinutes','Automatic rotation',[[0,'Off — keep the panel until changed'],...[1,2,5,10,15,30,60].map(n=>[n,`Every ${n} minute${n===1?'':'s'}`])])
+    +select('rotationMinutes','Automatic rotation',[[0,'Off — keep the panel until changed'],['smart','Smart — what matters now'],...[1,2,5,10,15,30,60].map(n=>[n,`Every ${n} minute${n===1?'':'s'}`])])
     +`<p class="micro">Choose up to five panels. Turn off flicks and rotation to keep one in place.</p>`
     +`<details><summary>Weather & humidity</summary>`+toggle('weather.enabled','Fetch weather','By default, weather follows your phone’s current location.')
     +select('weather.place','Forecast location',[['current','Current location · follows your phone'],[0,'Place 1'],[1,'Place 2'],[2,'Place 3']])+`<p class="micro">Current location uses the phone’s location permission and clock time zone. Choosing a saved city is optional. A manually entered clock city name only changes that caption.</p>`+select('horizon','Chart horizon',[[12,'12 hours'],[24,'24 hours'],[48,'48 hours']])
@@ -45,6 +45,7 @@ export function panelControls(root,getSettings,onChange,{getPosition}={}){
     el.onchange=()=>{
       const f=clone(getSettings().footer),path=el.dataset.panel,old=get(f,path);let value=el.type==='checkbox'?el.checked:typeof old==='number'?Number(el.value):el.value;
       if(path==='weather.place')value=el.value==='current'?'current':Number(el.value);
+      if(path==='rotationMinutes')value=el.value==='smart'?'smart':Number(el.value);
       if(path.startsWith('colors.')){if(f.colorMode!=='custom')f.colors={...panelColors(getSettings())};f.colorMode='custom';}
       if(path==='tide.station'||path==='tide.label')value=value.trim().toUpperCase();if(path==='tide.tz')value=value.trim();
       set(f,path,value);

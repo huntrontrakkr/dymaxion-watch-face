@@ -37,7 +37,8 @@ behind this watch. [Meet Fuller](https://www.bfi.org/about-fuller/) and
 - **Six bottom panels.** Time zones, weather, a two-week calendar, humidity,
   NOAA tide predictions, and Pebble Health. Choose up to five, their order,
   colors, units and scales. Switch with optional wrist flicks, timed rotation,
-  or leave one in place. Health data stays on the watch.
+  **smart rotation** (the tray shows what matters now: rain on the way, a
+  turning tide, a walk, the morning's calendar), or leave one in place. Health data stays on the watch.
 - **Small details, considered.** Current city, date, lunar phase, Bluetooth
   and battery in the top line. Optional 400 ms minute transitions, separate
   motion controls, adjustable daylight updates, and a night saver for set
@@ -90,7 +91,8 @@ between flicks. For an alternative, select **A window on the day → Panel gestu
 → Light the screen, then flick once**. Wake the backlight, pause briefly, then
 flick once. This option listens for motion only while the light is on. Screen
 taps can wake Pebble's backlight, but Pebble does not currently give touchscreen
-events to watchfaces. Automatic rotation is also available.
+events to watchfaces (buttons and touch stay with the system). Automatic
+rotation is also available, including **Smart**, which picks the page for you.
 
 For a larger preview, use the [workshop](https://huntrontrakkr.github.io/dymaxion-watch-face/).
 Choose **Export settings**, then **Import settings from the workshop** in the

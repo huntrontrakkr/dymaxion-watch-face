@@ -93,7 +93,7 @@ declares the `health` capability) and nothing about it leaves the watch.
 | 0 | Version = 1 |
 | 1–3 | Enabled boolean, page count 1–5, starting page ID |
 | 4–8 | Ordered unique page IDs, unused slots = 255 |
-| 9–10 | Rotation minutes (0/1/2/5/10/15/30/60), horizon hours (12/24/48) |
+| 9–10 | Rotation minutes (0/1/2/5/10/15/30/60, or 255 for smart rotation), horizon hours (12/24/48) |
 | 11–15 | Fahrenheit; rain off/probability/amount (0–2); daylight; grid; solar heading |
 | 16–20 | Week starts Sunday/Monday (0/1); previous+current weeks; weekend Sat+Sun/Fri+Sat/off (0–2); U.S. holidays; outlined today |
 | 21–28 | Opaque RGB222 temperature, rain, humidity, tide, Saturday, Sunday, holiday, today colors |

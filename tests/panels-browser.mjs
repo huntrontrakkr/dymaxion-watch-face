@@ -38,6 +38,20 @@ try{
   await page.getByLabel('Flick to change panels',{exact:true}).uncheck();await page.getByLabel('Automatic rotation',{exact:true}).selectOption('1');
   assert(await page.getByLabel('Panel gesture',{exact:true}).isDisabled());
   await page.clock.fastForward(61000);assert.equal(await page.locator('#panel-preview-label').textContent(),'Weather');
+  // Smart rotation: the page that matters now (sample data, so the choice is
+  // whatever the rules pick at this hour), and a manual change holds against it.
+  await page.getByLabel('Automatic rotation',{exact:true}).selectOption('smart');
+  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).footer.rotationMinutes,'smart');
+  const label=()=>page.locator('#panel-preview-label').textContent(),pick=()=>page.locator('#screen').getAttribute('data-smart-page');
+  const names={zones:'Time zones',weather:'Weather',calendar:'Two-week calendar',humidity:'Humidity',tide:'Tide',health:'Health'};
+  // The Next clicks above count as manual choices: let their ten-minute hold pass.
+  await page.clock.fastForward(11*60000);const smartLabel=await label();assert.equal(smartLabel,names[await pick()],'the tray shows the smart choice');
+  await page.locator('#next-panel').click();const manualLabel=await page.locator('#panel-preview-label').textContent();
+  assert.notEqual(manualLabel,smartLabel,'Next bottom panel moves on');
+  await page.clock.fastForward(5*60000);assert.equal(await page.locator('#panel-preview-label').textContent(),manualLabel,'a manual choice holds for ten minutes');
+  // Play the rest of the hold a minute at a time, as a watch's minute ticks would.
+  for(let i=0;i<7;i++)await page.clock.fastForward(60000);
+  { const l=await label(),p=await pick(),t=await page.evaluate(()=>new Date().toISOString());assert.equal(l,names[p],'then smart rotation returns: '+JSON.stringify({l,p,t,manualLabel,smartLabel})); }
   await page.getByLabel('Automatic rotation',{exact:true}).selectOption('0');
   await page.getByLabel('Starting panel',{exact:true}).selectOption('weather');
   await page.getByText('Weather & humidity',{exact:true}).click();

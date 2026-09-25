@@ -6,8 +6,8 @@ bool footer_valid(const uint8_t *p,unsigned length){
   if(length!=FOOTER_SIZE||p[0]!=1||p[F_ENABLED]>1||p[F_COUNT]<1||p[F_COUNT]>5||p[F_HOME]>=PANEL_COUNT)return false;
   unsigned used=0;for(int i=0;i<5;i++){int v=p[F_ORDER+i];if(i<p[F_COUNT]){if(v>=PANEL_COUNT||(used&(1<<v)))return false;used|=1<<v;}else if(v!=255)return false;}
   if(!(used&(1<<p[F_HOME])))return false;
-  const uint8_t rotations[]={0,1,2,5,10,15,30,60},horizons[]={12,24,48},refresh[]={30,60,120,180};
-  if(!one_of(p[F_ROTATE],rotations,8)||!one_of(p[F_HORIZON],horizons,3)||!one_of(p[F_REFRESH],refresh,4)||p[F_RAIN]>2||p[F_WEEKENDS]>2)return false;
+  const uint8_t rotations[]={0,1,2,5,10,15,30,60,ROTATE_SMART},horizons[]={12,24,48},refresh[]={30,60,120,180};
+  if(!one_of(p[F_ROTATE],rotations,9)||!one_of(p[F_HORIZON],horizons,3)||!one_of(p[F_REFRESH],refresh,4)||p[F_RAIN]>2||p[F_WEEKENDS]>2)return false;
   if((p[F_WEEK_START]>1&&p[F_WEEK_START]!=6)||p[F_HOLIDAYS]>=HOLIDAY_REGION_COUNT)return false;
   const uint8_t booleans[]={F_FAHRENHEIT,F_DAYLIGHT,F_GRID,F_SOLAR,F_PREVIOUS,F_TODAY_OUTLINE,F_TEMP_FIXED,F_HUMID_AUTO,F_RAIN_INCH,F_TIDE_FEET,F_WEATHER_ON,F_RANGE_LABELS,F_TIDE_ZERO,F_TIDE_ON,F_SHAKE};
   for(unsigned i=0;i<sizeof(booleans);i++)if(p[booleans[i]]>1)return false;
