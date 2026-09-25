@@ -38,6 +38,7 @@ try{
   assert.equal(settings.theme,14);assert.deepEqual(validateSettings(settings,zoneExists),settings);
   assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('dymaxion-workshop-v1'))),saved,'browsing and downloading must preserve the existing composition');
   await page.getByRole('link',{name:'Open the workshop'}).click();
+  await page.waitForFunction(()=>document.querySelector('#screen')?.dataset.clockDisplay);
   await page.locator('#import-file').setInputFiles('test-results/gallery-import.json');
   await page.waitForFunction(()=>document.querySelector('#notice').textContent==='Composition imported.');
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('dymaxion-workshop-v1')).theme),14);

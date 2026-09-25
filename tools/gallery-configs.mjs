@@ -32,7 +32,9 @@ export function galleryConfigs(seed=GALLERY_SEED){
       const positions=zoneColumnFits(settings.clockDisplay)?['panel','left','right','map']:['panel','map'];
       const position=pick(positions);settings.zoneTimes=position==='panel'?'panel':'always';
       settings.zonePosition=position==='panel'?'left':position;settings.mapTimesTurn=pick([true,false]);
-      const pool=[...PLACES];
+      // Keep published recipes stable as the offline city catalog grows.
+      // The September 2026 gallery was made with these original 21 places.
+      const pool=PLACES.slice(0,21);
       settings.places=Array.from({length:3},(_,i)=>{
         const place=pool.splice(Math.floor(random()*pool.length),1)[0];
         return {...place,on:true,icon:Math.floor(random()*5),color:random()<.2?pick([THEMES[theme].ink,THEMES[theme].accent,...THEMES[theme].marks]):null};

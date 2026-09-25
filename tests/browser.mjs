@@ -84,6 +84,7 @@ try{
   assert.deepEqual(Array.from(messages[0].DISPLAY),[3,4,36,0,0,22,7,10],'a fresh install shows Chamfer figures, with default power and motion');
   handlers.showConfiguration();assert.ok(opened.startsWith('data:text/html;charset=utf-8,'));
   const mobile=await browser.newPage({viewport:{width:390,height:844}});mobile.on('pageerror',e=>errors.push(e.message));await mobile.goto(opened);
+  await mobile.locator('details').evaluateAll(nodes=>nodes.forEach(d=>d.open=true));
   assert.equal(await mobile.locator('#theme option').count(),THEMES.filter(t=>!t.hidden).length);
   assert.equal(await mobile.locator('#theme option').filter({hasText:'Hot Dog Stand'}).count(),0);
   // Power and motion on the phone: the night hours and dark pause wait for the night saver.
@@ -127,7 +128,9 @@ try{
   assert.match(await mobile.locator('[data-symbol-meaning]').first().textContent(),/directional triangle/);
   await mobile.getByLabel('Color for place 1',{exact:true}).fill('#cc7700');
   assert.match(await mobile.locator('[data-color-label]').first().textContent(),/#AA5500/);
-  await mobile.getByText('Import settings from the workshop',{exact:true}).click();await mobile.locator('#json').fill(JSON.stringify({...defaults(),theme:3}));await mobile.getByRole('button',{name:'Load composition',exact:true}).click();assert.equal(await mobile.locator('#theme').inputValue(),'3');
+  const importSummary=mobile.getByText('Import settings from the workshop',{exact:true});
+  if(!await importSummary.evaluate(el=>el.closest('details').open))await importSummary.click();
+  await mobile.locator('#json').fill(JSON.stringify({...defaults(),theme:3}));await mobile.getByRole('button',{name:'Load composition',exact:true}).click();assert.equal(await mobile.locator('#theme').inputValue(),'3');
   await mobile.getByLabel('Flick to change panels',{exact:true}).uncheck();
   await mobile.getByLabel('Buzz on Bluetooth',{exact:true}).selectOption('both');
   await mobile.getByLabel('Numerical display',{exact:true}).selectOption('span');

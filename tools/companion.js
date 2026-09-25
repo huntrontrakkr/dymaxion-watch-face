@@ -24,7 +24,9 @@ function flush(){
 Pebble.addEventListener('ready',sync);
 Pebble.addEventListener('appmessage',sync);
 Pebble.addEventListener('showConfiguration',()=>{
-  const config=JSON.stringify({settings,zoneNames:moment.tz.names()}).replace(/</g,'\\u003c');
+  let city=null;
+  try{const cached=JSON.parse(localStorage.getItem('dymaxion-current-city-v1')||'null');if(cached&&Number.isFinite(cached.lat)&&Number.isFinite(cached.lon))city={name:cached.name,lat:cached.lat,lon:cached.lon};}catch{}
+  const config=JSON.stringify({settings,zoneNames:moment.tz.names(),city}).replace(/</g,'\\u003c');
   Pebble.openURL('data:text/html;charset=utf-8,'+encodeURIComponent(html.replace('__CONFIG__',()=>config)));
 });
 Pebble.addEventListener('webviewclosed',event=>{

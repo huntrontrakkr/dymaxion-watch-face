@@ -29,6 +29,7 @@ Thumbs.db
 .venv/
 /dist/
 test-results/
+release-artifacts/
 tools/mobile-config.generated.html
 
 # Local reference captures and discarded framing/LCD studies

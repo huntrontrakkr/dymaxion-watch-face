@@ -161,3 +161,9 @@ THIS SOFTWARE.
 
 Solarized Dark and Light are RGB222 adaptations inspired by Ethan Schoonover’s
 Solarized color palette: https://ethanschoonover.com/solarized/.
+
+City search and additional saved-city coordinates
+Location data: GeoNames (https://www.geonames.org/), CC BY 4.0.
+Retrieved via the Open-Meteo Geocoding API (https://open-meteo.com/en/docs/geocoding-api).
+The added saved cities are in shared/extra-places.json; short labels are editable
+city abbreviations, not a promise of official airport codes.

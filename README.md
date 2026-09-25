@@ -1,8 +1,15 @@
 # Dymaxion
 
-A small planetary instrument for **Pebble Time 2 / Emery**. A Dymaxion map
-follows the sunlight around Earth, with your time, your places, and a window
-on the day.
+A little world on your wrist, for **Pebble Time 2 / Emery**. Follow the sunlight
+across the continents, watch cities light up after dark, and keep your people
+and places close.
+
+That unusual map is a **Dymaxion map**: a globe unfolded across triangular faces
+to show Earth as a connected whole. Buckminster “Bucky” Fuller, the designer and
+inventor known for geodesic domes, developed it with Shoji Sadao. Fuller's ideas
+about doing more with less—and thinking about the whole planet—are the spark
+behind this watch. [Meet Fuller](https://www.bfi.org/about-fuller/) and
+[explore the map](https://www.bfi.org/about-fuller/big-ideas/dymaxion-map/).
 
 [**Get it on the Pebble Appstore**](https://apps.repebble.com/6d7f75de20c3406198a5abd6)
 · [**Download the watch face**](https://github.com/huntrontrakkr/dymaxion-watch-face/releases/latest/download/dymaxion.pbw)
@@ -56,9 +63,11 @@ enabled, install the downloaded file with:
 pebble install --phone <phone-ip> dymaxion.pbw
 ```
 
-Open Dymaxion's settings in the Pebble phone app to configure it. The settings
-page is bundled in the watch-face package and works offline; weather, tides
-and city lookup need a connection to refresh.
+Open Dymaxion's settings in the Pebble phone app. A pixel-perfect preview shows
+your palette and layout as you edit. **Your places** lets you search by city,
+choose the right region, and fill its coordinates and time zone automatically.
+Suggested three-letter labels remain editable. More than 50 saved cities work
+offline; search, weather, tides and automatic city lookup need a connection.
 
 For a larger preview, use the [workshop](https://huntrontrakkr.github.io/dymaxion-watch-face/).
 Choose **Export settings**, then **Import settings from the workshop** in the

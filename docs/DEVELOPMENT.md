@@ -17,7 +17,9 @@ without changing the watch's actual clock. Settings are saved in this browser.
 Use **Export settings** to save a JSON file. In the face's settings inside the
 Pebble phone app, open **Import settings from the workshop** and select that
 file (or paste its JSON). Save to watch. You can also configure the face entirely
-in the offline phone page, including exact positions and custom coordinates.
+in the bundled phone page, including palette previews, 51 saved cities, exact
+positions and custom coordinates. Worldwide city search uses Open-Meteo's
+GeoNames search service; the rest of the settings page works offline.
 
 ```sh
 npm run build                  # static workshop in dist/
@@ -76,7 +78,8 @@ The installable file is `watchface/build/watchface.pbw`. Target: Emery only,
 200×228 pixels, 64 colors. SDK 4.33.1 reports 100,924 bytes of resources and a
 61,303-byte code/static-RAM footprint, leaving 69,769 bytes for the heap before
 runtime allocations. The map bitmap and active clock resources use that heap.
-These figures are for version 0.3.5; resources are unchanged.
+These figures are unchanged in version 0.4.0. The new settings preview runs on
+the phone and adds no watch rendering or sensor activity.
 See the [native power profile](POWER-PROFILE.md) for measured rendering
 costs, the animation optimization, and the assumptions behind the battery model.
 
@@ -126,12 +129,80 @@ all clock styles, partial redraws, overlapping animations, Quick View and
 power-saving paths.
 Physical hardware and an actual phone webview have not been tested.
 
+Version 0.4.0 passed 73 core tests and seven browser suites. The settings tests
+cover 25 palette previews, eight clock styles, both compositions, keyboard and
+touch city selection, delayed/offline search, configuration saves, and widths
+from 320 to 1100 pixels. Live city search was also exercised from the bundled
+data-URL page. The compressed release PBW installed and rendered in the native
+Emery SDK emulator.
+
+## Publish an update
+
+Every pull request and push to `main` runs the release workflow: core
+C/JavaScript tests, desktop and phone browser tests, a production website build,
+and a clean Emery build using SDK 4.33.1 and `pebble-tool` 5.0.40. The separate
+Pages workflow publishes the workshop from `main`.
+
+Publish a watch update when it is ready by giving it a new version tag:
+
+```sh
+# Write the user-facing changes in releases/v0.4.1.md first.
+npm run release:prepare -- 0.4.1
+npm run companion
+git add package.json package-lock.json watchface/package.json releases/ watchface/src/pkjs/index.js
+git commit -m "Prepare Dymaxion 0.4.1"
+git push origin main
+git tag v0.4.1
+git push origin v0.4.1
+```
+
+Commit any implementation changes before the version tag. The workflow checks
+that the tag matches the root package, lockfile, native metadata and PBW, and
+that the commit belongs to `main`. After verification it submits the **same
+tested artifact** to the existing Pebble listing and creates a GitHub release
+with the PBW, release notes and SHA-256 checksum. A plain push to `main` updates
+the website and runs checks; only a version tag publishes a watch update.
+
+The description under `## Description` in `docs/STORE-LISTING.md` is the source
+for store copy. Publishing updates that text while preserving screenshots and
+release history, then downloads the public PBW and verifies its checksum.
+The Pebble refresh credential lives in the encrypted repository secret
+`PEBBLE_FIREBASE_REFRESH_TOKEN`. It is used only by the publishing job; no
+credential belongs in source control or workflow output.
+
+If publication fails after upload, use GitHub's **Re-run failed jobs**. The
+publish job reuses the verified artifact and recognizes an already uploaded
+version. Rebuilding an already published version may produce a different
+archive checksum; use a new version for changed code instead of overwriting
+the old one. The workflow refuses downgrades or a conflicting existing package.
+
+For a local release check:
+
+```sh
+npm run companion
+cd watchface
+pebble clean
+pebble build
+cd ..
+python3 tools/release.py package
+python3 tools/release.py check --tag v0.4.1
+```
+
+The packaged `release-artifacts/dymaxion.pbw` uses ZIP compression to keep the
+bundled phone page and source maps within the store's upload limit. Every
+uncompressed SDK archive member is verified byte-for-byte, including native
+binaries, resources, source maps and manifests.
+
+## Earlier validation
+
 The 0.3.0 palette/gallery update passed 70 core tests, five browser suites and
 a production build served under the same project subdirectory as GitHub Pages.
 All seven new palettes were also applied to the native Emery emulator and
 checked again after restarting the watch app: the background, figures, and
 both day/night land and water colors matched the RGB222 definitions in all
 14 checks. The gallery contains 64 distinct, native-resolution frames.
+
+## Source guide
 
 | Source | Responsibility |
 | --- | --- |
@@ -153,9 +224,12 @@ both day/night land and water colors matched the RGB222 definitions in all
 | `shared/map-markers.js` | Close markers side by side (mirrored by `map_markers.c`) |
 | `shared/map-times.js` | Place times on the map: tiny figures, placement and leaders (mirrored by `map_times.c`) |
 | `shared/city.js`, `tools/location-service.js` | City naming, hourly reverse geocoding and offline cache |
+| `shared/place-search.js`, `shared/extra-places.json` | City search, editable code suggestions and saved places |
 | `shared/panel-*`, `shared/calendar.js` | Panel controls, provider normalization, packet contract and preview |
 | `designer/` | Interactive preview, accessible controls, JSON import/export |
 | `tools/mobile-config.*` | Offline phone settings page |
+| `tools/config-preview.js` | Native-pixel phone preview using shared map, font and panel assets |
+| `.github/workflows/release.yml`, `tools/release.py` | Tested, versioned publication to Pebble and GitHub |
 | `tools/companion.js` | Pebble bridge, persistence and retried synchronization |
 | `tools/environment-service.js` | Weather/NOAA requests, caches and failure backoff |
 | `tools/generate-*` | Reproducible map/font/data resources |

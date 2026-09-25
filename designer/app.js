@@ -1,5 +1,7 @@
 import './style.css';
 import '../shared/palette-controls.css';
+import '../shared/place-search.css';
+import {citySearch} from '../shared/place-search.js';
 import {paletteFor} from '../shared/palette-settings.js';
 import {paletteControls} from '../shared/palette-controls.js';
 import moment from 'moment-timezone';
@@ -119,11 +121,13 @@ function markerGallery(){
     tile.append(copy);gallery.append(tile);
   });
 }
+let placeSearches=[];
 function placesUI(){
+  placeSearches.forEach(search=>search.destroy());placeSearches=[];
   $('place-list').replaceChildren();
   settings.places.forEach((p,i)=>{
     const card=document.createElement('div');card.className='place-card';
-    card.innerHTML=`<label class="toggle"><span><i class="place-dot"></i>Place 0${i+1}</span><input type="checkbox" aria-label="Enable place ${i+1}" data-field="on"></label><label class="field">City<select data-field="city" aria-label="City for place ${i+1}"></select></label><div class="place-fields"><label class="field">Short label<input data-field="label" aria-label="Label for place ${i+1}" maxlength="7" pattern="[A-Z0-9 +\\-]{1,7}"></label><label class="field">Map glyph<select data-field="icon" aria-label="Symbol for place ${i+1}"></select></label></div><div class="marker-control"><canvas width="9" height="9" aria-hidden="true"></canvas><span class="marker-description"></span></div><div class="marker-color"><label class="field">Marker color<input data-field="color" type="color" aria-label="Color for place ${i+1}"></label><output data-color-name></output><button type="button" data-color-reset aria-label="Use theme color for place ${i+1}">Use theme color</button></div><details><summary>Coordinates & named time zone</summary><div class="place-fields"><label class="field wide">IANA time zone<input data-field="tz" aria-label="Time zone for place ${i+1}" type="text"></label><label class="field">Latitude<input data-field="lat" aria-label="Latitude for place ${i+1}" type="number" step="0.0001" min="-90" max="90"></label><label class="field">Longitude<input data-field="lon" aria-label="Longitude for place ${i+1}" type="number" step="0.0001" min="-180" max="180"></label></div></details>`;
+    card.innerHTML=`<label class="toggle"><span><i class="place-dot"></i>Place 0${i+1}</span><input type="checkbox" aria-label="Enable place ${i+1}" data-field="on"></label><div data-city-search></div><label class="field">Saved city<select data-field="city" aria-label="City for place ${i+1}"></select></label><div class="place-fields"><label class="field">Short label<input data-field="label" aria-label="Label for place ${i+1}" maxlength="7" pattern="[A-Z0-9 +\\-]{1,7}"></label><label class="field">Map glyph<select data-field="icon" aria-label="Symbol for place ${i+1}"></select></label></div><div class="marker-control"><canvas width="9" height="9" aria-hidden="true"></canvas><span class="marker-description"></span></div><div class="marker-color"><label class="field">Marker color<input data-field="color" type="color" aria-label="Color for place ${i+1}"></label><output data-color-name></output><button type="button" data-color-reset aria-label="Use theme color for place ${i+1}">Use theme color</button></div><details><summary>Coordinates & named time zone</summary><div class="place-fields"><label class="field wide">IANA time zone<input data-field="tz" aria-label="Time zone for place ${i+1}" type="text"></label><label class="field">Latitude<input data-field="lat" aria-label="Latitude for place ${i+1}" type="number" step="0.0001" min="-90" max="90"></label><label class="field">Longitude<input data-field="lon" aria-label="Longitude for place ${i+1}" type="number" step="0.0001" min="-180" max="180"></label></div></details>`;
     const city=card.querySelector('[data-field=city]'),symbol=card.querySelector('[data-field=icon]');
     PLACES.forEach((place,n)=>city.add(new Option(`${place.name} / ${place.label}`,String(n))));city.add(new Option('Custom location','custom'));
     MARKERS.forEach((mark,n)=>symbol.add(new Option(mark.name,String(n))));
@@ -156,6 +160,7 @@ function placesUI(){
       if(city.value==='custom'){card.querySelector('details').open=true;return;}
       settings.places[i]={...PLACES[+city.value],on:settings.places[i].on,icon:settings.places[i].icon,color:settings.places[i].color};placesUI();save();
     };
+    placeSearches.push(citySearch(card.querySelector('[data-city-search]'),{label:`Search city for place ${i+1}`,zoneExists,near:()=>currentCity.sample?null:currentCity,onSelect:place=>{settings.places[i]={...place,on:settings.places[i].on,icon:settings.places[i].icon,color:settings.places[i].color};placesUI();panelEditor.refresh();save();}}));
     refreshMarker();$('place-list').append(card);
   });
 }

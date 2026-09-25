@@ -9,13 +9,13 @@ export function panelControls(root,getSettings,onChange){
   const number=(path,title,min,max,step=1)=>`<label class="field">${title}<input type="number" data-panel="${path}" aria-label="${title}" min="${min}" max="${max}" step="${step}"></label>`;
   const input=(path,title,max=80)=>`<label class="field">${title}<input type="text" data-panel="${path}" aria-label="${title}" maxlength="${max}"></label>`;
   root.classList.add('panel-controls');
-  root.innerHTML=toggle('enabled','Enable bottom panels','A 44-pixel band replaces the place clocks one panel at a time.')
+  root.innerHTML=toggle('enabled','Enable bottom panels','Choose what appears below the map, one panel at a time.')
     +`<div class="panel-order" data-order></div>`
     +select('home','Starting panel',PANEL_PAGES)
-    +toggle('shake','Flick to change panels','Uses Pebble’s built-in tap detection, which costs almost no battery.')+select('flicks','Flicks per panel change',[[2,'Two quick flicks — one flick only lights the screen'],[1,'One flick (also changes the panel when the backlight turns on)'],[3,'Three quick flicks']])
+    +toggle('shake','Flick to change panels','A short wrist flick moves to the next panel.')+select('flicks','Flicks per panel change',[[2,'Two quick flicks — one flick only lights the screen'],[1,'One flick (also changes the panel when the backlight turns on)'],[3,'Three quick flicks']])
     +select('rotationMinutes','Automatic rotation',[[0,'Off — keep the panel until changed'],...[1,2,5,10,15,30,60].map(n=>[n,`Every ${n} minute${n===1?'':'s'}`])])
-    +`<p class="micro">No touch controls. Automatic rotation uses the existing minute tick; flicks use the watch’s hardware tap detection, so nothing samples the accelerometer.</p>`
-    +`<details open><summary>Weather & humidity</summary>`+toggle('weather.enabled','Fetch weather','Open-Meteo forecast for one of your configured places.')
+    +`<p class="micro">Choose up to five panels. Turn off flicks and rotation to keep one in place.</p>`
+    +`<details><summary>Weather & humidity</summary>`+toggle('weather.enabled','Fetch weather','Open-Meteo forecast for one of your configured places.')
     +select('weather.place','Forecast location',[[0,'Place 1'],[1,'Place 2'],[2,'Place 3']])+select('horizon','Chart horizon',[[12,'12 hours'],[24,'24 hours'],[48,'48 hours']])
     +select('weather.temperatureUnit','Temperature units',[['c','Celsius'],['f','Fahrenheit']])+select('weather.precipitation','Rain overlay',[['off','Off'],['probability','Precipitation probability'],['amount','Precipitation amount']])
     +select('weather.rainUnit','Rain amount units',[['mm','Millimeters'],['in','Inches']])+toggle('weather.daylight','Daylight strip & night shading')+toggle('weather.solarTimes','Next sunrise or sunset','Turn off to show peak rain probability or rate in the weather heading.')

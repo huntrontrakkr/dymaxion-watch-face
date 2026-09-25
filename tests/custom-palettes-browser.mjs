@@ -74,6 +74,7 @@ try{
   handlers.showConfiguration();
   const phone=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:3});phone.on('pageerror',e=>errors.push(e.message));
   await phone.goto(opened);
+  await phone.locator('details').evaluateAll(nodes=>nodes.forEach(d=>d.open=true));
   assert.equal(await phone.getByLabel('Palette name',{exact:true}).inputValue(),'My ocean');
   assert.equal(await phone.getByLabel('Color for place 1',{exact:true}).inputValue(),'#ffffaa');
   assert(await phone.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
@@ -92,6 +93,7 @@ try{
   assert.equal(phoneSaved.customPalettes[0].name,'Ocean & <draft>');assert.equal(phoneSaved.customPalettes[0].ink,'#FFFFAA');
   assert.deepEqual(Array.from(messages.findLast(m=>m.PALETTE).PALETTE),[...encodePalette(phoneSaved)]);
   handlers.showConfiguration();await phone.goto(opened);
+  await phone.locator('details').evaluateAll(nodes=>nodes.forEach(d=>d.open=true));
   assert.equal(await phone.getByLabel('Palette name',{exact:true}).inputValue(),'Ocean & <draft>','palette names round trip through escaped inline configuration');
   phoneSaved.customPalette=null;handlers.webviewclosed({response:JSON.stringify(phoneSaved)});
   assert.equal(messages.findLast(m=>m.PALETTE).PALETTE[2],0,'switching back to a preset reaches the watch');

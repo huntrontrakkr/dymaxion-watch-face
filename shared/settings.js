@@ -9,6 +9,7 @@ import {ZONE_TIMES,ZONE_POSITIONS} from './zone-column.js';
 import {SYSTEM_CLOCKS} from './system-clock.js';
 import {THEMES} from './palettes.js';
 import {paletteFor,validatePalettes} from './palette-settings.js';
+import extraPlaces from './extra-places.json' with {type:'json'};
 export {THEMES,MOON_COLORS} from './palettes.js';
 export function quantizeColor(value){
   if(typeof value!=='string'||!/^#[0-9a-f]{6}$/i.test(value))throw new Error('Choose a six-digit color.');
@@ -32,7 +33,7 @@ export const PLACES = [
   ['CAI','Cairo','Africa/Cairo',30.0444,31.2357],['NBO','Nairobi','Africa/Nairobi',-1.2921,36.8219],
   ['CHI','Chicago','America/Chicago',41.8781,-87.6298],['SFO','San Francisco','America/Los_Angeles',37.7749,-122.4194],
   ['UTC','Greenwich','Etc/UTC',51.4769,0]
-].map(([label,name,tz,lat,lon])=>({label,name,tz,lat,lon}));
+].map(([label,name,tz,lat,lon])=>({label,name,tz,lat,lon})).concat(extraPlaces);
 export const PRESETS = {
   // Meridian: status line, small figures over the map, zones below.
   meridian:{orientation:0,stacked:false,time:[0,22],map:[0,73],zones:[[4,189],[70,189],[136,189]]},
@@ -152,7 +153,7 @@ export function validateSettings(input,zoneExists) {
     const icon=legacyMarkers?LEGACY_MARKER_IDS[p.icon]:p.icon;
     if(!Number.isInteger(p.icon)||!Number.isInteger(icon)||icon<0||icon>=MARKERS.length||typeof p.on!=='boolean')throw new Error('Invalid place marker.');
     const color=p.color==null?null:quantizeColor(p.color);
-    return {label:p.label,name:typeof p.name==='string'?p.name.slice(0,60):p.label,tz:p.tz,lat:p.lat,lon:p.lon,icon,color,on:p.on};
+    return {label:p.label,name:typeof p.name==='string'?p.name.slice(0,60):p.label,...(typeof p.region==='string'?{region:p.region.slice(0,120)}:{}),tz:p.tz,lat:p.lat,lon:p.lon,icon,color,on:p.on};
   });
   return out;
 }

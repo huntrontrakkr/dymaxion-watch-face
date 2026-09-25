@@ -1,0 +1,212 @@
+[
+  {
+    "label": "ORF",
+    "name": "Norfolk",
+    "tz": "America/New_York",
+    "lat": 36.84681,
+    "lon": -76.28522
+  },
+  {
+    "label": "BOS",
+    "name": "Boston",
+    "tz": "America/New_York",
+    "lat": 42.35843,
+    "lon": -71.05977
+  },
+  {
+    "label": "SEA",
+    "name": "Seattle",
+    "tz": "America/Los_Angeles",
+    "lat": 47.60621,
+    "lon": -122.33207
+  },
+  {
+    "label": "SAN",
+    "name": "San Diego",
+    "tz": "America/Los_Angeles",
+    "lat": 32.71571,
+    "lon": -117.16472
+  },
+  {
+    "label": "MIA",
+    "name": "Miami",
+    "tz": "America/New_York",
+    "lat": 25.77427,
+    "lon": -80.19366
+  },
+  {
+    "label": "DEN",
+    "name": "Denver",
+    "tz": "America/Denver",
+    "lat": 39.73915,
+    "lon": -104.9847
+  },
+  {
+    "label": "YYZ",
+    "name": "Toronto",
+    "tz": "America/Toronto",
+    "lat": 43.70643,
+    "lon": -79.39864
+  },
+  {
+    "label": "YVR",
+    "name": "Vancouver",
+    "tz": "America/Vancouver",
+    "lat": 49.24966,
+    "lon": -123.11934
+  },
+  {
+    "label": "MEX",
+    "name": "Mexico City",
+    "tz": "America/Mexico_City",
+    "lat": 19.42847,
+    "lon": -99.12766
+  },
+  {
+    "label": "SAO",
+    "name": "São Paulo",
+    "tz": "America/Sao_Paulo",
+    "lat": -23.5475,
+    "lon": -46.63611
+  },
+  {
+    "label": "BUE",
+    "name": "Buenos Aires",
+    "tz": "America/Argentina/Buenos_Aires",
+    "lat": -34.61315,
+    "lon": -58.37723
+  },
+  {
+    "label": "MAD",
+    "name": "Madrid",
+    "tz": "Europe/Madrid",
+    "lat": 40.4165,
+    "lon": -3.70256
+  },
+  {
+    "label": "ROM",
+    "name": "Rome",
+    "tz": "Europe/Rome",
+    "lat": 41.89193,
+    "lon": 12.51133
+  },
+  {
+    "label": "AMS",
+    "name": "Amsterdam",
+    "tz": "Europe/Amsterdam",
+    "lat": 52.37403,
+    "lon": 4.88969
+  },
+  {
+    "label": "ZRH",
+    "name": "Zürich",
+    "tz": "Europe/Zurich",
+    "lat": 47.36667,
+    "lon": 8.55
+  },
+  {
+    "label": "STO",
+    "name": "Stockholm",
+    "tz": "Europe/Stockholm",
+    "lat": 59.32938,
+    "lon": 18.06871
+  },
+  {
+    "label": "HEL",
+    "name": "Helsinki",
+    "tz": "Europe/Helsinki",
+    "lat": 60.16952,
+    "lon": 24.93545
+  },
+  {
+    "label": "ATH",
+    "name": "Athens",
+    "tz": "Europe/Athens",
+    "lat": 37.98376,
+    "lon": 23.72784
+  },
+  {
+    "label": "DUB",
+    "name": "Dublin",
+    "tz": "Europe/Dublin",
+    "lat": 53.33306,
+    "lon": -6.24889
+  },
+  {
+    "label": "LIS",
+    "name": "Lisbon",
+    "tz": "Europe/Lisbon",
+    "lat": 38.72509,
+    "lon": -9.1498
+  },
+  {
+    "label": "SEL",
+    "name": "Seoul",
+    "tz": "Asia/Seoul",
+    "lat": 37.566,
+    "lon": 126.9784
+  },
+  {
+    "label": "BJS",
+    "name": "Beijing",
+    "tz": "Asia/Shanghai",
+    "lat": 39.9075,
+    "lon": 116.39723
+  },
+  {
+    "label": "SHA",
+    "name": "Shanghai",
+    "tz": "Asia/Shanghai",
+    "lat": 31.22222,
+    "lon": 121.45806
+  },
+  {
+    "label": "HKG",
+    "name": "Hong Kong",
+    "tz": "Asia/Hong_Kong",
+    "lat": 22.27832,
+    "lon": 114.17469
+  },
+  {
+    "label": "TPE",
+    "name": "Taipei",
+    "tz": "Asia/Taipei",
+    "lat": 25.05306,
+    "lon": 121.52639
+  },
+  {
+    "label": "BKK",
+    "name": "Bangkok",
+    "tz": "Asia/Bangkok",
+    "lat": 13.75398,
+    "lon": 100.50144
+  },
+  {
+    "label": "JKT",
+    "name": "Jakarta",
+    "tz": "Asia/Jakarta",
+    "lat": -6.21462,
+    "lon": 106.84513
+  },
+  {
+    "label": "MEL",
+    "name": "Melbourne",
+    "tz": "Australia/Melbourne",
+    "lat": -37.814,
+    "lon": 144.96332
+  },
+  {
+    "label": "PER",
+    "name": "Perth",
+    "tz": "Australia/Perth",
+    "lat": -31.95224,
+    "lon": 115.8614
+  },
+  {
+    "label": "WLG",
+    "name": "Wellington",
+    "tz": "Pacific/Auckland",
+    "lat": -41.28664,
+    "lon": 174.77557
+  }
+]
