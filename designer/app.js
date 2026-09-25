@@ -51,7 +51,7 @@ previewSize.observe(canvas);previewSize.observe(document.querySelector('.preview
 window.addEventListener('resize',alignPreviewPixels);
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const minuteClock=minuteFlipClock({invalidate:()=>render()});
-document.addEventListener('visibilitychange',()=>{minuteClock.reset();if(!document.hidden)render();});
+document.addEventListener('visibilitychange',()=>{minuteClock.reset();stopMotion();if(!document.hidden)render();});
 reducedMotion.addEventListener('change',()=>{minuteClock.reset();render();});
 const STORAGE='dymaxion-workshop-v1';
 try {const saved=localStorage.getItem(STORAGE);if(saved)settings=validateSettings(JSON.parse(saved),zoneExists);}catch{notice('Saved settings could not be read. The default composition is loaded.');}
@@ -262,6 +262,7 @@ function daylightPlace(){
 }
 function render(){
   if(!mapPixels.length||!watchTypeface||!watchSpan)return;
+  if(animation&&(!motionOn()||performance.now()-animation>=PULSE_MS*pulseOrder.length))animation=0;
   if(!settings.footer.pages.includes(footerPage))footerPage=settings.footer.home;
   if(settings.footer.enabled&&settings.footer.rotationMinutes&&Date.now()-panelChanged>=settings.footer.rotationMinutes*60000){trayStart();footerPage=settings.footer.pages[(settings.footer.pages.indexOf(footerPage)+1)%settings.footer.pages.length];panelChanged=Date.now();if(footerPage==='zones')startPulse();}
   const now=new Date(Date.now()+offset*3600000),local=moment(now),sun=sunDirection(new Date(Math.floor(+now/60000)*60000-sinceRelight(settings.power,moment(now).hours(),moment(now).minutes())*60000)),pal=paletteFor(settings);
@@ -358,19 +359,31 @@ function render(){
   if($('guides').checked){const [x,y]=getPosition(selected),[w,h]=blockSize(settings,selected);ctx.fillStyle='#FF5500';for(let i=0;i<w;i++)if(i%4<2){ctx.fillRect(x+i,y,1,1);ctx.fillRect(x+i,y+h-1,1,1);}for(let i=0;i<h;i++)if(i%4<2){ctx.fillRect(x,y+i,1,1);ctx.fillRect(x+w-1,y+i,1,1);}}
   $('preview-time').textContent=local.format('ddd HH:mm')+(offset?' / PREVIEW':' / LIVE');
   const lunar=moonDescription(now);$('moon-state').textContent=settings.moonIndicator?`${lunar.name} · ${lunar.illumination}% lit. `:'';
-  if(animation){if(performance.now()-animation>PULSE_MS*pulseOrder.length)animation=0;setTimeout(render,65);}
   canvas.dataset.besideProgress=String(besideP);canvas.dataset.traySliding=String(!!trayOld);
-  if(trayOld||besideP!==(beside?1000:0))scheduleMotion();
+  scheduleMotion(!!trayOld||besideP!==(beside?1000:0));
 }
 // Transitions (shared/transitions.js), as on the watch: the tray swipes to its
 // next page, and the clock makes room before the place times fade in beside it.
 const previewHour=()=>moment(new Date(Date.now()+offset*3600000)).hours();
 const motionOn=()=>flourishesOn(settings.power,settings.motion,previewHour())&&!reducedMotion.matches&&!document.hidden;
-let motionTimer=0,trayOld=null,trayStarted=0,besideState=null;
+let motionTimer=0,pulseTimer=0,trayOld=null,trayStarted=0,besideState=null;
 // Display frames, like the minute animation, so the pace holds steady when one
 // hands over to the other; while the minute animation runs, its frames carry
 // the transitions too. (The watch paces both at TRANSITION_FRAME_MS.)
-function scheduleMotion(){if(!motionTimer&&!minuteClock.active)motionTimer=requestAnimationFrame(()=>{motionTimer=0;render();});}
+function scheduleMotion(moving){
+  // Exactly one source drives redraws: minute flip, smooth motion, or a pulse.
+  // A render from either animation must not start another chain of pulse timers.
+  if(pulseTimer){clearTimeout(pulseTimer);pulseTimer=0;}
+  if(motionTimer&&(!moving||minuteClock.active)){cancelAnimationFrame(motionTimer);motionTimer=0;}
+  if(minuteClock.active)return;
+  if(moving){if(!motionTimer)motionTimer=requestAnimationFrame(()=>{motionTimer=0;render();});}
+  else if(animation)pulseTimer=setTimeout(()=>{pulseTimer=0;render();},65);
+}
+function stopMotion(){
+  if(motionTimer)cancelAnimationFrame(motionTimer);
+  if(pulseTimer)clearTimeout(pulseTimer);
+  motionTimer=pulseTimer=0;animation=0;trayOld=null;besideState=null;
+}
 // The canvas still shows the page being left: keep its pixels to slide out.
 function trayStart(){trayOld=motionOn()&&settings.footer.enabled&&!$('quick-view').checked?ctx.getImageData(0,TRAY_Y,200,TRAY_H):null;trayStarted=performance.now();}
 function trayCompose(band){
