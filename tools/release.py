@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import shutil
 import sys
+import time
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -97,6 +98,17 @@ def access_token():
     return token
 
 
+def public_app():
+    import requests
+    # The public endpoint caches responses for five minutes and serves stale
+    # ones while revalidating. A unique query reads the release just uploaded,
+    # and the listing text just edited, without retrying a successful upload.
+    response = requests.get(API + "/api/v1/apps/id/" + APP_ID,
+                            params={"_release_check": str(time.time_ns())}, timeout=30)
+    response.raise_for_status()
+    return response.json()["data"][0]
+
+
 def publish(pbw, version):
     import requests
     from pebble_tool.commands.publish import PublishCommand
@@ -113,11 +125,6 @@ def publish(pbw, version):
     limit = me.get("upload_constraints", {}).get("max_pbw_bytes", 4400000)
     if Path(pbw).stat().st_size > limit:
         raise ValueError("PBW exceeds the store upload limit.")
-
-    def public_app():
-        response = requests.get(API + "/api/v1/apps/id/" + APP_ID, timeout=30)
-        response.raise_for_status()
-        return response.json()["data"][0]
 
     app = public_app()
     current = app.get("latest_release", {}).get("version", "0.0.0")

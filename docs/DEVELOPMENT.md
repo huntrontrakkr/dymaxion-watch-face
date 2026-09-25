@@ -129,7 +129,7 @@ all clock styles, partial redraws, overlapping animations, Quick View and
 power-saving paths.
 Physical hardware and an actual phone webview have not been tested.
 
-Version 0.4.0 passed 73 core tests and seven browser suites. The settings tests
+Version 0.4.0 passed 74 core tests and seven browser suites. The settings tests
 cover 25 palette previews, eight clock styles, both compositions, keyboard and
 touch city selection, delayed/offline search, configuration saves, and widths
 from 320 to 1100 pixels. Live city search was also exercised from the bundled
@@ -174,7 +174,9 @@ If publication fails after upload, use GitHub's **Re-run failed jobs**. The
 publish job reuses the verified artifact and recognizes an already uploaded
 version. Rebuilding an already published version may produce a different
 archive checksum; use a new version for changed code instead of overwriting
-the old one. The workflow refuses downgrades or a conflicting existing package.
+the old one. The workflow refuses downgrades or a conflicting existing package. Public-store
+verification bypasses the API’s five-minute response cache, so successful
+uploads are not mistaken for missing releases.
 
 For a local release check:
 
