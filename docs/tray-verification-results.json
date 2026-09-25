@@ -1,0 +1,687 @@
+{
+  "version": "0.3.5",
+  "sdk": "4.33.1",
+  "emulator": "Emery QEMU 10.1.5-pebble14",
+  "pbwSha256": "fe66d4f112ecf8b82c722de9c680cc8cb43a9019526f9b167f4809fc30899c55",
+  "method": "Capture the native framebuffer during production flick and minute callbacks, let motion settle, compare every pixel with a forced full redraw. Normalize QEMU backlight to RGB222. All flick cases use the supported one-flick setting.",
+  "before": {
+    "version": "0.3.4",
+    "cases": 28,
+    "failures": [
+      {
+        "case": "screenshot-6-weather",
+        "frames": 6,
+        "times": [
+          0,
+          0.0465,
+          0.0904,
+          0.1345,
+          0.1879,
+          0.2305
+        ],
+        "trigger_at": 0.0028,
+        "follow_at": null,
+        "map_versions": 2,
+        "final_changed_pixels": 2399,
+        "final_diff_box": [
+          1,
+          184,
+          200,
+          228
+        ]
+      }
+    ]
+  },
+  "after": [
+    {
+      "case": "screenshot-1-weather",
+      "frames": 5,
+      "times": [
+        0,
+        0.0517,
+        0.2275,
+        0.2715,
+        0.3154
+      ],
+      "trigger_at": 0.0084,
+      "follow_at": null,
+      "map_versions": 2,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "screenshot-2-calendar",
+      "frames": 8,
+      "times": [
+        0,
+        0.0855,
+        0.1295,
+        0.1735,
+        0.2175,
+        0.2615,
+        0.3056,
+        0.3495
+      ],
+      "trigger_at": 0.0427,
+      "follow_at": null,
+      "map_versions": 1,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "screenshot-3-humidity",
+      "frames": 8,
+      "times": [
+        0,
+        0.0872,
+        0.1312,
+        0.1752,
+        0.2193,
+        0.2632,
+        0.3072,
+        0.3512
+      ],
+      "trigger_at": 0.0443,
+      "follow_at": null,
+      "map_versions": 1,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "screenshot-4-tide",
+      "frames": 8,
+      "times": [
+        0,
+        0.0879,
+        0.1319,
+        0.1759,
+        0.22,
+        0.264,
+        0.308,
+        0.361
+      ],
+      "trigger_at": 0.0451,
+      "follow_at": null,
+      "map_versions": 1,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "screenshot-5-zones",
+      "frames": 18,
+      "times": [
+        0,
+        0.0876,
+        0.1316,
+        0.1756,
+        0.2196,
+        0.2636,
+        0.3076,
+        0.3516,
+        0.4396,
+        0.5717,
+        0.6596,
+        0.7916,
+        0.9236,
+        1.0556,
+        1.1436,
+        1.2756,
+        1.4076,
+        1.4957
+      ],
+      "trigger_at": 0.0447,
+      "follow_at": null,
+      "map_versions": 14,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "screenshot-6-weather",
+      "frames": 8,
+      "times": [
+        0,
+        0.0458,
+        0.0898,
+        0.1339,
+        0.1837,
+        0.2259,
+        0.2699,
+        0.3138
+      ],
+      "trigger_at": 0.0032,
+      "follow_at": null,
+      "map_versions": 2,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "screenshot-7-calendar",
+      "frames": 8,
+      "times": [
+        0,
+        0.0882,
+        0.1321,
+        0.1763,
+        0.2203,
+        0.2642,
+        0.3082,
+        0.3523
+      ],
+      "trigger_at": 0.0453,
+      "follow_at": null,
+      "map_versions": 1,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "screenshot-8-humidity",
+      "frames": 8,
+      "times": [
+        0,
+        0.0848,
+        0.1288,
+        0.1729,
+        0.2194,
+        0.2608,
+        0.3049,
+        0.3489
+      ],
+      "trigger_at": 0.0421,
+      "follow_at": null,
+      "map_versions": 1,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "screenshot-9-tide",
+      "frames": 8,
+      "times": [
+        0,
+        0.0873,
+        0.1313,
+        0.1753,
+        0.2238,
+        0.2675,
+        0.3115,
+        0.3553
+      ],
+      "trigger_at": 0.0444,
+      "follow_at": null,
+      "map_versions": 1,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "screenshot-10-zones",
+      "frames": 17,
+      "times": [
+        0,
+        0.0874,
+        0.1314,
+        0.1754,
+        0.2194,
+        0.2634,
+        0.3074,
+        0.3514,
+        0.4435,
+        0.5755,
+        0.6634,
+        0.7954,
+        0.9274,
+        1.0594,
+        1.1973,
+        1.2834,
+        1.4155
+      ],
+      "trigger_at": 0.0445,
+      "follow_at": null,
+      "map_versions": 13,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "default-1-weather",
+      "frames": 5,
+      "times": [
+        0,
+        0.044,
+        0.22,
+        0.264,
+        0.308
+      ],
+      "trigger_at": 0.0032,
+      "follow_at": null,
+      "map_versions": 2,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "default-2-calendar",
+      "frames": 7,
+      "times": [
+        0,
+        0.0925,
+        0.1364,
+        0.1804,
+        0.2243,
+        0.2683,
+        0.3124
+      ],
+      "trigger_at": 0.0454,
+      "follow_at": null,
+      "map_versions": 1,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "default-3-health",
+      "frames": 6,
+      "times": [
+        0,
+        0.1311,
+        0.1751,
+        0.2191,
+        0.2631,
+        0.3071
+      ],
+      "trigger_at": 0.0442,
+      "follow_at": null,
+      "map_versions": 1,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "default-4-zones",
+      "frames": 16,
+      "times": [
+        0,
+        0.0851,
+        0.1291,
+        0.1736,
+        0.2171,
+        0.2611,
+        0.3051,
+        0.4371,
+        0.5702,
+        0.6572,
+        0.7891,
+        0.9211,
+        1.0531,
+        1.1413,
+        1.2735,
+        1.4051
+      ],
+      "trigger_at": 0.0422,
+      "follow_at": null,
+      "map_versions": 13,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "default-5-weather",
+      "frames": 7,
+      "times": [
+        0,
+        0.0468,
+        0.0907,
+        0.1348,
+        0.1787,
+        0.2227,
+        0.2668
+      ],
+      "trigger_at": 0.0034,
+      "follow_at": null,
+      "map_versions": 2,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "default-6-calendar",
+      "frames": 5,
+      "times": [
+        0,
+        0.0864,
+        0.1304,
+        0.1743,
+        0.2184
+      ],
+      "trigger_at": 0.0435,
+      "follow_at": null,
+      "map_versions": 1,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "default-7-health",
+      "frames": 5,
+      "times": [
+        0,
+        0.0876,
+        0.1316,
+        0.1756,
+        0.2196
+      ],
+      "trigger_at": 0.0447,
+      "follow_at": null,
+      "map_versions": 1,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "default-8-zones",
+      "frames": 15,
+      "times": [
+        0,
+        0.0864,
+        0.1305,
+        0.1745,
+        0.2184,
+        0.3065,
+        0.4387,
+        0.5705,
+        0.6585,
+        0.7904,
+        0.9226,
+        1.0545,
+        1.1505,
+        1.2825,
+        1.4145
+      ],
+      "trigger_at": 0.0436,
+      "follow_at": null,
+      "map_versions": 13,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "horizon-1-weather",
+      "frames": 5,
+      "times": [
+        0,
+        0.0456,
+        0.2216,
+        0.2655,
+        0.3096
+      ],
+      "trigger_at": 0.0039,
+      "follow_at": null,
+      "map_versions": 2,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "horizon-2-calendar",
+      "frames": 8,
+      "times": [
+        0,
+        0.0888,
+        0.1326,
+        0.1766,
+        0.2208,
+        0.2646,
+        0.3086,
+        0.3526
+      ],
+      "trigger_at": 0.0459,
+      "follow_at": null,
+      "map_versions": 1,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "horizon-3-humidity",
+      "frames": 8,
+      "times": [
+        0,
+        0.088,
+        0.132,
+        0.1759,
+        0.2199,
+        0.264,
+        0.3079,
+        0.3519
+      ],
+      "trigger_at": 0.0453,
+      "follow_at": null,
+      "map_versions": 1,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "horizon-4-tide",
+      "frames": 8,
+      "times": [
+        0,
+        0.0872,
+        0.1312,
+        0.1752,
+        0.2192,
+        0.2632,
+        0.3072,
+        0.3512
+      ],
+      "trigger_at": 0.0444,
+      "follow_at": null,
+      "map_versions": 1,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "horizon-5-zones",
+      "frames": 17,
+      "times": [
+        0,
+        0.0919,
+        0.1359,
+        0.1799,
+        0.2309,
+        0.2719,
+        0.316,
+        0.3599,
+        0.4479,
+        0.5799,
+        0.6679,
+        0.8,
+        0.932,
+        1.0639,
+        1.1519,
+        1.2839,
+        1.4159
+      ],
+      "trigger_at": 0.0486,
+      "follow_at": null,
+      "map_versions": 13,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "horizon-6-weather",
+      "frames": 8,
+      "times": [
+        0,
+        0.0473,
+        0.0909,
+        0.1348,
+        0.1789,
+        0.2228,
+        0.2668,
+        0.3109
+      ],
+      "trigger_at": 0.0032,
+      "follow_at": null,
+      "map_versions": 2,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "horizon-7-calendar",
+      "frames": 8,
+      "times": [
+        0,
+        0.0866,
+        0.1304,
+        0.1745,
+        0.2186,
+        0.2625,
+        0.3065,
+        0.3504
+      ],
+      "trigger_at": 0.0437,
+      "follow_at": null,
+      "map_versions": 1,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "horizon-8-humidity",
+      "frames": 8,
+      "times": [
+        0,
+        0.088,
+        0.132,
+        0.176,
+        0.2201,
+        0.2682,
+        0.3121,
+        0.3601
+      ],
+      "trigger_at": 0.0454,
+      "follow_at": null,
+      "map_versions": 1,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "horizon-9-tide",
+      "frames": 8,
+      "times": [
+        0,
+        0.0861,
+        0.1301,
+        0.1741,
+        0.2181,
+        0.2621,
+        0.3061,
+        0.3501
+      ],
+      "trigger_at": 0.0434,
+      "follow_at": null,
+      "map_versions": 1,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "horizon-10-zones",
+      "frames": 17,
+      "times": [
+        0,
+        0.0881,
+        0.132,
+        0.1761,
+        0.22,
+        0.264,
+        0.308,
+        0.352,
+        0.44,
+        0.5722,
+        0.66,
+        0.7921,
+        0.9241,
+        1.0562,
+        1.144,
+        1.276,
+        1.408
+      ],
+      "trigger_at": 0.0451,
+      "follow_at": null,
+      "map_versions": 13,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "screenshot-minute-and-tray",
+      "frames": 7,
+      "times": [
+        0,
+        1.4282,
+        1.472,
+        1.56,
+        1.7407,
+        1.784,
+        1.828
+      ],
+      "trigger_at": 0.0834,
+      "follow_at": 1.5161,
+      "map_versions": 2,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "default-minute-and-tray",
+      "frames": 7,
+      "times": [
+        0,
+        1.2952,
+        1.3391,
+        1.4271,
+        1.603,
+        1.6471,
+        1.691
+      ],
+      "trigger_at": 0.0835,
+      "follow_at": 1.3831,
+      "map_versions": 2,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "horizon-minute-and-tray",
+      "frames": 7,
+      "times": [
+        0,
+        1.1574,
+        1.2453,
+        1.3333,
+        1.5092,
+        1.5532,
+        1.5971
+      ],
+      "trigger_at": 0.0839,
+      "follow_at": 1.2893,
+      "map_versions": 2,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "quick-view-during-tray",
+      "frames": 5,
+      "times": [
+        0,
+        0.0736,
+        0.2233,
+        0.2673,
+        0.3112
+      ],
+      "trigger_at": 0.0736,
+      "follow_at": null,
+      "map_versions": 4,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    },
+    {
+      "case": "quick-view-dismissed",
+      "frames": 4,
+      "times": [
+        0,
+        0.0853,
+        0.1295,
+        0.1733
+      ],
+      "trigger_at": 0.0423,
+      "follow_at": null,
+      "map_versions": 2,
+      "final_changed_pixels": 0,
+      "final_diff_box": null
+    }
+  ]
+}

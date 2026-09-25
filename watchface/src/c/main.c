@@ -340,7 +340,9 @@ static void motion_step(void *context){
 // one frame timer at a time, however many animations overlap.
 static void motion_continue(void){
   if(s_clock_timer){if(s_motion_timer){app_timer_cancel(s_motion_timer);s_motion_timer=NULL;}return;}
-  bool tray=s_tray_active&&clock_milliseconds()-s_tray_started<TRAY_MS,beside=s_beside_p!=(s_beside_to?1000:0);
+  // The last paint must finish the swipe. A slow frame can cross TRAY_MS
+  // after sampling it; stopping by elapsed time here would strand that frame.
+  bool tray=s_tray_active,beside=s_beside_p!=(s_beside_to?1000:0);
   if((tray||beside)&&!s_motion_timer)s_motion_timer=app_timer_register(TRANSITION_FRAME_MS,motion_step,NULL);
 }
 static void tray_end(void){s_tray_active=false;if(s_tray_old){free(s_tray_old);s_tray_old=NULL;}}

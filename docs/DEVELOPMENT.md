@@ -74,10 +74,9 @@ pebble install --phone <phone-ip>
 
 The installable file is `watchface/build/watchface.pbw`. Target: Emery only,
 200×228 pixels, 64 colors. SDK 4.33.1 reports 100,924 bytes of resources and a
-61,287-byte code/static-RAM footprint, leaving 69,785 bytes for the heap before
+61,303-byte code/static-RAM footprint, leaving 69,769 bytes for the heap before
 runtime allocations. The map bitmap and active clock resources use that heap.
-Lagoon and Sandstone add 32 bytes to the 0.3.1 build's static footprint;
-resources are unchanged.
+These figures are for version 0.3.5; resources are unchanged.
 See the [native power profile](POWER-PROFILE.md) for measured rendering
 costs, the animation optimization, and the assumptions behind the battery model.
 

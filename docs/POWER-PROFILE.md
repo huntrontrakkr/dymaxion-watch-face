@@ -200,3 +200,23 @@ The next useful battery measurement is a matched hardware comparison over
 several days: same firmware, notification load, backlight and Health settings,
 with only minute animation on/off changed. A current probe would additionally
 separate each animation, map refresh and radio burst.
+
+## Tray completion regression, version 0.3.5
+
+A subsequent native Emery run reproduced an intermittent incomplete tray swipe:
+one of 28 panel changes stopped with 2,399 tray pixels different from a fresh
+paint. The last frame sampled the animation before its 300 ms endpoint, but
+finished drawing after it. The scheduler then stopped without painting the
+endpoint, leaving the chart shifted until another redraw.
+
+The scheduler now keeps the tray timer alive until the drawing code finishes
+the transition. It still stops at rest and shares the minute-animation timer.
+No drawing, layout, map or animation duration changed.
+
+The corrected package passed 33 native emulator cases: two complete panel
+cycles in each of three configurations (28 transitions), three overlapping
+minute/tray animations, and Quick View interruption and dismissal. Every
+settled frame matched a forced full redraw pixel-for-pixel. All 70 core tests
+and the native and web builds passed. See the
+[tray verification results](tray-verification-results.json) for case details
+and the tested package hash. These checks do not replace physical-device testing.
