@@ -1,7 +1,7 @@
 # Pebble app-store listing
 
 Name: **Dymaxion**  
-Developer: **huntrontrakkr**  
+Developer: **segfaultgolf**  
 Type: **Watchface**  
 Platform: **Pebble Time 2 / Emery**  
 Website: https://huntrontrakkr.github.io/dymaxion-watch-face/  
@@ -48,6 +48,10 @@ Sign in to the [Pebble developer dashboard](https://developer.repebble.com/dashb
 and create a watchface listing with these assets. The SDK also supports
 `pebble login` followed by `pebble publish`; its `--screenshots` files must
 start with the platform name, as the kit's `emery_*.png` files do.
+
+Publish the same package and screenshots separately through the
+[Rebble developer portal](https://dev-portal.rebble.io/), using **segfaultgolf**
+as the public developer name there too. The Pebble CLI targets Pebble's store.
 
 The repository, workshop and GitHub releases are public independently of an
 app-store listing. A GitHub release does not submit the watch face to the store.
