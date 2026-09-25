@@ -522,7 +522,7 @@ static void marker_spots(time_t now,int visible,MarkerSpots *s){
 // Map time size from DISPLAY byte 3 (display.h): code 0 medium, 1 small, 2 large,
 // 3 extra large, 4 wide.
 static int map_time_size(void){
-  static const uint8_t SIZES[MAP_TIME_SIZE_CODES]={MAP_TIME_MEDIUM,MAP_TIME_SMALL,MAP_TIME_LARGE,MAP_TIME_XLARGE,MAP_TIME_WIDE};
+  static const uint8_t SIZES[MAP_TIME_SIZE_CODES]={MAP_TIME_MEDIUM,MAP_TIME_SMALL,MAP_TIME_LARGE,MAP_TIME_XLARGE,MAP_TIME_WIDE,MAP_TIME_HUGE};
   int c=DISPLAY_MAP_TIME_CODE(s_display);return c<MAP_TIME_SIZE_CODES?SIZES[c]:MAP_TIME_MEDIUM;
 }
 static void map_times_inputs(time_t now,uint8_t key[19],MapTimePlace places[3],const MarkerSpots *spots){
@@ -575,19 +575,24 @@ static void map_outline(void *context,int x,int y){MapPen *p=context;graphics_fi
 // Outlined leaders first, then their lines and the tiny times, in each place's color.
 static void draw_map_times(GContext *ctx,time_t now,const struct tm *local,int mx,int my,const MarkerSpots *spots){
   if(!map_times_ready(now,spots))return;
+  // Leaders and figures are outlined first, so map lines and background dots
+  // never touch them.
+  char text[3][MAP_TIME_TEXT];
   graphics_context_set_fill_color(ctx,color(0));
   for(int i=0;i<3;i++)if(s_map_spots[i].ok){
+    const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;const MapTimeSpot *s=&s_map_spots[i];
+    int delta;bool stale;struct tm zone=zone_time(z,now,local,&delta,&stale);
+    map_time_text(text[i],zone.tm_hour,zone.tm_min,is_24(),delta,stale);
     MapPen pen={ctx,mx,my,NULL};
-    map_time_route(s_map_spots[i].points,map_outline,&pen);
+    map_time_route(s->points,map_outline,&pen);
+    map_time_pixels(text[i],s->orientation,s->total,s->size,s->x,s->y,map_outline,&pen);
   }
   for(int i=0;i<3;i++)if(s_map_spots[i].ok){
-    const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;const MapTimeSpot *s=&s_map_spots[i];
+    const MapTimeSpot *s=&s_map_spots[i];
     graphics_context_set_stroke_color(ctx,mark_color(i));
     MapPen line={ctx,mx,my,&spots->inner[spots->index[i]]},label={ctx,mx,my,NULL};
     map_time_route(s->points,map_pixel,&line);
-    int delta;bool stale;struct tm zone=zone_time(z,now,local,&delta,&stale);char text[MAP_TIME_TEXT];
-    map_time_text(text,zone.tm_hour,zone.tm_min,is_24(),delta,stale);
-    map_time_pixels(text,s->orientation,s->total,s->size,s->x,s->y,map_pixel,&label);
+    map_time_pixels(text[i],s->orientation,s->total,s->size,s->x,s->y,map_pixel,&label);
   }
 }
 // The bottom band shows the place times: the zones page (or no panels), with

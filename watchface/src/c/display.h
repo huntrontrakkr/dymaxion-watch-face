@@ -11,7 +11,7 @@
 // Version 3 byte 3 bits 2-4: the map time size, 0 medium (3x6), 1 small
 // (3x5), 2 large (3x7), 3 extra large (3x8), 4 wide (4x8); older packets read
 // as medium.
-#define MAP_TIME_SIZE_CODES 5
+#define MAP_TIME_SIZE_CODES 6
 #define DISPLAY_MAP_BACKGROUND(d) ((d)[3]&3)
 #define DISPLAY_MAP_TIME_CODE(d) (((d)[3]>>2)&7)
 // Byte 3 bit 5: tall figures for the place times beside the clock.

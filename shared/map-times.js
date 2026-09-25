@@ -4,9 +4,9 @@
 // steps in watchface/src/c/map_times.c; tests compare the two.
 // Five sizes of one square-cornered figure design, chosen in the settings
 // (Map time size): 3×5, 3×6 (the default), 3×7 and 3×8, each a row taller than
-// the last, and 4×8 with wider figures. Each size measures its own template.
-export const MAP_TIME_SMALL = 0, MAP_TIME_MEDIUM = 1, MAP_TIME_LARGE = 2, MAP_TIME_XLARGE = 3, MAP_TIME_WIDE = 4;
-export const MAP_TIME_SIZES = ['small', 'medium', 'large', 'xlarge', 'wide'];
+// the last, 4×8 with wider figures, and 5×10, the largest. Each size measures its own template.
+export const MAP_TIME_SMALL = 0, MAP_TIME_MEDIUM = 1, MAP_TIME_LARGE = 2, MAP_TIME_XLARGE = 3, MAP_TIME_WIDE = 4, MAP_TIME_HUGE = 5;
+export const MAP_TIME_SIZES = ['small', 'medium', 'large', 'xlarge', 'wide', 'huge'];
 export const TINY_FONTS = Object.freeze([
   {height: 5, glyphs: Object.freeze({
   '0': ['###', '#.#', '#.#', '#.#', '###'], '1': ['.#.', '##.', '.#.', '.#.', '###'],
@@ -60,6 +60,17 @@ export const TINY_FONTS = Object.freeze([
     'P': ['###.', '#..#', '#..#', '###.', '#...', '#...', '#...', '#...'], '+': ['...', '...', '.#.', '###', '.#.', '...', '...', '...'],
     '-': ['...', '...', '...', '###', '...', '...', '...', '...'], '?': ['###.', '...#', '...#', '.##.', '.#..', '.#..', '....', '.#..'],
     ' ': ['.', '.', '.', '.', '.', '.', '.', '.']
+  })},
+  {height: 10, glyphs: Object.freeze({
+    '0': ['#####', '#...#', '#...#', '#...#', '#...#', '#...#', '#...#', '#...#', '#...#', '#####'], '1': ['..#..', '.##..', '..#..', '..#..', '..#..', '..#..', '..#..', '..#..', '..#..', '.###.'],
+    '2': ['#####', '....#', '....#', '....#', '#####', '#....', '#....', '#....', '#....', '#####'], '3': ['#####', '....#', '....#', '....#', '.####', '....#', '....#', '....#', '....#', '#####'],
+    '4': ['#...#', '#...#', '#...#', '#...#', '#####', '....#', '....#', '....#', '....#', '....#'], '5': ['#####', '#....', '#....', '#....', '#####', '....#', '....#', '....#', '....#', '#####'],
+    '6': ['#####', '#....', '#....', '#....', '#####', '#...#', '#...#', '#...#', '#...#', '#####'], '7': ['#####', '....#', '....#', '....#', '....#', '...#.', '...#.', '...#.', '...#.', '...#.'],
+    '8': ['#####', '#...#', '#...#', '#...#', '#####', '#...#', '#...#', '#...#', '#...#', '#####'], '9': ['#####', '#...#', '#...#', '#...#', '#####', '....#', '....#', '....#', '....#', '#####'],
+    ':': ['.', '.', '#', '.', '.', '.', '.', '#', '.', '.'], 'A': ['.###.', '#...#', '#...#', '#...#', '#####', '#...#', '#...#', '#...#', '#...#', '#...#'],
+    'P': ['####.', '#...#', '#...#', '#...#', '####.', '#....', '#....', '#....', '#....', '#....'], '+': ['.....', '.....', '..#..', '..#..', '#####', '..#..', '..#..', '.....', '.....', '.....'],
+    '-': ['.....', '.....', '.....', '.....', '#####', '.....', '.....', '.....', '.....', '.....'], '?': ['####.', '....#', '....#', '....#', '..##.', '..#..', '..#..', '..#..', '.....', '..#..'],
+    ' ': ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.']
   })}
 ]);
 export const TINY_GLYPHS = TINY_FONTS[MAP_TIME_MEDIUM].glyphs, TINY_HEIGHT = TINY_FONTS[MAP_TIME_MEDIUM].height;
@@ -164,7 +175,7 @@ export function outward(c, lo, hi) {
 // rows then columns outward from the glyph; the cheapest (5 × the longer
 // leader leg plus 2 × the shorter, plus 20 for a turned label) wins, first
 // found on ties. Returns the placement or null, and marks it taken.
-function placeOne(p, taken, blocked, width, height, turn, markers, size) {
+function placeOne(p, taken, wires, blocked, width, height, turn, markers, size) {
   const mark = (x, y) => { if (x >= 0 && y >= 0 && x < width && y < height) taken[y * width + x] = 1; };
   const open = (x, y) => x >= 0 && y >= 0 && x < width && y < height && !taken[y * width + x] && !blocked(x, y);
   let best = null;
@@ -197,12 +208,13 @@ function placeOne(p, taken, blocked, width, height, turn, markers, size) {
         if (best && routes[0].cost + penalty >= best.cost) continue;
         const own = (px, py) => glyphs.some(g => px >= x + g.x - MARGIN && px < x + g.x + g.w + MARGIN && py >= y + g.y - MARGIN && py < y + g.y + g.h + MARGIN);
         // Inside its own clearing (or group hull) a leader only has to miss the
-        // other glyphs and the pixel around them; beyond it, anything taken.
+        // other glyphs and the pixel around them, and the leaders already drawn
+        // (with a pixel between); beyond it, anything taken.
         const {x0, y0, x1, y1} = p.own ?? {x0: p.x - HALO, y0: p.y - HALO, x1: p.x + HALO, y1: p.y + HALO};
         const sibling = (px, py) => markers.some(m => (m.x !== p.x || m.y !== p.y) && Math.max(Math.abs(px - m.x), Math.abs(py - m.y)) <= m.half + 1);
         for (const r of routes) {
           if (best && r.cost + penalty >= best.cost) break;
-          const ok = routePixels(r.points).every(([px, py]) => px >= x0 && px <= x1 && py >= y0 && py <= y1 ? !sibling(px, py) :
+          const ok = routePixels(r.points).every(([px, py]) => px >= x0 && px <= x1 && py >= y0 && py <= y1 ? !sibling(px, py) && !wires[py * width + px] :
             (px >= 0 && py >= 0 && px < width && py < height && !taken[py * width + px] && !own(px, py)));
           if (ok) { best = {cost: r.cost + penalty, orientation, x, y, points: r.points}; break; }
         }
@@ -212,7 +224,9 @@ function placeOne(p, taken, blocked, width, height, turn, markers, size) {
   if (!best) return null;
   for (const g of tinyLayout(p.template, best.orientation, tinyWidth(p.template, size), size))
     for (let yy = best.y + g.y - MARGIN; yy < best.y + g.y + g.h + MARGIN; yy++) for (let xx = best.x + g.x - MARGIN; xx < best.x + g.x + g.w + MARGIN; xx++) mark(xx, yy);
-  for (const [px, py] of routePixels(best.points)) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) mark(px + dx, py + dy);
+  for (const [px, py] of routePixels(best.points)) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    mark(px + dx, py + dy);const x = px + dx, y = py + dy;if (x >= 0 && y >= 0 && x < width && y < height) wires[y * width + x] = 1;
+  }
   return {...best, template: p.template, total: tinyWidth(p.template, size), size};
 }
 // Every order of the places is tried (at most six); the arrangement with the
@@ -224,21 +238,27 @@ function placeOne(p, taken, blocked, width, height, turn, markers, size) {
 // location's clearing, group hulls) and `markers` every glyph {x, y, half},
 // which leaders crossing a hull must miss.
 export const MAP_TIME_ORDERS = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
-// `size` is MAP_TIME_SMALL, MAP_TIME_MEDIUM or MAP_TIME_LARGE; every label
-// uses it, going wherever it fits.
+// `size` is one of MAP_TIME_SIZES; every label uses it where it can fit, and
+// a smaller one where it cannot.
 export function placeMapTimes(places, blocked, width, height, {size = MAP_TIME_MEDIUM, ...options} = {}) {
   return arrange(places, blocked, width, height, options, size);
 }
 function arrange(places, blocked, width, height, {turn = false, obstacles = [], markers = []}, size) {
   let best = null;
   for (const order of MAP_TIME_ORDERS) {
-    const taken = new Uint8Array(width * height), result = [null, null, null];
+    const taken = new Uint8Array(width * height), wires = new Uint8Array(width * height), result = [null, null, null];
     const clear = ({x0, y0, x1, y1}) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (x >= 0 && y >= 0 && x < width && y < height) taken[y * width + x] = 1; };
     for (const p of places) if (p) clear({x0: p.x - HALO, y0: p.y - HALO, x1: p.x + HALO, y1: p.y + HALO});
     for (const o of obstacles) clear(o);
     let total = 0;
     // An order already costing at least the best so far cannot win.
-    for (const i of order) if (places[i] && (!best || total < best.total)) { result[i] = placeOne(places[i], taken, blocked, width, height, turn, markers, size); total += result[i] ? result[i].cost : 10000; }
+    // A time that does not fit at the chosen size steps down a size at a time
+    // rather than going missing.
+    for (const i of order) if (places[i] && (!best || total < best.total)) {
+      for (let k = size; k >= 0 && !result[i]; k--) result[i] = placeOne(places[i], taken, wires, blocked, width, height, turn, markers, k);
+      // Each size stepped down costs 1000, so it wins only when the chosen size cannot fit.
+      total += result[i] ? result[i].cost + 1000 * (size - result[i].size) : 10000;
+    }
     if (!best || total < best.total) best = {total, result};
   }
   return best.result.slice(0, places.length);

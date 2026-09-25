@@ -247,13 +247,16 @@ function drawMapTimes(now,local,mx,my,pal,markers){
   const {obstacles}=markers,key=JSON.stringify([places,obstacles,markers.markers,settings.mapTimesTurn,settings.mapTimeSize]);
   if(key!==mapTimesCache.key)mapTimesCache={key,spots:placeMapTimes(places,(x,y)=>!!(mapPixels[(y*w+x)*4+3]&3),w,h,{turn:settings.mapTimesTurn,obstacles,markers:markers.markers,size:MAP_TIME_SIZES.indexOf(settings.mapTimeSize)})};
   const spots=mapTimesCache.spots,px=(x,y,c)=>{ctx.fillStyle=c;ctx.fillRect(mx+x,my+y,1,1);};
-  // Outlined leaders first, then their lines and the tiny times in each place's color.
-  spots.forEach(s=>{if(s){ctx.fillStyle=pal.bg;for(const [x,y] of routePixels(s.points))ctx.fillRect(mx+x-1,my+y-1,3,3);}});
+  // Leaders and figures outlined first (so map lines and background dots never
+  // touch them), then the leaders and the tiny times in each place's color.
+  const figures=spots.map((s,i)=>{if(!s)return null;const p=settings.places[i],there=moment(now).tz(p.tz),delta=Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000);
+    return tinyPixels(mapTimeText({hour:there.hours(),minute:there.minutes(),clock24,delta}),s.orientation,s.total,s.size).map(([x,y])=>[s.x+x,s.y+y]);});
+  ctx.fillStyle=pal.bg;
+  spots.forEach((s,i)=>{if(s)for(const [x,y] of [...routePixels(s.points),...figures[i]])ctx.fillRect(mx+x-1,my+y-1,3,3);});
   spots.forEach((s,i)=>{
     if(!s)return;const p=settings.places[i],ink=markColor(p,settings,i),{x0,y0,x1,y1}=markers.places[i].inner;
     for(const [x,y] of routePixels(s.points))if(x<x0||x>x1||y<y0||y>y1)px(x,y,ink);
-    const there=moment(now).tz(p.tz),delta=Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000);
-    for(const [x,y] of tinyPixels(mapTimeText({hour:there.hours(),minute:there.minutes(),clock24,delta}),s.orientation,s.total,s.size))px(s.x+x,s.y+y,ink);
+    for(const [x,y] of figures[i])px(x,y,ink);
   });
 }
 function statusWidth(){return settings.moonIndicator?126:140;}

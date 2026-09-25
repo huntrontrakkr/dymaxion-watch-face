@@ -8,13 +8,13 @@ import {MAP_BACKGROUNDS} from './map-background.js';
 import {ZONE_TIMES,ZONE_POSITIONS} from './zone-column.js';
 import {encodePower} from './power.js';
 // Wire order for the map time size: medium first, so older packets (0) read as medium.
-export const MAP_TIME_SIZE_CODES=['medium','small','large','xlarge','wide'];
+export const MAP_TIME_SIZE_CODES=['medium','small','large','xlarge','wide','huge'];
 // Version 3: [3, style, options, map background, power bits, night start,
 // night end, low battery]. Byte 2: bit 1 no leading zero (clear by default), bits 2-3
 // index ZONE_TIMES, bits 4-5 ZONE_POSITIONS, bit 6 lets map times turn 90°, bit
 // 7 shows the Dymaxion nameplate; bit 0 is retired. Byte 3: bits 0-1 index
 // MAP_BACKGROUNDS, bits 2-4 the map time size (0 medium 3×6, 1 small 3×5,
-// 2 large 3×7, 3 extra large 3×8, 4 wide 4×8; older packets read as medium),
+// 2 large 3×7, 3 extra large 3×8, 4 wide 4×8, 5 largest 5×10; older packets read as medium),
 // bit 5 tall place times beside the clock, bit 6 hides the place icons in the
 // time-zone drawer (clear in older packets, so icons show). Bytes 4-6 are power and motion (shared/power.js). The watch
 // still loads 4-byte version 1 and 2 packets, with default power and motion.

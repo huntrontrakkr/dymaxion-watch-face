@@ -11,7 +11,7 @@
 #define MAP_TIME_TEXT 12
 enum {MAP_TIME_H,MAP_TIME_V};
 // Figure sizes: 3x5, 3x6, 3x7, 3x8 and 4x8 (Map time size in the settings).
-enum {MAP_TIME_SMALL,MAP_TIME_MEDIUM,MAP_TIME_LARGE,MAP_TIME_XLARGE,MAP_TIME_WIDE};
+enum {MAP_TIME_SMALL,MAP_TIME_MEDIUM,MAP_TIME_LARGE,MAP_TIME_XLARGE,MAP_TIME_WIDE,MAP_TIME_HUGE};
 // `own`: the rectangle the place's leader may cross freely (its clearing, or its group's hull).
 typedef struct {bool present;int16_t x,y;char template_text[MAP_TIME_TEXT];MapRect own;} MapTimePlace;
 // A placed label, and its leader's corner points: glyph centre, exit, two

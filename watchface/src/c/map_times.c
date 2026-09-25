@@ -5,45 +5,51 @@
 #define MARGIN 1
 #define TURN_PENALTY 20
 #define TIME_GLYPHS 5
-// Five sizes of one figure design (shared/map-times.js): 3x5, 3x6, 3x7, 3x8
-// and 4x8, chosen in the settings. Rows as bit masks, bit 2 = left pixel of a 3-wide glyph; shorter
+// Six sizes of one figure design (shared/map-times.js): 3x5, 3x6, 3x7, 3x8,
+// 4x8 and 5x10, chosen in the settings. Rows as bit masks, bit 2 = left pixel of a 3-wide glyph; shorter
 // sets leave their last rows empty.
-#define TINY_MAX_H 8
-static const int TINY_HEIGHT[5]={5,6,7,8,8};
+#define TINY_MAX_H 10
+static const int TINY_HEIGHT[6]={5,6,7,8,8,10};
 static int centre(int w){return (w-1)>>1;}
 typedef struct {char c;uint8_t w,rows[TINY_MAX_H];} Tiny;
 static const Tiny TINY_SMALL[]={
-  {'0',3,{7,5,5,5,7,0,0,0}},{'1',3,{2,6,2,2,7,0,0,0}},{'2',3,{7,1,7,4,7,0,0,0}},{'3',3,{7,1,3,1,7,0,0,0}},{'4',3,{5,5,7,1,1,0,0,0}},
-  {'5',3,{7,4,7,1,7,0,0,0}},{'6',3,{7,4,7,5,7,0,0,0}},{'7',3,{7,1,1,2,2,0,0,0}},{'8',3,{7,5,7,5,7,0,0,0}},{'9',3,{7,5,7,1,7,0,0,0}},
-  {':',1,{0,1,0,1,0,0,0,0}},{'A',3,{2,5,7,5,5,0,0,0}},{'P',3,{6,5,6,4,4,0,0,0}},{'+',3,{0,2,7,2,0,0,0,0}},{'-',3,{0,0,7,0,0,0,0,0}},
-  {'?',3,{6,1,2,0,2,0,0,0}},{' ',1,{0,0,0,0,0,0,0,0}}
+  {'0',3,{7,5,5,5,7,0,0,0,0,0}},{'1',3,{2,6,2,2,7,0,0,0,0,0}},{'2',3,{7,1,7,4,7,0,0,0,0,0}},{'3',3,{7,1,3,1,7,0,0,0,0,0}},{'4',3,{5,5,7,1,1,0,0,0,0,0}},
+  {'5',3,{7,4,7,1,7,0,0,0,0,0}},{'6',3,{7,4,7,5,7,0,0,0,0,0}},{'7',3,{7,1,1,2,2,0,0,0,0,0}},{'8',3,{7,5,7,5,7,0,0,0,0,0}},{'9',3,{7,5,7,1,7,0,0,0,0,0}},
+  {':',1,{0,1,0,1,0,0,0,0,0,0}},{'A',3,{2,5,7,5,5,0,0,0,0,0}},{'P',3,{6,5,6,4,4,0,0,0,0,0}},{'+',3,{0,2,7,2,0,0,0,0,0,0}},{'-',3,{0,0,7,0,0,0,0,0,0,0}},
+  {'?',3,{6,1,2,0,2,0,0,0,0,0}},{' ',1,{0,0,0,0,0,0,0,0,0,0}}
 };
 static const Tiny TINY_MEDIUM[]={
-  {'0',3,{7,5,5,5,5,7,0,0}},{'1',3,{2,6,2,2,2,7,0,0}},{'2',3,{7,1,1,7,4,7,0,0}},{'3',3,{7,1,3,1,1,7,0,0}},{'4',3,{5,5,5,7,1,1,0,0}},
-  {'5',3,{7,4,7,1,1,7,0,0}},{'6',3,{7,4,7,5,5,7,0,0}},{'7',3,{7,1,1,2,2,2,0,0}},{'8',3,{7,5,7,5,5,7,0,0}},{'9',3,{7,5,5,7,1,7,0,0}},
-  {':',1,{0,1,0,0,1,0,0,0}},{'A',3,{2,5,5,7,5,5,0,0}},{'P',3,{6,5,5,6,4,4,0,0}},{'+',3,{0,2,7,2,0,0,0,0}},{'-',3,{0,0,7,0,0,0,0,0}},
-  {'?',3,{6,1,1,2,0,2,0,0}},{' ',1,{0,0,0,0,0,0,0,0}}
+  {'0',3,{7,5,5,5,5,7,0,0,0,0}},{'1',3,{2,6,2,2,2,7,0,0,0,0}},{'2',3,{7,1,1,7,4,7,0,0,0,0}},{'3',3,{7,1,3,1,1,7,0,0,0,0}},{'4',3,{5,5,5,7,1,1,0,0,0,0}},
+  {'5',3,{7,4,7,1,1,7,0,0,0,0}},{'6',3,{7,4,7,5,5,7,0,0,0,0}},{'7',3,{7,1,1,2,2,2,0,0,0,0}},{'8',3,{7,5,7,5,5,7,0,0,0,0}},{'9',3,{7,5,5,7,1,7,0,0,0,0}},
+  {':',1,{0,1,0,0,1,0,0,0,0,0}},{'A',3,{2,5,5,7,5,5,0,0,0,0}},{'P',3,{6,5,5,6,4,4,0,0,0,0}},{'+',3,{0,2,7,2,0,0,0,0,0,0}},{'-',3,{0,0,7,0,0,0,0,0,0,0}},
+  {'?',3,{6,1,1,2,0,2,0,0,0,0}},{' ',1,{0,0,0,0,0,0,0,0,0,0}}
 };
 static const Tiny TINY_LARGE[]={
-  {'0',3,{7,5,5,5,5,5,7,0}},{'1',3,{2,6,2,2,2,2,7,0}},{'2',3,{7,1,1,7,4,4,7,0}},{'3',3,{7,1,1,3,1,1,7,0}},{'4',3,{5,5,5,7,1,1,1,0}},
-  {'5',3,{7,4,4,7,1,1,7,0}},{'6',3,{7,4,4,7,5,5,7,0}},{'7',3,{7,1,1,1,2,2,2,0}},{'8',3,{7,5,5,7,5,5,7,0}},{'9',3,{7,5,5,7,1,1,7,0}},
-  {':',1,{0,1,0,0,0,1,0,0}},{'A',3,{2,5,5,7,5,5,5,0}},{'P',3,{6,5,5,6,4,4,4,0}},{'+',3,{0,0,2,7,2,0,0,0}},{'-',3,{0,0,0,7,0,0,0,0}},
-  {'?',3,{6,1,1,2,2,0,2,0}},{' ',1,{0,0,0,0,0,0,0,0}}
+  {'0',3,{7,5,5,5,5,5,7,0,0,0}},{'1',3,{2,6,2,2,2,2,7,0,0,0}},{'2',3,{7,1,1,7,4,4,7,0,0,0}},{'3',3,{7,1,1,3,1,1,7,0,0,0}},{'4',3,{5,5,5,7,1,1,1,0,0,0}},
+  {'5',3,{7,4,4,7,1,1,7,0,0,0}},{'6',3,{7,4,4,7,5,5,7,0,0,0}},{'7',3,{7,1,1,1,2,2,2,0,0,0}},{'8',3,{7,5,5,7,5,5,7,0,0,0}},{'9',3,{7,5,5,7,1,1,7,0,0,0}},
+  {':',1,{0,1,0,0,0,1,0,0,0,0}},{'A',3,{2,5,5,7,5,5,5,0,0,0}},{'P',3,{6,5,5,6,4,4,4,0,0,0}},{'+',3,{0,0,2,7,2,0,0,0,0,0}},{'-',3,{0,0,0,7,0,0,0,0,0,0}},
+  {'?',3,{6,1,1,2,2,0,2,0,0,0}},{' ',1,{0,0,0,0,0,0,0,0,0,0}}
 };
 static const Tiny TINY_XLARGE[]={
-  {'0',3,{7,5,5,5,5,5,5,7}},{'1',3,{2,6,2,2,2,2,2,7}},{'2',3,{7,1,1,7,4,4,4,7}},{'3',3,{7,1,1,3,1,1,1,7}},{'4',3,{5,5,5,7,1,1,1,1}},
-  {'5',3,{7,4,4,7,1,1,1,7}},{'6',3,{7,4,4,7,5,5,5,7}},{'7',3,{7,1,1,1,2,2,2,2}},{'8',3,{7,5,5,7,5,5,5,7}},{'9',3,{7,5,5,7,1,1,1,7}},
-  {':',1,{0,1,0,0,0,0,1,0}},{'A',3,{2,5,5,7,5,5,5,5}},{'P',3,{6,5,5,6,4,4,4,4}},{'+',3,{0,0,2,7,2,0,0,0}},{'-',3,{0,0,0,7,0,0,0,0}},
-  {'?',3,{6,1,1,2,2,2,0,2}},{' ',1,{0,0,0,0,0,0,0,0}}
+  {'0',3,{7,5,5,5,5,5,5,7,0,0}},{'1',3,{2,6,2,2,2,2,2,7,0,0}},{'2',3,{7,1,1,7,4,4,4,7,0,0}},{'3',3,{7,1,1,3,1,1,1,7,0,0}},{'4',3,{5,5,5,7,1,1,1,1,0,0}},
+  {'5',3,{7,4,4,7,1,1,1,7,0,0}},{'6',3,{7,4,4,7,5,5,5,7,0,0}},{'7',3,{7,1,1,1,2,2,2,2,0,0}},{'8',3,{7,5,5,7,5,5,5,7,0,0}},{'9',3,{7,5,5,7,1,1,1,7,0,0}},
+  {':',1,{0,1,0,0,0,0,1,0,0,0}},{'A',3,{2,5,5,7,5,5,5,5,0,0}},{'P',3,{6,5,5,6,4,4,4,4,0,0}},{'+',3,{0,0,2,7,2,0,0,0,0,0}},{'-',3,{0,0,0,7,0,0,0,0,0,0}},
+  {'?',3,{6,1,1,2,2,2,0,2,0,0}},{' ',1,{0,0,0,0,0,0,0,0,0,0}}
 };
 static const Tiny TINY_WIDE[]={
-  {'0',4,{15,9,9,9,9,9,9,15}},{'1',4,{2,6,2,2,2,2,2,7}},{'2',4,{15,1,1,15,8,8,8,15}},{'3',4,{15,1,1,7,1,1,1,15}},{'4',4,{9,9,9,15,1,1,1,1}},
-  {'5',4,{15,8,8,15,1,1,1,15}},{'6',4,{15,8,8,15,9,9,9,15}},{'7',4,{15,1,1,1,2,2,2,2}},{'8',4,{15,9,9,15,9,9,9,15}},{'9',4,{15,9,9,15,1,1,1,15}},
-  {':',1,{0,1,0,0,0,0,1,0}},{'A',4,{6,9,9,15,9,9,9,9}},{'P',4,{14,9,9,14,8,8,8,8}},{'+',3,{0,0,2,7,2,0,0,0}},{'-',3,{0,0,0,7,0,0,0,0}},
-  {'?',4,{14,1,1,6,4,4,0,4}},{' ',1,{0,0,0,0,0,0,0,0}}
+  {'0',4,{15,9,9,9,9,9,9,15,0,0}},{'1',4,{2,6,2,2,2,2,2,7,0,0}},{'2',4,{15,1,1,15,8,8,8,15,0,0}},{'3',4,{15,1,1,7,1,1,1,15,0,0}},{'4',4,{9,9,9,15,1,1,1,1,0,0}},
+  {'5',4,{15,8,8,15,1,1,1,15,0,0}},{'6',4,{15,8,8,15,9,9,9,15,0,0}},{'7',4,{15,1,1,1,2,2,2,2,0,0}},{'8',4,{15,9,9,15,9,9,9,15,0,0}},{'9',4,{15,9,9,15,1,1,1,15,0,0}},
+  {':',1,{0,1,0,0,0,0,1,0,0,0}},{'A',4,{6,9,9,15,9,9,9,9,0,0}},{'P',4,{14,9,9,14,8,8,8,8,0,0}},{'+',3,{0,0,2,7,2,0,0,0,0,0}},{'-',3,{0,0,0,7,0,0,0,0,0,0}},
+  {'?',4,{14,1,1,6,4,4,0,4,0,0}},{' ',1,{0,0,0,0,0,0,0,0,0,0}}
+};
+static const Tiny TINY_HUGE[]={
+  {'0',5,{31,17,17,17,17,17,17,17,17,31}},{'1',5,{4,12,4,4,4,4,4,4,4,14}},{'2',5,{31,1,1,1,31,16,16,16,16,31}},{'3',5,{31,1,1,1,15,1,1,1,1,31}},{'4',5,{17,17,17,17,31,1,1,1,1,1}},
+  {'5',5,{31,16,16,16,31,1,1,1,1,31}},{'6',5,{31,16,16,16,31,17,17,17,17,31}},{'7',5,{31,1,1,1,1,2,2,2,2,2}},{'8',5,{31,17,17,17,31,17,17,17,17,31}},{'9',5,{31,17,17,17,31,1,1,1,1,31}},
+  {':',1,{0,0,1,0,0,0,0,1,0,0}},{'A',5,{14,17,17,17,31,17,17,17,17,17}},{'P',5,{30,17,17,17,30,16,16,16,16,16}},{'+',5,{0,0,4,4,31,4,4,0,0,0}},{'-',5,{0,0,0,0,31,0,0,0,0,0}},
+  {'?',5,{30,1,1,1,6,4,4,4,0,4}},{' ',1,{0,0,0,0,0,0,0,0,0,0}}
 };
 static const Tiny *tiny(char c,int size){
-  static const Tiny *const SETS[]={TINY_SMALL,TINY_MEDIUM,TINY_LARGE,TINY_XLARGE,TINY_WIDE};
+  static const Tiny *const SETS[]={TINY_SMALL,TINY_MEDIUM,TINY_LARGE,TINY_XLARGE,TINY_WIDE,TINY_HUGE};
   const Tiny *set=SETS[size];int n=sizeof(TINY_LARGE)/sizeof(TINY_LARGE[0]);
   for(int i=0;i<n;i++)if(set[i].c==c)return &set[i];
   return &set[15];
@@ -137,11 +143,13 @@ static int outward(int c,int lo,int hi,int16_t *out){
   return n;
 }
 static int gap(int c,int lo,int hi){return c<lo?lo-c:c>hi?c-hi:0;}
-typedef struct {const uint8_t *taken;const Box *g;int n,x,y,px,py;const MapRect *own;const MapMarker *markers;int marker_count;bool ok;} RouteCheck;
+typedef struct {const uint8_t *taken,*wires;const Box *g;int n,x,y,px,py;const MapRect *own;const MapMarker *markers;int marker_count;bool ok;} RouteCheck;
 static void check_route(void *context,int x,int y){
   RouteCheck *c=context;
-  // Inside its own clearing or hull, a leader only has to miss the other glyphs.
+  // Inside its own clearing or hull, a leader only has to miss the other glyphs
+  // and the leaders already drawn (with a pixel between).
   if(x>=c->own->x0&&x<=c->own->x1&&y>=c->own->y0&&y<=c->own->y1){
+    if(x>=0&&y>=0&&x<MAP_TIMES_W&&y<MAP_TIMES_H&&bit(c->wires,x,y)){c->ok=false;return;}
     for(int k=0;k<c->marker_count;k++){const MapMarker *m=&c->markers[k];
       if((m->x!=c->px||m->y!=c->py)&&iabs(x-m->x)<=m->half+1&&iabs(y-m->y)<=m->half+1){c->ok=false;return;}}
     return;
@@ -151,7 +159,7 @@ static void check_route(void *context,int x,int y){
 }
 static void mark_route(void *context,int x,int y){for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++)set_bit(context,x+dx,y+dy);}
 #define MAX_ROUTES 48
-static void place_one(const MapTimePlace *p,const uint8_t *blocked,uint8_t *taken,bool turn,const MapMarker *markers,int marker_count,int size,MapTimeSpot *best){
+static void place_one(const MapTimePlace *p,const uint8_t *blocked,uint8_t *taken,uint8_t *wires,bool turn,const MapMarker *markers,int marker_count,int size,MapTimeSpot *best){
   best->ok=false;
   for(uint8_t orientation=MAP_TIME_H;orientation<=(turn?MAP_TIME_V:MAP_TIME_H);orientation++){
     Box g[MAP_TIME_TEXT];int total=tiny_width(p->template_text,size),n=layout(p->template_text,orientation,total,size,g),bw=0,bh=0;
@@ -181,7 +189,7 @@ static void place_one(const MapTimePlace *p,const uint8_t *blocked,uint8_t *take
         if(!nr||(best->ok&&routes[0].cost+penalty>=best->cost))continue;
         for(int r=0;r<nr;r++){
           if(best->ok&&routes[r].cost+penalty>=best->cost)break;
-          RouteCheck c={taken,g,n,x,y,p->x,p->y,&p->own,markers,marker_count,true};map_time_route(routes[r].points,check_route,&c);
+          RouteCheck c={taken,wires,g,n,x,y,p->x,p->y,&p->own,markers,marker_count,true};map_time_route(routes[r].points,check_route,&c);
           if(c.ok){best->ok=true;best->orientation=orientation;best->x=x;best->y=y;best->cost=routes[r].cost+penalty;best->total=total;best->size=size;
             memcpy(best->points,routes[r].points,sizeof(best->points));break;}
         }
@@ -193,19 +201,26 @@ static void place_one(const MapTimePlace *p,const uint8_t *blocked,uint8_t *take
   for(int i=0;i<n;i++)for(int yy=best->y+g[i].y-MARGIN;yy<best->y+g[i].y+g[i].h+MARGIN;yy++)
     for(int xx=best->x+g[i].x-MARGIN;xx<best->x+g[i].x+g[i].w+MARGIN;xx++)set_bit(taken,xx,yy);
   map_time_route(best->points,mark_route,taken);
+  map_time_route(best->points,mark_route,wires);
 }
 static const uint8_t ORDERS[6][3]={{0,1,2},{0,2,1},{1,0,2},{1,2,0},{2,0,1},{2,1,0}};
 static void arrange(const uint8_t *blocked,const MapTimePlace places[3],const MapRect *obstacles,int obstacle_count,
   const MapMarker *markers,int marker_count,bool turn,uint8_t *taken,int size,MapTimeSpot out[3]){
   int32_t best_total=INT32_MAX;
+  // Leaders placed so far, a pixel wide either side. Static: Pebble app stacks are small.
+  static uint8_t wires[MAP_TIMES_MASK_BYTES];
   for(int o=0;o<6;o++){
-    memset(taken,0,MAP_TIMES_MASK_BYTES);
+    memset(taken,0,MAP_TIMES_MASK_BYTES);memset(wires,0,MAP_TIMES_MASK_BYTES);
     for(int i=0;i<3;i++)if(places[i].present)for(int dy=-HALO;dy<=HALO;dy++)for(int dx=-HALO;dx<=HALO;dx++)set_bit(taken,places[i].x+dx,places[i].y+dy);
     for(int k=0;k<obstacle_count;k++)for(int y=obstacles[k].y0;y<=obstacles[k].y1;y++)for(int x=obstacles[k].x0;x<=obstacles[k].x1;x++)set_bit(taken,x,y);
     MapTimeSpot result[3]={{0}};int32_t total=0;
     // An order already costing at least the best so far cannot win.
+    // A time that does not fit at the chosen size steps down a size at a time
+    // rather than going missing.
     for(int k=0;k<3&&total<best_total;k++){int i=ORDERS[o][k];if(!places[i].present)continue;
-      place_one(&places[i],blocked,taken,turn,markers,marker_count,size,&result[i]);total+=result[i].ok?result[i].cost:10000;}
+      for(int s=size;s>=0&&!result[i].ok;s--)place_one(&places[i],blocked,taken,wires,turn,markers,marker_count,s,&result[i]);
+      // Each size stepped down costs 1000, so it wins only when the chosen size cannot fit.
+      total+=result[i].ok?result[i].cost+1000*(size-result[i].size):10000;}
     if(total<best_total){best_total=total;memcpy(out,result,sizeof(result));}
   }
 }

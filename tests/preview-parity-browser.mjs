@@ -13,7 +13,9 @@ const cases={
   'default, 12-hour':{format:2},
   'place icons off':{theme:theme('High Visibility'),format:2,placeIcons:false},
   'tall times beside the clock, 24-hour':{format:1,zoneTimes:'always',zonePosition:'left',zoneTimesTall:true},
-  'clock below the map, nameplate on':{format:2,time:[0,134],map:[0,24],nameplate:true}
+  'clock below the map, nameplate on':{format:2,time:[0,134],map:[0,24],nameplate:true},
+  'times on the map, largest size, turned':{format:2,zoneTimes:'always',zonePosition:'map',mapTimeSize:'huge',mapTimesTurn:true},
+  'times on the map, wide, 24-hour, dotted background':{format:1,zoneTimes:'always',zonePosition:'map',mapTimeSize:'wide',mapBackground:'lines'}
 };
 const browser=await chromium.launch(),errors=[];
 try{

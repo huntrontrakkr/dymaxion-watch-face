@@ -107,3 +107,8 @@ test('theme panel colors reach the watch while old and new custom colors survive
   custom.footer.colorMode='theme';assert.equal(panelColors(custom).tide,THEMES[13].panelColors.tide);
   custom.footer.colorMode='invalid';assert.throws(()=>validateSettings(custom,zoneExists),/colorMode/);
 });
+test('panel guides stay visible: every palette\'s edge color stands off its background',()=>{
+  // The edge color draws the calendar's weekday letters, the chart's night
+  // shading and daylight strip, and the chart axes.
+  for(const t of THEMES.filter(t=>!t.hidden))assert(contrast(t.edge,t.bg)>=2.3,`${t.name}: edge ${t.edge} on ${t.bg} (${contrast(t.edge,t.bg).toFixed(2)})`);
+});

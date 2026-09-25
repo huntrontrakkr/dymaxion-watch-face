@@ -185,9 +185,12 @@ Chamfer or a system font (styles 4–9); Broad and Span fill the strip. On the
 map, the watch places each time itself (`map_times.c`, mirrored by
 `shared/map-times.js`) whenever places, the clock format, turning or a place's
 day-offset reservation change; nothing extra travels from the phone. Labels
-use the figure size chosen in Map time size: 3×5, 3×6 (the default), 3×7, 3×8
-or 4×8 pixels, carried in byte 3 bits 2–4 (0 medium, 1 small, 2 large, 3 extra
-large, 4 wide; older packets read as medium). Every label uses it and goes wherever it fits. Byte 3 bit 5 draws the place times beside the clock in
+use the figure size chosen in Map time size: 3×5, 3×6 (the default), 3×7, 3×8,
+4×8 or 5×10 pixels, carried in byte 3 bits 2–4 (0 medium, 1 small, 2 large, 3 extra
+large, 4 wide, 5 largest; older packets read as medium). Every label uses it where it fits;
+a label with no room steps down one size at a time rather than going missing. Labels and
+leaders are outlined in the background colour, and a leader keeps a pixel clear of other
+leaders even inside a group's clearing. Byte 3 bit 5 draws the place times beside the clock in
 tall figures, 6×10 pixels on rows 13 apart, instead of the 7-pixel capitals
 (`zone_tall_draw` in `zone_column.c`); labels, A/P and day offsets stay in the
 capitals, each a pixel closer so a 12-hour row with a day offset still fits.
