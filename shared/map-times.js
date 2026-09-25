@@ -1,9 +1,12 @@
-// Place times on the map: a tiny 3×5 pixel figure set, placed in the nearest
+// Place times on the map: tiny 3×6 (or, when crowded, 3×5) pixel figures, placed in the nearest
 // open gap of the unfolded net and joined to the place's glyph by an outlined
 // leader of flat and 45° runs with sharp corners. The watch runs the same
 // steps in watchface/src/c/map_times.c; tests compare the two.
-export const TINY_HEIGHT = 5;
-export const TINY_GLYPHS = Object.freeze({
+// Two sizes: 3×6 figures when every label fits comfortably, 3×5 when the
+// arrangement is crowded (placeMapTimes picks; every label shares a size).
+export const MAP_TIME_SMALL = 0, MAP_TIME_LARGE = 1;
+export const TINY_FONTS = Object.freeze([
+  {height: 5, glyphs: Object.freeze({
   '0': ['###', '#.#', '#.#', '#.#', '###'], '1': ['.#.', '##.', '.#.', '.#.', '###'],
   '2': ['###', '..#', '###', '#..', '###'], '3': ['###', '..#', '.##', '..#', '###'],
   '4': ['#.#', '#.#', '###', '..#', '..#'], '5': ['###', '#..', '###', '..#', '###'],
@@ -11,11 +14,24 @@ export const TINY_GLYPHS = Object.freeze({
   '8': ['###', '#.#', '###', '#.#', '###'], '9': ['###', '#.#', '###', '..#', '###'],
   ':': ['.', '#', '.', '#', '.'], 'A': ['.#.', '#.#', '###', '#.#', '#.#'], 'P': ['##.', '#.#', '##.', '#..', '#..'],
   '+': ['...', '.#.', '###', '.#.', '...'], '-': ['...', '...', '###', '...', '...'], '?': ['##.', '..#', '.#.', '...', '.#.'], ' ': ['.', '.', '.', '.', '.']
-});
+})},
+  {height: 6, glyphs: Object.freeze({
+  '0': ['###', '#.#', '#.#', '#.#', '#.#', '###'], '1': ['.#.', '##.', '.#.', '.#.', '.#.', '###'],
+  '2': ['###', '..#', '..#', '###', '#..', '###'], '3': ['###', '..#', '.##', '..#', '..#', '###'],
+  '4': ['#.#', '#.#', '#.#', '###', '..#', '..#'], '5': ['###', '#..', '###', '..#', '..#', '###'],
+  '6': ['###', '#..', '###', '#.#', '#.#', '###'], '7': ['###', '..#', '..#', '.#.', '.#.', '.#.'],
+  '8': ['###', '#.#', '###', '#.#', '#.#', '###'], '9': ['###', '#.#', '#.#', '###', '..#', '###'],
+  ':': ['.', '#', '.', '.', '#', '.'], 'A': ['.#.', '#.#', '#.#', '###', '#.#', '#.#'],
+  'P': ['##.', '#.#', '#.#', '##.', '#..', '#..'], '+': ['...', '.#.', '###', '.#.', '...', '...'],
+  '-': ['...', '...', '###', '...', '...', '...'], '?': ['##.', '..#', '..#', '.#.', '...', '.#.'],
+  ' ': ['.', '.', '.', '.', '.', '.']
+})}
+]);
+export const TINY_GLYPHS = TINY_FONTS[MAP_TIME_LARGE].glyphs, TINY_HEIGHT = TINY_FONTS[MAP_TIME_LARGE].height;
 export const TINY_CHARS = '0123456789:AP+-? ';
 export const MAP_TIME_ORIENTATIONS = ['horizontal', 'turn'];
 const H = 0, V = 1, HALO = 3, MARGIN = 1, TURN_PENALTY = 20, TIME_GLYPHS = 5;
-export const tinyWidth = text => [...text].reduce((w, c, i) => w + TINY_GLYPHS[c][0].length + (i ? 1 : 0), 0);
+export const tinyWidth = (text, size = MAP_TIME_LARGE) => [...text].reduce((w, c, i) => w + TINY_FONTS[size].glyphs[c][0].length + (i ? 1 : 0), 0);
 // The text a place shows, and the widest it can get (its placement template):
 // HH:MM, A/P in 12-hour time, and a day offset when its offset differs from
 // the watch's, so the label never outgrows its gap.
@@ -28,19 +44,21 @@ export const mapTimeTemplate = (clock24, reserveDay) => '00:00' + (clock24 ? '' 
 // Glyph boxes relative to the label origin. Turned labels read bottom to top;
 // `total` (the template's width) keeps the first figure in place when the text
 // is shorter than its template.
-export function tinyLayout(text, orientation, total = tinyWidth(text)) {
-  const glyphs = [];let x = 0;
+export function tinyLayout(text, orientation, total, size = MAP_TIME_LARGE) {
+  total ??= tinyWidth(text, size);
+  const glyphs = [], {height, glyphs: set} = TINY_FONTS[size];let x = 0;
   for (const c of text) {
-    const g = TINY_GLYPHS[c], w = g[0].length;
-    glyphs.push(orientation === V ? {x: 0, y: total - x - w, w: TINY_HEIGHT, h: w, c} : {x, y: 0, w, h: TINY_HEIGHT, c});
+    const g = set[c], w = g[0].length;
+    glyphs.push(orientation === V ? {x: 0, y: total - x - w, w: height, h: w, c} : {x, y: 0, w, h: height, c});
     x += w + 1;
   }
   return glyphs;
 }
-export function tinyPixels(text, orientation, total = tinyWidth(text)) {
+export function tinyPixels(text, orientation, total, size = MAP_TIME_LARGE) {
+  total ??= tinyWidth(text, size);
   const out = [];
-  for (const g of tinyLayout(text, orientation, total)) {
-    const rows = TINY_GLYPHS[g.c], w = rows[0].length;
+  for (const g of tinyLayout(text, orientation, total, size)) {
+    const rows = TINY_FONTS[size].glyphs[g.c], w = rows[0].length;
     rows.forEach((row, py) => [...row].forEach((p, px) => { if (p === '#') out.push(orientation === V ? [g.x + py, g.y + w - 1 - px] : [g.x + px, g.y + py]); }));
   }
   return out;
@@ -55,17 +73,20 @@ export function tinyPixels(text, orientation, total = tinyWidth(text)) {
 // a shorter run would read as a minus sign).
 export const EXITS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const EXIT_DISTANCE = HALO + 1;
-function ports(text, orientation, total, x, y) {
-  const glyphs = tinyLayout(text, orientation, total), out = [], timeOnly = text.length === TIME_GLYPHS;
+// Where leaders attach: the label's middle row, and a figure's centre column.
+const centre = w => (w - 1) >> 1;
+function ports(text, orientation, total, x, y, size) {
+  const glyphs = tinyLayout(text, orientation, total, size), out = [], timeOnly = text.length === TIME_GLYPHS;
+  const height = TINY_FONTS[size].height, MID = centre(height);
   const last = glyphs[TIME_GLYPHS - 1];
   if (orientation === H) {
-    out.push({p: [x - 2, y + 2], d: [1, 0], end: true});
-    if (timeOnly) out.push({p: [x + last.x + last.w + 1, y + 2], d: [-1, 0], end: true});
-    glyphs.slice(0, TIME_GLYPHS).forEach(g => { if (g.c === ':') return; out.push({p: [x + g.x + 1, y - 2], d: [0, 1]}, {p: [x + g.x + 1, y + TINY_HEIGHT + 1], d: [0, -1]}); });
+    out.push({p: [x - 2, y + MID], d: [1, 0], end: true});
+    if (timeOnly) out.push({p: [x + last.x + last.w + 1, y + MID], d: [-1, 0], end: true});
+    glyphs.slice(0, TIME_GLYPHS).forEach(g => { if (g.c === ':') return; out.push({p: [x + g.x + centre(g.w), y - 2], d: [0, 1]}, {p: [x + g.x + centre(g.w), y + height + 1], d: [0, -1]}); });
   } else {
-    out.push({p: [x + 2, y + glyphs[0].y + glyphs[0].h + 1], d: [0, -1], end: true});
-    if (timeOnly) out.push({p: [x + 2, y + last.y - 2], d: [0, 1], end: true});
-    glyphs.slice(0, TIME_GLYPHS).forEach(g => { if (g.c === ':') return; out.push({p: [x - 2, y + g.y + 1], d: [1, 0]}, {p: [x + TINY_HEIGHT + 1, y + g.y + 1], d: [-1, 0]}); });
+    out.push({p: [x + MID, y + glyphs[0].y + glyphs[0].h + 1], d: [0, -1], end: true});
+    if (timeOnly) out.push({p: [x + MID, y + last.y - 2], d: [0, 1], end: true});
+    glyphs.slice(0, TIME_GLYPHS).forEach(g => { if (g.c === ':') return; out.push({p: [x - 2, y + g.y + centre(g.h)], d: [1, 0]}, {p: [x + height + 1, y + g.y + centre(g.h)], d: [-1, 0]}); });
   }
   return out;
 }
@@ -108,12 +129,12 @@ export function outward(c, lo, hi) {
 // rows then columns outward from the glyph; the cheapest (5 × the longer
 // leader leg plus 2 × the shorter, plus 20 for a turned label) wins, first
 // found on ties. Returns the placement or null, and marks it taken.
-function placeOne(p, taken, blocked, width, height, turn, markers) {
+function placeOne(p, taken, blocked, width, height, turn, markers, size) {
   const mark = (x, y) => { if (x >= 0 && y >= 0 && x < width && y < height) taken[y * width + x] = 1; };
   const open = (x, y) => x >= 0 && y >= 0 && x < width && y < height && !taken[y * width + x] && !blocked(x, y);
   let best = null;
   for (const orientation of turn ? [H, V] : [H]) {
-    const total = tinyWidth(p.template), glyphs = tinyLayout(p.template, orientation, total);
+    const total = tinyWidth(p.template, size), glyphs = tinyLayout(p.template, orientation, total, size);
     const bw = Math.max(...glyphs.map(g => g.x + g.w)), bh = Math.max(...glyphs.map(g => g.y + g.h));
     const xs = outward(p.x - (bw >> 1), MARGIN, width - MARGIN - bw), ys = outward(p.y - (bh >> 1), MARGIN, height - MARGIN - bh);
     const penalty = orientation === V ? TURN_PENALTY : 0;
@@ -132,7 +153,7 @@ function placeOne(p, taken, blocked, width, height, turn, markers) {
         if (!fits) continue;
         // Candidate routes, cheapest first (exits, then ports, in order on ties).
         const routes = [];
-        for (const e of EXITS) for (const port of ports(p.template, orientation, total, x, y)) {
+        for (const e of EXITS) for (const port of ports(p.template, orientation, total, x, y, size)) {
           const r = leaderRoute([p.x, p.y], e, port);
           if (r) routes.push(r);
         }
@@ -154,10 +175,10 @@ function placeOne(p, taken, blocked, width, height, turn, markers) {
     }
   }
   if (!best) return null;
-  for (const g of tinyLayout(p.template, best.orientation))
+  for (const g of tinyLayout(p.template, best.orientation, tinyWidth(p.template, size), size))
     for (let yy = best.y + g.y - MARGIN; yy < best.y + g.y + g.h + MARGIN; yy++) for (let xx = best.x + g.x - MARGIN; xx < best.x + g.x + g.w + MARGIN; xx++) mark(xx, yy);
   for (const [px, py] of routePixels(best.points)) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) mark(px + dx, py + dy);
-  return {...best, template: p.template, total: tinyWidth(p.template)};
+  return {...best, template: p.template, total: tinyWidth(p.template, size), size};
 }
 // Every order of the places is tried (at most six); the arrangement with the
 // lowest total cost wins, a missing label costing 10000, first order on ties.
@@ -168,7 +189,16 @@ function placeOne(p, taken, blocked, width, height, turn, markers) {
 // location's clearing, group hulls) and `markers` every glyph {x, y, half},
 // which leaders crossing a hull must miss.
 export const MAP_TIME_ORDERS = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
-export function placeMapTimes(places, blocked, width, height, {turn = false, obstacles = [], markers = []} = {}) {
+// The large figures are kept when every label finds a gap with a leader of
+// ordinary length (cost under COMFORTABLE, about 55 pixels); otherwise the
+// whole arrangement uses the small figures.
+export const COMFORTABLE = 280;
+export function placeMapTimes(places, blocked, width, height, options = {}) {
+  const large = arrange(places, blocked, width, height, options, MAP_TIME_LARGE);
+  const fits = places.every((p, i) => !p || (large[i] && large[i].cost < COMFORTABLE));
+  return fits ? large : arrange(places, blocked, width, height, options, MAP_TIME_SMALL);
+}
+function arrange(places, blocked, width, height, {turn = false, obstacles = [], markers = []}, size) {
   let best = null;
   for (const order of MAP_TIME_ORDERS) {
     const taken = new Uint8Array(width * height), result = [null, null, null];
@@ -177,7 +207,7 @@ export function placeMapTimes(places, blocked, width, height, {turn = false, obs
     for (const o of obstacles) clear(o);
     let total = 0;
     // An order already costing at least the best so far cannot win.
-    for (const i of order) if (places[i] && (!best || total < best.total)) { result[i] = placeOne(places[i], taken, blocked, width, height, turn, markers); total += result[i] ? result[i].cost : 10000; }
+    for (const i of order) if (places[i] && (!best || total < best.total)) { result[i] = placeOne(places[i], taken, blocked, width, height, turn, markers, size); total += result[i] ? result[i].cost : 10000; }
     if (!best || total < best.total) best = {total, result};
   }
   return best.result.slice(0, places.length);

@@ -580,7 +580,7 @@ static void draw_map_times(GContext *ctx,time_t now,const struct tm *local,int m
     map_time_route(s->points,map_pixel,&line);
     int delta;bool stale;struct tm zone=zone_time(z,now,local,&delta,&stale);char text[MAP_TIME_TEXT];
     map_time_text(text,zone.tm_hour,zone.tm_min,is_24(),delta,stale);
-    map_time_pixels(text,s->orientation,s->total,s->x,s->y,map_pixel,&label);
+    map_time_pixels(text,s->orientation,s->total,s->size,s->x,s->y,map_pixel,&label);
   }
 }
 // The bottom band shows the place times: the zones page (or no panels), with

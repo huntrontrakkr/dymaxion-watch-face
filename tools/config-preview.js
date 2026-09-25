@@ -56,7 +56,7 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
     labels.forEach((label,j)=>{if(!label)return;const {p,i}=enabled[j],t=times[i],color=markColor(p,s,i);
       for(const [x,y]of routePixels(label.points)){ctx.fillStyle=pal.bg;ctx.fillRect(mx+x-1,my+y-1,3,3);}
       ctx.fillStyle=color;for(const [x,y]of routePixels(label.points))ctx.fillRect(mx+x,my+y,1,1);
-      for(const [x,y]of tinyPixels(mapTimeText({hour:t.h,minute:t.m,clock24,delta:Math.round((t.day-local.day)/86400000)}),label.orientation,label.total))ctx.fillRect(mx+label.x+x,my+label.y+y,1,1);
+      for(const [x,y]of tinyPixels(mapTimeText({hour:t.h,minute:t.m,clock24,delta:Math.round((t.day-local.day)/86400000)}),label.orientation,label.total,label.size))ctx.fillRect(mx+label.x+x,my+label.y+y,1,1);
     });
   }
   spots.forEach((point,j)=>{const {p,i}=enabled[j];ctx.fillStyle=pal.bg;ctx.fillRect(mx+point.x-3,my+point.y-3,7,7);drawMarkerPixels(ctx,p.icon,mx+point.x,my+point.y,markColor(p,s,i));});

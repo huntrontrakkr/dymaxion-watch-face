@@ -184,7 +184,10 @@ Horizon) to make room, if its figures still clear the bottom panel by six. Besid
 Chamfer or a system font (styles 4–9); Broad and Span fill the strip. On the
 map, the watch places each time itself (`map_times.c`, mirrored by
 `shared/map-times.js`) whenever places, the clock format, turning or a place's
-day-offset reservation change; nothing extra travels from the phone. Byte 2 bit 1 turns the leading zero off (the first digit slot stays blank for
+day-offset reservation change; nothing extra travels from the phone. Labels
+use 3×6-pixel figures when every one finds a gap with a leader of ordinary
+length (about 55 pixels), and 3×5 figures for a crowded arrangement; all labels
+share one size. Byte 2 bit 1 turns the leading zero off (the first digit slot stays blank for
 hours under ten). Bit 1 is clear in every older packet, so the zero stays on. Byte 3 selects the
 map background: 0 none, 1 triangle points, 2 triangle lines, 3 fine triangle
 points (the lattice split twice). Background *n* is

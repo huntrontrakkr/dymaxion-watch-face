@@ -253,7 +253,7 @@ function drawMapTimes(now,local,mx,my,pal,markers){
     if(!s)return;const p=settings.places[i],ink=markColor(p,settings,i),{x0,y0,x1,y1}=markers.places[i].inner;
     for(const [x,y] of routePixels(s.points))if(x<x0||x>x1||y<y0||y>y1)px(x,y,ink);
     const there=moment(now).tz(p.tz),delta=Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000);
-    for(const [x,y] of tinyPixels(mapTimeText({hour:there.hours(),minute:there.minutes(),clock24,delta}),s.orientation,s.total))px(s.x+x,s.y+y,ink);
+    for(const [x,y] of tinyPixels(mapTimeText({hour:there.hours(),minute:there.minutes(),clock24,delta}),s.orientation,s.total,s.size))px(s.x+x,s.y+y,ink);
   });
 }
 function statusWidth(){return settings.moonIndicator?126:140;}

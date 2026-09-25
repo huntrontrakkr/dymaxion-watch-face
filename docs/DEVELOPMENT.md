@@ -229,7 +229,7 @@ both day/night land and water colors matched the RGB222 definitions in all
 | `shared/transitions.js` | Tray swipe and beside-the-clock transitions (mirrored by `transitions.c`) |
 | `shared/nameplate.js` | The optional Dymaxion nameplate (mirrored by `nameplate.c`) |
 | `shared/map-markers.js` | Close markers side by side (mirrored by `map_markers.c`) |
-| `shared/map-times.js` | Place times on the map: tiny figures, placement and leaders (mirrored by `map_times.c`) |
+| `shared/map-times.js` | Place times on the map: 3×6 figures (3×5 when crowded), placement and leaders (mirrored by `map_times.c`) |
 | `shared/city.js`, `tools/location-service.js` | City naming, hourly reverse geocoding and offline cache |
 | `shared/place-search.js`, `shared/extra-places.json` | City search, editable code suggestions and saved places |
 | `shared/panel-*`, `shared/calendar.js` | Panel controls, provider normalization, packet contract and preview |
