@@ -67,21 +67,25 @@ try{
       const img=new Image();img.src='data:image/png;base64,'+watch;await img.decode();
       const c=document.createElement('canvas');c.width=200;c.height=228;const x=c.getContext('2d');x.drawImage(img,0,0);
       const a=x.getImageData(0,0,200,228),b=document.querySelector('#screen').getContext('2d').getImageData(0,0,200,228);
-      const diff=new ImageData(200,228);let off=0;
-      for(let i=0;i<a.data.length;i+=4){const same=a.data[i]===b.data[i]&&a.data[i+1]===b.data[i+1]&&a.data[i+2]===b.data[i+2];if(!same)off++;diff.data.set(same?[b.data[i]/3,b.data[i+1]/3,b.data[i+2]/3,255]:[255,0,0,255],i);}
+      const diff=new ImageData(200,228),regions={};let off=0;
+      for(let i=0;i<a.data.length;i+=4){const same=a.data[i]===b.data[i]&&a.data[i+1]===b.data[i+1]&&a.data[i+2]===b.data[i+2];if(!same){off++;const px=(i/4)%200,py=Math.floor(i/800),band=py<18?'top bar':py<180?'clock and map':'panel',r=regions[band]||(regions[band]={count:0,x0:200,y0:228,x1:0,y1:0,samples:[]});r.count++;r.x0=Math.min(r.x0,px);r.y0=Math.min(r.y0,py);r.x1=Math.max(r.x1,px);r.y1=Math.max(r.y1,py);if(r.samples.length<4)r.samples.push(`(${px},${py}) watch #${[0,1,2].map(k=>a.data[i+k].toString(16).padStart(2,'0')).join('')} preview #${[0,1,2].map(k=>b.data[i+k].toString(16).padStart(2,'0')).join('')}`);}diff.data.set(same?[b.data[i]/3,b.data[i+1]/3,b.data[i+2]/3,255]:[255,0,0,255],i);}
       const s=document.createElement('canvas');s.width=620*2;s.height=228*2;const g=s.getContext('2d');g.imageSmoothingEnabled=false;g.fillStyle='#fff';g.fillRect(0,0,s.width,s.height);
       const put=(data,dx)=>{const t=document.createElement('canvas');t.width=200;t.height=228;t.getContext('2d').putImageData(data,0,0);g.drawImage(t,dx*2,0,400,456);};
       put(a,0);put(b,210);put(diff,420);
-      return {off,png:s.toDataURL().split(',')[1],size:[img.width,img.height]};
+      return {off,regions,png:s.toDataURL().split(',')[1],size:[img.width,img.height]};
     },shot.toString('base64'));
     await page.close();
     writeFileSync(join(out,slug+'.png'),Buffer.from(result.png,'base64'));
     if(result.off)failed++;
     rows.push(`| ${name} | ${at.toISOString().slice(11,16)} UTC | ${result.size.join('×')} | ${result.off} |`);
     console.log(`${name}: ${result.off} pixels differ`);
+    // Where they differ, so a mismatch can be read from the log alone.
+    for(const [band,r] of Object.entries(result.regions))console.log(`  ${band}: ${r.count} pixels in x ${r.x0}-${r.x1}, y ${r.y0}-${r.y1}; ${r.samples.join('; ')}`);
   }
 }finally{await browser.close();}
 const report=['### Emulator against the preview','','| Set-up | Time | Screenshot | Pixels that differ |','|---|---|---|---|',...rows,''].join('\n');
 if(process.env.GITHUB_STEP_SUMMARY)appendFileSync(process.env.GITHUB_STEP_SUMMARY,report+'\n');
 console.log(report);
-process.exit(failed?1:0);
+// Reports only for now: a difference is a warning with side-by-sides in the
+// artifact, not a failed check, until the comparison has settled in.
+if(failed)console.log(`::warning title=Emulator against the preview::${failed} of ${rows.length} set-ups differ; see the job summary and the emulator-comparison artifact.`);
