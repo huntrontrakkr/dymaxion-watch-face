@@ -127,7 +127,7 @@ jobs:
         run: |
           npm run dev -- --port 5173 --strictPort > /tmp/dymaxion-vite.log 2>&1 &
           for attempt in $(seq 1 30); do curl -fsS http://127.0.0.1:5173/ > /dev/null && break; sleep 1; done
-          (cd watchface && pebble install --emulator emery build/watchface.pbw)
+          (cd watchface && pebble install -vv --emulator emery build/watchface.pbw)
           node tests/emulator-parity.mjs
       - name: Keep the emulator comparison
         if: always()

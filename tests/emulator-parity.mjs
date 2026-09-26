@@ -18,8 +18,18 @@ mkdirSync(out,{recursive:true});
 const find=(dir,name)=>{for(const e of readdirSync(dir,{withFileTypes:true})){const p=join(dir,e.name);if(e.isDirectory()){const f=find(p,name);if(f)return f;}else if(e.name===name)return p;}return null;};
 const header=readFileSync(find('watchface/build','message_keys.auto.h'),'utf8');
 const KEY=Object.fromEntries([...header.matchAll(/MESSAGE_KEY_(\w+)\s+(\d+)/g)].map(m=>[m[1],m[2]]));
-const pebble=(...args)=>execFileSync('pebble',[...args,'--emulator','emery'],{cwd:'watchface',stdio:['ignore','pipe','inherit'],timeout:60000}).toString();
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+// pebble-tool respawns the phone simulator when it has stopped, which can take
+// a moment to accept connections: try each command a few times.
+const pebble=async(...args)=>{
+  for(let attempt=1;;attempt++){
+    try{return execFileSync('pebble',[...args,'--emulator','emery'],{cwd:'watchface',stdio:['ignore','pipe','inherit'],timeout:60000}).toString();}
+    catch(error){
+      if(attempt===4){try{console.log(readFileSync('/tmp/pb-emulator.json','utf8'));console.log(execFileSync('ps',['-eo','pid,stat,cmd']).toString().split('\n').filter(l=>/qemu|pypkjs/.test(l)).join('\n'));}catch{}throw error;}
+      console.log(`pebble ${args[0]} failed (attempt ${attempt}); retrying`);await sleep(5000);
+    }
+  }
+};
 const theme=name=>THEMES.findIndex(t=>t.name===name);
 const cases={
   'default':{},
@@ -28,7 +38,7 @@ const cases={
   'tides with highs and lows':{footer:{...defaults().footer,pages:['tide','zones'],home:'tide'}}
 };
 
-pebble('emu-battery','--percent','86');pebble('emu-bt-connection','--connected','yes');
+await pebble('emu-battery','--percent','86');await pebble('emu-bt-connection','--connected','yes');
 // Let the phone app's own start-up sync finish before sending ours.
 await sleep(15000);
 const browser=await chromium.launch(),rows=[];let failed=0;
@@ -42,9 +52,9 @@ try{
       const files={SETTINGS:encodeSettings(settings),FOOTER:encodeFooter(settings),DISPLAY:encodeDisplay(settings),PALETTE:encodePalette(settings)};
       if(settings.footer.pages.includes('tide'))files.TIDE=encodeEnvironment(sampleEnvironment(Date.now()).tide,'tide');
       const entries=Object.entries(files).map(([k,bytes])=>{const f=join(process.cwd(),out,`${slug}-${k}.bin`);writeFileSync(f,bytes);return `${KEY[k]}=${f}`;});
-      pebble('send-app-message','--bytes-file',...entries);
+      await pebble('send-app-message','--bytes-file',...entries);
       await sleep(4000);
-      const before=new Date();pebble('screenshot','--no-open','--no-correction',join(process.cwd(),out,slug+'-watch.png'));const after=new Date();
+      const before=new Date();await pebble('screenshot','--no-open','--no-correction',join(process.cwd(),out,slug+'-watch.png'));const after=new Date();
       if(Math.floor(+before/60000)===Math.floor(+after/60000)){shot=readFileSync(join(out,slug+'-watch.png'));at=before;}
     }
     if(!shot)throw new Error(name+': no capture within one minute');
