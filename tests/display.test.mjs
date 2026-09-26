@@ -30,6 +30,13 @@ test('display preferences migrate, validate, and travel separately from the stab
   assert.deepEqual([...encodeDisplay({...defaults(),zoneTimes:'always',zonePosition:'right'})],[3,4,24,0,0,22,7,10]);
   assert.deepEqual([...encodeDisplay({...defaults(),zoneTimes:'always',zonePosition:'map'})],[3,4,40,0,0,22,7,10]);
   assert.throws(()=>validateSettings({...s,zonePosition:'top'},zoneExists));
+  // Place times between the clock and the map: position 3 (bits 4-5).
+  assert.deepEqual([...encodeDisplay({...defaults(),zoneTimes:'always',zonePosition:'strip'})],[3,4,56,0,0,22,7,10]);
+  // The icosahedron: byte 3 bit 7 on, byte 4 bit 7 on the right; off by default.
+  assert.equal(defaults().clockArt,'none');
+  assert.deepEqual([...encodeDisplay({...defaults(),clockArt:'left'})],[3,4,36,128,0,22,7,10]);
+  assert.deepEqual([...encodeDisplay({...defaults(),clockArt:'right'})],[3,4,36,128,128,22,7,10]);
+  assert.throws(()=>validateSettings({...s,clockArt:'center'},zoneExists));
   assert.equal(defaults().nameplate,false,'the nameplate is off by default');
   assert.equal(defaults().mapTimeSize,'medium','map times use the 3×6 figures by default');
   assert.deepEqual(['small','medium','large','xlarge','wide','huge'].map(mapTimeSize=>encodeDisplay({...defaults(),mapTimeSize,mapBackground:'lines'})[3]),[2|4,2,2|8,2|12,2|16,2|20],'bits 2-4: 1 small, 0 medium, 2 large, 3 extra large, 4 wide');

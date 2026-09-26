@@ -19,7 +19,8 @@ import {BLUETOOTH_ROWS,SUN_ROWS,SUN_HALO_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS} f
 import {drawPixelRows} from '../shared/pixels.js';
 import {BACKGROUND_BITS} from '../shared/map-background.js';
 import {nameplateLayout,NAMEPLATE_ROWS,NAMEPLATE_HEIGHT} from '../shared/nameplate.js';
-import {zonesBeside,zonesOnMap,zoneColumn,zoneRow,zoneRowBaseline,tallPixels} from '../shared/zone-column.js';
+import {zonesBeside,zonesOnMap,zonesOnStrip,artBeside,besideSide,zoneColumn,zoneRow,zoneRowBaseline,tallPixels} from '../shared/zone-column.js';
+import {drawClockArt,drawZoneStrip} from '../shared/beside-render.js';
 import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,labelHull,hullRect,MAP_TIME_SIZES} from '../shared/map-times.js';
 import {layoutMarkers,markerClearance} from '../shared/map-markers.js';
 
@@ -51,7 +52,7 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
   const clock24=s.format===1||(s.format===0&&!new Intl.DateTimeFormat(undefined,{hour:'numeric'}).resolvedOptions().hour12);
   const local={h:now.getHours(),m:now.getMinutes(),day:Date.UTC(now.getFullYear(),now.getMonth(),now.getDate())};
   const times=s.places.map(p=>zoned(now,p.tz)),time=t=>`${hourText(clock24?t.h:t.h%12||12,s.leadingZero)}:${two(t.m)}`;
-  const panelZones=!s.footer.enabled||page==='zones',beside=zonesBeside(s,panelZones),onMap=zonesOnMap(s,panelZones);
+  const panelZones=!s.footer.enabled||page==='zones',beside=zonesBeside(s,panelZones),onMap=zonesOnMap(s,panelZones),strip=zonesOnStrip(s,panelZones),art=artBeside(s),side=besideSide(s);
   const enabled=s.places.map((p,i)=>({p,i})).filter(({p})=>p.on);
   const points=enabled.map(({p})=>{const [x,y]=map.project(p.lat,p.lon);return {x:Math.round(x),y:Math.round(y),half:2};});
   const spots=layoutMarkers(points,w,h);
@@ -71,18 +72,22 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
   }
   spots.forEach((point,j)=>{const {p,i}=enabled[j];drawPixelRows(ctx,MARKER_HALO_ROWS,mx+point.x-3,my+point.y-3,pal.bg);drawMarkerPixels(ctx,p.icon,mx+point.x,my+point.y,markColor(p,s,i));});
   const [tx,timeY]=s.time,[tw,th]=blockSize(s,'time');
-  const {plate,clockTop:ty}=s.nameplate?nameplateLayout({mapY:my,timeY,height:th,visible:228}):{plate:null,clockTop:timeY};
-  if(plate)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
+  // Place times between the clock and the map take the nameplate's place.
+  const {plate,clockTop:ty}=s.nameplate||strip?nameplateLayout({mapY:my,timeY,height:th,visible:228}):{plate:null,clockTop:timeY};
+  if(plate&&!strip)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
-  if(plate&&plate.y<ty+th&&plate.y+NAMEPLATE_HEIGHT>ty)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
+  if(plate&&!strip&&plate.y<ty+th&&plate.y+NAMEPLATE_HEIGHT>ty)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
+  if(plate&&strip)drawZoneStrip(ctx,plate.y,enabled.map(({p,i})=>({icon:p.icon,label:p.label,hour:times[i].h,minute:times[i].m,delta:Math.round((times[i].day-local.day)/86400000),color:markColor(p,s,i)})),{font:font.lining.small,clock24,ink:pal.ink,accent:pal.accent,bg:pal.bg});
   const cityName=s.location.mode==='manual'?s.location.name:city?.name||'YOUR CITY',ampm=now.getHours()<12?'AM':'PM';
   const date=`${['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()]} ${two(now.getDate())} ${['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][now.getMonth()]}`;
   // The clock as the workshop draws it, with AM/PM beside Chamfer when nothing
   // sits beside the clock.
-  drawFlipPixels(ctx,clockMask(time(local),s.clockDisplay),tx+(beside?zoneColumn(s.zonePosition).shift:0),ty+flipOffset(s.clockDisplay),{ink:pal.ink,background:pal.bg});
-  if(!beside&&s.clockDisplay==='chamfer'&&!clock24)drawBitmapText(ctx,font.lining.small,ampm,tx+167,ty+9,pal.accent);
+  // The column beside a narrow clock holds the place times, or else the icosahedron.
+  drawFlipPixels(ctx,clockMask(time(local),s.clockDisplay),tx+(beside||art?zoneColumn(side).shift:0),ty+flipOffset(s.clockDisplay),{ink:pal.ink,background:pal.bg});
+  if(art&&!beside)drawClockArt(ctx,side,tx,ty,pal.accent);
+  if(!beside&&!art&&s.clockDisplay==='chamfer'&&!clock24)drawBitmapText(ctx,font.lining.small,ampm,tx+167,ty+9,pal.accent);
   if(beside)enabled.forEach(({p,i},row)=>{
-    const t=times[i],r=zoneRow({label:p.label,hour:t.h,minute:t.m,clock24,delta:Math.round((t.day-local.day)/86400000),side:s.zonePosition,tall:s.zoneTimesTall},text=>[...text].reduce((n,c)=>n+(font.lining.small[c]||font.lining.small['?']).a,0)),base=ty+zoneRowBaseline(row,enabled.length,s.zoneTimesTall);
+    const t=times[i],r=zoneRow({label:p.label,hour:t.h,minute:t.m,clock24,delta:Math.round((t.day-local.day)/86400000),side,tall:s.zoneTimesTall},text=>[...text].reduce((n,c)=>n+(font.lining.small[c]||font.lining.small['?']).a,0)),base=ty+zoneRowBaseline(row,enabled.length,s.zoneTimesTall);
     drawBitmapText(ctx,font.lining.small,r.label,tx+r.labelX,base,markColor(p,s,i));
     if(s.zoneTimesTall){ctx.fillStyle=pal.ink;for(const [x,y] of tallPixels(r.time))ctx.fillRect(tx+r.timeX+x,base+y,1,1);}
     else drawBitmapText(ctx,font.lining.small,r.time,tx+r.timeX,base,pal.ink);
@@ -105,7 +110,7 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
   ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,18);
   // The status line as the workshop and watch build it: date, city, and AM/PM
   // unless the clock shows it (Chamfer, with nothing beside it).
-  const clockAmpm=s.clockDisplay==='chamfer'&&!beside;
+  const clockAmpm=s.clockDisplay==='chamfer'&&!beside&&!art;
   drawBitmapText(ctx,font.lining.small,clockCaption(date,cityName.toUpperCase(),clock24||clockAmpm?'':ampm,s.moonIndicator?126:140,t=>textWidth(font.lining.small,t),'  '),4,12,pal.accent);
   ctx.fillStyle=pal.bg;ctx.fillRect(130,0,70,18);
   if(s.moonIndicator)MOON_GLYPHS[moonFrame(now)].forEach((row,y)=>[...row].forEach((pixel,x)=>{if(pixel!=='.'){ctx.fillStyle=pixel==='#'?pal.ink:pal.moonShadow;ctx.fillRect(134+x,3+y,1,1);}}));

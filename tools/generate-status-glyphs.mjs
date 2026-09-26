@@ -1,4 +1,5 @@
 import {mkdirSync,writeFileSync} from 'node:fs';
+import {ICOSAHEDRON_ROWS,ICOSAHEDRON_WIDTH,ICOSAHEDRON_HEIGHT,clockArtSpot} from '../shared/clock-art.js';
 import {MOON_GLYPHS,MOON_FRAMES,MOON_NAMES,MOON_SIZE} from '../shared/moon.js';
 import {BLUETOOTH_ROWS,QUIET_ROWS,CHARGE_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS,SUN_ROWS,SUN_HALO_ROWS,SUN_SIZE,HERE_ROWS,HERE_HALO_ROWS,HERE_SIZE,PULSE_ROWS,PULSE_SIZE} from '../shared/status-glyphs.js';
 
@@ -23,6 +24,8 @@ writeFileSync('watchface/src/c/generated/status_glyphs.h',
   +`static const uint8_t BLUETOOTH_GLYPH[BLUETOOTH_HEIGHT] = {${bt}};\n`
   +`#define QUIET_WIDTH 10\n#define QUIET_HEIGHT 12\nstatic const uint16_t QUIET_GLYPH[QUIET_HEIGHT] = ${pixelRows(QUIET_ROWS)};\n`
   +`static const uint8_t CHARGE_GLYPH[7] = ${pixelRows(CHARGE_ROWS)};\n`
+  +`// The icosahedron beside a narrow clock (shared/clock-art.js), bit ${ICOSAHEDRON_WIDTH-1} the leftmost column.\n#define ICOSAHEDRON_WIDTH ${ICOSAHEDRON_WIDTH}\n#define ICOSAHEDRON_HEIGHT ${ICOSAHEDRON_HEIGHT}\n#define ICOSAHEDRON_LEFT_X ${clockArtSpot('left').x}\n#define ICOSAHEDRON_RIGHT_X ${clockArtSpot('right').x}\n#define ICOSAHEDRON_Y ${clockArtSpot('left').y}\n`
+  +`static const uint64_t ICOSAHEDRON_GLYPH[ICOSAHEDRON_HEIGHT] = {${ICOSAHEDRON_ROWS.map(row=>BigInt('0b'+row.replaceAll('.','0').replaceAll('#','1'))+'ull').join(',')}};\n`
   +`static const uint32_t DAY_NIGHT_GLYPHS[2][5] = {${DAY_NIGHT_ROWS.map(pixelRows).join(',')}};\n`
   +`static const uint32_t MARKER_HALO[7] = ${pixelRows(MARKER_HALO_ROWS)};\n`
   +`#define SUN_SIZE ${SUN_SIZE}\nstatic const uint32_t SUN_GLYPH[SUN_SIZE] = ${pixelRows(SUN_ROWS)};\nstatic const uint32_t SUN_HALO[SUN_SIZE+2] = ${pixelRows(SUN_HALO_ROWS)};\n`
@@ -43,4 +46,4 @@ writeFileSync('docs/screenshots/status-glyphs.svg',
   +`<g fill="#c9d0d8" font-family="sans-serif" font-size="8">${moonSamples}`
   +`<g transform="translate(258 91) scale(2)">${bluetooth}</g>`
   +`<text x="281" y="105">Bluetooth connected</text></g></svg>\n`);
-console.log('Pixel status masks: eight Moon phases, Bluetooth, Quiet Time, charging, day/night, marker halo, sun, your location and four pulse rings.');
+console.log('Pixel status masks: eight Moon phases, Bluetooth, Quiet Time, charging, the icosahedron, day/night, marker halo, sun, your location and four pulse rings.');

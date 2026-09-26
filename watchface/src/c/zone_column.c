@@ -4,10 +4,11 @@
 bool zone_column_fits(uint8_t style){return style>=4&&style<=9;}
 static bool elsewhere(uint8_t zone_times,bool panel_shows_zones){return zone_times==ZONE_TIMES_ALWAYS||(zone_times==ZONE_TIMES_WHEN_HIDDEN&&!panel_shows_zones);}
 bool zones_beside(uint8_t style,uint8_t zone_times,uint8_t position,bool panel_shows_zones){
-  if(position==ZONE_POSITION_MAP||!zone_column_fits(style))return false;
+  if(position>ZONE_POSITION_RIGHT||!zone_column_fits(style))return false;
   return elsewhere(zone_times,panel_shows_zones);
 }
 bool zones_on_map(uint8_t zone_times,uint8_t position,bool panel_shows_zones){return position==ZONE_POSITION_MAP&&elsewhere(zone_times,panel_shows_zones);}
+bool zones_on_strip(uint8_t zone_times,uint8_t position,bool panel_shows_zones){return position==ZONE_POSITION_STRIP&&elsewhere(zone_times,panel_shows_zones);}
 // Rows 14 pixels apart, centred on the figures (y 2-37 of the strip); tall
 // rows 13 apart, centred in y 2-38.
 int zone_row_baseline(int index,int count,bool tall){
@@ -58,4 +59,32 @@ void zone_row(ZoneRow *row,const char *label,int hour,int minute,bool clock24,in
   row->label[n]=0;
   while(n&&measure(row->label,font)>room)row->label[--n]=0;
   row->label_x=x;row->day_x=x+measure(row->label,font)+1-trim;
+}
+void zone_strip_entry(ZoneStripItem *item,const char *label,int hour,int minute,bool clock24,int delta,bool stale){
+  // 12-hour hours drop their leading zero here, to leave the labels room.
+  int h=clock24?hour%100:(hour%12?hour%12:12);
+  snprintf(item->time,sizeof(item->time),clock24?"%02d:%02d":"%d:%02d",h,minute%60);
+  snprintf(item->suffix,sizeof(item->suffix),"%s",clock24?"":hour<12?"A":"P");
+  if(stale)snprintf(item->day,sizeof(item->day),"?");
+  else if(delta)snprintf(item->day,sizeof(item->day),"%+d",delta>9?9:delta<-9?-9:delta);
+  else item->day[0]=0;
+  size_t n=0;for(;n<7&&label[n];n++)item->label[n]=(label[n]>='a'&&label[n]<='z')?label[n]-'a'+'A':label[n];
+  item->label[n]=0;
+}
+static int strip_size(const ZoneStripItem *e,ZoneMeasure measure,const void *font){
+  return 5+2+(e->label[0]?measure(e->label,font)+2:0)+zone_tall_width(e->time)+(e->suffix[0]?measure(e->suffix,font):0)+(e->day[0]?1+measure(e->day,font):0)-1;
+}
+static int strip_total(const ZoneStripItem *items,int n,ZoneMeasure measure,const void *font){int t=0;for(int i=0;i<n;i++)t+=strip_size(&items[i],measure,font);return t;}
+void zone_strip(ZoneStripItem *items,int n,ZoneMeasure measure,const void *font){
+  if(n<1)return;
+  // At least 4 pixels between places and 2 at each side.
+  if(strip_total(items,n,measure,font)+4*(n-1)>196)for(int i=0;i<n;i++)items[i].label[3]=0;
+  if(strip_total(items,n,measure,font)+4*(n-1)>196)for(int i=0;i<n;i++)items[i].label[0]=0;
+  int free=200-strip_total(items,n,measure,font),gap=free/(n+1),x=gap+((free-gap*(n+1))>>1);
+  for(int i=0;i<n;i++){
+    ZoneStripItem *e=&items[i];
+    e->glyph_x=x+2;e->label_x=x+7;e->time_x=e->label_x+(e->label[0]?measure(e->label,font)+2:0);
+    e->suffix_x=e->time_x+zone_tall_width(e->time);e->day_x=e->suffix_x+(e->suffix[0]?measure(e->suffix,font):0)+1;
+    x+=strip_size(e,measure,font)+gap;
+  }
 }

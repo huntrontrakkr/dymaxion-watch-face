@@ -84,6 +84,10 @@ static const uint8_t *power(void){return s_display+4;}
 static bool quiet(void){return quiet_time_is_active();}
 static int local_hour(void){time_t t=time(NULL);return localtime(&t)->tm_hour;}
 static uint8_t zone_position(void){return (s_display[2]>>4)&3;}
+// The icosahedron beside a narrow clock; the column beside the clock is on its
+// side whenever it is on, and place times beside the clock take its place.
+static bool art_on(void){return DISPLAY_ART(s_display)&&zone_column_fits(s_display[1]);}
+static bool beside_right(void){return art_on()?DISPLAY_ART_RIGHT(s_display):zone_position()==ZONE_POSITION_RIGHT;}
 
 static float fsin(float r) { return (float)sin_lookup((int32_t)(r*TRIG_MAX_ANGLE/6.283185307f))/TRIG_MAX_RATIO; }
 static float fcos(float r) { return (float)cos_lookup((int32_t)(r*TRIG_MAX_ANGLE/6.283185307f))/TRIG_MAX_RATIO; }
@@ -335,14 +339,24 @@ static void draw_meridiem(GContext *ctx,const char *ampm,int x,int baseline);
 static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int x,int y,int alpha);
 static void nameplate_pixel(void *context,int x,int y){graphics_draw_pixel(context,GPoint(x,y));}
 static void draw_nameplate(GContext *ctx,int x,int y){graphics_context_set_stroke_color(ctx,color(7));nameplate_pixels(x,y,nameplate_pixel,ctx);}
+static void draw_zone_strip(GContext *ctx,time_t now,const struct tm *local,int top);
+static void draw_clock_art(GContext *ctx,int x,int y,int alpha);
+static bool strip_on(int visible);
+// The nameplate's place: the nameplate, or the place times when they go there.
+static void draw_plate(GContext *ctx,time_t now,const struct tm *local,int visible,int x,int y){
+  if(strip_on(visible))draw_zone_strip(ctx,now,local,y);else draw_nameplate(ctx,x,y);
+}
 // Where the clock goes, and the Dymaxion nameplate when it is on and fits
 // (a clock below the map moves down to make room for it).
 // The clock strip's height: 40 pixels for Chamfer and the system fonts, 46 otherwise.
 static int clock_height(void){return s_display[1]>=4?40:46;}
+static bool zones_in_panel(int visible);
+// Place times between the clock and the map, in the nameplate's place.
+static bool strip_on(int visible){return zones_on_strip((s_display[2]>>2)&3,zone_position(),zones_in_panel(visible));}
 static int clock_layout(int visible,bool *plate,int *px,int *py){
   int h=clock_height();bool shown;int x,y;
   int top=nameplate_layout(s_settings[MAP_Y],s_settings[TIME_Y],h,visible,&shown,&x,&y);
-  if(!(s_display[2]&DISPLAY_NAMEPLATE)){shown=false;top=clock_top_for_visible(s_settings[TIME_Y],h,visible);}
+  if(!(s_display[2]&DISPLAY_NAMEPLATE)&&!strip_on(visible)){shown=false;top=clock_top_for_visible(s_settings[TIME_Y],h,visible);}
   if(plate){*plate=shown;if(shown){*px=x;*py=y;}}
   return top;
 }
@@ -383,7 +397,7 @@ static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
   // The strip is taller than the figures (46 pixels for Broad and Span), so it
   // can reach the nameplate; the nameplate goes back on top. It never touches
   // the figures themselves (nameplate.c keeps it clear of their ink).
-  if(plate&&py<y+h&&py+WORDMARK_HEIGHT>y)draw_nameplate(ctx,px,py);
+  if(plate&&py<y+h&&py+WORDMARK_HEIGHT>y)draw_plate(ctx,now,local,visible,px,py);
   char timebuf[8];int hour=local->tm_hour;if(!is_24()){hour%=12;if(!hour)hour=12;}
   const char *ampm=is_24()?"":(local->tm_hour<12?"AM":"PM");
   {
@@ -392,11 +406,14 @@ static void draw_time(GContext *ctx,struct tm *local,time_t now,int visible) {
     uint8_t digits[4]={timebuf[0]==' '?10:timebuf[0]-'0',timebuf[1]-'0',timebuf[3]-'0',timebuf[4]-'0'};
     // Beside the place times, the figures shift left and the column fills the right.
     // It glides over first; then the column fades in (the reverse on the way back).
-    int cx=x+beside_shift(s_beside_p,zone_clock_shift(zone_position()==ZONE_POSITION_RIGHT)),alpha=column_alpha(s_beside_p);
+    int cx=x+beside_shift(s_beside_p,zone_clock_shift(beside_right())),alpha=column_alpha(s_beside_p);
+    bool zones=zones_beside(s_display[1],(s_display[2]>>2)&3,zone_position(),zones_in_panel(visible));
     if(s_clock_face)draw_flip_time(ctx,local,now,cx,y);
     else if(s_display[1]>=5)draw_system_time(ctx,timebuf,cx,y);
     else draw_span_time(ctx,digits,cx,y);
-    if(alpha)draw_zone_column(ctx,now,local,x,y,alpha);
+    // The column shows the place times (fading with the glide), or else the icosahedron.
+    if(alpha&&art_on()&&!zones)draw_clock_art(ctx,x,y,alpha);
+    else if(alpha)draw_zone_column(ctx,now,local,x,y,alpha);
     // 12-hour Chamfer time carries AM/PM beside the figures, top-aligned with them.
     else if(!s_beside&&s_clock_face==&s_chamfer&&*ampm)draw_meridiem(ctx,ampm,x+167,y+9);
   }
@@ -479,7 +496,7 @@ static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int
     struct tm zone=zone_time(z,now,local,&delta,&stale);char label[8];
     snprintf(label,sizeof(label),"%.7s",(const char *)z);
     bool tall=DISPLAY_ZONE_TALL(s_display);
-    ZoneRow r;zone_row(&r,label,zone.tm_hour,zone.tm_min,is_24(),delta,stale,zone_position()==ZONE_POSITION_RIGHT,tall,caps_measure,s_caps);
+    ZoneRow r;zone_row(&r,label,zone.tm_hour,zone.tm_min,is_24(),delta,stale,beside_right(),tall,caps_measure,s_caps);
     int base=y+zone_row_baseline(row++,count,tall);
     CapsPen mark={ctx,faded(mark_color(i),alpha)},ink={ctx,faded(color(6),alpha)},accent={ctx,faded(color(7),alpha)};
     caps_draw(s_caps,r.label,x+r.label_x,base,false,caps_span,&mark);
@@ -487,6 +504,38 @@ static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int
     else caps_draw(s_caps,r.time,x+r.time_x,base,false,caps_span,&ink);
     caps_draw(s_caps,r.suffix,x+r.suffix_x,base,false,caps_span,&accent);
     caps_draw(s_caps,r.day,x+r.day_x,base,false,caps_span,&accent);
+  }
+}
+// The icosahedron (generated/status_glyphs.h), in the accent color, fading
+// with the column.
+static void draw_clock_art(GContext *ctx,int x,int y,int alpha){
+  graphics_context_set_stroke_color(ctx,faded(color(7),alpha));
+  int left=x+(beside_right()?ICOSAHEDRON_RIGHT_X:ICOSAHEDRON_LEFT_X);
+  for(int r=0;r<ICOSAHEDRON_HEIGHT;r++)for(int c=0;c<ICOSAHEDRON_WIDTH;c++)
+    if((ICOSAHEDRON_GLYPH[r]>>(ICOSAHEDRON_WIDTH-1-c))&1)graphics_draw_pixel(ctx,GPoint(left+c,y+ICOSAHEDRON_Y+r));
+}
+// Place times between the clock and the map (zone_column.c zone_strip): each
+// place's glyph and label in its color, the time in tall figures, A/P and the
+// day offset in the accent.
+static void draw_zone_strip(GContext *ctx,time_t now,const struct tm *local,int top){
+  if(!s_caps)return;
+  ZoneStripItem items[3];int index[3],n=0;
+  for(int i=0;i<3;i++){
+    if(!(s_settings[ENABLED]&(1<<i)))continue;
+    const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;int delta;bool stale;char label[8];
+    struct tm zone=zone_time(z,now,local,&delta,&stale);snprintf(label,sizeof(label),"%.7s",(const char *)z);
+    zone_strip_entry(&items[n],label,zone.tm_hour,zone.tm_min,is_24(),delta,stale);index[n++]=i;
+  }
+  graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(0,top,200,ZONE_STRIP_HEIGHT),0,GCornerNone);
+  zone_strip(items,n,caps_measure,s_caps);
+  int base=top+ZONE_STRIP_BASELINE;CapsPen ink={ctx,color(6)},accent={ctx,color(7)};
+  for(int k=0;k<n;k++){
+    const ZoneStripItem *e=&items[k];int i=index[k];CapsPen mark={ctx,mark_color(i)};
+    marker_glyph(ctx,GPoint(e->glyph_x,top+ZONE_STRIP_GLYPH_Y),s_settings[HEADER_SIZE+i*ZONE_SIZE+10],mark_color(i));
+    caps_draw(s_caps,e->label,e->label_x,base,false,caps_span,&mark);
+    graphics_context_set_stroke_color(ctx,ink.color);zone_tall_draw(e->time,e->time_x,base,tall_plot,ctx);
+    caps_draw(s_caps,e->suffix,e->suffix_x,base,false,caps_span,&accent);
+    caps_draw(s_caps,e->day,e->day_x,base,false,caps_span,&accent);
   }
 }
 // Place times on the map (map_times.c). Placement reruns only when the places,
@@ -668,7 +717,7 @@ static void draw_status_section(GContext *ctx,struct tm *local,time_t now){
 }
 static void update_beside(int visible){
   uint8_t when=(s_display[2]>>2)&3;
-  beside_update(s_caps&&zones_beside(s_display[1],when,zone_position(),zones_in_panel(visible)));
+  beside_update(s_caps&&(zones_beside(s_display[1],when,zone_position(),zones_in_panel(visible))||art_on()));
 }
 // An animation frame: only the clock strip and/or the tray, plus whatever a
 // full frame draws over them afterwards (the tray where a low clock reaches
@@ -730,7 +779,7 @@ static void update_proc(Layer *layer,GContext *ctx) {
   }
   // You: a bullseye one size up, in the clock's ink.
   // The Dymaxion nameplate, in the accent color, when there is room.
-  if(spots.plate)draw_nameplate(ctx,spots.plate_x,spots.plate_y);
+  if(spots.plate)draw_plate(ctx,now,&local,visible,spots.plate_x,spots.plate_y);
   if(spots.you>=0)pixel_rows(ctx,HERE_GLYPH,HERE_SIZE,HERE_SIZE,mx+spots.layout[spots.you].x-HERE_SIZE/2,my+spots.layout[spots.you].y-HERE_SIZE/2,color(6));
   update_beside(visible);
   draw_time(ctx,&local,now,visible);

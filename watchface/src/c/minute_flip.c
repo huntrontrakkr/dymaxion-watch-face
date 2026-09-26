@@ -13,7 +13,12 @@ static int slot_at(const ClockFace *f,int x){
 }
 
 static const uint8_t *broad_glyph(const ClockFace *f,int digit){(void)f;return CLOCK_GLYPHS[digit];}
-static uint16_t broad_owner(const ClockFace *f,int x,int y){(void)f;return CLOCK_OWNERS[y*CLOCK_WIDTH+x];}
+// Each row lists where its tile changes; a binary search finds the run.
+static uint16_t broad_owner(const ClockFace *f,int x,int y){
+  (void)f;int lo=CLOCK_OWNER_ROWS[y],hi=CLOCK_OWNER_ROWS[y+1]-1;
+  while(lo<hi){int mid=(lo+hi+1)/2;if(CLOCK_OWNER_X[mid]<=x)lo=mid;else hi=mid-1;}
+  return CLOCK_OWNER_ID[lo];
+}
 static void broad_cell(const ClockFace *f,int id,ClockCell *out){(void)f;*out=CLOCK_CELLS[id];}
 static void broad_colon(uint8_t *bits){
   for(int top=9;top<=23;top+=14)for(int y=0;y<8;y++){

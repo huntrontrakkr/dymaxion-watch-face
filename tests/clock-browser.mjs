@@ -159,6 +159,23 @@ try{
   await page.getByLabel('Map time size',{exact:true}).selectOption('large');
   assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).mapTimeSize,'large');
   await page.getByLabel('Map time size',{exact:true}).selectOption('medium');
+  // Between the clock and the map: the times take the nameplate's place.
+  await page.getByLabel('Place times',{exact:true}).selectOption('always');
+  await page.getByLabel('Place times position',{exact:true}).selectOption('strip');
+  assert.equal(await screen.getAttribute('data-zones-strip'),'true');assert.equal(await screen.getAttribute('data-nameplate'),'','no nameplate while the times are there');
+  const stripInk=await screen.evaluate(c=>Array.from(c.getContext('2d').getImageData(0,62,200,16).data).some((v,i)=>i%4!==3&&v>200));assert(stripInk,'the times are drawn in the band');
+  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).zonePosition,'strip');
+  await page.getByLabel('Place times',{exact:true}).selectOption('panel');
+  // The icosahedron beside the clock: the column on its side, off for Broad.
+  const artColumn=()=>screen.evaluate(c=>Array.from(c.getContext('2d').getImageData(0,22,72,40).data).join());
+  const noArt=await artColumn();
+  await page.getByLabel('Beside the clock',{exact:true}).selectOption('left');await page.clock.runFor(1500);
+  assert.notEqual(await artColumn(),noArt,'the icosahedron fills the left column');
+  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).clockArt,'left');
+  await page.getByLabel('Numerical display',{exact:true}).selectOption('broad');assert(await page.getByLabel('Beside the clock',{exact:true}).isDisabled(),'no room beside Broad');
+  await page.getByLabel('Numerical display',{exact:true}).selectOption('chamfer');
+  await page.getByLabel('Beside the clock',{exact:true}).selectOption('none');await page.clock.runFor(1500);
+  await page.getByLabel('Place times',{exact:true}).selectOption('always');
   await page.getByLabel('Place times position',{exact:true}).selectOption(where);await page.getByLabel('Place times',{exact:true}).selectOption(times);
   // Night saver: with the night covering every hour (same start and end), minute changes do not animate.
   await page.getByRole('tab',{name:'Character',exact:true}).click();
