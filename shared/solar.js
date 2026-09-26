@@ -23,6 +23,12 @@ const reduce=degrees=>degrees-360*Math.floor(degrees/360);
 // crosses -0.833 degrees (refraction plus the solar radius), as in almanacs.
 // Mirrored in watchface/src/c/solar.c.
 export const SUNRISE_SINE=Math.sin(-0.833*Math.PI/180);
+// Civil twilight ends when the sun's centre is 6 degrees below the horizon.
+export const CIVIL_TWILIGHT_SINE=Math.sin(-6*Math.PI/180);
+// The map's night side: day while the sun is up, a checkerboard through civil
+// twilight, then night. `light` is the sine of the sun's altitude there.
+// Mirrored in watchface/src/c/main.c rebuild_map().
+export const mapNight=(light,x,y)=>light<CIVIL_TWILIGHT_SINE||light<SUNRISE_SINE&&((x+y)&1)===1;
 export function sunUp(epoch,place){
   const s=sunDirection(new Date(epoch*1000));
   return s[0]*place[0]+s[1]*place[1]+s[2]*place[2]>=SUNRISE_SINE*Math.hypot(...place);

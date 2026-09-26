@@ -226,8 +226,9 @@ the seasons' declination and the equation of time both come out of it without
 inverse trigonometry. The watch (`solar.c`) computes it in single precision
 from whole days and seconds since J2000.0, and agrees with the preview
 (`shared/solar.js`) to about 0.002°. The same sun lights the map and gives the
-panels' sunrise and sunset. The map is still a visual solar clock, with
-quantized direction vectors and a dithered twilight boundary.
+panels' sunrise and sunset. On the map, land and sea are lit while the sun
+is up (its centre above -0.833°, as almanacs count sunrise), checkered through
+civil twilight, and dark once the sun is 6° below the horizon.
 
 ## Lunar indicator
 

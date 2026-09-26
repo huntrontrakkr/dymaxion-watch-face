@@ -10,7 +10,7 @@ import {defaults,THEMES,PLACES,PRESETS,activePreset,presetFor,withClockDisplay,v
 import {MARKERS,drawMarkerPixels} from '../shared/markers.js';
 import {makeMap,direction,dot,MAP_SIZE} from '../shared/map.js';
 import {BACKGROUND_BITS} from '../shared/map-background.js';
-import {sunDirection} from '../shared/solar.js';
+import {sunDirection,mapNight} from '../shared/solar.js';
 import {moonFrame,moonDescription,MOON_GLYPHS,MOON_SIZE} from '../shared/moon.js';
 import {BLUETOOTH_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS,SUN_ROWS,SUN_HALO_ROWS,HERE_ROWS,HERE_HALO_ROWS,PULSE_ROWS} from '../shared/status-glyphs.js';
 import {drawPixelRows,drawPixelLine} from '../shared/pixels.js';
@@ -221,8 +221,7 @@ function mapImage(now,pal,sun){
     const i=(y*w+x)*4,kind=data[i+3]&3;let c=0;
     if(kind){const light=(signed[i]*sun[0]+signed[i+1]*sun[1]+signed[i+2]*sun[2])/127;
       if(light>best){best=light;sunPoint=[x,y];}
-      let night=settings.dayNight&&light<0;
-      if(settings.dayNight&&Math.abs(light)<.05)night=(x+y)&1?light<.05:light<-.05;
+      const night=settings.dayNight&&mapNight(light,x,y);
       c=kind+(night?2:0);if(settings.edges&&(data[i+3]&4))c=5;
     }else if(data[i+3]&BACKGROUND_BITS[settings.mapBackground])c=5; // background dots in the edge colour
     img.data.set([...colors[c],255],i);

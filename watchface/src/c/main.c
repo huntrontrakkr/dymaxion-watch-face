@@ -96,6 +96,9 @@ static void sun_update(time_t now) {
   for(int i=0;i<3;i++)s_sun[i]=(int16_t)(1024*sun[i]);
 }
 static int32_t illumination(int8_t x,int8_t y,int8_t z) { return x*s_sun[0]+y*s_sun[1]+z*s_sun[2]; }
+// sin(-0.833 degrees) and sin(-6 degrees) in illumination's units (127 x 1024).
+#define MAP_SUNRISE -1891
+#define MAP_CIVIL_TWILIGHT -13594
 static bool custom_palette(void) { return palette_applies(s_palette,s_settings[THEME]); }
 static const uint8_t *palette(void) { return custom_palette()?s_palette+PAL_COLORS:PALETTES[s_settings[THEME]]; }
 static GColor color(int i) { return (GColor){.argb=palette()[i]}; }
@@ -118,8 +121,9 @@ static void rebuild_map(void) {
       if(kind) {
         int32_t light=illumination((int8_t)r[0],(int8_t)r[1],(int8_t)r[2]);
         if(light>closest){closest=light;s_sun_point=GPoint(x,y);}
-        bool night=(s_settings[FLAGS]&DAY_NIGHT)&&light<0;
-        if((s_settings[FLAGS]&DAY_NIGHT)&&light>-6500&&light<6500)night=((x+y)&1)?light<6500:light<-6500;
+        // Day while the sun is up, a checkerboard through civil twilight, then
+        // night (mapNight() in shared/solar.js).
+        bool night=(s_settings[FLAGS]&DAY_NIGHT)&&(light<MAP_CIVIL_TWILIGHT||(light<MAP_SUNRISE&&((x+y)&1)));
         c=p[kind+(night?2:0)];
         if((s_settings[FLAGS]&EDGES)&&(r[3]&4))c=p[5];
       }else if(DISPLAY_MAP_BACKGROUND(s_display)&&(r[3]&(4<<DISPLAY_MAP_BACKGROUND(s_display))))c=p[5]; // map background, in the edge colour
