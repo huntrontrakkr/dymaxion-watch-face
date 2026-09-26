@@ -106,10 +106,13 @@ try{
   assert.equal(await mobile.locator('#theme option').filter({hasText:'Hot Dog Stand'}).count(),0);
   // Power and motion on the phone: the night hours and dark pause wait for the night saver.
   assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isDisabled());
-  await mobile.getByLabel('Night saver',{exact:true}).check();assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isEnabled());
-  await mobile.getByLabel('Night saver',{exact:true}).uncheck();
-  await mobile.getByLabel('During Quiet Time',{exact:true}).check();assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isEnabled(),'Quiet Time alone can be the night');
-  await mobile.getByLabel('During Quiet Time',{exact:true}).uncheck();
+  const saver=mobile.getByLabel('Night saver',{exact:true});
+  assert.equal(await saver.inputValue(),'off');assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isDisabled());
+  await saver.selectOption('hours');assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isEnabled());assert(await mobile.getByLabel('Night saver from',{exact:true}).isEnabled());
+  // Quiet Time can be the night by itself, without any hours.
+  await saver.selectOption('quiet');assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isEnabled(),'Quiet Time alone can be the night');assert(await mobile.getByLabel('Night saver from',{exact:true}).isDisabled(),'no hours to choose');
+  await saver.selectOption('both');assert(await mobile.getByLabel('Night saver from',{exact:true}).isEnabled());
+  await saver.selectOption('off');
   for(let theme=4;theme<THEMES.length;theme++){
     if(!THEMES[theme].hidden){
       await mobile.locator('#theme').selectOption(String(theme));
