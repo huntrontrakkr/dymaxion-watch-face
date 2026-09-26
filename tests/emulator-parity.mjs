@@ -12,12 +12,13 @@ import {encodeFooter,encodeEnvironment} from '../shared/panel-protocol.js';
 import {encodeDisplay} from '../shared/display.js';
 import {encodePalette} from '../shared/palette-protocol.js';
 import {sampleEnvironment} from '../shared/panel-data.js';
+import {encodeCity} from '../shared/city.js';
 
 const base=process.env.PREVIEW_URL||'http://127.0.0.1:5173',out='test-results/emulator';
 mkdirSync(out,{recursive:true});
 // Message key numbers as the SDK assigned them for this build.
 const KEY=JSON.parse(readFileSync('watchface/build/js/message_keys.json','utf8'));
-for(const k of ['SETTINGS','FOOTER','DISPLAY','PALETTE','TIDE'])if(!Number.isInteger(KEY[k]))throw new Error('No message key for '+k);
+for(const k of ['SETTINGS','FOOTER','DISPLAY','PALETTE','TIDE','CITY'])if(!Number.isInteger(KEY[k]))throw new Error('No message key for '+k);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 // pebble-tool respawns the phone simulator when it has stopped, which can take
 // a moment to accept connections: try each command a few times.
@@ -35,7 +36,7 @@ const cases={
   'default':{},
   'place times between the clock and the map':{zoneTimes:'always',zonePosition:'strip'},
   'icosahedron beside the clock, battery gauge':{clockArt:'left',zoneTimes:'panel',batteryGauge:true,theme:theme('Paper')},
-  'tides with highs and lows':{footer:{...defaults().footer,pages:['tide','zones'],home:'tide'}}
+  'tides with highs and lows':{footer:{...defaults().footer,pages:['tide','zones'],home:'tide',tide:{...defaults().footer.tide,station:'8638610'}}}
 };
 
 await pebble('emu-battery','--percent','86');await pebble('emu-bt-connection','--connected','yes');
@@ -49,7 +50,9 @@ try{
     let shot,at;
     for(let attempt=0;attempt<3&&!shot;attempt++){
       while(new Date().getUTCSeconds()<8||new Date().getUTCSeconds()>40)await sleep(1000);
-      const files={SETTINGS:encodeSettings(settings),FOOTER:encodeFooter(settings),DISPLAY:encodeDisplay(settings),PALETTE:encodePalette(settings)};
+      // The city arrives in its own packet on the watch, as the phone app sends it;
+      // a typed-in name marks no position on the map.
+      const files={SETTINGS:encodeSettings(settings),FOOTER:encodeFooter(settings),DISPLAY:encodeDisplay(settings),PALETTE:encodePalette(settings),CITY:encodeCity({name:'Norfolk',manual:true})};
       if(settings.footer.pages.includes('tide'))files.TIDE=encodeEnvironment(sampleEnvironment(Date.now()).tide,'tide');
       const entries=Object.entries(files).map(([k,bytes])=>{const f=join(process.cwd(),out,`${slug}-${k}.bin`);writeFileSync(f,bytes);return `${KEY[k]}=${f}`;});
       await pebble('send-app-message','--bytes-file',...entries);
