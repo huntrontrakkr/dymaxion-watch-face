@@ -2,6 +2,10 @@ import {sampleHealth} from './health.js';
 import moment from 'moment-timezone';
 const HOUR=3600;
 export const SAMPLE_COUNT=49;
+// The shape of the weather and tide data the phone saves. Raise it whenever
+// normalizeForecast or normalizeTide changes what they keep, so an updated app
+// refetches instead of waiting out the old data's refresh interval.
+export const DATA_VERSION=2;
 // The most high and low tides a tide packet carries (two days hold eight or nine).
 export const TIDE_EVENTS=10;
 const number=(n,min,max)=>typeof n==='number'&&Number.isFinite(n)&&n>=min&&n<=max;
@@ -55,16 +59,20 @@ export function tideUrls(station,now=Date.now()){
   const base='https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=DymaxionWatch&format=json&time_zone=gmt&units=metric&datum=MLLW&station='+encodeURIComponent(station.station)+'&begin_date='+start+'&end_date='+end;
   return [base+'&interval=h',base+'&interval=hilo'];
 }
-// Clearly labelled workshop examples. These are never fetched or sent by the phone.
+// Workshop examples, for the preview and the store screenshots. These are
+// never fetched or sent by the phone.
 export function sampleEnvironment(now=Date.now()){
   const start=Math.floor(now/3600000)*HOUR,first=new Date(start*1000).getHours(),next=h=>start+((h-first+24)%24)*HOUR;
   // Keyed to the local clock hour: daylight 07-19, warmest mid-afternoon.
-  const weather={kind:'weather',start,fetched:Math.floor(now/1000),label:'TEMP',rise:next(7),set:next(19),riseMinute:6*60+42,setMinute:18*60+48,demo:true,error:false,
+  const weather={kind:'weather',start,fetched:Math.floor(now/1000),label:'TEMP',rise:next(7)-18*60,set:next(19)-12*60,riseMinute:6*60+42,setMinute:18*60+48,demo:true,error:false,
     samples:Array.from({length:SAMPLE_COUNT},(_,i)=>{const hour=(first+i)%24,wave=Math.sin((hour-9)/24*Math.PI*2);
       return {temperature:Math.round(210+55*wave),humidity:Math.round(64-18*wave),probability:Math.round(70*Math.exp(-(((i-14)/5)**2))),rain:Math.round(24*Math.exp(-(((i-14)/3)**2))),day:hour>=7&&hour<19?1:0,hour};})};
-  const tide={kind:'tide',start,fetched:Math.floor(now/1000),label:'TIDE',station:'',high:start+3*HOUR,low:start+9*HOUR,highHeight:170,lowHeight:12,highMinute:540,lowMinute:915,demo:true,error:false,
-    samples:Array.from({length:SAMPLE_COUNT},(_,i)=>({height:Math.round(85+80*Math.cos((i-3)*Math.PI/6.2)),hour:weather.samples[i].hour})),
-    events:Array.from({length:8},(_,k)=>({time:start+Math.round((3+6.2*k)*HOUR),height:k%2?5:165,high:!(k%2)})).filter(e=>e.time<=start+(SAMPLE_COUNT-1)*HOUR)};
+  // Sample tides: a high three hours out and the low 6.2 hours after it, with
+  // their times on the local clock, so the header reads like a real station's.
+  const events=Array.from({length:8},(_,k)=>({time:start+Math.round((3+6.2*k)*HOUR),height:k%2?5:165,high:!(k%2)})).filter(e=>e.time<=start+(SAMPLE_COUNT-1)*HOUR);
+  const minute=t=>{const d=new Date(t*1000);return d.getHours()*60+d.getMinutes();};
+  const tide={kind:'tide',start,fetched:Math.floor(now/1000),label:'TIDE',station:'',high:events[0].time,low:events[1].time,highHeight:165,lowHeight:5,highMinute:minute(events[0].time),lowMinute:minute(events[1].time),demo:true,error:false,
+    samples:Array.from({length:SAMPLE_COUNT},(_,i)=>({height:Math.round(85+80*Math.cos((i-3)*Math.PI/6.2)),hour:weather.samples[i].hour})),events};
   return {weather,tide,health:sampleHealth(now)};
 }
 // The next high and the next low, soonest first, for the tide header: the ones

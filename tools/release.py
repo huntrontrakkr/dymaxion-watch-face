@@ -132,7 +132,14 @@ def publish(pbw, version):
     if parse(current) > parse(version):
         raise ValueError("Refusing to replace a newer published version.")
     if current != version:
-        PublishCommand._upload_release(API, APP_ID, token, str(pbw), version, notes, True, [], [])
+        # Each release carries the gallery in docs/screenshots/store: the demo
+        # GIF first, then the stills, replacing the listing's screenshots. If
+        # the store refuses them, the release goes out without them.
+        gallery = sorted((ROOT / "docs/screenshots/store").glob("emery_*"))
+        gifs = [str(p) for p in gallery if p.suffix == ".gif"]
+        stills = [str(p) for p in gallery if p.suffix == ".png"]
+        PublishCommand._upload_release(API, APP_ID, token, str(pbw), version, notes, True, gifs, stills,
+                                       replace_screenshots=bool(gallery))
     # A rerun verifies an existing version instead of creating it a second time.
     app = public_app()
     if app["latest_release"]["version"] != version:
@@ -143,7 +150,7 @@ def publish(pbw, version):
         raise RuntimeError("Published version has a different package. Use a new version; do not overwrite it.")
 
     # The dashboard's documented-in-client session + multipart edit flow.
-    # Updating text does not replace screenshots or existing release history.
+    # Updating text leaves the screenshots and release history as they are.
     with requests.Session() as session:
         response = session.post(API + "/api/auth/firebase/session", json={"idToken": token}, timeout=30)
         response.raise_for_status()
@@ -157,6 +164,7 @@ def publish(pbw, version):
     if app.get("description") != copy or not app.get("visible") or not app.get("screenshot_images"):
         raise RuntimeError("Release uploaded, but listing verification failed.")
     print(f"Verified public release {version}: {STORE}")
+    print("Listing screenshots:", json.dumps(app.get("screenshot_images"))[:2000])
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
         with open(summary, "a") as f:

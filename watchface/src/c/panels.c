@@ -248,8 +248,7 @@ static void graph_draw(GContext *ctx,time_t now){
   else snprintf(title,sizeof(title),"%.7s %d%c",(const char *)p+24,(n+(n<0?-5:5))/10,s_footer[F_FAHRENHEIT]?'F':'C');
   right[0]=0;
   bool stale=(p[2]&2)||((uint32_t)now>read_u32(p+4)+(tide?12*3600:s_footer[F_REFRESH]*120));
-  if(p[2]&1)snprintf(right,sizeof(right),"DEMO");
-  else if(stale)snprintf(right,sizeof(right),"OLD");
+  if(stale&&!(p[2]&1))snprintf(right,sizeof(right),"OLD");
   HeaderTime times[2];int time_count=0;
   if(!right[0])time_count=tide?next_tides(p,now,times):s_footer[F_SOLAR]?next_suns(p,now,times):0;
   if(!right[0]&&!time_count&&!tide&&!humidity&&s_footer[F_RAIN]){
