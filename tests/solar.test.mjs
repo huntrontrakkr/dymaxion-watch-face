@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {mkdirSync} from 'node:fs';
-import {sunUp,nextSunEvent} from '../shared/solar.js';
+import {sunUp,nextSunEvent,sunDirection} from '../shared/solar.js';
 import {direction} from '../shared/map.js';
 const minute=(t,tz)=>new Date(t*1000).toLocaleTimeString('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit'});
 test('sunrise and sunset match almanac times for the wearer\'s place',()=>{
@@ -30,4 +30,14 @@ test('watch and browser agree on daylight and the next sunrise or sunset',()=>{
     if(!event){assert(next===0||Math.abs(next-t)<=90,`none ${lat},${lon} @${t}`);return;}
     assert.equal(rise,+event.rise,`${lat},${lon} @${t}`);assert(Math.abs(next-event.time)<=90,`${lat},${lon} @${t}: ${next} vs ${event.time}`);
   });
+});
+test('the sun sits where the almanac puts it through the seasons',()=>{
+  const deg=r=>r*180/Math.PI,at=t=>sunDirection(new Date(t));
+  // Declination at the 2026 equinoxes and solstices (USNO), to 0.02 degrees.
+  for(const [t,want] of [['2026-03-20T14:46Z',0],['2026-06-21T08:24Z',23.436],['2026-09-23T00:05Z',0],['2026-12-21T20:50Z',-23.436],['2030-03-20T13:52Z',0]])
+    assert(Math.abs(deg(Math.asin(at(t)[2]))-want)<0.02,t);
+  // The equation of time at its extremes: the sun 16.4 minutes fast in early
+  // November and 14.2 minutes slow in mid-February, to 0.2 minutes.
+  const late=t=>deg(Math.atan2(at(t)[1],at(t)[0]))*4;
+  assert(Math.abs(late('2026-11-03T12:00Z')+16.4)<0.2);assert(Math.abs(late('2026-02-11T12:00Z')-14.2)<0.2);
 });

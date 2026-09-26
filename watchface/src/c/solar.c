@@ -18,17 +18,21 @@ void solar_place_vector(const int8_t v[3],float out[3]){
   float n=solar_sqrt((float)(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]));
   for(int i=0;i<3;i++)out[i]=n>0?v[i]/n:0;
 }
-// NOAA fractional-year approximation, as sunDirection() in shared/solar.js.
+// Degrees into [0,360).
+static float solar_reduce(float degrees){int turns=(int)(degrees/360);if(degrees<0)turns--;return degrees-360.0f*turns;}
+// The Astronomical Almanac's low-precision solar coordinates, as sunDirection()
+// in shared/solar.js: whole days and seconds since J2000.0 keep every angle
+// within single precision.
+#define J2000 946728000
 void solar_direction(uint32_t epoch,float out[3]){
-  int32_t day=(int32_t)(epoch/86400);int year=1970;
-  for(;;){int length=365+(year%4==0&&(year%100!=0||year%400==0));if(day<length)break;day-=length;year++;}
-  int days=365+(year%4==0&&(year%100!=0||year%400==0));
-  float minutes=(float)(epoch%86400)/60;
-  float g=2*PI/days*(day+(minutes/60-12)/24);
-  float eq=229.18f*(.000075f+.001868f*solar_cos(g)-.032077f*solar_sin(g)-.014615f*solar_cos(2*g)-.040849f*solar_sin(2*g));
-  float dec=.006918f-.399912f*solar_cos(g)+.070257f*solar_sin(g)-.006758f*solar_cos(2*g)+.000907f*solar_sin(2*g)-.002697f*solar_cos(3*g)+.00148f*solar_sin(3*g);
-  float lon=(720-minutes-eq)*PI/720;
-  out[0]=solar_cos(dec)*solar_cos(lon);out[1]=solar_cos(dec)*solar_sin(lon);out[2]=solar_sin(dec);
+  int32_t s=(int32_t)(epoch-J2000),day=s/86400,second=s%86400;
+  if(second<0){second+=86400;day--;}
+  float n=day+second/86400.0f,rad=PI/180;
+  float g=solar_reduce(357.528f+0.9856003f*n)*rad,L=solar_reduce(280.460f+0.9856474f*n);
+  float lambda=(L+1.915f*solar_sin(g)+0.020f*solar_sin(2*g))*rad,tilt=(23.439f-0.0000004f*n)*rad;
+  float theta=solar_reduce(280.46061837f+solar_reduce(0.98564736629f*day)+0.98564736629f*second/86400+second/240.0f)*rad;
+  float X=solar_cos(lambda),Y=solar_cos(tilt)*solar_sin(lambda),Z=solar_sin(tilt)*solar_sin(lambda);
+  out[0]=X*solar_cos(theta)+Y*solar_sin(theta);out[1]=Y*solar_cos(theta)-X*solar_sin(theta);out[2]=Z;
 }
 bool solar_up(uint32_t epoch,const float place[3]){
   float s[3];solar_direction(epoch,s);

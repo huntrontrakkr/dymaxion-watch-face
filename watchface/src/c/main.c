@@ -90,16 +90,10 @@ static bool art_on(void){return DISPLAY_ART(s_display)&&zone_column_fits(s_displ
 static bool beside_right(void){return art_on()?DISPLAY_ART_RIGHT(s_display):zone_position()==ZONE_POSITION_RIGHT;}
 
 static float fsin(float r) { return (float)sin_lookup((int32_t)(r*TRIG_MAX_ANGLE/6.283185307f))/TRIG_MAX_RATIO; }
-static float fcos(float r) { return (float)cos_lookup((int32_t)(r*TRIG_MAX_ANGLE/6.283185307f))/TRIG_MAX_RATIO; }
+// The map's light: the same sun as the panels' sunrise and sunset (solar.c).
 static void sun_update(time_t now) {
-  struct tm t=*gmtime(&now);int year=t.tm_year+1900;
-  bool leap=year%4==0&&(year%100!=0||year%400==0);
-  float minutes=t.tm_hour*60+t.tm_min+t.tm_sec/60.0f;
-  float g=6.283185307f/(leap?366:365)*(t.tm_yday+(minutes/60-12)/24);
-  float eq=229.18f*(.000075f+.001868f*fcos(g)-.032077f*fsin(g)-.014615f*fcos(2*g)-.040849f*fsin(2*g));
-  float dec=.006918f-.399912f*fcos(g)+.070257f*fsin(g)-.006758f*fcos(2*g)+.000907f*fsin(2*g)-.002697f*fcos(3*g)+.00148f*fsin(3*g);
-  float lon=(720-minutes-eq)*3.141592654f/720;
-  s_sun[0]=1024*fcos(dec)*fcos(lon);s_sun[1]=1024*fcos(dec)*fsin(lon);s_sun[2]=1024*fsin(dec);
+  float sun[3];solar_direction((uint32_t)now,sun);
+  for(int i=0;i<3;i++)s_sun[i]=(int16_t)(1024*sun[i]);
 }
 static int32_t illumination(int8_t x,int8_t y,int8_t z) { return x*s_sun[0]+y*s_sun[1]+z*s_sun[2]; }
 static bool custom_palette(void) { return palette_applies(s_palette,s_settings[THEME]); }

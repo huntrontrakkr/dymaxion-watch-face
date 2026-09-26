@@ -1,15 +1,22 @@
-// NOAA fractional-year approximation; visual day/night indication, not navigation.
+// The sun's direction from the Earth's centre, in the Earth's frame (x toward
+// 0N 0E, y toward 0N 90E, z toward the North Pole): the Astronomical Almanac's
+// low-precision solar coordinates, good to about 0.01 degrees from 1950 to
+// 2050. The ecliptic longitude is tilted onto the equator and turned by the
+// Greenwich sidereal angle, so no inverse trig is needed. Days are counted
+// from J2000.0 as whole days plus seconds, so single-precision floats on the
+// watch keep the angles to about a thousandth of a degree.
+// Mirrored in watchface/src/c/solar.c.
 export function sunDirection(date) {
-  const year=date.getUTCFullYear(),start=Date.UTC(year,0,1);
-  const day=Math.floor((date-start)/86400000);
-  const minutes=date.getUTCHours()*60+date.getUTCMinutes()+date.getUTCSeconds()/60;
-  const leap=(year%4===0&&(year%100!==0||year%400===0)),days=leap?366:365;
-  const g=2*Math.PI/days*(day+(minutes/60-12)/24);
-  const eq=229.18*(.000075+.001868*Math.cos(g)-.032077*Math.sin(g)-.014615*Math.cos(2*g)-.040849*Math.sin(2*g));
-  const dec=.006918-.399912*Math.cos(g)+.070257*Math.sin(g)-.006758*Math.cos(2*g)+.000907*Math.sin(2*g)-.002697*Math.cos(3*g)+.00148*Math.sin(3*g);
-  const lon=(720-minutes-eq)*Math.PI/720;
-  return [Math.cos(dec)*Math.cos(lon),Math.cos(dec)*Math.sin(lon),Math.sin(dec)];
+  const s=Math.floor(date/1000)-J2000,day=Math.floor(s/86400),second=s-day*86400,n=day+second/86400;
+  const rad=Math.PI/180,g=reduce(357.528+0.9856003*n)*rad,L=reduce(280.460+0.9856474*n);
+  const lambda=(L+1.915*Math.sin(g)+0.020*Math.sin(2*g))*rad,tilt=(23.439-0.0000004*n)*rad;
+  const theta=reduce(280.46061837+reduce(0.98564736629*day)+0.98564736629*second/86400+second/240)*rad;
+  const X=Math.cos(lambda),Y=Math.cos(tilt)*Math.sin(lambda),Z=Math.sin(tilt)*Math.sin(lambda);
+  return [X*Math.cos(theta)+Y*Math.sin(theta),Y*Math.cos(theta)-X*Math.sin(theta),Z];
 }
+// 2000-01-01 12:00 UTC in Unix seconds.
+const J2000=946728000;
+const reduce=degrees=>degrees-360*Math.floor(degrees/360);
 
 // Daylight at one place, for the panel charts. A place is a unit vector (see
 // direction() in map.js). Sunrise and sunset are the moments the sun's centre
