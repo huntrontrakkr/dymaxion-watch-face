@@ -28,7 +28,9 @@ export function encodeSettings(input,now=Date.now()) {
     v.setUint32(base+18,transitions[8]?.[0]??0xffffffff,true);
     saved.forEach(([until,offset],j)=>{v.setUint32(base+22+j*6,until,true);v.setInt16(base+26+j*6,offset,true);});
   });
+  // Spare byte 17 of the first two places: the moon, then the battery gauge.
   bytes[HEADER_SIZE+17]=s.moonIndicator?1:0;
+  bytes[HEADER_SIZE+ZONE_SIZE+17]=s.batteryGauge?1:0;
   return bytes;
 }
 export function packetOffset(bytes,index,epoch) {

@@ -24,6 +24,9 @@ static const uint16_t MOON_LIGHT_ROWS[MOON_GLYPH_COUNT][MOON_GLYPH_SIZE] = {
   {16,64,128,128,384,128,128,64,16}
 };
 static const uint8_t BLUETOOTH_GLYPH[BLUETOOTH_HEIGHT] = {8,12,74,41,30,8,30,41,74,12,8};
+#define QUIET_WIDTH 10
+#define QUIET_HEIGHT 12
+static const uint16_t QUIET_GLYPH[QUIET_HEIGHT] = {7,2,247,32,64,240,0,992,64,128,256,992};
 static const uint32_t DAY_NIGHT_GLYPHS[2][5] = {{7,12,8,12,7},{21,14,31,14,21}};
 static const uint32_t MARKER_HALO[7] = {28,62,127,127,127,62,28};
 #define SUN_SIZE 5

@@ -40,6 +40,14 @@ try{
   await page.getByRole('tab',{name:'Composition',exact:true}).click();
   assert.equal((await saved()).moonIndicator,false);
   await page.locator('#moonIndicator').check();
+  // The battery gauge and the Quiet Time mark, drawn at the top right.
+  const corner=()=>page.locator('#screen').evaluate(c=>Array.from(c.getContext('2d').getImageData(156,0,44,16).data).join());
+  const plain=await corner();
+  assert.equal((await saved()).batteryGauge,false);await page.locator('#batteryGauge').check();assert.equal((await saved()).batteryGauge,true);
+  const gauge=await corner();assert.notEqual(gauge,plain,'the gauge draws a battery around the percentage');
+  await page.locator('#preview-quiet').check();assert.notEqual(await corner(),gauge,'Quiet Time shows its mark');
+  await page.locator('#preview-quiet').uncheck();assert.equal(await corner(),gauge);
+  await page.locator('#batteryGauge').uncheck();assert.equal(await corner(),plain);
   assert.equal(await page.getByRole('button',{name:'Original axis',exact:true}).count(),0);
   await page.getByRole('tab',{name:'Places',exact:true}).click();
   assert.equal(await page.locator('.marker-control canvas').first().evaluate(c=>c.clientWidth/c.width),3,'marker samples enlarge each pixel exactly three times');
@@ -131,6 +139,7 @@ try{
   await mobile.locator('#preset').selectOption('horizon');await mobile.locator('#theme').selectOption('1');
   assert.equal(await mobile.locator('#stacked').count(),0,'the stacked clock is retired');
   await mobile.locator('#moonIndicator').uncheck();assert.equal(await mobile.locator('#moonIndicator').isChecked(),false);
+  assert.equal(await mobile.locator('#batteryGauge').isChecked(),false);await mobile.locator('#batteryGauge').check();
   assert.equal(await mobile.locator('[data-key=icon]').first().locator('option').count(),12);
   await mobile.locator('[data-key=icon]').first().selectOption('3');
   assert.match(await mobile.locator('[data-symbol-meaning]').first().textContent(),/point up/);

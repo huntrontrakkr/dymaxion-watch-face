@@ -6,3 +6,7 @@ bool palette_valid(const uint8_t *p,size_t length){
   return true;
 }
 bool palette_applies(const uint8_t *p,uint8_t theme){return p[PAL_ENABLED]&&p[PAL_THEME]==theme;}
+uint8_t palette_step(uint8_t c,uint8_t toward){
+  uint8_t out=0xc0;for(int shift=0;shift<6;shift+=2){int a=(c>>shift)&3,b=(toward>>shift)&3;out|=(a+(b>a)-(b<a))<<shift;}
+  return out;
+}

@@ -13,6 +13,18 @@ int main(int argc,char **argv){
     for(int i=2;i<argc;i++)printf("%d\n",chart_range_width(argv[i]));
     return 0;
   }
+  if(argc>1&&!strcmp(argv[1],"tide")){
+    // tide: lines of "lo hi count range n" then n "seconds value high" triples.
+    int lo,hi,count,range,n;
+    while(scanf("%d %d %d %d %d",&lo,&hi,&count,&range,&n)==5){
+      TideEvent events[10];TideMark marks[10];
+      for(int i=0;i<n;i++){int seconds,value,high;if(scanf("%d %d %d",&seconds,&value,&high)!=3)return 1;events[i]=(TideEvent){seconds,(int16_t)value,high!=0};}
+      char upper[20],lower[20];chart_value_label(upper,sizeof(upper),hi,true);chart_value_label(lower,sizeof(lower),lo,true);
+      int m=chart_tide_marks(chart_layout(upper,lower,count,range,12),lo,hi,events,n,marks);
+      printf("%d",m);for(int i=0;i<m;i++)printf(" %d,%d,%d,%s,%d,%d",marks[i].x,marks[i].y,marks[i].high,marks[i].label,marks[i].label_x,marks[i].label_y);puts("");
+    }
+    return 0;
+  }
   int lo,hi,decimal,count,clock24,range,max_width;
   while(scanf("%d %d %d %d %d %d %d",&lo,&hi,&decimal,&count,&clock24,&range,&max_width)==7){
     int hours[49],widths[49];for(int i=0;i<count;i++)if(scanf("%d",&hours[i])!=1)return 1;

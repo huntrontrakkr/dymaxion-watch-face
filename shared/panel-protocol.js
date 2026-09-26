@@ -1,10 +1,13 @@
 import {HOLIDAY_REGIONS} from './calendar.js';
 import {pebbleColor} from './settings.js';
 import {PANEL_PAGES,PANEL_COLOR_ROLES,panelColors} from './panel-settings.js';
-import {environmentIsValid} from './panel-data.js';
+import {environmentIsValid,TIDE_EVENTS} from './panel-data.js';
 // Byte 9: rotation minutes, or ROTATE_SMART for smart rotation (shared/smart-tray.js).
 export const ROTATE_SMART=255;
-export const FOOTER_SIZE=64,WEATHER_SIZE=424,TIDE_SIZE=244;
+// A tide packet: 48-byte header, 49 hourly samples, then up to TIDE_EVENTS
+// highs and lows (count in byte 44): minutes after the first sample, with the
+// top bit set for a high, and the height in centimetres.
+export const FOOTER_SIZE=64,WEATHER_SIZE=424,TIDE_SIZE=284,TIDE_EVENTS_AT=244;
 const ids=PANEL_PAGES.map(([id])=>id);
 export function encodeFooter(s){
   const f=s.footer,w=f.weather,c=f.calendar,t=f.tide,b=new Uint8Array(FOOTER_SIZE),v=new DataView(b.buffer);
@@ -29,6 +32,8 @@ export function encodeEnvironment(data,kind){
   }else{
     v.setUint32(12,d.high||0,true);v.setUint32(16,d.low||0,true);v.setInt16(20,d.highHeight||0,true);v.setInt16(22,d.lowHeight||0,true);v.setUint16(24,d.highMinute||0,true);v.setUint16(26,d.lowMinute||0,true);putText(b,28,d.label);putText(b,36,d.station);
     (d.samples||[]).forEach((p,i)=>{const j=48+i*4;v.setInt16(j,p.height,true);b[j+2]=p.hour;});
+    const events=(d.events||[]).slice(0,TIDE_EVENTS);b[44]=events.length;
+    events.forEach((e,i)=>{const j=TIDE_EVENTS_AT+i*4;v.setUint16(j,Math.round((e.time-d.start)/60)|(e.high?0x8000:0),true);v.setInt16(j+2,e.height,true);});
   }
   return b;
 }

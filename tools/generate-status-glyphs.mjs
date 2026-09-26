@@ -1,12 +1,14 @@
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {MOON_GLYPHS,MOON_FRAMES,MOON_NAMES,MOON_SIZE} from '../shared/moon.js';
-import {BLUETOOTH_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS,SUN_ROWS,SUN_HALO_ROWS,SUN_SIZE,HERE_ROWS,HERE_HALO_ROWS,HERE_SIZE,PULSE_ROWS,PULSE_SIZE} from '../shared/status-glyphs.js';
+import {BLUETOOTH_ROWS,QUIET_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS,SUN_ROWS,SUN_HALO_ROWS,SUN_SIZE,HERE_ROWS,HERE_HALO_ROWS,HERE_SIZE,PULSE_ROWS,PULSE_SIZE} from '../shared/status-glyphs.js';
 
 if(MOON_GLYPHS.length!==MOON_FRAMES || MOON_GLYPHS.some(frame=>
   frame.length!==MOON_SIZE || frame.some(row=>row.length!==MOON_SIZE || /[^.o#]/.test(row))))
   throw new Error('Invalid Moon glyphs.');
 if(BLUETOOTH_ROWS.length!==11 || BLUETOOTH_ROWS.some(row=>row.length!==7 || /[^.#]/.test(row)))
   throw new Error('Invalid Bluetooth glyph.');
+if(QUIET_ROWS.length!==12 || QUIET_ROWS.some(row=>row.length!==10 || /[^.#]/.test(row)))
+  throw new Error('Invalid Quiet Time glyph.');
 const mask=(row,pixel)=>parseInt([...row].map(ch=>ch===pixel?'1':'0').join(''),2);
 const matrix=pixel=>MOON_GLYPHS.map(frame=>'{'+frame.map(row=>mask(row,pixel)).join(',')+'}').join(',\n  ');
 const bt=BLUETOOTH_ROWS.map(row=>mask(row,'#')).join(',');
@@ -19,6 +21,7 @@ writeFileSync('watchface/src/c/generated/status_glyphs.h',
   +`static const uint16_t MOON_SHADE_ROWS[MOON_GLYPH_COUNT][MOON_GLYPH_SIZE] = {\n  ${matrix('o')}\n};\n`
   +`static const uint16_t MOON_LIGHT_ROWS[MOON_GLYPH_COUNT][MOON_GLYPH_SIZE] = {\n  ${matrix('#')}\n};\n`
   +`static const uint8_t BLUETOOTH_GLYPH[BLUETOOTH_HEIGHT] = {${bt}};\n`
+  +`#define QUIET_WIDTH 10\n#define QUIET_HEIGHT 12\nstatic const uint16_t QUIET_GLYPH[QUIET_HEIGHT] = ${pixelRows(QUIET_ROWS)};\n`
   +`static const uint32_t DAY_NIGHT_GLYPHS[2][5] = {${DAY_NIGHT_ROWS.map(pixelRows).join(',')}};\n`
   +`static const uint32_t MARKER_HALO[7] = ${pixelRows(MARKER_HALO_ROWS)};\n`
   +`#define SUN_SIZE ${SUN_SIZE}\nstatic const uint32_t SUN_GLYPH[SUN_SIZE] = ${pixelRows(SUN_ROWS)};\nstatic const uint32_t SUN_HALO[SUN_SIZE+2] = ${pixelRows(SUN_HALO_ROWS)};\n`
@@ -39,4 +42,4 @@ writeFileSync('docs/screenshots/status-glyphs.svg',
   +`<g fill="#c9d0d8" font-family="sans-serif" font-size="8">${moonSamples}`
   +`<g transform="translate(258 91) scale(2)">${bluetooth}</g>`
   +`<text x="281" y="105">Bluetooth connected</text></g></svg>\n`);
-console.log('Pixel status masks: eight Moon phases, Bluetooth, day/night, marker halo, sun, your location and four pulse rings.');
+console.log('Pixel status masks: eight Moon phases, Bluetooth, Quiet Time, day/night, marker halo, sun, your location and four pulse rings.');

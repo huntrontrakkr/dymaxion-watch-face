@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {mkdirSync} from 'node:fs';
-import {AXIS_GLYPHS,RANGE_GLYPHS,RANGE_GAP,CHART,rangeTextWidth,axisTextWidth,axisValue,chartLayout,chartX,chartY,chartHourLabels} from '../shared/chart-axis.js';
+import {AXIS_GLYPHS,RANGE_GLYPHS,RANGE_GAP,CHART,rangeTextWidth,axisTextWidth,axisValue,chartLayout,chartX,chartY,chartHourLabels,tideMarks} from '../shared/chart-axis.js';
 // Hour labels use the compact chart numerals.
 const maxHourWidth=clock24=>axisTextWidth(clock24?'23':'12A');
 test('measured chart gutters and dense hourly labels fit signed values, units and partial horizons',()=>{
@@ -46,5 +46,25 @@ test('native and browser chart metrics, pixel glyphs and axis placements agree',
     expected.push([upper,lower,layout.left,layout.step,chartY(lo-10,lo,hi),chartY(hi+10,lo,hi),...labels.map(l=>[l.index,l.tick,l.x,l.width,l.text].join(','))].join(' '));
   }
   const native=execFileSync('test-results/chart-axis-test',[],{input:cases.join('\n'),encoding:'utf8',maxBuffer:2_000_000}).trim().split('\n');
+  assert.deepEqual(native,expected);
+});
+test('tide marks: every high and low, heights over the highs, the same on the watch',()=>{
+  const layout=chartLayout('1.9','-0.2',25,true,12);
+  const marks=tideMarks(layout,-20,190,[{seconds:-60,value:160,high:true},{seconds:3*3600,value:165,high:true},{seconds:9*3600+1800,value:5,high:false},{seconds:24*3600,value:170,high:true},{seconds:25*3600,value:150,high:true}]);
+  assert.equal(marks.length,3,'events outside the chart are left out');
+  assert.deepEqual(marks.map(m=>[m.high,m.label]),[[true,'1.7'],[false,''],[true,'1.7']]);
+  assert.equal(marks[0].x,chartX(layout,3));assert(marks[2].labelX+rangeTextWidth('1.7')-1<=layout.right,'labels stay on the chart');
+  // A peak at the top of the chart puts its height below; low enough, above.
+  assert(marks[0].labelY>marks[0].y);
+  const low=tideMarks(layout,-20,400,[{seconds:3*3600,value:100,high:true}])[0];assert(low.labelY+7<low.y,'room above: the height goes over the peak');
+  const cases=[],expected=[];let seed=7;const rand=n=>(seed=(seed*1103515245+12345)%2147483648)%n;
+  for(let k=0;k<400;k++){
+    const count=[13,25,49][k%3],lo=rand(400)-200,hi=lo+10+rand(600),range=k%2,n=rand(11),events=[];
+    let t=rand(7200)-3600;for(let i=0;i<n;i++){events.push({seconds:t,value:lo-50+rand(hi-lo+100),high:i%2===0});t+=3000+rand(40000);}
+    cases.push([lo,hi,count,range,n,...events.flatMap(e=>[e.seconds,e.value,+e.high])].join(' '));
+    const layout=chartLayout(axisValue(hi,true),axisValue(lo,true),count,!!range,12),marks=tideMarks(layout,lo,hi,events);
+    expected.push([marks.length,...marks.map(m=>[m.x,m.y,+m.high,m.label,m.labelX,m.labelY].join(','))].join(' '));
+  }
+  const native=execFileSync('test-results/chart-axis-test',['tide'],{input:cases.join('\n'),encoding:'utf8',maxBuffer:2_000_000}).trim().split('\n');
   assert.deepEqual(native,expected);
 });

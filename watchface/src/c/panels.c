@@ -1,4 +1,5 @@
 #include "panels.h"
+#include "palette.h"
 #include "settings.h"
 #include "chart_axis.h"
 #include "caps.h"
@@ -57,10 +58,7 @@ static void label(GContext *ctx,const char *t,int x,int baseline,int width,GText
   caps_draw(s_caps,t,x,baseline,false,panel_span,&pen);
 }
 // One RGB222 step per channel toward the ground: rain sits dimmed behind the line.
-static GColor dim(GColor c,GColor ground){
-  uint8_t out=0xc0;for(int shift=0;shift<6;shift+=2){int a=(c.argb>>shift)&3,b=(ground.argb>>shift)&3;out|=(a+(b>a)-(b<a))<<shift;}
-  return (GColor){.argb=out};
-}
+static GColor dim(GColor c,GColor ground){return (GColor){.argb=palette_step(c.argb,ground.argb)};}
 static void glyph_label(GContext *ctx,const char *text,int x,int y,GColor ink,const ChartGlyph *(*lookup)(char)){
   graphics_context_set_stroke_color(ctx,ink);
   while(*text){const ChartGlyph *glyph=lookup(*text++);
@@ -241,10 +239,26 @@ static void graph_draw(GContext *ctx,time_t now){
   }
   if(s_footer[F_GRID])for(int x=layout.left;x<=layout.right;x+=4)rect(ctx,x,(layout.top+layout.bottom)/2,1,1,color(5));
   if(tide&&s_footer[F_TIDE_ZERO]&&lo<0&&hi>0)for(int x=layout.left;x<=layout.right;x+=4)rect(ctx,x,chart_y(0,lo,hi),MIN(2,layout.right-x+1),1,color(5));
+  // High and low tides: a dotted line from each high down, and from each low
+  // up, with the height over the high tides (chart_tide_marks).
+  TideMark marks[TIDE_EVENTS];int mark_count=0;
+  if(tide){
+    TideEvent events[TIDE_EVENTS];int n=0;
+    for(int i=0;i<p[44]&&i<TIDE_EVENTS;i++){
+      const uint8_t *e=p+TIDE_EVENTS_AT+4*i;uint16_t at=(uint16_t)read_i16(e);int v=read_i16(e+2);
+      events[n++]=(TideEvent){(int32_t)(at&0x7fff)*60-start*3600,(int16_t)(s_footer[F_TIDE_FEET]?v*328/100:v),(at&0x8000)!=0};
+    }
+    mark_count=chart_tide_marks(layout,lo,hi,events,n,marks);
+    for(int i=0;i<mark_count;i++){
+      const TideMark *m=&marks[i];int from=m->high?m->y+2:layout.top,to=m->high?layout.bottom:m->y-2;
+      for(int y=from;y<=to;y+=2)if(!(m->label[0]&&y>=m->label_y-1&&y<=m->label_y+7))rect(ctx,m->x,y,1,1,color(5));
+    }
+  }
   // Humidity joins the weather chart as a dotted line on its own fixed 0-100% scale.
   if(!tide&&!humidity&&s_footer[F_HUMID_LINE])for(int i=1;i<count;i++)
     dotted_line(ctx,chart_x(layout,i-1),chart_y(p[32+(start+i-1)*8+2]*10,0,1000),chart_x(layout,i),chart_y(p[32+(start+i)*8+2]*10,0,1000),custom(F_HUMID_COLOR));
   for(int i=1;i<count;i++)line(ctx,chart_x(layout,i-1),chart_y(metric(p,start+i-1,tide,humidity),lo,hi),chart_x(layout,i),chart_y(metric(p,start+i,tide,humidity),lo,hi),ink);
+  for(int i=0;i<mark_count;i++)if(marks[i].label[0])glyph_label(ctx,marks[i].label,marks[i].label_x,marks[i].label_y,color(6),chart_range_glyph);
   if(s_footer[F_RANGE_LABELS]){
     range_label(ctx,layout,upper,layout.top,color(6));
     range_label(ctx,layout,lower,layout.bottom-6,color(6));

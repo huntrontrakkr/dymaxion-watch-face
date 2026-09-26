@@ -14,6 +14,22 @@ export const BLUETOOTH_ROWS=[
   '...#...'
 ];
 
+// Quiet Time: three Zs, rising, beside the Bluetooth rune while it is on.
+export const QUIET_ROWS=[
+  '.......###',
+  '........#.',
+  '..####.###',
+  '....#.....',
+  '...#......',
+  '..####....',
+  '..........',
+  '#####.....',
+  '...#......',
+  '..#.......',
+  '.#........',
+  '#####.....'
+];
+
 // Night and day beside each name in the time-zone drawer: a crescent moon and
 // the map's sun (SUN_ROWS below), so neither can be mistaken for a place's
 // own marker (the Point and Ring markers are a filled and an open circle).

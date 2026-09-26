@@ -78,3 +78,29 @@ export function chartHourLabels(layout,hours,clock24){
   }
   return labels;
 }
+// High and low tides on the tide chart. Each event is {seconds after the
+// chart's first hour, value in chart units, high}. A mark sits at the event's
+// time and height; a high tide also gets its height in the narrow figures,
+// above the peak when there is room, else just below it, else none (and none
+// where it would run into the label before). The watch does the same
+// (chart_axis.c).
+export const TIDE_LABEL_GAP=2;
+export function tideMarks(layout,lo,hi,events){
+  const span=(layout.count-1)*3600,marks=[];let last=-99;
+  for(const e of events){
+    if(e.seconds<0||e.seconds>span)continue;
+    const x=layout.left+Math.trunc(e.seconds*(layout.right-layout.left)/span),y=chartY(e.value,lo,hi,layout.top,layout.bottom);
+    const mark={x,y,high:e.high,label:'',labelX:0,labelY:0};
+    if(e.high){
+      const text=axisValue(e.value,true),width=rangeTextWidth(text),lx=Math.max(layout.left,Math.min(layout.right-width+1,x-Math.floor(width/2)));
+      const ly=y-7-TIDE_LABEL_GAP>=layout.top-1?y-7-TIDE_LABEL_GAP:y+TIDE_LABEL_GAP+7<=layout.bottom?y+TIDE_LABEL_GAP+1:null;
+      if(ly!==null&&lx>last+1){Object.assign(mark,{label:text,labelX:lx,labelY:ly});last=lx+width-1;}
+    }
+    marks.push(mark);
+  }
+  return marks;
+}
+export function drawNarrowText(ctx,text,x,y,color){
+  ctx.fillStyle=color;
+  for(const char of String(text)){const rows=rangeGlyph(char);rows.forEach((row,ry)=>[...row].forEach((p,rx)=>{if(p==='#')ctx.fillRect(x+rx,y+ry,1,1);}));x+=rows[0].length+1;}
+}

@@ -289,6 +289,13 @@ static void draw_moon_indicator(GContext *ctx,time_t now) {
     if(index){graphics_context_set_stroke_color(ctx,(GColor){.argb=colors[index]});graphics_draw_pixel(ctx,GPoint(134+x,3+y));}
   }
 }
+// Quiet Time: three Zs beside the Bluetooth rune while it is on.
+static void draw_quiet_indicator(GContext *ctx) {
+  if(!quiet())return;
+  graphics_context_set_stroke_color(ctx,color(6));
+  for(int y=0;y<QUIET_HEIGHT;y++)for(int x=0;x<QUIET_WIDTH;x++)
+    if(QUIET_GLYPH[y]&(1u<<(QUIET_WIDTH-1-x)))graphics_draw_pixel(ctx,GPoint(157+x,1+y));
+}
 static void draw_bluetooth_indicator(GContext *ctx) {
   graphics_context_set_stroke_color(ctx,s_connected?color(6):color(5));
   for(int y=0;y<BLUETOOTH_HEIGHT;y++)for(int x=0;x<BLUETOOTH_WIDTH;x++)
@@ -615,7 +622,14 @@ static void draw_status_line(GContext *ctx,struct tm *local,time_t now,const cha
   clock_caption(status,sizeof(status),date,ampm,s_settings[HEADER_SIZE+17]?126:140,now,"  ",status_width);
   CapsPen accent={ctx,color(7)},ink={ctx,color(6)};
   caps_draw(s_caps,status,4,12,false,caps_span,&accent);
-  caps_draw(s_caps,battery,195,12,true,caps_span,&ink);
+  // The battery gauge (shared/status-bar.js): a battery outline around the
+  // percentage, filled as far as the charge.
+  if(!s_settings[HEADER_SIZE+ZONE_SIZE+17]){caps_draw(s_caps,battery,195,12,true,caps_span,&ink);return;}
+  int left=192-caps_width(s_caps,battery),charge=s_battery.charge_percent>100?100:s_battery.charge_percent,fill=((193-left)*charge+50)/100;
+  graphics_context_set_fill_color(ctx,(GColor){.argb=palette_step(palette()[0],palette()[6])});graphics_fill_rect(ctx,GRect(left+1,4,fill,9),0,GCornerNone);
+  graphics_context_set_stroke_color(ctx,color(6));graphics_draw_rect(ctx,GRect(left,3,195-left,11));
+  graphics_context_set_fill_color(ctx,color(6));graphics_fill_rect(ctx,GRect(195,6,2,5),0,GCornerNone);
+  caps_draw(s_caps,battery,194,12,true,caps_span,&ink);
 }
 // The chart's daylight follows its forecast source. When the current position
 // is unavailable, panels use the forecast's day/night samples.
@@ -632,6 +646,7 @@ static void draw_status_section(GContext *ctx,struct tm *local,time_t now){
   else text(ctx,battery,s_small,GRect(160,0,35,15),GTextAlignmentRight,color(6));
   draw_moon_indicator(ctx,now);
   draw_bluetooth_indicator(ctx);
+  draw_quiet_indicator(ctx);
 }
 static void update_beside(int visible){
   uint8_t when=(s_display[2]>>2)&3;

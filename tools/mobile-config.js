@@ -42,7 +42,7 @@ $('place-clock-options').append($('display-controls').querySelector('[data-zone-
 const powerEditor=powerControls($('power-controls'),()=>s,power=>{s=validateSettings({...s,power},exists);refresh();});
 const paletteEditor=paletteControls($('palette-controls'),()=>s,patch=>{s=validateSettings({...s,...patch},exists);refresh();});
 function options(select,entries){select.replaceChildren();entries.forEach(([label,value])=>select.add(new Option(label,value)));}
-for(const [key,title] of [['moonIndicator','Moon in top bar'],['dayNight','Day and night'],['lights','City lights'],['sun','Sun on the map'],['edges','Triangle edges']]){
+for(const [key,title] of [['moonIndicator','Moon in top bar'],['batteryGauge','Battery gauge'],['dayNight','Day and night'],['lights','City lights'],['sun','Sun on the map'],['edges','Triangle edges']]){
   const label=document.createElement('label');label.className='toggle';const span=document.createElement('span');span.textContent=title;const input=document.createElement('input');input.type='checkbox';input.id=key;label.append(span,input);$('switches').append(label);
 }
 function swatches(root,p){root.replaceChildren();for(const color of [p.bg,p.ocean,p.land,p.nightOcean,p.nightLand,p.ink]){const i=document.createElement('i');i.style.background=color;root.append(i);}}
@@ -65,7 +65,7 @@ function refresh(){
   paletteEditor.refresh();
   paletteChoices();
   $('theme').value=s.theme;$('format').value=s.format;$('connectionBuzz').value=s.connectionBuzz;$('mapBackground').value=s.mapBackground;
-  for(const k of ['moonIndicator','dayNight','lights','sun','edges','motion'])$(k).checked=s[k];
+  for(const k of ['moonIndicator','batteryGauge','dayNight','lights','sun','edges','motion'])$(k).checked=s[k];
   const openPlaces=[...$('places').querySelectorAll('details')].map(d=>d.open);
   searches.forEach(search=>search.destroy());searches=[];$('places').replaceChildren();
   s.places.forEach((p,i)=>{
@@ -94,7 +94,7 @@ $('preset').onchange=()=>{const preset=$('preset').value;if(preset!=='custom')Ob
 $('connectionBuzz').onchange=()=>{s.connectionBuzz=$('connectionBuzz').value;};
 $('mapBackground').onchange=()=>{s.mapBackground=$('mapBackground').value;changed();};
 for(const key of ['theme','format'])$(key).onchange=()=>{s[key]=Number($(key).value);if(key==='theme'){s.customPalette=null;refresh();}changed();};
-for(const key of ['moonIndicator','dayNight','lights','sun','edges','motion'])$(key).onchange=()=>{s[key]=$(key).checked;powerEditor.refresh();changed();};
+for(const key of ['moonIndicator','batteryGauge','dayNight','lights','sun','edges','motion'])$(key).onchange=()=>{s[key]=$(key).checked;powerEditor.refresh();changed();};
 function importText(text){try{s=validateSettings(JSON.parse(text),exists);$('error').textContent='Composition loaded.';$('preset').value='custom';refresh();}catch(e){$('error').textContent=e.message;}}
 $('file').onchange=async()=>{const file=$('file').files[0];if(!file)return;if(file.size>50000){$('error').textContent='Settings file is too large.';return;}importText(await file.text());};
 $('import').onclick=()=>importText($('json').value);

@@ -65,7 +65,14 @@ test('a resolved nearby station delivers actual NOAA hourly and high/low data th
   await service.refresh();const tide=messages.findLast(m=>m.kind==='tide').data;
   assert.equal(urls.length,2);assert(urls.every(u=>u.searchParams.get('station')==='8638660'));
   assert.equal(tide.samples.length,49);assert.equal(tide.error,false);assert.equal(tide.label,'PORTSMO');
-  const packet=encodeEnvironment(tide,'tide');assert.equal(packet.length,244);
+  const packet=encodeEnvironment(tide,'tide');assert.equal(packet.length,284);
+  // Every high and low in the two days the samples cover rides along, in order.
+  const hilo=read('nearby-tide-extrema').predictions.filter(p=>{const t=Date.parse(p.t.replace(' ','T')+':00Z')/1000;return t>=tide.start&&t<=tide.start+48*3600;});
+  assert(hilo.length>=7&&tide.events.length===Math.min(10,hilo.length));
+  assert.deepEqual(tide.events.map(e=>e.high),hilo.slice(0,10).map(p=>p.type==='H'));
+  assert.equal(packet[44],tide.events.length);
+  const view=new DataView(packet.buffer);
+  tide.events.forEach((e,i)=>{const at=view.getUint16(244+i*4,true);assert.equal(at&0x7fff,Math.round((e.time-tide.start)/60));assert.equal(!!(at&0x8000),e.high);assert.equal(view.getInt16(246+i*4,true),e.height);});
   assert.equal(Buffer.from(packet.subarray(36,43)).toString(),'8638660');
   await service.refresh();assert.equal(urls.length,2,'six-hour tide cache is preserved');
 });

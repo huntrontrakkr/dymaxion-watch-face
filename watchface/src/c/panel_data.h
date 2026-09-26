@@ -3,7 +3,10 @@
 #include <stdint.h>
 #define FOOTER_SIZE 64
 #define WEATHER_SIZE 424
-#define TIDE_SIZE 244
+// A tide packet ends with up to TIDE_EVENTS highs and lows (shared/panel-protocol.js).
+#define TIDE_SIZE 284
+#define TIDE_EVENTS 10
+#define TIDE_EVENTS_AT 244
 #define PANEL_COUNT 6
 enum { PANEL_ZONES,PANEL_WEATHER,PANEL_CALENDAR,PANEL_HUMIDITY,PANEL_TIDE,PANEL_HEALTH };
 enum { F_RAIN_MAX=43,F_TIDE_FIXED=45,F_TIDE_MIN=46,F_TIDE_MAX=48 };

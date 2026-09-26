@@ -17,6 +17,7 @@ import {drawPixelRows,drawPixelLine} from '../shared/pixels.js';
 import {CITIES} from '../shared/cities.js';
 import {panelControls} from '../shared/panel-controls.js';
 import {drawFooter} from '../shared/panel-render.js';
+import {drawBatteryStatus} from '../shared/status-bar.js';
 import {sampleEnvironment} from '../shared/panel-data.js';
 import {smartPage,smartInputs,SMART_HOLD} from '../shared/smart-tray.js';
 import {environmentService} from '../tools/environment-service.js';
@@ -170,7 +171,7 @@ function placesUI(){
 }
 markerGallery();
 function sync(){
-  for(const key of ['dayNight','edges','lights','sun','motion','moonIndicator'])$(key).checked=settings[key];
+  for(const key of ['dayNight','edges','lights','sun','motion','moonIndicator','batteryGauge'])$(key).checked=settings[key];
   $('format').value=settings.format;$('connectionBuzz').value=settings.connectionBuzz;$('mapBackground').value=settings.mapBackground;
   document.querySelectorAll('[data-theme]').forEach(b=>{
     const id=+b.dataset.theme;b.hidden=!!THEMES[id].hidden&&id!==settings.theme;
@@ -179,7 +180,7 @@ function sync(){
   const current=activePreset(settings);document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.preset===current)));
   positionFields();placesUI();panelEditor.refresh();cityEditor.refresh();displayEditor.refresh();powerEditor.refresh();paletteEditor.refresh();
 }
-for(const key of ['dayNight','edges','lights','sun','motion','moonIndicator'])$(key).onchange=()=>{settings[key]=$(key).checked;move('time',settings.time);positionFields();displayEditor.refresh();powerEditor.refresh();save();};
+for(const key of ['dayNight','edges','lights','sun','motion','moonIndicator','batteryGauge'])$(key).onchange=()=>{settings[key]=$(key).checked;move('time',settings.time);positionFields();displayEditor.refresh();powerEditor.refresh();save();};
 $('format').onchange=()=>{settings.format=+$('format').value;save();};
 $('connectionBuzz').onchange=()=>{settings.connectionBuzz=$('connectionBuzz').value;save();};
 $('mapBackground').onchange=()=>{settings.mapBackground=$('mapBackground').value;save();};
@@ -377,8 +378,9 @@ function render(){
   $('panel-preview-label').textContent=settings.footer.enabled?PANEL_PAGES.find(([id])=>id===footerPage)[1]:'Time zones';
   $('data-state').textContent=environmentMode==='sample'?'Showing sample data. Load live data to see real readings.':`Forecast source: ${settings.footer.weather.place==='current'?'your current location':settings.places[settings.footer.weather.place].name}. ${liveData.weather?.error?'Weather update unavailable; check location permission and connection. Cached data is marked OLD.':''} ${liveData.tide?.error?'NOAA update unavailable.':''}`;
   ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,18);
-  drawBitmapText(ctx,watchTypeface.lining.small,status,4,12,pal.accent);drawBitmapText(ctx,watchTypeface.lining.small,'86%',195,12,pal.ink,'right');
+  drawBitmapText(ctx,watchTypeface.lining.small,status,4,12,pal.accent);
   drawMoonIndicator(now);drawBluetoothIndicator();
+  drawBatteryStatus(ctx,watchTypeface.lining.small,86,{gauge:settings.batteryGauge,quiet:$('preview-quiet').checked,ink:pal.ink,bg:pal.bg});
   if(visible<228){ctx.fillStyle=pal.ink;ctx.fillRect(0,visible,200,228-visible);ctx.fillStyle=pal.bg;ctx.fillRect(8,visible+10,110,7);ctx.fillRect(8,visible+24,160,5);ctx.fillRect(8,visible+34,130,5);}
   canvas.dataset.quickView=String(visible<228);canvas.dataset.clockTop=String(ty);
   // All watch pixels already come from RGB222 colors and native bitmap masks.
@@ -438,7 +440,7 @@ const PULSE_RING_MS=120,PULSE_MS=4*PULSE_RING_MS;
 function startPulse(){pulseOrder=settings.places.map((p,i)=>p.on?i:-1).filter(i=>i>=0);if(pulseOrder.length&&motionOn())animation=performance.now();}
 function pulseNow(){if(!animation)return null;const t=performance.now()-animation,k=Math.floor(t/PULSE_MS);return k<pulseOrder.length?{place:pulseOrder[k],frame:Math.floor(t%PULSE_MS/PULSE_RING_MS)}:null;}
 function pulse(){startPulse();render();}
-$('pulse').onclick=pulse;$('guides').onchange=render;$('quick-view').onchange=render;
+$('pulse').onclick=pulse;$('guides').onchange=render;$('quick-view').onchange=render;$('preview-quiet').onchange=render;
 // Screen colors or as on the watch: shared with the color picker.
 watchViewOverlay(canvas);
 const showWatchView=()=>{$('watch-colors').checked=colorView()==='watch';};

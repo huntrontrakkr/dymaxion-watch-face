@@ -28,6 +28,14 @@ bool environment_valid(const uint8_t *p,unsigned length,bool tide){
   if(!read_u32(p+4)||!read_u32(p+8))return false;
   int a=tide?24:20;for(int i=a;i<a+4;i+=2)if((uint16_t)read_i16(p+i)>=1440)return false;
   if(tide&&(!label_valid(p+36)||read_i16(p+20)<-3000||read_i16(p+20)>3000||read_i16(p+22)<-3000||read_i16(p+22)>3000))return false;
+  if(tide){
+    if(p[44]>TIDE_EVENTS)return false;
+    for(int i=0;i<TIDE_EVENTS;i++){
+      const uint8_t *e=p+TIDE_EVENTS_AT+4*i;int height=read_i16(e+2);
+      if(i>=p[44]){if(read_u32(e))return false;}
+      else if(((uint16_t)read_i16(e)&0x7fff)>48*60||height< -3000||height>3000)return false;
+    }
+  }
   for(int i=0;i<49;i++){
     const uint8_t *s=p+(tide?48+i*4:32+i*8);int value=read_i16(s);
     if(tide){if(value< -3000||value>3000||s[2]>23||s[3])return false;}

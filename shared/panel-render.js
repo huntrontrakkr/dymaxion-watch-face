@@ -5,7 +5,7 @@ import {panelColors} from './panel-settings.js';
 import {drawPixelLine} from './pixels.js';
 import {sunUp,nextSunEvent} from './solar.js';
 import {healthView} from './health.js';
-import {drawRangeText,drawAxisText,axisTextWidth,axisValue,chartLayout,chartX,chartY,chartHourLabels} from './chart-axis.js';
+import {drawRangeText,drawAxisText,drawNarrowText,axisTextWidth,axisValue,chartLayout,chartX,chartY,chartHourLabels,tideMarks} from './chart-axis.js';
 // One RGB222 step (85) per channel toward the ground: a dimmer version of a color.
 export function dimColor(color,ground){
   return '#'+[1,3,5].map(i=>{const a=parseInt(color.slice(i,i+2),16),b=parseInt(ground.slice(i,i+2),16);return (a+Math.sign(b-a)*Math.min(85,Math.abs(b-a))).toString(16).padStart(2,'0');}).join('').toUpperCase();
@@ -49,7 +49,7 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       text(kind,4,193,pal.accent);
       text(tide&&!f.tide.station&&!series?.demo?'CHOOSE A NOAA STATION':!tide&&!w.enabled?'ENABLE WEATHER IN SETTINGS':series?.samples?.length?'FORECAST EXPIRED':series?.error?'DATA UNAVAILABLE':'WAITING FOR PHONE',4,214);
     }else{
-      const samples=window.samples,metric=p=>tide?p.height*(f.tide.unit==='ft'?3.28:1):humidity?p.humidity*10:w.temperatureUnit==='f'?Math.trunc(p.temperature*9/5)+320:p.temperature;
+      const samples=window.samples,metric=p=>tide?(f.tide.unit==='ft'?Math.trunc(p.height*328/100):p.height):humidity?p.humidity*10:w.temperatureUnit==='f'?Math.trunc(p.temperature*9/5)+320:p.temperature;
       const values=samples.map(metric);let lo=Math.min(...values),hi=Math.max(...values);
       if(tide&&f.tide.scale==='fixed'){lo=f.tide.min*100;hi=f.tide.max*100;}
       else if(humidity&&w.humidityScale==='percent'){lo=0;hi=1000;}
@@ -84,9 +84,14 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       });
       if(w.grid)for(let xx=layout.left;xx<=layout.right;xx+=4)rect(xx,Math.trunc((layout.top+bottom)/2),1,1,pal.edge);
       if(tide&&f.tide.zeroLine&&lo<0&&hi>0)for(let xx=layout.left;xx<=layout.right;xx+=4)rect(xx,y(0),Math.min(2,layout.right-xx+1),1,pal.edge);
+      // High and low tides: a dotted line from each high down, and from each
+      // low up, with the height over the high tides.
+      const marks=tide?tideMarks(layout,lo,hi,(series.events||[]).map(e=>({seconds:e.time-series.start-window.start*3600,value:metric(e),high:e.high}))):[];
+      for(const m of marks){const from=m.high?m.y+2:layout.top,to=m.high?bottom:m.y-2;for(let yy=from;yy<=to;yy+=2)if(!(m.label&&yy>=m.labelY-1&&yy<=m.labelY+7))rect(m.x,yy,1,1,pal.edge);}
       // Humidity joins the weather chart as a dotted line on its own fixed 0-100% scale.
       if(!tide&&!humidity&&w.humidityLine){const h=p=>chartY(p.humidity*10,0,1000,layout.top,bottom);for(let i=1;i<samples.length;i++)line(x(i-1),h(samples[i-1]),x(i),h(samples[i]),c.humidity,true);}
       for(let i=1;i<samples.length;i++)line(x(i-1),y(values[i-1]),x(i),y(values[i]),ink);
+      for(const m of marks)if(m.label)drawNarrowText(ctx,m.label,m.labelX,m.labelY,pal.ink);
       if(w.rangeLabels){drawRangeText(ctx,upper,layout,layout.top,pal.ink);drawRangeText(ctx,lower,layout,bottom-6,pal.ink);}
       line(layout.left,layout.axis,layout.right,layout.axis,pal.edge);
       for(let i=0;i<samples.length;i++){const major=i%layout.step===0;line(x(i),layout.axis+1,x(i),layout.axis+(major?2:1),major?pal.ink:pal.edge);}

@@ -152,6 +152,11 @@ test('full-width clock and top-bar moon migrate old widget settings',()=>{
   assert.deepEqual(validateSettings({...s,time:[0,20],map:[0,73]},zoneExists).time,PRESETS.meridian.time,'saved Atlas faces become Meridian');
   assert.equal('widgets' in migrated,false);
   assert.throws(()=>validateSettings({...s,moonIndicator:3},zoneExists));
+  // The battery gauge is optional and off by default; it rides in the second
+  // place's spare byte 17.
+  assert.equal(s.batteryGauge,false);assert.equal(validateSettings(old,zoneExists).batteryGauge,false);
+  assert.equal(encodeSettings({...s,batteryGauge:true})[16+72+17],1);
+  assert.throws(()=>validateSettings({...s,batteryGauge:1},zoneExists));
 });
 test('old saved presets adopt the enlarged map; custom arrangements keep their positions',()=>{
   const saved={...defaults(),time:[20,18],map:[4,73]};

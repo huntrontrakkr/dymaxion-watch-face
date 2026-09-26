@@ -11,6 +11,7 @@
   "motion": true,
   "sun": false,
   "moonIndicator": false,
+  "batteryGauge": false,
   "connectionBuzz": "disconnect",
   "orientation": 0,
   "time": [
