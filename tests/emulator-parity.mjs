@@ -36,6 +36,7 @@ const cases={
   'default':{},
   'place times between the clock and the map':{zoneTimes:'always',zonePosition:'strip'},
   'icosahedron beside the clock, battery gauge':{clockArt:'left',zoneTimes:'panel',batteryGauge:true,theme:theme('Paper')},
+  'Ultraviolet, 12-hour':{theme:theme('Ultraviolet'),format:2},
   'tides with highs and lows':{footer:{...defaults().footer,pages:['tide','zones'],home:'tide',tide:{...defaults().footer.tide,station:'8638610'}}}
 };
 
