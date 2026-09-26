@@ -118,9 +118,12 @@ jobs:
           pebble sdk install 4.33.1
           npx playwright install --with-deps chromium
           sudo apt-get install -y --no-install-recommends libsdl2-2.0-0 libpixman-1-0 libfdt1
-      - name: Build the watch face
+      # The comparison sends its own packets, so the phone side is a stub: the
+      # emulator's phone simulator stops while running the full bundle, and the
+      # real app would send its own settings over the test's.
+      - name: Build the watch face with a stub phone app
         run: |
-          npm run companion
+          echo "Pebble.addEventListener('ready',function(){console.log('stub phone app');});" > watchface/src/pkjs/index.js
           cd watchface
           pebble build
       - name: Compare the emulator with the preview

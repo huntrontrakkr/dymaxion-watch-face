@@ -23,7 +23,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 // a moment to accept connections: try each command a few times.
 const pebble=async(...args)=>{
   for(let attempt=1;;attempt++){
-    try{return execFileSync('pebble',[...args,'--emulator','emery'],{cwd:'watchface',stdio:['ignore','pipe','inherit'],timeout:60000}).toString();}
+    try{execFileSync('pebble',[...args,'--emulator','emery'],{cwd:'watchface',stdio:['ignore','inherit','inherit'],timeout:60000});return;}
     catch(error){
       if(attempt===4){try{console.log(readFileSync('/tmp/pb-emulator.json','utf8'));console.log(execFileSync('ps',['-eo','pid,stat,cmd']).toString().split('\n').filter(l=>/qemu|pypkjs/.test(l)).join('\n'));}catch{}throw error;}
       console.log(`pebble ${args[0]} failed (attempt ${attempt}); retrying`);await sleep(5000);
