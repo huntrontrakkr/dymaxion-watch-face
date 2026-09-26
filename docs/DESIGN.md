@@ -219,10 +219,16 @@ explicitly labeled Norfolk example and only requests location on the preview
 button. The public Photon server has no availability guarantee; a larger-scale
 release should provision a geocoder with appropriate capacity.
 
-Solar shading follows the fractional-year/equation-of-time approximation in
-[NOAA's General Solar Position Calculations](https://gml.noaa.gov/grad/solcalc/solareqns.PDF).
-It is a visual solar clock, with quantized direction vectors and a dithered
-twilight boundary. It does not predict sunrise events or atmospheric refraction.
+Solar shading uses the Astronomical Almanac's low-precision solar
+coordinates, good to about 0.01° from 1950 to 2050: the sun's ecliptic
+longitude is tilted onto the equator and turned by Greenwich sidereal time, so
+the seasons' declination and the equation of time both come out of it without
+inverse trigonometry. The watch (`solar.c`) computes it in single precision
+from whole days and seconds since J2000.0, and agrees with the preview
+(`shared/solar.js`) to about 0.002°. The same sun lights the map and gives the
+panels' sunrise and sunset. On the map, land and sea are lit while the sun
+is up (its centre above -0.833°, as almanacs count sunrise), checkered through
+civil twilight, and dark once the sun is 6° below the horizon.
 
 ## Lunar indicator
 
