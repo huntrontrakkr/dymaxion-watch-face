@@ -2,6 +2,8 @@ import {sampleHealth} from './health.js';
 import moment from 'moment-timezone';
 const HOUR=3600;
 export const SAMPLE_COUNT=49;
+// The most high and low tides a tide packet carries (two days hold eight or nine).
+export const TIDE_EVENTS=10;
 const number=(n,min,max)=>typeof n==='number'&&Number.isFinite(n)&&n>=min&&n<=max;
 const integer=(n,min,max)=>Number.isInteger(n)&&n>=min&&n<=max;
 export const localMinute=(epoch,tz)=>{const d=moment.unix(epoch).tz(tz);return d.hour()*60+d.minute();};
@@ -39,7 +41,11 @@ export function normalizeTide(hourly,extrema,station,now=Date.now()){
   const next=type=>extrema.predictions.filter(p=>p.type===type).map(p=>({time:noaaTime(p.t),height:typeof p.v==='string'&&p.v.trim()!==''?Number(p.v):NaN})).find(p=>p.time>=now/1000&&number(p.height,-30,30));
   const high=next('H'),low=next('L');
   if(!high||!low)throw new Error('NOAA returned no upcoming high and low tides.');
-  return {kind:'tide',start,fetched:Math.floor(now/1000),label:station.label,station:station.station,high:high.time,low:low.time,highHeight:Math.round(high.height*100),lowHeight:Math.round(low.height*100),highMinute:localMinute(high.time,station.tz),lowMinute:localMinute(low.time,station.tz),samples,demo:false,error:false};
+  // Every high and low within the samples, for the marks on the chart.
+  const events=extrema.predictions.map(p=>({time:noaaTime(p.t),height:typeof p.v==='string'&&p.v.trim()!==''?Number(p.v):NaN,high:p.type==='H'}))
+    .filter(p=>p.time>=start&&p.time<=start+(SAMPLE_COUNT-1)*HOUR&&number(p.height,-30,30)).slice(0,TIDE_EVENTS)
+    .map(p=>({time:p.time,height:Math.round(p.height*100),high:p.high}));
+  return {kind:'tide',start,fetched:Math.floor(now/1000),label:station.label,station:station.station,high:high.time,low:low.time,highHeight:Math.round(high.height*100),lowHeight:Math.round(low.height*100),highMinute:localMinute(high.time,station.tz),lowMinute:localMinute(low.time,station.tz),samples,events,demo:false,error:false};
 }
 export function weatherUrl(place){
   return 'https://api.open-meteo.com/v1/forecast?latitude='+place.lat+'&longitude='+place.lon+'&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,is_day&daily=sunrise,sunset&forecast_days=4&timeformat=unixtime&timezone='+encodeURIComponent(place.tz);
@@ -57,8 +63,24 @@ export function sampleEnvironment(now=Date.now()){
     samples:Array.from({length:SAMPLE_COUNT},(_,i)=>{const hour=(first+i)%24,wave=Math.sin((hour-9)/24*Math.PI*2);
       return {temperature:Math.round(210+55*wave),humidity:Math.round(64-18*wave),probability:Math.round(70*Math.exp(-(((i-14)/5)**2))),rain:Math.round(24*Math.exp(-(((i-14)/3)**2))),day:hour>=7&&hour<19?1:0,hour};})};
   const tide={kind:'tide',start,fetched:Math.floor(now/1000),label:'TIDE',station:'',high:start+3*HOUR,low:start+9*HOUR,highHeight:170,lowHeight:12,highMinute:540,lowMinute:915,demo:true,error:false,
-    samples:Array.from({length:SAMPLE_COUNT},(_,i)=>({height:Math.round(85+80*Math.cos((i-3)*Math.PI/6.2)),hour:weather.samples[i].hour}))};
+    samples:Array.from({length:SAMPLE_COUNT},(_,i)=>({height:Math.round(85+80*Math.cos((i-3)*Math.PI/6.2)),hour:weather.samples[i].hour})),
+    events:Array.from({length:8},(_,k)=>({time:start+Math.round((3+6.2*k)*HOUR),height:k%2?5:165,high:!(k%2)})).filter(e=>e.time<=start+(SAMPLE_COUNT-1)*HOUR)};
   return {weather,tide,health:sampleHealth(now)};
+}
+// The next high and the next low, soonest first, for the tide header: the ones
+// saved at fetch while still ahead, then later ones from the day's events
+// (their local time from the hour of the sample they fall in). Minutes are
+// the station's local minutes of the day. The watch does the same (panels.c).
+export function nextTides(d,now){
+  const out=[];
+  for(const high of [true,false]){
+    const time=high?d.high:d.low;
+    if(time>=now){out.push({high,time,minute:high?d.highMinute:d.lowMinute});continue;}
+    const e=(d.events||[]).find(e=>e.high===high&&e.time>=now);if(!e)continue;
+    const offset=Math.round((e.time-d.start)/60),i=Math.floor(offset/60);
+    if(i<d.samples.length)out.push({high,time:e.time,minute:d.samples[i].hour*60+offset%60});
+  }
+  return out.sort((a,b)=>a.time-b.time);
 }
 export function dataWindow(data,now,horizon){
   if(!data?.samples?.length)return null;
@@ -69,5 +91,7 @@ export function dataWindow(data,now,horizon){
 export function environmentIsValid(d,kind){
   if(!d||d.kind!==kind||!integer(d.start,1,0xffffffff)||!integer(d.fetched,1,0xffffffff)||typeof d.label!=='string'||!/^[A-Z0-9 +\-]{1,7}$/.test(d.label)||!Array.isArray(d.samples)||d.samples.length!==49)return false;
   if(kind==='weather')return ['rise','set'].every(k=>integer(d[k],0,0xffffffff))&&['riseMinute','setMinute'].every(k=>integer(d[k],0,1439))&&d.samples.every(p=>integer(p.temperature,-1000,650)&&integer(p.humidity,0,100)&&integer(p.probability,0,100)&&integer(p.rain,0,5000)&&integer(p.day,0,1)&&integer(p.hour,0,23));
+  // Tide marks came later: data saved without them is still valid.
+  if(d.events!==undefined&&!(Array.isArray(d.events)&&d.events.length<=TIDE_EVENTS&&d.events.every(e=>integer(e.time,d.start,d.start+(SAMPLE_COUNT-1)*HOUR)&&integer(e.height,-3000,3000)&&typeof e.high==='boolean')))return false;
   return ['high','low'].every(k=>integer(d[k],1,0xffffffff))&&['highMinute','lowMinute'].every(k=>integer(d[k],0,1439))&&['highHeight','lowHeight'].every(k=>integer(d[k],-3000,3000))&&typeof d.station==='string'&&/^([A-Z0-9]{7})?$/.test(d.station)&&d.samples.every(p=>integer(p.height,-3000,3000)&&integer(p.hour,0,23));
 }

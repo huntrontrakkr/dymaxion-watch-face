@@ -34,6 +34,14 @@ export const RANGE_GLYPHS={
   '.':['.','.','.','.','.','.','#'],
   '?':['##.','..#','..#','.#.','.#.','...','.#.']
 };
+// Glyphs before the times in a chart's header, five pixels square: a solid
+// triangle up for high water and down for low, as tide tables mark them, and
+// the same over a horizon for sunrise and sunset.
+export const HEADER_GLYPHS={
+  high:['.....','..#..','.###.','#####','.....'],low:['.....','#####','.###.','..#..','.....'],
+  rise:['..#..','.###.','#####','.....','#####'],set:['#####','.###.','..#..','.....','#####']
+};
+export const HEADER_GLYPH_ORDER=['high','low','rise','set'];
 // Range labels end two pixels short of the chart, one pixel from the edge.
 export const RANGE_GAP=2;
 export const CHART={top:193,bottom:214,right:197,daylight:192,axis:215,labelBaseline:225,labelLeft:1,labelRight:199};
@@ -77,4 +85,53 @@ export function chartHourLabels(layout,hours,clock24){
     labels.push({index,tick,x,width,text});
   }
   return labels;
+}
+// High and low tides on the tide chart. Each event is {seconds after the
+// chart's first hour, value in chart units, high}. A mark sits at the event's
+// time and height; a high tide also gets its height in the narrow figures,
+// above the peak when there is room, else just below it, else none (and none
+// where it would run into the label before). The watch does the same
+// (chart_axis.c).
+export const TIDE_LABEL_GAP=2;
+// Where a value label `width` wide goes for a point at (x,y): over it, two
+// pixels clear, or under it, whichever is tried first and fits the plot;
+// null when neither does. Centred on x, kept inside the chart.
+export function labelSpot(layout,x,y,width,aboveFirst=true){
+  const lx=Math.max(layout.left,Math.min(layout.right-width+1,x-Math.floor(width/2)));
+  const above=y-7-TIDE_LABEL_GAP>=layout.top-1?y-7-TIDE_LABEL_GAP:null,below=y+TIDE_LABEL_GAP+7<=layout.bottom?y+TIDE_LABEL_GAP+1:null;
+  const ly=aboveFirst?above??below:below??above;
+  return ly===null?null:{x:lx,y:ly};
+}
+export function tideMarks(layout,lo,hi,events){
+  const span=(layout.count-1)*3600,marks=[];let last=-99;
+  for(const e of events){
+    if(e.seconds<0||e.seconds>span)continue;
+    const x=layout.left+Math.trunc(e.seconds*(layout.right-layout.left)/span),y=chartY(e.value,lo,hi,layout.top,layout.bottom);
+    const mark={x,y,high:e.high,label:'',labelX:0,labelY:0};
+    if(e.high){
+      const text=axisValue(e.value,true),spot=labelSpot(layout,x,y,rangeTextWidth(text));
+      if(spot&&spot.x>last+1){Object.assign(mark,{label:text,labelX:spot.x,labelY:spot.y});last=spot.x+rangeTextWidth(text)-1;}
+    }
+    marks.push(mark);
+  }
+  return marks;
+}
+// The warmest and coolest readings on the weather chart: the first of each,
+// labelled over the peak and under the trough where there is room (else the
+// other side). The low is left out if it would touch the high's label. The
+// watch does the same (chart_extremes).
+export function chartExtremes(layout,lo,hi,values){
+  const out=[];let max=0,min=0;
+  values.forEach((v,i)=>{if(v>values[max])max=i;if(v<values[min])min=i;});
+  for(const [i,above] of min===max?[[max,true]]:[[max,true],[min,false]]){
+    const text=axisValue(values[i]),width=rangeTextWidth(text),x=chartX(layout,i),y=chartY(values[i],lo,hi,layout.top,layout.bottom),spot=labelSpot(layout,x,y,width,above);
+    if(!spot)continue;
+    const a=out[0];if(a&&spot.x<=a.x+a.width&&a.x<=spot.x+width&&spot.y<=a.y+7&&a.y<=spot.y+7)continue;
+    out.push({text,width,x:spot.x,y:spot.y});
+  }
+  return out;
+}
+export function drawNarrowText(ctx,text,x,y,color){
+  ctx.fillStyle=color;
+  for(const char of String(text)){const rows=rangeGlyph(char);rows.forEach((row,ry)=>[...row].forEach((p,rx)=>{if(p==='#')ctx.fillRect(x+rx,y+ry,1,1);}));x+=rows[0].length+1;}
 }

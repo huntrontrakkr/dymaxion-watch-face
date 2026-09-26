@@ -16,7 +16,7 @@ bool settings_valid(const uint8_t *s,unsigned length) {
   for(int i=0;i<3;i++) {
     if(s[ZONE_X+2*i]>140 || s[ZONE_Y+2*i]<16 || s[ZONE_Y+2*i]>192)return false;
     const uint8_t *z=s+HEADER_SIZE+i*ZONE_SIZE;
-    if(z[17]>(i==0?1:0) || (z[70]&0xc0)!=0xc0 || z[71])return false;
+    if(z[17]>1 || (z[70]&0xc0)!=0xc0 || z[71])return false;
     if(!z[0] || z[7] || z[8]>=200 || z[9]>=104 || z[10]>=MARKER_COUNT || z[16]>8)return false;
     for(int j=0;j<7 && z[j];j++)if(!((z[j]>='A'&&z[j]<='Z')||(z[j]>='0'&&z[j]<='9')||z[j]==' '||z[j]=='+'||z[j]=='-'))return false;
     int off=read_i16(z+14);if(off < -840 || off > 840)return false;

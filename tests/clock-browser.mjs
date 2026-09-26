@@ -164,10 +164,12 @@ try{
   await page.getByRole('tab',{name:'Character',exact:true}).click();
   const flipsAtNextMinute=async()=>{const wait=await page.evaluate(()=>60000-Date.now()%60000);await page.clock.runFor(wait+100);return await screen.getAttribute('data-clock-animating')==='true';};
   assert(await flipsAtNextMinute(),'by day the minute change animates');
-  await page.getByLabel('Night saver',{exact:true}).check();
+  await page.getByLabel('Night saver',{exact:true}).selectOption('hours');
   await page.getByLabel('Night saver from',{exact:true}).selectOption('0');await page.getByLabel('Night saver until',{exact:true}).selectOption('0');
   assert.deepEqual(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).power,{daylightMinutes:5,minuteAnimation:true,flourishes:true,night:true,nightStart:0,nightEnd:0,quietTime:false,darkPause:false,lowBattery:10});
   assert(!await flipsAtNextMinute(),'at night it does not');
-  await page.getByLabel('Night saver',{exact:true}).uncheck();
+  await page.getByLabel('Night saver',{exact:true}).selectOption('quiet');
+  const quietOnly=JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).power;assert.deepEqual([quietOnly.night,quietOnly.quietTime],[false,true],'Quiet Time alone, without hours');
+  await page.getByLabel('Night saver',{exact:true}).selectOption('off');
   assert.deepEqual(errors,[]);console.log('PASS: actual and manual city captions, hourly lookup cache, 12-hour time, Span persistence, retired triangular display, system fonts, the map background, and place times beside the clock and on the map, and the nameplate.');
 }finally{await browser.close();}

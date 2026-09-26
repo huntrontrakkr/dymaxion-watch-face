@@ -42,3 +42,5 @@ static const ChartGlyph CHART_RANGE_GLYPHS[] = {
   {'.',1,{0,0,0,0,0,0,1}},
   {'?',3,{6,1,1,2,2,0,2}}
 };
+// Header glyphs (high, low, sunrise, sunset): five pixels square.
+static const uint8_t HEADER_GLYPHS[4][5] = {{0,4,14,31,0},{0,31,14,4,0},{4,14,31,0,31},{31,14,4,0,31}};

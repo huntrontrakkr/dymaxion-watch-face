@@ -25,7 +25,7 @@ try{
   // The first custom edit snapshots the active theme; switching themes must not
   // silently discard those choices. Returning to theme colors is explicit.
   await page.getByRole('tab',{name:'Character',exact:true}).click();await page.getByRole('button',{name:'Polar',exact:true}).click();
-  await page.getByRole('tab',{name:'Panels',exact:true}).click();await page.getByText('Panel colors',{exact:true}).click();
+  await page.getByRole('tab',{name:'Panels',exact:true}).click();await page.getByText('Charts & colors',{exact:true}).click();
   assert.equal(await page.getByLabel('Temperature panel color',{exact:true}).inputValue(),'#000055');
   await page.getByLabel('Temperature panel color',{exact:true}).fill('#ff0055');
   assert.equal(await page.getByLabel('Rain panel color',{exact:true}).inputValue(),'#005555');

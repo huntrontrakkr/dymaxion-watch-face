@@ -40,6 +40,20 @@ try{
   await page.getByRole('tab',{name:'Composition',exact:true}).click();
   assert.equal((await saved()).moonIndicator,false);
   await page.locator('#moonIndicator').check();
+  // The battery gauge and the Quiet Time mark, drawn at the top right.
+  const corner=()=>page.locator('#screen').evaluate(c=>Array.from(c.getContext('2d').getImageData(156,0,44,16).data).join());
+  const plain=await corner();
+  assert.equal((await saved()).batteryGauge,false);await page.locator('#batteryGauge').check();assert.equal((await saved()).batteryGauge,true);
+  const gauge=await corner();assert.notEqual(gauge,plain,'the gauge draws a battery around the percentage');
+  await page.locator('#preview-quiet').check();assert.notEqual(await corner(),gauge,'Quiet Time shows its mark');
+  await page.locator('#preview-quiet').uncheck();assert.equal(await corner(),gauge);
+  await page.locator('#batteryGauge').uncheck();assert.equal(await corner(),plain);
+  await page.locator('#preview-battery').selectOption('charging');assert.notEqual(await corner(),plain,'a bolt while charging');
+  await page.locator('#preview-battery').selectOption('low');assert.notEqual(await corner(),plain,'the accent color when low');
+  await page.locator('#preview-battery').selectOption('normal');assert.equal(await corner(),plain);
+  const underBar=()=>page.locator('#screen').evaluate(c=>Array.from(c.getContext('2d').getImageData(0,17,200,1).data).join());
+  const bare=await underBar();await page.locator('#stepLine').check();assert.equal((await saved()).stepLine,true);assert.notEqual(await underBar(),bare,'the step line');
+  await page.locator('#stepLine').uncheck();assert.equal(await underBar(),bare);
   assert.equal(await page.getByRole('button',{name:'Original axis',exact:true}).count(),0);
   await page.getByRole('tab',{name:'Places',exact:true}).click();
   assert.equal(await page.locator('.marker-control canvas').first().evaluate(c=>c.clientWidth/c.width),3,'marker samples enlarge each pixel exactly three times');
@@ -92,10 +106,13 @@ try{
   assert.equal(await mobile.locator('#theme option').filter({hasText:'Hot Dog Stand'}).count(),0);
   // Power and motion on the phone: the night hours and dark pause wait for the night saver.
   assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isDisabled());
-  await mobile.getByLabel('Night saver',{exact:true}).check();assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isEnabled());
-  await mobile.getByLabel('Night saver',{exact:true}).uncheck();
-  await mobile.getByLabel('During Quiet Time',{exact:true}).check();assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isEnabled(),'Quiet Time alone can be the night');
-  await mobile.getByLabel('During Quiet Time',{exact:true}).uncheck();
+  const saver=mobile.getByLabel('Night saver',{exact:true});
+  assert.equal(await saver.inputValue(),'off');assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isDisabled());
+  await saver.selectOption('hours');assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isEnabled());assert(await mobile.getByLabel('Night saver from',{exact:true}).isEnabled());
+  // Quiet Time can be the night by itself, without any hours.
+  await saver.selectOption('quiet');assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isEnabled(),'Quiet Time alone can be the night');assert(await mobile.getByLabel('Night saver from',{exact:true}).isDisabled(),'no hours to choose');
+  await saver.selectOption('both');assert(await mobile.getByLabel('Night saver from',{exact:true}).isEnabled());
+  await saver.selectOption('off');
   for(let theme=4;theme<THEMES.length;theme++){
     if(!THEMES[theme].hidden){
       await mobile.locator('#theme').selectOption(String(theme));
@@ -131,6 +148,7 @@ try{
   await mobile.locator('#preset').selectOption('horizon');await mobile.locator('#theme').selectOption('1');
   assert.equal(await mobile.locator('#stacked').count(),0,'the stacked clock is retired');
   await mobile.locator('#moonIndicator').uncheck();assert.equal(await mobile.locator('#moonIndicator').isChecked(),false);
+  assert.equal(await mobile.locator('#batteryGauge').isChecked(),false);await mobile.locator('#batteryGauge').check();
   assert.equal(await mobile.locator('[data-key=icon]').first().locator('option').count(),12);
   await mobile.locator('[data-key=icon]').first().selectOption('3');
   assert.match(await mobile.locator('[data-symbol-meaning]').first().textContent(),/point up/);

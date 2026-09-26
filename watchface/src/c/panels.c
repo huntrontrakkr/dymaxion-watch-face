@@ -1,4 +1,5 @@
 #include "panels.h"
+#include "palette.h"
 #include "settings.h"
 #include "chart_axis.h"
 #include "caps.h"
@@ -17,7 +18,7 @@ static const float *s_daylight;
 // the window, width or place moves (hourly), the next sunrise or sunset once it
 // has passed. Each redraw otherwise reuses them.
 static struct {uint32_t t0;int count,left,right;float place[3];uint8_t day[25];} s_columns;
-static struct {uint32_t valid_until,event;bool rise;float place[3];} s_sun_event;
+static struct {uint32_t valid_until,event,second;bool rise,second_rise;float place[3];} s_sun_event;
 static bool same_place(const float a[3],const float b[3]){return a[0]==b[0]&&a[1]==b[1]&&a[2]==b[2];}
 static void daylight_columns(uint32_t t0,int count,int left,int right){
   if(s_columns.t0==t0&&s_columns.count==count&&s_columns.left==left&&s_columns.right==right&&same_place(s_columns.place,s_daylight))return;
@@ -29,6 +30,7 @@ static uint32_t next_sun_event(uint32_t now,bool *rise){
   if(now>=s_sun_event.valid_until||!same_place(s_sun_event.place,s_daylight)){
     memcpy(s_sun_event.place,s_daylight,sizeof(s_sun_event.place));
     s_sun_event.event=solar_next_event(now,s_daylight,48,&s_sun_event.rise);
+    s_sun_event.second=s_sun_event.event?solar_next_event(s_sun_event.event+60,s_daylight,48,&s_sun_event.second_rise):0;
     // Valid until the event passes; with none (polar day or night), for an hour.
     s_sun_event.valid_until=s_sun_event.event?s_sun_event.event:now+3600;
   }
@@ -57,10 +59,7 @@ static void label(GContext *ctx,const char *t,int x,int baseline,int width,GText
   caps_draw(s_caps,t,x,baseline,false,panel_span,&pen);
 }
 // One RGB222 step per channel toward the ground: rain sits dimmed behind the line.
-static GColor dim(GColor c,GColor ground){
-  uint8_t out=0xc0;for(int shift=0;shift<6;shift+=2){int a=(c.argb>>shift)&3,b=(ground.argb>>shift)&3;out|=(a+(b>a)-(b<a))<<shift;}
-  return (GColor){.argb=out};
-}
+static GColor dim(GColor c,GColor ground){return (GColor){.argb=palette_step(c.argb,ground.argb)};}
 static void glyph_label(GContext *ctx,const char *text,int x,int y,GColor ink,const ChartGlyph *(*lookup)(char)){
   graphics_context_set_stroke_color(ctx,ink);
   while(*text){const ChartGlyph *glyph=lookup(*text++);
@@ -169,6 +168,58 @@ static void calendar_draw(GContext *ctx,const struct tm *local){
     label(ctx,day,x,y,24,GTextAlignmentCenter,ink);
   }
 }
+// The next high and low, soonest first, each after its triangle, ending at
+// the right edge (shared/panel-data.js nextTides): the ones saved at fetch
+// while still ahead, then later ones from the events, their local time from
+// the hour of the sample they fall in.
+// Up to two times in the header, soonest first, each after its glyph, ending
+// at the right edge (shared/panel-render.js headerTimes).
+typedef struct {uint32_t time;int minute,glyph;} HeaderTime;
+static void header_times(GContext *ctx,HeaderTime *t,int n){
+  if(!s_caps)return;
+  if(n==2&&t[1].time<t[0].time){HeaderTime swap=t[0];t[0]=t[1];t[1]=swap;}
+  int x=196;graphics_context_set_stroke_color(ctx,color(7));
+  for(int k=n-1;k>=0;k--){
+    char text[16];clock_label(text,sizeof(text),t[k].minute);int left=x-caps_width(s_caps,text);
+    label(ctx,text,left,191,x-left,GTextAlignmentLeft,color(7));
+    const uint8_t *g=chart_header_glyph(t[k].glyph);
+    for(int row=0;row<5;row++)for(int col=0;col<5;col++)if(g[row]&(1u<<(4-col)))graphics_draw_pixel(ctx,GPoint(left-7+col,185+row));
+    x=left-12;
+  }
+}
+// The next high and low tide (shared/panel-data.js nextTides): the ones saved
+// at fetch while still ahead, then later ones from the events, their local
+// time from the hour of the sample they fall in.
+static int next_tides(const uint8_t *p,time_t now,HeaderTime out[2]){
+  int n=0;
+  for(int k=0;k<2;k++){
+    bool high=k==0;uint32_t t=read_u32(p+(high?12:16));int minute=(uint16_t)read_i16(p+(high?24:26));
+    if(t<(uint32_t)now){
+      int i=0;for(;i<p[44];i++){uint16_t at=(uint16_t)read_i16(p+TIDE_EVENTS_AT+4*i);
+        t=read_u32(p+8)+(uint32_t)(at&0x7fff)*60;if(((at&0x8000)!=0)==high&&t>=(uint32_t)now)break;}
+      if(i==p[44])continue;
+      int offset=(uint16_t)read_i16(p+TIDE_EVENTS_AT+4*i)&0x7fff;if(offset/60>=p[1])continue;
+      minute=p[48+(offset/60)*4+2]*60+offset%60;
+    }
+    out[n++]=(HeaderTime){t,minute,high?GLYPH_HIGH:GLYPH_LOW};
+  }
+  return n;
+}
+// The next sunrise and sunset: from the sun at the daylight place when the
+// forecast follows you (the same source as the shading), else the forecast's.
+static int next_suns(const uint8_t *p,time_t now,HeaderTime out[2]){
+  int n=0;
+  if(s_daylight&&s_footer[F_WEATHER_PLACE]==3){
+    bool rise;uint32_t t=next_sun_event((uint32_t)now,&rise);
+    for(int k=0;k<2&&t;k++){
+      time_t at=t;struct tm *local=localtime(&at);out[n++]=(HeaderTime){t,local->tm_hour*60+local->tm_min,rise?GLYPH_RISE:GLYPH_SET};
+      if(!k){t=s_sun_event.second;rise=s_sun_event.second_rise;}
+    }
+    return n;
+  }
+  for(int k=0;k<2;k++){uint32_t t=read_u32(p+12+4*k);if(t>=(uint32_t)now)out[n++]=(HeaderTime){t,(uint16_t)read_i16(p+20+2*k),k?GLYPH_SET:GLYPH_RISE};}
+  return n;
+}
 static int metric(const uint8_t *p,int i,bool tide,bool humidity){
   const uint8_t *sample=p+(tide?48+i*4:32+i*8);int v=read_i16(sample);
   if(tide)return s_footer[F_TIDE_FEET]?v*328/100:v; // hundredths of m or ft
@@ -195,28 +246,20 @@ static void graph_draw(GContext *ctx,time_t now){
   else if(humidity)snprintf(title,sizeof(title),"RH %d%%",n/10);
   else if(s_footer[F_HUMID_LINE])snprintf(title,sizeof(title),"%.7s %d%c RH %d%%",(const char *)p+24,(n+(n<0?-5:5))/10,s_footer[F_FAHRENHEIT]?'F':'C',p[32+start*8+2]);
   else snprintf(title,sizeof(title),"%.7s %d%c",(const char *)p+24,(n+(n<0?-5:5))/10,s_footer[F_FAHRENHEIT]?'F':'C');
-  right[0]=0;uint32_t first=read_u32(p+12),second=read_u32(p+16);bool usefirst=first>=(uint32_t)now&&(second<(uint32_t)now||first<second);uint32_t event=usefirst?first:second;
+  right[0]=0;
   bool stale=(p[2]&2)||((uint32_t)now>read_u32(p+4)+(tide?12*3600:s_footer[F_REFRESH]*120));
   if(p[2]&1)snprintf(right,sizeof(right),"DEMO");
   else if(stale)snprintf(right,sizeof(right),"OLD");
-  else if(tide&&event>=(uint32_t)now){
-    char timebuf[16];clock_label(timebuf,sizeof(timebuf),(uint16_t)read_i16(p+24+(usefirst?0:2)));
-    snprintf(right,sizeof(right),"%s %s",usefirst?"H":"L",timebuf);
-  }else if(!tide&&s_footer[F_SOLAR]&&s_daylight&&s_footer[F_WEATHER_PLACE]==3){
-    // Sunrise and sunset at the daylight place, the same source as the shading.
-    bool rise;time_t sun=next_sun_event((uint32_t)now,&rise);
-    if(sun){struct tm *t=localtime(&sun);char timebuf[16];clock_label(timebuf,sizeof(timebuf),t->tm_hour*60+t->tm_min);snprintf(right,sizeof(right),"%s %s",rise?"RISE":"SET",timebuf);}
-  }else if(!tide&&s_footer[F_SOLAR]&&event>=(uint32_t)now){
-    char timebuf[16];clock_label(timebuf,sizeof(timebuf),(uint16_t)read_i16(p+20+(usefirst?0:2)));
-    snprintf(right,sizeof(right),"%s %s",usefirst?"RISE":"SET",timebuf);
-  }
-  if(!right[0]&&!tide&&!humidity&&s_footer[F_RAIN]){
+  HeaderTime times[2];int time_count=0;
+  if(!right[0])time_count=tide?next_tides(p,now,times):s_footer[F_SOLAR]?next_suns(p,now,times):0;
+  if(!right[0]&&!time_count&&!tide&&!humidity&&s_footer[F_RAIN]){
     int peak=0;for(int i=0;i<count;i++){const uint8_t *sample=p+32+(start+i)*8;int rain=s_footer[F_RAIN]==1?sample[3]:(uint16_t)read_i16(sample+4);peak=MAX(peak,rain);}
     if(s_footer[F_RAIN]==1)snprintf(right,sizeof(right),"RAIN %d%%",peak);
     else if(s_footer[F_RAIN_INCH]){int hundredths=(peak*100+127)/254;snprintf(right,sizeof(right),"MAX %d.%02dIN",hundredths/100,hundredths%100);}
     else{decimal(value,sizeof(value),peak);snprintf(right,sizeof(right),"MAX %sMM",value);}
   }
   label(ctx,title,4,191,104,GTextAlignmentLeft,color(6));label(ctx,right,107,191,89,GTextAlignmentRight,color(7));
+  header_times(ctx,times,time_count);
   char upper[12],lower[12];chart_value_label(upper,sizeof(upper),hi,tide);chart_value_label(lower,sizeof(lower),lo,tide);
   ChartLayout layout=chart_layout(upper,lower,count,s_footer[F_RANGE_LABELS],chart_text_width(s_clock24?"23":"12A"));
   int plot_height=layout.bottom-layout.top+1;
@@ -224,10 +267,14 @@ static void graph_draw(GContext *ctx,time_t now){
   // Daylight per pixel column: the sun's altitude at that moment and place.
   if(!tide&&s_footer[F_DAYLIGHT]){
     if(s_daylight)daylight_columns(read_u32(p+8)+(uint32_t)start*3600,count,layout.left,layout.right);
+    bool was_day=false;
     for(int xx=layout.left;xx<=layout.right;xx++){
       int sample=(xx-layout.left)*(count-1)/(layout.right-layout.left);
       bool day=s_daylight?(s_columns.day[xx/8]>>(xx%8))&1:p[32+(start+sample)*8+6];
       rect(ctx,xx,layout.daylight,1,1,day?color(7):color(5));
+      // Sunrise or sunset: a short grey line across the strip.
+      if(xx>layout.left&&day!=was_day)rect(ctx,xx,layout.daylight-1,1,5,color(5));
+      was_day=day;
       if(!day&&xx%4==0)for(int y=layout.top+2;y<=layout.bottom;y+=4)rect(ctx,xx,y,1,1,color(5));
     }
   }
@@ -241,10 +288,32 @@ static void graph_draw(GContext *ctx,time_t now){
   }
   if(s_footer[F_GRID])for(int x=layout.left;x<=layout.right;x+=4)rect(ctx,x,(layout.top+layout.bottom)/2,1,1,color(5));
   if(tide&&s_footer[F_TIDE_ZERO]&&lo<0&&hi>0)for(int x=layout.left;x<=layout.right;x+=4)rect(ctx,x,chart_y(0,lo,hi),MIN(2,layout.right-x+1),1,color(5));
+  // High and low tides: a dotted line from each high down, and from each low
+  // up, with the height over the high tides (chart_tide_marks).
+  TideMark marks[TIDE_EVENTS];int mark_count=0;
+  if(tide){
+    TideEvent events[TIDE_EVENTS];int n=0;
+    for(int i=0;i<p[44]&&i<TIDE_EVENTS;i++){
+      const uint8_t *e=p+TIDE_EVENTS_AT+4*i;uint16_t at=(uint16_t)read_i16(e);int v=read_i16(e+2);
+      events[n++]=(TideEvent){(int32_t)(at&0x7fff)*60-start*3600,(int16_t)(s_footer[F_TIDE_FEET]?v*328/100:v),(at&0x8000)!=0};
+    }
+    mark_count=chart_tide_marks(layout,lo,hi,events,n,marks);
+    for(int i=0;i<mark_count;i++){
+      const TideMark *m=&marks[i];int from=m->high?m->y+2:layout.top,to=m->high?layout.bottom:m->y-2;
+      for(int y=from;y<=to;y+=2)if(!(m->label[0]&&y>=m->label_y-1&&y<=m->label_y+7))rect(ctx,m->x,y,1,1,color(5));
+    }
+  }
   // Humidity joins the weather chart as a dotted line on its own fixed 0-100% scale.
   if(!tide&&!humidity&&s_footer[F_HUMID_LINE])for(int i=1;i<count;i++)
     dotted_line(ctx,chart_x(layout,i-1),chart_y(p[32+(start+i-1)*8+2]*10,0,1000),chart_x(layout,i),chart_y(p[32+(start+i)*8+2]*10,0,1000),custom(F_HUMID_COLOR));
   for(int i=1;i<count;i++)line(ctx,chart_x(layout,i-1),chart_y(metric(p,start+i-1,tide,humidity),lo,hi),chart_x(layout,i),chart_y(metric(p,start+i,tide,humidity),lo,hi),ink);
+  // The warmest and coolest readings, on a cleared patch.
+  if(!tide&&!humidity){
+    int16_t values[49];for(int i=0;i<count;i++)values[i]=(int16_t)metric(p,start+i,false,false);
+    ChartLabel extremes[2];int m=chart_extremes(layout,lo,hi,values,count,extremes);
+    for(int i=0;i<m;i++){rect(ctx,extremes[i].x-1,extremes[i].y-1,extremes[i].width+2,9,color(0));glyph_label(ctx,extremes[i].text,extremes[i].x,extremes[i].y,color(6),chart_range_glyph);}
+  }
+  for(int i=0;i<mark_count;i++)if(marks[i].label[0])glyph_label(ctx,marks[i].label,marks[i].label_x,marks[i].label_y,color(6),chart_range_glyph);
   if(s_footer[F_RANGE_LABELS]){
     range_label(ctx,layout,upper,layout.top,color(6));
     range_label(ctx,layout,lower,layout.bottom-6,color(6));
@@ -298,15 +367,17 @@ static void health_draw(GContext *ctx,time_t now,const struct tm *local){
     label(ctx,"HEALTH",4,193,190,GTextAlignmentLeft,color(7));
     label(ctx,"ALLOW HEALTH IN THE PEBBLE APP",4,214,192,GTextAlignmentLeft,color(6));return;
   }
-  static HealthView v;health_view(&s_health,s_footer[F_RANGE_LABELS],chart_text_width(s_clock24?"23":"12A"),&v);
-  const ChartLayout l=v.layout;
-  label(ctx,v.title,4,191,104,GTextAlignmentLeft,color(6));label(ctx,v.right,107,191,89,GTextAlignmentRight,color(7));
-  for(int i=1;i<HEALTH_HOURS;i++)dotted_line(ctx,chart_x(l,i-1),v.usual[i-1],chart_x(l,i),v.usual[i],color(6));
-  for(int i=0;i<v.bar_count;i++)if(v.bar_h[i])rect(ctx,v.bar_x[i],v.bar_y[i],v.bar_w[i],v.bar_h[i],custom(F_RAIN_COLOR));
-  for(int i=1;i<HEALTH_HOURS;i++)if(v.pulse[i-1]>=0&&v.pulse[i]>=0)line(ctx,chart_x(l,i-1),v.pulse[i-1],chart_x(l,i),v.pulse[i],custom(F_TEMP_COLOR));
+  // On the heap for the draw only: the app's static memory is nearly full.
+  HealthView *hv=malloc(sizeof(HealthView));if(!hv)return;
+  health_view(&s_health,s_footer[F_RANGE_LABELS],chart_text_width(s_clock24?"23":"12A"),hv);
+  const ChartLayout l=hv->layout;
+  label(ctx,hv->title,4,191,104,GTextAlignmentLeft,color(6));label(ctx,hv->right,107,191,89,GTextAlignmentRight,color(7));
+  for(int i=1;i<HEALTH_HOURS;i++)dotted_line(ctx,chart_x(l,i-1),hv->usual[i-1],chart_x(l,i),hv->usual[i],color(6));
+  for(int i=0;i<hv->bar_count;i++)if(hv->bar_h[i])rect(ctx,hv->bar_x[i],hv->bar_y[i],hv->bar_w[i],hv->bar_h[i],custom(F_RAIN_COLOR));
+  for(int i=1;i<HEALTH_HOURS;i++)if(hv->pulse[i-1]>=0&&hv->pulse[i]>=0)line(ctx,chart_x(l,i-1),hv->pulse[i-1],chart_x(l,i),hv->pulse[i],custom(F_TEMP_COLOR));
   if(s_footer[F_RANGE_LABELS]){
-    range_label(ctx,l,v.upper,l.top,color(6));
-    range_label(ctx,l,v.lower,l.bottom-6,color(6));
+    range_label(ctx,l,hv->upper,l.top,color(6));
+    range_label(ctx,l,hv->lower,l.bottom-6,color(6));
   }
   line(ctx,l.left,l.axis,l.right,l.axis,color(5));
   char value[12];
@@ -315,6 +386,7 @@ static void health_draw(GContext *ctx,time_t now,const struct tm *local){
     line(ctx,x,l.axis+1,x,l.axis+(major?2:1),major?color(6):color(5));
     if(major){chart_hour_label(value,sizeof(value),i,s_clock24);axis_label(ctx,value,chart_hour_left(l,i,chart_text_width(value)),l.label_baseline-6,color(6));}
   }
+  free(hv);
 }
 bool panels_showing_zones(void){return !s_footer[F_ENABLED]||s_page==PANEL_ZONES;}
 bool panels_draw(GContext *ctx,time_t now,const struct tm *local,GFont font,const uint8_t *caps,const uint8_t *palette,bool clock24,const float *daylight){

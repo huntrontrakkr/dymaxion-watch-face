@@ -1,4 +1,5 @@
 #include "map_times.h"
+#include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 #define HALO 3
@@ -163,13 +164,15 @@ static void check_route(void *context,int x,int y){
 }
 static void mark_route(void *context,int x,int y){for(int dy=-1;dy<=1;dy++)for(int dx=-1;dx<=1;dx++)set_bit(context,x+dx,y+dy);}
 #define MAX_ROUTES 48
-static void place_one(const MapTimePlace *p,const uint8_t *blocked,uint8_t *taken,uint8_t *wires,bool turn,const MapMarker *markers,int marker_count,int size,MapTimeSpot *best){
+// The search's working lists, on the heap while placing: Pebble app stacks
+// are small and its static memory is nearly full.
+typedef struct {int16_t xs[MAP_TIMES_W],ys[MAP_TIMES_H];Route routes[MAX_ROUTES];Port port[MAX_ROUTES];} Scratch;
+static void place_one(Scratch *sc,const MapTimePlace *p,const uint8_t *blocked,uint8_t *taken,uint8_t *wires,bool turn,const MapMarker *markers,int marker_count,int size,MapTimeSpot *best){
   best->ok=false;
   for(uint8_t orientation=MAP_TIME_H;orientation<=(turn?MAP_TIME_V:MAP_TIME_H);orientation++){
     Box g[MAP_TIME_TEXT];int total=tiny_width(p->template_text,size),n=layout(p->template_text,orientation,total,size,g),bw=0,bh=0;
     for(int i=0;i<n;i++){if(g[i].x+g[i].w>bw)bw=g[i].x+g[i].w;if(g[i].y+g[i].h>bh)bh=g[i].y+g[i].h;}
-    // Static: Pebble app stacks are small.
-    static int16_t xs[MAP_TIMES_W],ys[MAP_TIMES_H];static Route routes[MAX_ROUTES];static Port port[MAX_ROUTES];
+    int16_t *xs=sc->xs,*ys=sc->ys;Route *routes=sc->routes;Port *port=sc->port;
     int nx=outward(p->x-(bw>>1),MARGIN,MAP_TIMES_W-MARGIN-bw,xs),ny=outward(p->y-(bh>>1),MARGIN,MAP_TIMES_H-MARGIN-bh,ys);
     int penalty=orientation==MAP_TIME_V?TURN_PENALTY:0;
     for(int j=0;j<ny;j++){
@@ -208,7 +211,7 @@ static void place_one(const MapTimePlace *p,const uint8_t *blocked,uint8_t *take
   map_time_route(best->points,mark_route,wires);
 }
 static const uint8_t ORDERS[6][3]={{0,1,2},{0,2,1},{1,0,2},{1,2,0},{2,0,1},{2,1,0}};
-static void arrange(const uint8_t *blocked,const MapTimePlace places[3],const MapRect *obstacles,int obstacle_count,
+static void arrange(Scratch *sc,const uint8_t *blocked,const MapTimePlace places[3],const MapRect *obstacles,int obstacle_count,
   const MapMarker *markers,int marker_count,bool turn,uint8_t *taken,int size,MapTimeSpot out[3]){
   int32_t best_total=INT32_MAX;
   // Leaders placed so far, a pixel wide either side: the second half of the
@@ -223,7 +226,7 @@ static void arrange(const uint8_t *blocked,const MapTimePlace places[3],const Ma
     // A time that does not fit at the chosen size steps down a size at a time
     // rather than going missing.
     for(int k=0;k<3&&total<best_total;k++){int i=ORDERS[o][k];if(!places[i].present)continue;
-      for(int s=size;s>=0&&!result[i].ok;s--)place_one(&places[i],blocked,taken,wires,turn,markers,marker_count,s,&result[i]);
+      for(int s=size;s>=0&&!result[i].ok;s--)place_one(sc,&places[i],blocked,taken,wires,turn,markers,marker_count,s,&result[i]);
       // Each size stepped down costs 1000, so it wins only when the chosen size cannot fit.
       total+=result[i].ok?result[i].cost+1000*(size-result[i].size):10000;}
     if(total<best_total){best_total=total;memcpy(out,result,sizeof(result));}
@@ -232,5 +235,7 @@ static void arrange(const uint8_t *blocked,const MapTimePlace places[3],const Ma
 // Every label uses the chosen size and goes wherever it fits.
 void map_times_place(const uint8_t *blocked,const MapTimePlace places[3],const MapRect *obstacles,int obstacle_count,
   const MapMarker *markers,int marker_count,bool turn,int size,uint8_t *taken,MapTimeSpot out[3]){
-  arrange(blocked,places,obstacles,obstacle_count,markers,marker_count,turn,taken,size,out);
+  Scratch *sc=malloc(sizeof(Scratch));if(!sc){memset(out,0,3*sizeof(MapTimeSpot));return;}
+  arrange(sc,blocked,places,obstacles,obstacle_count,markers,marker_count,turn,taken,size,out);
+  free(sc);
 }
