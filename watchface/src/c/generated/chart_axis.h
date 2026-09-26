@@ -42,3 +42,5 @@ static const ChartGlyph CHART_RANGE_GLYPHS[] = {
   {'.',1,{0,0,0,0,0,0,1}},
   {'?',3,{6,1,1,2,2,0,2}}
 };
+// High and low tide: five wide, three tall.
+static const uint8_t TIDE_GLYPHS[2][3] = {{4,14,31},{31,14,4}};

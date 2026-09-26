@@ -76,3 +76,14 @@ test('a resolved nearby station delivers actual NOAA hourly and high/low data th
   assert.equal(Buffer.from(packet.subarray(36,43)).toString(),'8638660');
   await service.refresh();assert.equal(urls.length,2,'six-hour tide cache is preserved');
 });
+test('the tide header lists the next high and low, soonest first, from the events once the saved ones pass',async()=>{
+  const {nextTides}=await import('../shared/panel-data.js');
+  const H=3600,start=1_800_000_000,samples=Array.from({length:49},(_,i)=>({height:0,hour:(5+i)%24}));
+  const d={start,high:start+2*H,low:start+8*H+30*60,highMinute:7*60,lowMinute:13*60+30,samples,
+    events:[{time:start+2*H,height:150,high:true},{time:start+8*H+30*60,height:10,high:false},{time:start+14*H+45*60,height:160,high:true},{time:start+21*H,height:5,high:false}]};
+  assert.deepEqual(nextTides(d,start).map(t=>[t.high,t.minute]),[[true,420],[false,810]]);
+  // The saved high has passed: the next one comes from the events, at its local time.
+  assert.deepEqual(nextTides(d,start+3*H).map(t=>[t.high,t.minute]),[[false,810],[true,19*60+45]]);
+  assert.deepEqual(nextTides(d,start+15*H).map(t=>[t.high,t.minute]),[[false,2*60]],'no high left in the data: only the low');
+  assert.deepEqual(nextTides({...d,events:undefined},start+9*H),[]);
+});

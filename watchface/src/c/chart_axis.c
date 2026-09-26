@@ -50,3 +50,4 @@ int chart_tide_marks(ChartLayout layout,int lo,int hi,const TideEvent *events,in
   }
   return count;
 }
+const uint8_t *chart_tide_glyph(bool high){return TIDE_GLYPHS[high?0:1];}

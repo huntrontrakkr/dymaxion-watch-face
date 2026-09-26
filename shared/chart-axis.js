@@ -34,6 +34,9 @@ export const RANGE_GLYPHS={
   '.':['.','.','.','.','.','.','#'],
   '?':['##.','..#','..#','.#.','.#.','...','.#.']
 };
+// High and low tide in the tide header: a solid triangle pointing up for high
+// water and down for low, as tide tables mark them.
+export const TIDE_GLYPHS={high:['..#..','.###.','#####'],low:['#####','.###.','..#..']};
 // Range labels end two pixels short of the chart, one pixel from the edge.
 export const RANGE_GAP=2;
 export const CHART={top:193,bottom:214,right:197,daylight:192,axis:215,labelBaseline:225,labelLeft:1,labelRight:199};

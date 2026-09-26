@@ -167,6 +167,34 @@ static void calendar_draw(GContext *ctx,const struct tm *local){
     label(ctx,day,x,y,24,GTextAlignmentCenter,ink);
   }
 }
+// The next high and low, soonest first, each after its triangle, ending at
+// the right edge (shared/panel-data.js nextTides): the ones saved at fetch
+// while still ahead, then later ones from the events, their local time from
+// the hour of the sample they fall in.
+static void tide_header(GContext *ctx,const uint8_t *p,time_t now){
+  if(!s_caps)return;
+  uint32_t times[2];int minutes[2],n=0;bool highs[2];
+  for(int k=0;k<2;k++){
+    bool high=k==0;uint32_t t=read_u32(p+(high?12:16));int minute=(uint16_t)read_i16(p+(high?24:26));
+    if(t<(uint32_t)now){
+      int i=0;for(;i<p[44];i++){const uint8_t *e=p+TIDE_EVENTS_AT+4*i;uint16_t at=(uint16_t)read_i16(e);
+        t=read_u32(p+8)+(uint32_t)(at&0x7fff)*60;if(((at&0x8000)!=0)==high&&t>=(uint32_t)now)break;}
+      if(i==p[44])continue;
+      int offset=(uint16_t)read_i16(p+TIDE_EVENTS_AT+4*i)&0x7fff;if(offset/60>=p[1])continue;
+      minute=p[48+(offset/60)*4+2]*60+offset%60;
+    }
+    times[n]=t;minutes[n]=minute;highs[n++]=high;
+  }
+  if(n==2&&times[1]<times[0]){uint32_t t=times[0];times[0]=times[1];times[1]=t;int m=minutes[0];minutes[0]=minutes[1];minutes[1]=m;bool h=highs[0];highs[0]=highs[1];highs[1]=h;}
+  int x=196;
+  for(int k=n-1;k>=0;k--){
+    char text[12];clock_label(text,sizeof(text),minutes[k]);int left=x-caps_width(s_caps,text);
+    label(ctx,text,left,191,x-left,GTextAlignmentLeft,color(7));
+    graphics_context_set_stroke_color(ctx,color(7));
+    for(int row=0;row<3;row++)for(int col=0;col<5;col++)if(chart_tide_glyph(highs[k])[row]&(1u<<(4-col)))graphics_draw_pixel(ctx,GPoint(left-7+col,186+row));
+    x=left-12;
+  }
+}
 static int metric(const uint8_t *p,int i,bool tide,bool humidity){
   const uint8_t *sample=p+(tide?48+i*4:32+i*8);int v=read_i16(sample);
   if(tide)return s_footer[F_TIDE_FEET]?v*328/100:v; // hundredths of m or ft
@@ -197,10 +225,8 @@ static void graph_draw(GContext *ctx,time_t now){
   bool stale=(p[2]&2)||((uint32_t)now>read_u32(p+4)+(tide?12*3600:s_footer[F_REFRESH]*120));
   if(p[2]&1)snprintf(right,sizeof(right),"DEMO");
   else if(stale)snprintf(right,sizeof(right),"OLD");
-  else if(tide&&event>=(uint32_t)now){
-    char timebuf[16];clock_label(timebuf,sizeof(timebuf),(uint16_t)read_i16(p+24+(usefirst?0:2)));
-    snprintf(right,sizeof(right),"%s %s",usefirst?"H":"L",timebuf);
-  }else if(!tide&&s_footer[F_SOLAR]&&s_daylight&&s_footer[F_WEATHER_PLACE]==3){
+  else if(tide){}
+  else if(!tide&&s_footer[F_SOLAR]&&s_daylight&&s_footer[F_WEATHER_PLACE]==3){
     // Sunrise and sunset at the daylight place, the same source as the shading.
     bool rise;time_t sun=next_sun_event((uint32_t)now,&rise);
     if(sun){struct tm *t=localtime(&sun);char timebuf[16];clock_label(timebuf,sizeof(timebuf),t->tm_hour*60+t->tm_min);snprintf(right,sizeof(right),"%s %s",rise?"RISE":"SET",timebuf);}
@@ -215,6 +241,7 @@ static void graph_draw(GContext *ctx,time_t now){
     else{decimal(value,sizeof(value),peak);snprintf(right,sizeof(right),"MAX %sMM",value);}
   }
   label(ctx,title,4,191,104,GTextAlignmentLeft,color(6));label(ctx,right,107,191,89,GTextAlignmentRight,color(7));
+  if(tide&&!right[0])tide_header(ctx,p,now);
   char upper[12],lower[12];chart_value_label(upper,sizeof(upper),hi,tide);chart_value_label(lower,sizeof(lower),lo,tide);
   ChartLayout layout=chart_layout(upper,lower,count,s_footer[F_RANGE_LABELS],chart_text_width(s_clock24?"23":"12A"));
   int plot_height=layout.bottom-layout.top+1;
@@ -312,15 +339,17 @@ static void health_draw(GContext *ctx,time_t now,const struct tm *local){
     label(ctx,"HEALTH",4,193,190,GTextAlignmentLeft,color(7));
     label(ctx,"ALLOW HEALTH IN THE PEBBLE APP",4,214,192,GTextAlignmentLeft,color(6));return;
   }
-  static HealthView v;health_view(&s_health,s_footer[F_RANGE_LABELS],chart_text_width(s_clock24?"23":"12A"),&v);
-  const ChartLayout l=v.layout;
-  label(ctx,v.title,4,191,104,GTextAlignmentLeft,color(6));label(ctx,v.right,107,191,89,GTextAlignmentRight,color(7));
-  for(int i=1;i<HEALTH_HOURS;i++)dotted_line(ctx,chart_x(l,i-1),v.usual[i-1],chart_x(l,i),v.usual[i],color(6));
-  for(int i=0;i<v.bar_count;i++)if(v.bar_h[i])rect(ctx,v.bar_x[i],v.bar_y[i],v.bar_w[i],v.bar_h[i],custom(F_RAIN_COLOR));
-  for(int i=1;i<HEALTH_HOURS;i++)if(v.pulse[i-1]>=0&&v.pulse[i]>=0)line(ctx,chart_x(l,i-1),v.pulse[i-1],chart_x(l,i),v.pulse[i],custom(F_TEMP_COLOR));
+  // On the heap for the draw only: the app's static memory is nearly full.
+  HealthView *hv=malloc(sizeof(HealthView));if(!hv)return;
+  health_view(&s_health,s_footer[F_RANGE_LABELS],chart_text_width(s_clock24?"23":"12A"),hv);
+  const ChartLayout l=hv->layout;
+  label(ctx,hv->title,4,191,104,GTextAlignmentLeft,color(6));label(ctx,hv->right,107,191,89,GTextAlignmentRight,color(7));
+  for(int i=1;i<HEALTH_HOURS;i++)dotted_line(ctx,chart_x(l,i-1),hv->usual[i-1],chart_x(l,i),hv->usual[i],color(6));
+  for(int i=0;i<hv->bar_count;i++)if(hv->bar_h[i])rect(ctx,hv->bar_x[i],hv->bar_y[i],hv->bar_w[i],hv->bar_h[i],custom(F_RAIN_COLOR));
+  for(int i=1;i<HEALTH_HOURS;i++)if(hv->pulse[i-1]>=0&&hv->pulse[i]>=0)line(ctx,chart_x(l,i-1),hv->pulse[i-1],chart_x(l,i),hv->pulse[i],custom(F_TEMP_COLOR));
   if(s_footer[F_RANGE_LABELS]){
-    range_label(ctx,l,v.upper,l.top,color(6));
-    range_label(ctx,l,v.lower,l.bottom-6,color(6));
+    range_label(ctx,l,hv->upper,l.top,color(6));
+    range_label(ctx,l,hv->lower,l.bottom-6,color(6));
   }
   line(ctx,l.left,l.axis,l.right,l.axis,color(5));
   char value[12];
@@ -329,6 +358,7 @@ static void health_draw(GContext *ctx,time_t now,const struct tm *local){
     line(ctx,x,l.axis+1,x,l.axis+(major?2:1),major?color(6):color(5));
     if(major){chart_hour_label(value,sizeof(value),i,s_clock24);axis_label(ctx,value,chart_hour_left(l,i,chart_text_width(value)),l.label_baseline-6,color(6));}
   }
+  free(hv);
 }
 bool panels_showing_zones(void){return !s_footer[F_ENABLED]||s_page==PANEL_ZONES;}
 bool panels_draw(GContext *ctx,time_t now,const struct tm *local,GFont font,const uint8_t *caps,const uint8_t *palette,bool clock24,const float *daylight){

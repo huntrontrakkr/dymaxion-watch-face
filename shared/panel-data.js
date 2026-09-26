@@ -67,6 +67,21 @@ export function sampleEnvironment(now=Date.now()){
     events:Array.from({length:8},(_,k)=>({time:start+Math.round((3+6.2*k)*HOUR),height:k%2?5:165,high:!(k%2)})).filter(e=>e.time<=start+(SAMPLE_COUNT-1)*HOUR)};
   return {weather,tide,health:sampleHealth(now)};
 }
+// The next high and the next low, soonest first, for the tide header: the ones
+// saved at fetch while still ahead, then later ones from the day's events
+// (their local time from the hour of the sample they fall in). Minutes are
+// the station's local minutes of the day. The watch does the same (panels.c).
+export function nextTides(d,now){
+  const out=[];
+  for(const high of [true,false]){
+    const time=high?d.high:d.low;
+    if(time>=now){out.push({high,time,minute:high?d.highMinute:d.lowMinute});continue;}
+    const e=(d.events||[]).find(e=>e.high===high&&e.time>=now);if(!e)continue;
+    const offset=Math.round((e.time-d.start)/60),i=Math.floor(offset/60);
+    if(i<d.samples.length)out.push({high,time:e.time,minute:d.samples[i].hour*60+offset%60});
+  }
+  return out.sort((a,b)=>a.time-b.time);
+}
 export function dataWindow(data,now,horizon){
   if(!data?.samples?.length)return null;
   const start=Math.max(0,Math.floor((now/1000-data.start)/HOUR)),samples=data.samples.slice(start,start+horizon+1);

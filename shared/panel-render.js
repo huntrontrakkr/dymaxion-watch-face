@@ -1,11 +1,11 @@
 import {calendarCells} from './calendar.js';
-import {dataWindow} from './panel-data.js';
+import {dataWindow,nextTides} from './panel-data.js';
 import {drawBitmapText,textWidth} from './type.js';
 import {panelColors} from './panel-settings.js';
-import {drawPixelLine} from './pixels.js';
+import {drawPixelLine,drawPixelRows} from './pixels.js';
 import {sunUp,nextSunEvent} from './solar.js';
 import {healthView} from './health.js';
-import {drawRangeText,drawAxisText,drawNarrowText,axisTextWidth,axisValue,chartLayout,chartX,chartY,chartHourLabels,tideMarks} from './chart-axis.js';
+import {drawRangeText,drawAxisText,drawNarrowText,axisTextWidth,axisValue,chartLayout,chartX,chartY,chartHourLabels,tideMarks,TIDE_GLYPHS} from './chart-axis.js';
 // One RGB222 step (85) per channel toward the ground: a dimmer version of a color.
 export function dimColor(color,ground){
   return '#'+[1,3,5].map(i=>{const a=parseInt(color.slice(i,i+2),16),b=parseInt(ground.slice(i,i+2),16);return (a+Math.sign(b-a)*Math.min(85,Math.abs(b-a))).toString(16).padStart(2,'0');}).join('').toUpperCase();
@@ -62,9 +62,11 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       // already localized by the provider, just like their chart hour labels.
       const sun=!tide&&w.place==='current'&&data.daylight?nextSunEvent(Math.floor(now/1000),data.daylight):null,local=t=>{const d=new Date(t*1000);return d.getHours()*60+d.getMinutes();};
       const solar=sun?`${sun.rise?'RISE':'SET'} ${timeLabel(local(sun.time))}`:event>=now/1000?`${usefirst?'RISE':'SET'} ${timeLabel(usefirst?series.riseMinute:series.setMinute)}`:'';
-      let right=series.demo?'DEMO':stale?'OLD':tide?(event>=now/1000?`${usefirst?'H':'L'} ${timeLabel(usefirst?series.highMinute:series.lowMinute)}`:''):w.solarTimes?solar:'';
+      let right=series.demo?'DEMO':stale?'OLD':tide?'':w.solarTimes?solar:'';
       if(!right&&!tide&&!humidity&&w.precipitation!=='off')right=w.precipitation==='probability'?`RAIN ${Math.max(...samples.map(p=>p.probability))}%`:`MAX ${(Math.max(...samples.map(p=>p.rain))/10/(w.rainUnit==='in'?25.4:1)).toFixed(w.rainUnit==='in'?2:1)}${w.rainUnit.toUpperCase()}`;
       text(title,4,191);text(right,196,191,pal.accent,'right');
+      // The next high and low, soonest first, each after its triangle, ending at the right edge.
+      if(tide&&!right){let x=196;for(const t of nextTides(series,now/1000).reverse()){const label=timeLabel(t.minute),left=x-textWidth(font,label);text(label,x,191,pal.accent,'right');drawPixelRows(ctx,TIDE_GLYPHS[t.high?'high':'low'],left-7,186,pal.accent);x=left-12;}}
       const upper=axisValue(hi,tide),lower=axisValue(lo,tide),layout=chartLayout(upper,lower,samples.length,w.rangeLabels,axisTextWidth(clock24?'23':'12A'));
       const ink=tide?c.tide:humidity?c.humidity:c.temperature;
       // Rain sits behind the line, one RGB222 step toward the ground, so the
