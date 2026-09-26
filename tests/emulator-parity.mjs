@@ -4,7 +4,7 @@
 // test-results/emulator/*.png (watch | preview | differing pixels in red).
 import {chromium} from '@playwright/test';
 import {execFileSync} from 'node:child_process';
-import {readFileSync,readdirSync,writeFileSync,mkdirSync,appendFileSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdirSync,appendFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {defaults,THEMES} from '../shared/settings.js';
 import {encodeSettings} from '../shared/protocol.js';
@@ -15,9 +15,9 @@ import {sampleEnvironment} from '../shared/panel-data.js';
 
 const base=process.env.PREVIEW_URL||'http://127.0.0.1:5173',out='test-results/emulator';
 mkdirSync(out,{recursive:true});
-const find=(dir,name)=>{for(const e of readdirSync(dir,{withFileTypes:true})){const p=join(dir,e.name);if(e.isDirectory()){const f=find(p,name);if(f)return f;}else if(e.name===name)return p;}return null;};
-const header=readFileSync(find('watchface/build','message_keys.auto.h'),'utf8');
-const KEY=Object.fromEntries([...header.matchAll(/MESSAGE_KEY_(\w+)\s+(\d+)/g)].map(m=>[m[1],m[2]]));
+// Message key numbers as the SDK assigned them for this build.
+const KEY=JSON.parse(readFileSync('watchface/build/js/message_keys.json','utf8'));
+for(const k of ['SETTINGS','FOOTER','DISPLAY','PALETTE','TIDE'])if(!Number.isInteger(KEY[k]))throw new Error('No message key for '+k);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 // pebble-tool respawns the phone simulator when it has stopped, which can take
 // a moment to accept connections: try each command a few times.
