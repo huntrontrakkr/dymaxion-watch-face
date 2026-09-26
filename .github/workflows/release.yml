@@ -18,6 +18,8 @@ jobs:
   verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -53,10 +55,26 @@ jobs:
           cd ..
           python tools/release.py package
           python tools/release.py check
+      # A version tag releases that tag. A push to main releases a new version
+      # when package.json names one that has release notes and no tag yet.
+      - name: Decide whether this push is a release
+        id: release
+        if: github.event_name == 'push'
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            tag="$GITHUB_REF_NAME"
+          else
+            tag="v$(node -p "require('./package.json').version")"
+            if git ls-remote --exit-code --tags origin "refs/tags/$tag" > /dev/null || [ ! -f "releases/$tag.md" ]; then
+              tag=""
+            fi
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Release: ${tag:-none}"
       - name: Verify release tag belongs to main
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: steps.release.outputs.tag != ''
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
         run: |
           git merge-base --is-ancestor HEAD origin/main
           python tools/release.py check --tag "$RELEASE_TAG"
@@ -75,7 +93,7 @@ jobs:
 
   publish:
     needs: verify
-    if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
+    if: needs.verify.outputs.tag != '' && github.event_name == 'push'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -83,8 +101,18 @@ jobs:
     concurrency:
       group: pebble-store-publish
       cancel-in-progress: false
+    env:
+      RELEASE_TAG: ${{ needs.verify.outputs.tag }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      # Tag the tested commit. A tag pushed with the workflow's own token starts
+      # no new run, so this run publishes it. If the same tag was pushed by
+      # hand meanwhile, carry on only when it names this commit.
+      - name: Tag the release
+        if: github.ref_type == 'branch'
+        run: |
+          git tag "$RELEASE_TAG" "$GITHUB_SHA"
+          git push origin "refs/tags/$RELEASE_TAG" || [ "$(git ls-remote origin "refs/tags/$RELEASE_TAG" | cut -f1)" = "$GITHUB_SHA" ]
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.11'
@@ -96,12 +124,10 @@ jobs:
       - name: Publish the verified package to Pebble
         env:
           PEBBLE_FIREBASE_REFRESH_TOKEN: ${{ secrets.PEBBLE_FIREBASE_REFRESH_TOKEN }}
-          RELEASE_TAG: ${{ github.ref_name }}
         run: python tools/release.py publish --tag "$RELEASE_TAG"
       - name: Publish GitHub release downloads
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
         run: |
           if ! gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
             gh release create "$RELEASE_TAG" --verify-tag --title "Dymaxion $RELEASE_TAG" --notes-file release-artifacts/release-notes.md
