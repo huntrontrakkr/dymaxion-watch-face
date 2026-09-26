@@ -16,7 +16,7 @@ export function paletteControls(root,getSettings,onChange){
     <div data-editor hidden><label class="field">Palette name<input type="text" data-name aria-label="Palette name" maxlength="32"></label>
     <div class="palette-preview" aria-label="Current palette colors"></div>
     ${groups.map(([title,fields],i)=>`${i?`<details><summary>${title}</summary>`:''}<div class="palette-colors">${fields.map(([path,label])=>`<label class="field">${label}<input type="color" data-color="${path}" aria-label="Palette ${label.toLowerCase()}"><output data-value="${path}"></output></label>`).join('')}</div>${i?'</details>':''}`).join('')}
-    <p class="micro">Colors snap to the watch’s 64 colors. Individual place and panel color choices take priority.</p>
+    <p class="micro">Choose from the watch’s 64 colors. Individual place and panel color choices take priority.</p>
     </div><p class="micro" data-summary></p><p data-error class="notice error" role="alert"></p>`;
   const saved=root.querySelector('[data-saved]'),name=root.querySelector('[data-name]');
   function commit(patch,input){

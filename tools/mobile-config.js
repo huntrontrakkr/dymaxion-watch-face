@@ -10,6 +10,9 @@ import {citySearch} from '../shared/place-search.js';
 import {renderConfigPreview} from './config-preview.js';
 import {PANEL_PAGES} from '../shared/panel-settings.js';
 import {quoteOfTheDay} from '../shared/fuller-quotes.js';
+import {installWatchColorPicker} from '../shared/color-picker.js';
+import {colorView,setColorView,onColorViewChange,watchViewOverlay} from '../shared/watch-view.js';
+installWatchColorPicker();
 const $=id=>document.getElementById(id),data=window.DYMAXION_CONFIG;
 {const q=quoteOfTheDay();$('fuller-quote').textContent=q.text;$('fuller-source').textContent=q.source;}
 const exists=zone=>data.zoneNames.indexOf(zone)>=0;
@@ -98,5 +101,9 @@ $('import').onclick=()=>importText($('json').value);
 $('config').addEventListener('invalid',event=>{for(let node=event.target.parentElement;node;node=node.parentElement)if(node.tagName==='DETAILS')node.open=true;},true);
 $('config').onsubmit=e=>{e.preventDefault();try{s=validateSettings(s,exists);location.href='pebblejs://close#'+encodeURIComponent(JSON.stringify(s));}catch(e){$('error').textContent=e.message;}};
 $('preview-next').onclick=()=>{const pages=s.footer.pages;previewPage=pages[(pages.indexOf(previewPage)+1)%pages.length];preview();};
+// Screen colors or as on the watch: shared with the color picker.
+watchViewOverlay($('watch-preview'));
+const showWatchView=()=>$('preview-watch-colors').setAttribute('aria-pressed',String(colorView()==='watch'));
+$('preview-watch-colors').onclick=()=>setColorView(colorView()==='watch'?'screen':'watch');onColorViewChange(showWatchView);showWatchView();
 for(const [id,value]of [['preview-day',false],['preview-night',true]])$(id).onclick=()=>{evening=value;$('preview-day').setAttribute('aria-pressed',String(!value));$('preview-night').setAttribute('aria-pressed',String(value));preview();};
 refresh();

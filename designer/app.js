@@ -33,6 +33,9 @@ import {TRAY_MS,TRAY_Y,TRAY_H,traySlide,slideRow,besideProgress,besideShift,colu
 import {zoneColumn,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline,tallPixels} from '../shared/zone-column.js';
 import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,labelHull,hullRect,MAP_TIME_SIZES} from '../shared/map-times.js';
 import {minuteFlipClock,drawFlipPixels,FLIP_FACES,flipOffset} from '../shared/minute-flip.js';
+import {installWatchColorPicker} from '../shared/color-picker.js';
+import {colorView,setColorView,onColorViewChange,watchViewOverlay} from '../shared/watch-view.js';
+installWatchColorPicker();
 
 const $=id=>document.getElementById(id),zoneExists=tz=>!!moment.tz.zone(tz);
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -436,6 +439,10 @@ function startPulse(){pulseOrder=settings.places.map((p,i)=>p.on?i:-1).filter(i=
 function pulseNow(){if(!animation)return null;const t=performance.now()-animation,k=Math.floor(t/PULSE_MS);return k<pulseOrder.length?{place:pulseOrder[k],frame:Math.floor(t%PULSE_MS/PULSE_RING_MS)}:null;}
 function pulse(){startPulse();render();}
 $('pulse').onclick=pulse;$('guides').onchange=render;$('quick-view').onchange=render;
+// Screen colors or as on the watch: shared with the color picker.
+watchViewOverlay(canvas);
+const showWatchView=()=>{$('watch-colors').checked=colorView()==='watch';};
+$('watch-colors').onchange=()=>setColorView($('watch-colors').checked?'watch':'screen');onColorViewChange(showWatchView);showWatchView();
 $('scale').onclick=()=>{const actual=$('scale').getAttribute('aria-pressed')!=='true';$('scale').setAttribute('aria-pressed',actual);$('scale').textContent=actual?'Enlarge preview':'Actual size';document.querySelector('.preview-stage').classList.toggle('actual',actual);};
 $('scrub').oninput=()=>{offset=+$('scrub').value;render();};$('live').onclick=()=>{offset=0;$('scrub').value=0;render();};
 function point(e){const b=canvas.getBoundingClientRect();return [(e.clientX-b.left)*200/b.width,(e.clientY-b.top)*228/b.height];}

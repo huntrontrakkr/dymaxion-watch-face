@@ -29,7 +29,35 @@ try{
   await page.getByLabel('Palette day land',{exact:true}).fill('#aaffaa');
   await page.getByLabel('Palette night ocean',{exact:true}).fill('#000000');
   await page.getByText('Places & small indicators',{exact:true}).click();
-  await page.getByLabel('Palette place 1 default',{exact:true}).fill('#ffffaa');
+  // The color inputs open a grid of the watch's 64 colors, not the system picker.
+  await page.getByLabel('Palette place 1 default',{exact:true}).click();
+  const picker=page.getByRole('dialog',{name:'Palette place 1 default: watch colors'});
+  assert(await picker.isVisible(),'the watch color grid opens');
+  assert.equal(await picker.getByRole('radio').count(),64,'exactly the watch\'s 64 colors');
+  const swatch=picker.getByRole('radio',{name:'#FF0000',exact:true}),bg=()=>swatch.evaluate(b=>getComputedStyle(b).backgroundColor);
+  assert.equal(await bg(),'rgb(255, 0, 0)');
+  await picker.getByRole('button',{name:'As on the watch'}).click();
+  assert.equal(await bg(),'rgb(227, 84, 98)','shown as Pebble sampled it on the watch');
+  await picker.getByRole('button',{name:'Screen colors'}).click();
+  await picker.getByRole('radio',{name:'#FFFFAA',exact:true}).click();
+  assert(await picker.isHidden(),'a choice closes the grid');
+  assert.equal(await page.getByLabel('Palette place 1 default',{exact:true}).inputValue(),'#ffffaa');
+  assert.equal((await saved()).customPalettes[0].marks[0],'#FFFFAA','the choice is saved');
+  await page.getByLabel('Palette place 1 default',{exact:true}).click();await page.keyboard.press('Escape');
+  assert(await picker.isHidden(),'Escape closes it');
+  // The preview's "As on the watch" is the same choice as the picker's, and
+  // shows the watch colors over the preview, which keeps its true pixels.
+  await page.getByLabel('As on the watch',{exact:true}).check();await page.waitForTimeout(100);
+  const overlay=page.locator('canvas[data-watch-view]');assert(await overlay.isVisible(),'the watch view covers the preview');
+  const at=(sel)=>page.locator(sel).evaluate(c=>{const d=c.getContext('2d').getImageData(0,0,200,228).data,seen=new Set();for(let i=0;i<d.length;i+=4)seen.add(d[i]+','+d[i+1]+','+d[i+2]);return [...seen];});
+  const real=await at('#screen'),shown=await at('canvas[data-watch-view]');
+  assert(real.every(c=>c.split(',').every(v=>v%85===0)),'the preview itself stays in the 64 colors');
+  assert(shown.some(c=>c.split(',').some(v=>v%85!==0)),'the watch view shows the sampled colors');
+  await page.getByLabel('Palette place 1 default',{exact:true}).click();
+  assert.equal(await picker.getByRole('button',{name:'As on the watch'}).getAttribute('aria-pressed'),'true','the picker follows');
+  await picker.getByRole('button',{name:'Screen colors'}).click();await page.keyboard.press('Escape');
+  assert.equal(await page.getByLabel('As on the watch',{exact:true}).isChecked(),false,'and the preview follows the picker');
+  assert(await overlay.isHidden(),'screen colors again');
   await page.getByText('Chart & calendar defaults',{exact:true}).click();
   await page.getByLabel('Palette rain',{exact:true}).fill('#aaffff');
   let s=await saved();assert.equal(s.customPalettes[0].panelColors.rain,'#AAFFFF');
