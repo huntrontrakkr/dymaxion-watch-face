@@ -7,7 +7,7 @@ import {drawBitmapText,fitLabel,textWidth} from '../shared/type.js';
 import {clockCaption} from '../shared/city.js';
 import {markColor,hourText,blockSize} from '../shared/settings.js';
 import {drawMarkerPixels} from '../shared/markers.js';
-import {sunDirection,mapNight} from '../shared/solar.js';
+import {sunDirection,mapNight,mapSun,mapLight} from '../shared/solar.js';
 import {sinceRelight} from '../shared/power.js';
 import {CITIES} from '../shared/cities.js';
 import {drawFooter} from '../shared/panel-render.js';
@@ -36,10 +36,10 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
   const sun=sunDirection(new Date(+now-sinceRelight(s.power,now.getHours(),now.getMinutes())*60000)),[w,h]=MAP_SIZE,[mx,my]=s.map;
   ctx.imageSmoothingEnabled=false;ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,228);
   const image=ctx.createImageData(w,h),colors=[pal.bg,pal.ocean,pal.land,pal.nightOcean,pal.nightLand,pal.edge].map(c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)));
-  let best=-Infinity,sunPoint=[0,0];
+  let best=-Infinity,sunPoint=[0,0];const sunLight=mapSun(sun);
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
     const i=(y*w+x)*4,kind=pixels[i+3]&3;let color=0;
-    if(kind){const light=(signed[i]*sun[0]+signed[i+1]*sun[1]+signed[i+2]*sun[2])/127;
+    if(kind){const light=mapLight(signed,i,sunLight);
       if(light>best){best=light;sunPoint=[x,y];}const night=s.dayNight&&mapNight(light,x,y);
       color=kind+(night?2:0);if(s.edges&&(pixels[i+3]&4))color=5;
     }else if(pixels[i+3]&BACKGROUND_BITS[s.mapBackground])color=5;

@@ -10,7 +10,7 @@ import {defaults,THEMES,PLACES,PRESETS,activePreset,presetFor,withClockDisplay,v
 import {MARKERS,drawMarkerPixels} from '../shared/markers.js';
 import {makeMap,direction,dot,MAP_SIZE} from '../shared/map.js';
 import {BACKGROUND_BITS} from '../shared/map-background.js';
-import {sunDirection,mapNight} from '../shared/solar.js';
+import {sunDirection,mapNight,mapSun,mapLight} from '../shared/solar.js';
 import {moonFrame,moonDescription,MOON_GLYPHS,MOON_SIZE} from '../shared/moon.js';
 import {BLUETOOTH_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS,SUN_ROWS,SUN_HALO_ROWS,HERE_ROWS,HERE_HALO_ROWS,PULSE_ROWS} from '../shared/status-glyphs.js';
 import {drawPixelRows,drawPixelLine} from '../shared/pixels.js';
@@ -216,10 +216,10 @@ function mapImage(now,pal,sun){
   const offscreen=document.createElement('canvas');offscreen.width=w;offscreen.height=h;
   const g=offscreen.getContext('2d'),img=g.createImageData(w,h),signed=new Int8Array(data.buffer);
   const colors=[pal.bg,pal.ocean,pal.land,pal.nightOcean,pal.nightLand,pal.edge].map(c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)));
-  let best=-Infinity,sunPoint=[0,0];
+  let best=-Infinity,sunPoint=[0,0];const sunLight=mapSun(sun);
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
     const i=(y*w+x)*4,kind=data[i+3]&3;let c=0;
-    if(kind){const light=(signed[i]*sun[0]+signed[i+1]*sun[1]+signed[i+2]*sun[2])/127;
+    if(kind){const light=mapLight(signed,i,sunLight);
       if(light>best){best=light;sunPoint=[x,y];}
       const night=settings.dayNight&&mapNight(light,x,y);
       c=kind+(night?2:0);if(settings.edges&&(data[i+3]&4))c=5;
