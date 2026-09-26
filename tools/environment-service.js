@@ -26,7 +26,10 @@ export function environmentService({getSettings,send,storage,getJSON=requestJSON
     if(!d.enabled||inflight[kind]?.key!==d.key)delete inflight[kind];
     if(!d.enabled){send(kind,{label:d.label,samples:[]});return;}
     const cached=read(kind,d.key);if(cached)send(kind,cached);
-    if(cached&&now()-cached.fetched*1000<d.interval&&cached.start*1000+48*3600000>now()+d.interval)return;
+    // Tides saved before the packet carried every high and low (events) are
+    // sent while fresh ones load, but always refetched.
+    const complete=kind!=='tide'||Array.isArray(cached?.events);
+    if(cached&&complete&&now()-cached.fetched*1000<d.interval&&cached.start*1000+48*3600000>now()+d.interval)return;
     if(inflight[kind]?.key===d.key)return;
     if(retryAfter[kind]?.key===d.key&&retryAfter[kind].until>now()){send(kind,{...(cached||{label:d.label,samples:[]}),error:true});return;}
     if(!cached)send(kind,{label:d.label,samples:[]});
