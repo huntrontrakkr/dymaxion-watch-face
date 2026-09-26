@@ -92,12 +92,12 @@ jobs:
           retention-days: 7
 
   # The real watch build in the Pebble emulator, compared with the workshop
-  # preview at the same minute. It reports rather than gating releases while
-  # the comparison settles in; the side-by-sides are kept as an artifact.
+  # preview at the same minute. Differences are reported as a warning, not a
+  # failure, while the comparison settles in; the side-by-sides are kept as an
+  # artifact. Releases never wait on it.
   emulator:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    continue-on-error: true
     env:
       TZ: UTC
       # The emulator has no screen to open here; screenshots read its framebuffer.
