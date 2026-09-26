@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {mkdirSync} from 'node:fs';
-import {AXIS_GLYPHS,RANGE_GLYPHS,RANGE_GAP,CHART,rangeTextWidth,axisTextWidth,axisValue,chartLayout,chartX,chartY,chartHourLabels,tideMarks} from '../shared/chart-axis.js';
+import {AXIS_GLYPHS,RANGE_GLYPHS,RANGE_GAP,CHART,rangeTextWidth,axisTextWidth,axisValue,chartLayout,chartX,chartY,chartHourLabels,tideMarks,chartExtremes,labelSpot,HEADER_GLYPHS} from '../shared/chart-axis.js';
 // Hour labels use the compact chart numerals.
 const maxHourWidth=clock24=>axisTextWidth(clock24?'23':'12A');
 test('measured chart gutters and dense hourly labels fit signed values, units and partial horizons',()=>{
@@ -66,5 +66,27 @@ test('tide marks: every high and low, heights over the highs, the same on the wa
     expected.push([marks.length,...marks.map(m=>[m.x,m.y,+m.high,m.label,m.labelX,m.labelY].join(','))].join(' '));
   }
   const native=execFileSync('test-results/chart-axis-test',['tide'],{input:cases.join('\n'),encoding:'utf8',maxBuffer:2_000_000}).trim().split('\n');
+  assert.deepEqual(native,expected);
+});
+test('the weather chart labels its warmest and coolest readings, the same on the watch',()=>{
+  const layout=chartLayout('28','14',25,true,12),values=Array.from({length:25},(_,i)=>Math.round(210+55*Math.sin((i-9)/24*Math.PI*2)));
+  const [warm,cool]=chartExtremes(layout,140,280,values);
+  assert.equal(warm.text,'27');assert.equal(cool.text,'16');
+  // The warm label goes over its peak when it can, the cool one under its trough.
+  const peak=chartY(Math.max(...values),140,280),trough=chartY(Math.min(...values),140,280);
+  assert(warm.y+7<peak||warm.y>peak);assert(cool.y>trough||cool.y+7<trough);
+  assert.equal(chartExtremes(layout,0,100,Array(25).fill(50)).length,1,'a flat line gets one label');
+  assert.deepEqual(labelSpot(layout,100,205,7,false),{x:97,y:208});assert.deepEqual(labelSpot(layout,100,205,7,true),{x:97,y:196});
+  assert.deepEqual(labelSpot(layout,100,200,7,true),{x:97,y:203},'no room over it: under it');
+  assert(Object.values(HEADER_GLYPHS).every(g=>g.length===5&&g.every(r=>r.length===5)));
+  const cases=[],expected=[];let seed=11;const rand=n=>(seed=(seed*1103515245+12345)%2147483648)%n;
+  for(let k=0;k<400;k++){
+    const count=[13,25,49][k%3],base=rand(300)-100,swing=5+rand(150),values=Array.from({length:count},(_,i)=>base+Math.round(swing*Math.sin(i/(2+rand(6))))+rand(20));
+    const pad=Math.max(10,Math.trunc((Math.max(...values)-Math.min(...values))/8)),lo=Math.min(...values)-pad*(k%4?1:0),hi=Math.max(...values)+pad*(k%5?1:0),range=k%2;
+    cases.push([lo,hi,count,range,...values].join(' '));
+    const out=chartExtremes(chartLayout(axisValue(hi),axisValue(lo),count,!!range,12),lo,hi,values);
+    expected.push([out.length,...out.map(e=>[e.text,e.x,e.y,e.width].join(','))].join(' '));
+  }
+  const native=execFileSync('test-results/chart-axis-test',['extremes'],{input:cases.join('\n'),encoding:'utf8',maxBuffer:2_000_000}).trim().split('\n');
   assert.deepEqual(native,expected);
 });

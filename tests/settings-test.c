@@ -48,10 +48,11 @@ int main(int argc,char **argv) {
   memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+10]=MARKER_COUNT;assert(!settings_valid(bad,sizeof(bad)));
   memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+71]=1;assert(!settings_valid(bad,sizeof(bad)));
   memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+17]=2;assert(!settings_valid(bad,sizeof(bad)));
-  // The second place's byte 17 is the battery gauge: on or off, nothing else.
+  // Byte 17 of the second and third places: the battery gauge and the step line, on or off.
   memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+ZONE_SIZE+17]=1;assert(settings_valid(bad,sizeof(bad)));
   memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+ZONE_SIZE+17]=2;assert(!settings_valid(bad,sizeof(bad)));
-  memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+2*ZONE_SIZE+17]=1;assert(!settings_valid(bad,sizeof(bad)));
+  memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+2*ZONE_SIZE+17]=1;assert(settings_valid(bad,sizeof(bad)));
+  memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+2*ZONE_SIZE+17]=2;assert(!settings_valid(bad,sizeof(bad)));
   memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+10]=MARKER_COUNT-1;bad[HEADER_SIZE+70]=0xff;assert(settings_valid(bad,sizeof(bad)));
   assert(zone_offset(bytes+HEADER_SIZE,1772953199)==-300);
   assert(zone_offset(bytes+HEADER_SIZE,1772953200)==-240);

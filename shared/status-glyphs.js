@@ -30,6 +30,9 @@ export const QUIET_ROWS=[
   '#####.....'
 ];
 
+// Charging: a bolt in the place of the battery's % sign, the same size.
+export const CHARGE_ROWS=['...##','..##.','.##..','#####','..##.','.##..','##...'];
+
 // Night and day beside each name in the time-zone drawer: a crescent moon and
 // the map's sun (SUN_ROWS below), so neither can be mistaken for a place's
 // own marker (the Point and Ring markers are a filled and an open circle).

@@ -11,7 +11,8 @@ import {sunDirection} from '../shared/solar.js';
 import {sinceRelight} from '../shared/power.js';
 import {CITIES} from '../shared/cities.js';
 import {drawFooter} from '../shared/panel-render.js';
-import {drawBatteryStatus} from '../shared/status-bar.js';
+import {drawBatteryStatus,stepLineWidth,STEP_LINE_Y} from '../shared/status-bar.js';
+import {sampleHealth} from '../shared/health.js';
 import {sampleEnvironment} from '../shared/panel-data.js';
 import {MOON_GLYPHS,moonFrame} from '../shared/moon.js';
 import {BLUETOOTH_ROWS,SUN_ROWS,SUN_HALO_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS} from '../shared/status-glyphs.js';
@@ -108,5 +109,6 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
   drawBitmapText(ctx,font.lining.small,clockCaption(date,cityName.toUpperCase(),clock24||clockAmpm?'':ampm,s.moonIndicator?126:140,t=>textWidth(font.lining.small,t),'  '),4,12,pal.accent);
   ctx.fillStyle=pal.bg;ctx.fillRect(130,0,70,18);
   if(s.moonIndicator)MOON_GLYPHS[moonFrame(now)].forEach((row,y)=>[...row].forEach((pixel,x)=>{if(pixel!=='.'){ctx.fillStyle=pixel==='#'?pal.ink:pal.moonShadow;ctx.fillRect(134+x,3+y,1,1);}}));
-  drawPixelRows(ctx,BLUETOOTH_ROWS,148,2,pal.ink);drawBatteryStatus(ctx,font.lining.small,86,{gauge:s.batteryGauge,quiet:false,ink:pal.ink,bg:pal.bg});
+  drawPixelRows(ctx,BLUETOOTH_ROWS,148,2,pal.ink);drawBatteryStatus(ctx,font.lining.small,86,{gauge:s.batteryGauge,quiet:false,ink:pal.ink,bg:pal.bg,accent:pal.accent});
+  if(s.stepLine){const h=sampleHealth(+now),sum=a=>a.reduce((x,y)=>x+y,0);ctx.fillStyle=pal.accent;ctx.fillRect(0,STEP_LINE_Y,stepLineWidth(sum(h.steps),sum(h.typical)),1);}
 }

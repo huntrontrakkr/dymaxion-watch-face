@@ -12,6 +12,7 @@
   "sun": false,
   "moonIndicator": true,
   "batteryGauge": false,
+  "stepLine": false,
   "connectionBuzz": "disconnect",
   "orientation": 0,
   "time": [

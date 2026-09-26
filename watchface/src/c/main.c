@@ -620,16 +620,24 @@ static void draw_status_line(GContext *ctx,struct tm *local,time_t now,const cha
   snprintf(date,sizeof(date),"%s %02d %s",(const char *[]){"Sun","Mon","Tue","Wed","Thu","Fri","Sat"}[local->tm_wday],local->tm_mday,
     (const char *[]){"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"}[local->tm_mon]);
   clock_caption(status,sizeof(status),date,ampm,s_settings[HEADER_SIZE+17]?126:140,now,"  ",status_width);
-  CapsPen accent={ctx,color(7)},ink={ctx,color(6)};
+  CapsPen accent={ctx,color(7)};
   caps_draw(s_caps,status,4,12,false,caps_span,&accent);
-  // The battery gauge (shared/status-bar.js): a battery outline around the
-  // percentage, filled as far as the charge.
-  if(!s_settings[HEADER_SIZE+ZONE_SIZE+17]){caps_draw(s_caps,battery,195,12,true,caps_span,&ink);return;}
-  int left=192-caps_width(s_caps,battery),charge=s_battery.charge_percent>100?100:s_battery.charge_percent,fill=((193-left)*charge+50)/100;
-  graphics_context_set_fill_color(ctx,(GColor){.argb=palette_step(palette()[0],palette()[6])});graphics_fill_rect(ctx,GRect(left+1,4,fill,9),0,GCornerNone);
-  graphics_context_set_stroke_color(ctx,color(6));graphics_draw_rect(ctx,GRect(left,3,195-left,11));
-  graphics_context_set_fill_color(ctx,color(6));graphics_fill_rect(ctx,GRect(195,6,2,5),0,GCornerNone);
-  caps_draw(s_caps,battery,194,12,true,caps_span,&ink);
+  // The battery (shared/status-bar.js): in the accent color at or below the
+  // low-battery level, with a bolt for the % sign while charging, and
+  // optionally a battery outline around it, filled as far as the charge.
+  int charge=s_battery.charge_percent>100?100:s_battery.charge_percent,right=195;
+  GColor tint=power_battery_allows_motion(power(),charge)?color(6):color(7);CapsPen pen={ctx,tint};
+  if(s_settings[HEADER_SIZE+ZONE_SIZE+17]){
+    int left=192-caps_width(s_caps,battery),fill=((193-left)*charge+50)/100;right=194;
+    graphics_context_set_fill_color(ctx,(GColor){.argb=palette_step(palette()[0],tint.argb)});graphics_fill_rect(ctx,GRect(left+1,4,fill,9),0,GCornerNone);
+    graphics_context_set_stroke_color(ctx,tint);graphics_draw_rect(ctx,GRect(left,3,195-left,11));
+    graphics_context_set_fill_color(ctx,tint);graphics_fill_rect(ctx,GRect(195,6,2,5),0,GCornerNone);
+  }
+  if(!s_battery.is_charging){caps_draw(s_caps,battery,right,12,true,caps_span,&pen);return;}
+  char digits[4];snprintf(digits,sizeof(digits),"%d",charge);int sign=caps_width(s_caps,"%");
+  caps_draw(s_caps,digits,right-sign,12,true,caps_span,&pen);
+  graphics_context_set_stroke_color(ctx,tint);
+  for(int y=0;y<7;y++)for(int x=0;x<5;x++)if(CHARGE_GLYPH[y]&(1u<<(4-x)))graphics_draw_pixel(ctx,GPoint(right-sign+x,5+y));
 }
 // The chart's daylight follows its forecast source. When the current position
 // is unavailable, panels use the forecast's day/night samples.
@@ -641,6 +649,16 @@ static void draw_tray_section(GContext *ctx,time_t now,struct tm *local,int visi
 }
 static void draw_status_section(GContext *ctx,struct tm *local,time_t now){
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(0,0,200,18),0,GCornerNone);
+#if defined(PBL_HEALTH)
+  // Steps today against a typical day's total, as a line under the bar
+  // (shared/status-bar.js stepLineWidth); 10,000 without a typical day.
+  if(s_settings[HEADER_SIZE+2*ZONE_SIZE+17]){
+    time_t today=time_start_of_today();int steps=(int)health_service_sum_today(HealthMetricStepCount);
+    int typical=(int)health_service_sum_averaged(HealthMetricStepCount,today,today+SECONDS_PER_DAY,HealthServiceTimeScopeDailyWeekdayOrWeekend);
+    int width=(int)((int64_t)steps*200/(typical>0?typical:10000));
+    graphics_context_set_fill_color(ctx,color(7));graphics_fill_rect(ctx,GRect(0,17,width>200?200:width,1),0,GCornerNone);
+  }
+#endif
   char battery[8];snprintf(battery,sizeof(battery),"%d%%",s_battery.charge_percent);
   if(s_caps)draw_status_line(ctx,local,now,battery);
   else text(ctx,battery,s_small,GRect(160,0,35,15),GTextAlignmentRight,color(6));

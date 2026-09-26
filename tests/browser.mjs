@@ -48,6 +48,12 @@ try{
   await page.locator('#preview-quiet').check();assert.notEqual(await corner(),gauge,'Quiet Time shows its mark');
   await page.locator('#preview-quiet').uncheck();assert.equal(await corner(),gauge);
   await page.locator('#batteryGauge').uncheck();assert.equal(await corner(),plain);
+  await page.locator('#preview-battery').selectOption('charging');assert.notEqual(await corner(),plain,'a bolt while charging');
+  await page.locator('#preview-battery').selectOption('low');assert.notEqual(await corner(),plain,'the accent color when low');
+  await page.locator('#preview-battery').selectOption('normal');assert.equal(await corner(),plain);
+  const underBar=()=>page.locator('#screen').evaluate(c=>Array.from(c.getContext('2d').getImageData(0,17,200,1).data).join());
+  const bare=await underBar();await page.locator('#stepLine').check();assert.equal((await saved()).stepLine,true);assert.notEqual(await underBar(),bare,'the step line');
+  await page.locator('#stepLine').uncheck();assert.equal(await underBar(),bare);
   assert.equal(await page.getByRole('button',{name:'Original axis',exact:true}).count(),0);
   await page.getByRole('tab',{name:'Places',exact:true}).click();
   assert.equal(await page.locator('.marker-control canvas').first().evaluate(c=>c.clientWidth/c.width),3,'marker samples enlarge each pixel exactly three times');

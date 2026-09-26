@@ -43,11 +43,28 @@ int chart_tide_marks(ChartLayout layout,int lo,int hi,const TideEvent *events,in
     m->x=layout.left+e->seconds*(layout.right-layout.left)/span;m->y=chart_y(e->value,lo,hi);m->high=e->high;m->label[0]=0;m->label_x=m->label_y=0;
     if(!e->high)continue;
     char text[8];chart_value_label(text,sizeof(text),e->value,true);
-    int width=chart_range_width(text),lx=MAX(layout.left,MIN(layout.right-width+1,m->x-width/2)),ly;
-    if(m->y-7-TIDE_LABEL_GAP>=layout.top-1)ly=m->y-7-TIDE_LABEL_GAP;else if(m->y+TIDE_LABEL_GAP+7<=layout.bottom)ly=m->y+TIDE_LABEL_GAP+1;else continue;
-    if(lx<=last+1)continue;
+    int width=chart_range_width(text),lx,ly;
+    if(!chart_label_spot(layout,m->x,m->y,width,true,&lx,&ly)||lx<=last+1)continue;
     memcpy(m->label,text,sizeof(text));m->label_x=lx;m->label_y=ly;last=lx+width-1;
   }
   return count;
 }
-const uint8_t *chart_tide_glyph(bool high){return TIDE_GLYPHS[high?0:1];}
+const uint8_t *chart_header_glyph(int which){return HEADER_GLYPHS[which];}
+bool chart_label_spot(ChartLayout layout,int x,int y,int width,bool above_first,int *lx,int *ly){
+  *lx=MAX(layout.left,MIN(layout.right-width+1,x-width/2));
+  bool above=y-7-TIDE_LABEL_GAP>=layout.top-1,below=y+TIDE_LABEL_GAP+7<=layout.bottom;
+  if(!above&&!below)return false;
+  *ly=(above_first?above:!below)?y-7-TIDE_LABEL_GAP:y+TIDE_LABEL_GAP+1;
+  return true;
+}
+int chart_extremes(ChartLayout layout,int lo,int hi,const int16_t *values,int count,ChartLabel out[2]){
+  int max=0,min=0,n=0;
+  for(int i=1;i<count;i++){if(values[i]>values[max])max=i;if(values[i]<values[min])min=i;}
+  for(int k=0;k<(min==max?1:2);k++){
+    int i=k?min:max,lx,ly;char text[8];chart_value_label(text,sizeof(text),values[i],false);int width=chart_range_width(text);
+    if(!chart_label_spot(layout,chart_x(layout,i),chart_y(values[i],lo,hi),width,!k,&lx,&ly))continue;
+    if(n&&lx<=out[0].x+out[0].width&&out[0].x<=lx+width&&ly<=out[0].y+7&&out[0].y<=ly+7)continue;
+    out[n]=(ChartLabel){(int16_t)lx,(int16_t)ly,(int16_t)width,{0}};memcpy(out[n].text,text,sizeof(text));n++;
+  }
+  return n;
+}

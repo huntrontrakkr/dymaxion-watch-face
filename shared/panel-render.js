@@ -5,7 +5,7 @@ import {panelColors} from './panel-settings.js';
 import {drawPixelLine,drawPixelRows} from './pixels.js';
 import {sunUp,nextSunEvent} from './solar.js';
 import {healthView} from './health.js';
-import {drawRangeText,drawAxisText,drawNarrowText,axisTextWidth,axisValue,chartLayout,chartX,chartY,chartHourLabels,tideMarks,TIDE_GLYPHS} from './chart-axis.js';
+import {drawRangeText,drawAxisText,drawNarrowText,axisTextWidth,axisValue,chartLayout,chartX,chartY,chartHourLabels,tideMarks,chartExtremes,HEADER_GLYPHS} from './chart-axis.js';
 // One RGB222 step (85) per channel toward the ground: a dimmer version of a color.
 export function dimColor(color,ground){
   return '#'+[1,3,5].map(i=>{const a=parseInt(color.slice(i,i+2),16),b=parseInt(ground.slice(i,i+2),16);return (a+Math.sign(b-a)*Math.min(85,Math.abs(b-a))).toString(16).padStart(2,'0');}).join('').toUpperCase();
@@ -56,17 +56,21 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       else if(!tide&&!humidity&&w.temperatureScale==='fixed'){lo=w.temperatureMin*10;hi=w.temperatureMax*10;}
       else{const pad=Math.max(10,Math.trunc((hi-lo)/8));lo-=pad;hi+=pad;if(humidity){lo=Math.max(0,lo);hi=Math.min(1000,hi);}}
       const n=values[0],title=tide?`${series.label} ${(n/100).toFixed(1)}${f.tide.unit.toUpperCase()}`:humidity?`RH ${Math.round(n/10)}%`:`${series.label} ${Math.round(n/10)}${w.temperatureUnit.toUpperCase()}${w.humidityLine?` RH ${samples[0].humidity}%`:''}`;
-      const first=tide?series.high:series.rise,second=tide?series.low:series.set,usefirst=first>=now/1000&&(second<now/1000||first<second),event=usefirst?first:second;
-      const stale=series.error||now/1000-series.fetched>(tide?12*3600:w.refreshMinutes*120);
+      const stale=series.error||now/1000-series.fetched>(tide?12*3600:w.refreshMinutes*120),at=Math.floor(now/1000);
       // Current-location solar times use the main clock. Saved-city times are
       // already localized by the provider, just like their chart hour labels.
-      const sun=!tide&&w.place==='current'&&data.daylight?nextSunEvent(Math.floor(now/1000),data.daylight):null,local=t=>{const d=new Date(t*1000);return d.getHours()*60+d.getMinutes();};
-      const solar=sun?`${sun.rise?'RISE':'SET'} ${timeLabel(local(sun.time))}`:event>=now/1000?`${usefirst?'RISE':'SET'} ${timeLabel(usefirst?series.riseMinute:series.setMinute)}`:'';
-      let right=series.demo?'DEMO':stale?'OLD':tide?'':w.solarTimes?solar:'';
-      if(!right&&!tide&&!humidity&&w.precipitation!=='off')right=w.precipitation==='probability'?`RAIN ${Math.max(...samples.map(p=>p.probability))}%`:`MAX ${(Math.max(...samples.map(p=>p.rain))/10/(w.rainUnit==='in'?25.4:1)).toFixed(w.rainUnit==='in'?2:1)}${w.rainUnit.toUpperCase()}`;
+      const local=t=>{const d=new Date(t*1000);return d.getHours()*60+d.getMinutes();};
+      const suns=()=>{
+        if(w.place==='current'&&data.daylight){const first=nextSunEvent(at,data.daylight),second=first&&nextSunEvent(first.time+60,data.daylight);
+          return [first,second].filter(Boolean).map(e=>({time:e.time,minute:local(e.time),glyph:e.rise?'rise':'set'}));}
+        return [[series.rise,series.riseMinute,'rise'],[series.set,series.setMinute,'set']].filter(([t])=>t>=at).map(([time,minute,glyph])=>({time,minute,glyph}));
+      };
+      let right=series.demo?'DEMO':stale?'OLD':'';
+      const times=right?[]:tide?nextTides(series,at).map(t=>({...t,glyph:t.high?'high':'low'})):w.solarTimes?suns():[];
+      if(!right&&!times.length&&!tide&&!humidity&&w.precipitation!=='off')right=w.precipitation==='probability'?`RAIN ${Math.max(...samples.map(p=>p.probability))}%`:`MAX ${(Math.max(...samples.map(p=>p.rain))/10/(w.rainUnit==='in'?25.4:1)).toFixed(w.rainUnit==='in'?2:1)}${w.rainUnit.toUpperCase()}`;
       text(title,4,191);text(right,196,191,pal.accent,'right');
-      // The next high and low, soonest first, each after its triangle, ending at the right edge.
-      if(tide&&!right){let x=196;for(const t of nextTides(series,now/1000).reverse()){const label=timeLabel(t.minute),left=x-textWidth(font,label);text(label,x,191,pal.accent,'right');drawPixelRows(ctx,TIDE_GLYPHS[t.high?'high':'low'],left-7,186,pal.accent);x=left-12;}}
+      // Up to two times, soonest first, each after its glyph, ending at the right edge.
+      let hx=196;for(const t of times.sort((a,b)=>a.time-b.time).reverse()){const label=timeLabel(t.minute),left=hx-textWidth(font,label);text(label,hx,191,pal.accent,'right');drawPixelRows(ctx,HEADER_GLYPHS[t.glyph],left-7,185,pal.accent);hx=left-12;}
       const upper=axisValue(hi,tide),lower=axisValue(lo,tide),layout=chartLayout(upper,lower,samples.length,w.rangeLabels,axisTextWidth(clock24?'23':'12A'));
       const ink=tide?c.tide:humidity?c.humidity:c.temperature;
       // Rain sits behind the line, one RGB222 step toward the ground, so the
@@ -74,10 +78,14 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       const rain=!tide&&!humidity&&w.precipitation!=='off',rainInk=dimColor(c.rain,pal.bg),bottom=layout.bottom,plotHeight=bottom-layout.top+1;
       const x=i=>chartX(layout,i),y=n=>chartY(n,lo,hi,layout.top,bottom);
       // Daylight per pixel column: the sun's altitude at that moment and place.
+      let wasDay=false;
       if(!tide&&w.daylight)for(let xx=layout.left;xx<=layout.right;xx++){
         const hour=(xx-layout.left)*(samples.length-1)/(layout.right-layout.left);
         const t=series.start+window.start*3600+Math.trunc(hour*3600),day=data.daylight?sunUp(t,data.daylight):samples[Math.floor(hour)].day;
         rect(xx,layout.daylight,1,1,day?pal.accent:pal.edge);
+        // Sunrise or sunset: a short grey line across the strip.
+        if(xx>layout.left&&day!==wasDay)rect(xx,layout.daylight-1,1,5,pal.edge);
+        wasDay=day;
         if(!day&&xx%4===0)for(let yy=layout.top+2;yy<=bottom;yy+=4)rect(xx,yy,1,1,pal.edge);
       }
       samples.forEach((p,i)=>{
@@ -93,6 +101,8 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       // Humidity joins the weather chart as a dotted line on its own fixed 0-100% scale.
       if(!tide&&!humidity&&w.humidityLine){const h=p=>chartY(p.humidity*10,0,1000,layout.top,bottom);for(let i=1;i<samples.length;i++)line(x(i-1),h(samples[i-1]),x(i),h(samples[i]),c.humidity,true);}
       for(let i=1;i<samples.length;i++)line(x(i-1),y(values[i-1]),x(i),y(values[i]),ink);
+      // The warmest and coolest readings, on a cleared patch.
+      if(!tide&&!humidity)for(const e of chartExtremes(layout,lo,hi,values)){rect(e.x-1,e.y-1,e.width+2,9,pal.bg);drawNarrowText(ctx,e.text,e.x,e.y,pal.ink);}
       for(const m of marks)if(m.label)drawNarrowText(ctx,m.label,m.labelX,m.labelY,pal.ink);
       if(w.rangeLabels){drawRangeText(ctx,upper,layout,layout.top,pal.ink);drawRangeText(ctx,lower,layout,bottom-6,pal.ink);}
       line(layout.left,layout.axis,layout.right,layout.axis,pal.edge);

@@ -157,6 +157,7 @@ test('full-width clock and top-bar moon migrate old widget settings',()=>{
   assert.equal(s.batteryGauge,false);assert.equal(validateSettings(old,zoneExists).batteryGauge,false);
   assert.equal(encodeSettings({...s,batteryGauge:true})[16+72+17],1);
   assert.throws(()=>validateSettings({...s,batteryGauge:1},zoneExists));
+  assert.equal(s.stepLine,false);assert.equal(encodeSettings({...s,stepLine:true})[16+144+17],1);assert.throws(()=>validateSettings({...s,stepLine:'yes'},zoneExists));
 });
 test('old saved presets adopt the enlarged map; custom arrangements keep their positions',()=>{
   const saved={...defaults(),time:[20,18],map:[4,73]};
