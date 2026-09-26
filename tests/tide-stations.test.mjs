@@ -87,3 +87,16 @@ test('the tide header lists the next high and low, soonest first, from the event
   assert.deepEqual(nextTides(d,start+15*H).map(t=>[t.high,t.minute]),[[false,2*60]],'no high left in the data: only the low');
   assert.deepEqual(nextTides({...d,events:undefined},start+9*H),[]);
 });
+test('tides saved before highs and lows rode along are refetched at once, not kept for six hours',async()=>{
+  const meta=read('nearby-tide-meta'),settings=defaults(),messages=[],urls=[],store=new Map();
+  settings.footer.pages=['tide'];settings.footer.home='tide';Object.assign(settings.footer.tide,tideStationDetails(details,'8638660'));
+  const storage={getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,v)};
+  const make=()=>environmentService({getSettings:()=>settings,now:()=>meta.capturedAt,storage,getPosition:()=>null,send:(kind,data)=>messages.push({kind,data}),getJSON:async url=>{urls.push(url);return read(url.includes('interval=hilo')?'nearby-tide-extrema':'nearby-tide-hourly');}});
+  await make().refresh();assert.equal(urls.length,2);
+  // What an older phone app saved: the same data without its events.
+  const saved=JSON.parse(store.get('dymaxion-environment-tide'));delete saved.data.events;store.set('dymaxion-environment-tide',JSON.stringify(saved));
+  messages.length=0;await make().refresh();
+  assert.equal(urls.length,4,'the old data is fetched again');
+  assert(messages.filter(m=>m.kind==='tide').at(-1).data.events.length>0,'and the watch gets the highs and lows');
+  await make().refresh();assert.equal(urls.length,4,'complete data keeps its six-hour cache');
+});
