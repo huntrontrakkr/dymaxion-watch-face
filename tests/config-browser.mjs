@@ -17,9 +17,9 @@ try{
   assert.equal(await page.locator('#preview-error').textContent(),'');
   for(const width of [320,390,768,1100]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'settings fit '+width+'px');}
   // The preview can show the colors as on the watch, and back.
-  await page.locator('#preview-watch-colors').click();await page.waitForTimeout(100);
+  await page.locator('#preview-watch-colors').click();
   assert.equal(await page.locator('#preview-watch-colors').getAttribute('aria-pressed'),'true');assert(await page.locator('canvas[data-watch-view]').isVisible());
-  await page.locator('#preview-watch-colors').click();await page.waitForTimeout(100);
+  await page.locator('#preview-watch-colors').click();
   assert.equal(await page.locator('#preview-watch-colors').getAttribute('aria-pressed'),'false');assert(await page.locator('canvas[data-watch-view]').isHidden());
   await page.setViewportSize({width:390,height:844});
   const before=await pixels();assert(before.some((n,i)=>i%4!==3&&n>0),'preview is drawn');

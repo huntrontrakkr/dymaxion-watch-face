@@ -41,7 +41,12 @@ export function watchViewOverlay(canvas) {
     dst.putImageData(img, 0, 0);
     frame = requestAnimationFrame(paint);
   }
-  const start = () => { if (!frame) frame = requestAnimationFrame(paint); };
-  onColorViewChange(start);start();
+  // Switching back hides the overlay at once; switching on paints at once
+  // and then keeps up a frame at a time.
+  const update = () => {
+    if (colorView() !== 'watch') { cancelAnimationFrame(frame);frame = 0;overlay.style.display = 'none';return; }
+    cancelAnimationFrame(frame);paint();
+  };
+  onColorViewChange(update);update();
   return overlay;
 }

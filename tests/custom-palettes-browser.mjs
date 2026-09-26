@@ -47,7 +47,7 @@ try{
   assert(await picker.isHidden(),'Escape closes it');
   // The preview's "As on the watch" is the same choice as the picker's, and
   // shows the watch colors over the preview, which keeps its true pixels.
-  await page.getByLabel('As on the watch',{exact:true}).check();await page.waitForTimeout(100);
+  await page.getByLabel('As on the watch',{exact:true}).check();
   const overlay=page.locator('canvas[data-watch-view]');assert(await overlay.isVisible(),'the watch view covers the preview');
   const at=(sel)=>page.locator(sel).evaluate(c=>{const d=c.getContext('2d').getImageData(0,0,200,228).data,seen=new Set();for(let i=0;i<d.length;i+=4)seen.add(d[i]+','+d[i+1]+','+d[i+2]);return [...seen];});
   const real=await at('#screen'),shown=await at('canvas[data-watch-view]');
