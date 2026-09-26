@@ -1,4 +1,4 @@
-import {normalizeForecast,normalizeTide,weatherUrl,tideUrls,environmentIsValid} from '../shared/panel-data.js';
+import {normalizeForecast,normalizeTide,weatherUrl,tideUrls,environmentIsValid,DATA_VERSION} from '../shared/panel-data.js';
 import moment from 'moment-timezone';
 import {devicePosition} from './device-position.js';
 export function requestJSON(url){return new Promise((resolve,reject)=>{
@@ -18,18 +18,18 @@ export function environmentService({getSettings,send,storage,getJSON=requestJSON
   function read(kind,key){
     try{
       const saved=memory[kind]||JSON.parse(storage.getItem('dymaxion-environment-'+kind)||'null');
-      if(saved&&saved.key===key&&!saved.data?.demo&&environmentIsValid(saved.data,kind)){memory[kind]=saved;return saved.data;}
+      if(saved&&saved.key===key&&!saved.data?.demo&&environmentIsValid(saved.data,kind)){memory[kind]=saved;return saved;}
     }catch{}return null;
   }
   async function refreshKind(kind){
     const d=descriptor(kind);
     if(!d.enabled||inflight[kind]?.key!==d.key)delete inflight[kind];
     if(!d.enabled){send(kind,{label:d.label,samples:[]});return;}
-    const cached=read(kind,d.key);if(cached)send(kind,cached);
-    // Tides saved before the packet carried every high and low (events) are
-    // sent while fresh ones load, but always refetched.
-    const complete=kind!=='tide'||Array.isArray(cached?.events);
-    if(cached&&complete&&now()-cached.fetched*1000<d.interval&&cached.start*1000+48*3600000>now()+d.interval)return;
+    const saved=read(kind,d.key),cached=saved?.data;if(cached)send(kind,cached);
+    // Data saved by an older version of the app (a different DATA_VERSION)
+    // is sent while fresh data loads, but always refetched.
+    const current=saved?.version===DATA_VERSION;
+    if(cached&&current&&now()-cached.fetched*1000<d.interval&&cached.start*1000+48*3600000>now()+d.interval)return;
     if(inflight[kind]?.key===d.key)return;
     if(retryAfter[kind]?.key===d.key&&retryAfter[kind].until>now()){send(kind,{...(cached||{label:d.label,samples:[]}),error:true});return;}
     if(!cached)send(kind,{label:d.label,samples:[]});
@@ -48,7 +48,7 @@ export function environmentService({getSettings,send,storage,getJSON=requestJSON
       const stamp=now();
       const data=kind==='weather'?{...normalizeForecast(await getJSON(weatherUrl(place)),place,stamp),place}:await Promise.all(tideUrls(d.tide,stamp).map(getJSON)).then(([hourly,extrema])=>normalizeTide(hourly,extrema,d.tide,stamp));
       if(!active())return;
-      memory[kind]={key:d.key,data};try{storage.setItem('dymaxion-environment-'+kind,JSON.stringify(memory[kind]));}catch{}
+      memory[kind]={key:d.key,version:DATA_VERSION,data};try{storage.setItem('dymaxion-environment-'+kind,JSON.stringify(memory[kind]));}catch{}
       delete retryAfter[kind];send(kind,data);
     }catch(error){
       if(!active())return;

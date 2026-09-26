@@ -24,10 +24,10 @@ int main(void){
     }
   }
   // Version 2 byte 2: bit 1 leading zero, bits 2-3 when place times show
-  // (0-2), bits 4-5 where (0-2), bit 6 map turning, bit 7 the nameplate; bit 0 stays clear.
+  // (0-2), bits 4-5 where (0-3, 3 between the clock and the map), bit 6 map turning, bit 7 the nameplate; bit 0 stays clear.
   for(int options=0;options<256;options++){
     uint8_t current[4]={2,4,options,0};
-    bool valid=!(options&~0xfe)&&((options>>2)&3)<3&&((options>>4)&3)<3;
+    bool valid=!(options&~0xfe)&&((options>>2)&3)<3;
     assert(display_valid(current,4)==valid);
     if(valid){assert(display_normalize(normalized,current,4));assert(!memcmp(normalized,(uint8_t[]){3,4,options,0,0,22,7,10},8));}
   }
@@ -40,11 +40,13 @@ int main(void){
   // Version 3: power and motion in bytes 4-7; 8 bytes only.
   uint8_t v3[8]={3,4,2,1,0x3f,23,0,10};assert(display_valid(v3,8));assert(!display_valid(v3,4));
   assert(display_normalize(normalized,v3,8));assert(!memcmp(normalized,v3,8));
-  v3[4]=0x7f;assert(display_valid(v3,8));v3[4]=0x80;assert(!display_valid(v3,8));v3[4]=0;
+  // Byte 4 bit 7 puts the icosahedron on the right; the power bits are 0-6.
+  v3[4]=0x7f;assert(display_valid(v3,8));v3[4]=0x80;assert(display_valid(v3,8));assert(DISPLAY_ART_RIGHT(v3));v3[4]=0;
   v3[5]=24;assert(!display_valid(v3,8));v3[5]=22;v3[6]=24;assert(!display_valid(v3,8));v3[6]=7;
   for(int low=0;low<256;low++){v3[7]=low;assert(display_valid(v3,8)==(low==5||low==10||low==20||low==30));}v3[7]=10;v3[0]=2;assert(!display_valid(v3,8));v3[0]=3;
   v3[2]=1;assert(!display_valid(v3,8));
-  // Byte 3: bits 0-1 background, bits 2-4 map time size (0 medium, 1 small, 2 large, 3 extra large, 4 wide).
-  v3[2]=2;for(int b=0;b<256;b++){v3[3]=b;assert(display_valid(v3,8)==(((b>>2)&7)<6&&!(b&~0x7f)));}v3[3]=1;
+  // Byte 3: bits 0-1 background, bits 2-4 map time size (0 medium, 1 small, 2 large, 3 extra large, 4 wide, 5 largest),
+  // bit 5 tall place times, bit 6 no place icons, bit 7 the icosahedron.
+  v3[2]=2;for(int b=0;b<256;b++){v3[3]=b;assert(display_valid(v3,8)==(((b>>2)&7)<6));assert(DISPLAY_ART(v3)==((b&128)!=0));}v3[3]=1;
   return 0;
 }

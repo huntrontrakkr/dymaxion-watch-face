@@ -5,8 +5,11 @@
 // When place times also show outside the bottom panel, and where.
 export const ZONE_TIMES = ['panel', 'when-hidden', 'always'];
 export const ZONE_TIMES_NAMES = Object.freeze({panel: 'Only in the bottom panel', 'when-hidden': 'Also whenever the panel shows something else', always: 'Always'});
-export const ZONE_POSITIONS = ['left', 'right', 'map'];
-export const ZONE_POSITION_NAMES = Object.freeze({left: 'Left of the clock', right: 'Right of the clock', map: 'On the map'});
+export const ZONE_POSITIONS = ['left', 'right', 'map', 'strip'];
+export const ZONE_POSITION_NAMES = Object.freeze({left: 'Left of the clock', right: 'Right of the clock', map: 'On the map', strip: 'Between the clock and the map'});
+// The icosahedron beside a narrow clock (shared/clock-art.js): off, or on the
+// left or right, where it holds the column until place times take it.
+export const CLOCK_ART = ['none', 'left', 'right'];
 // Chamfer's figures and every system font's ink sit within x 37-162 of the
 // strip. Shifted 36 pixels right they start at x 73, clear of a left column
 // [4, 70); shifted left they end by x 126, clear of a right column [130, 196).
@@ -22,10 +25,15 @@ export const zoneColumnFits = style => NARROW.includes(style);
 // clock (which needs a narrow horizontal clock) or on the map.
 const elsewhere = (settings, panelShowsZones) => settings.zoneTimes === 'always' || (settings.zoneTimes === 'when-hidden' && !panelShowsZones);
 export function zonesBeside(settings, panelShowsZones) {
-  if (settings.zonePosition === 'map' || !zoneColumnFits(settings.clockDisplay)) return false;
+  if (!['left', 'right'].includes(settings.zonePosition) || !zoneColumnFits(settings.clockDisplay)) return false;
   return elsewhere(settings, panelShowsZones);
 }
 export const zonesOnMap = (settings, panelShowsZones) => settings.zonePosition === 'map' && elsewhere(settings, panelShowsZones);
+export const zonesOnStrip = (settings, panelShowsZones) => settings.zonePosition === 'strip' && elsewhere(settings, panelShowsZones);
+// The icosahedron shows beside a narrow clock; the column is then always on
+// its side, and place times beside the clock take its place there.
+export const artBeside = settings => (settings.clockArt ?? 'none') !== 'none' && zoneColumnFits(settings.clockDisplay);
+export const besideSide = settings => artBeside(settings) ? settings.clockArt : settings.zonePosition;
 // Baseline of row `index` of `count`, relative to the strip top: rows are
 // centred on the figures, which run from y 2 to 37.
 // Tall times (the Tall place times option) use TALL_FIGURES, 10 pixels high,
@@ -76,4 +84,36 @@ export function zoneRow({label, hour, minute, clock24, delta = 0, stale = false,
   let text = label.toUpperCase().slice(0, 7);
   while (text && measure(text) > room) text = text.slice(0, -1);
   return {label: text, labelX: x, day, dayX: x + measure(text) + 1 - trim, time, timeX, suffix, suffixX};
+}
+
+// Place times between the clock and the map, in the nameplate's place (the
+// Position option "Between the clock and the map"): one line per place of its
+// glyph, label and time, the places spread evenly across the width. Labels
+// shorten to three letters, then drop, if the line would not fit. Times use
+// the tall figures, labels and A/P the capitals. Offsets are from the slot's
+// top left; the watch mirrors this in zone_strip (zone_column.c).
+export const ZONE_STRIP = Object.freeze({height: 16, baseline: 13, glyphY: 9, glyph: 5, width: 200, edge: 2});
+export function zoneStripEntry({label, hour, minute, clock24, delta = 0, stale = false}) {
+  // 12-hour hours drop their leading zero here, to leave the labels room.
+  const two = n => String(n).padStart(2, '0'), h = clock24 ? two(hour) : String(hour % 12 || 12);
+  return {label: label.toUpperCase().slice(0, 7), time: h + ':' + two(minute), suffix: clock24 ? '' : hour < 12 ? 'A' : 'P', day: stale ? '?' : delta ? (delta > 0 ? '+' : '') + delta : ''};
+}
+export function zoneStrip(entries, measure) {
+  const {glyph, width, edge} = ZONE_STRIP;
+  // Advances: glyph and 2, label and 2, the time, A/P, then 1 and the day offset.
+  const size = (e, label) => glyph + 2 + (label ? measure(label) + 2 : 0) + tallWidth(e.time) + (e.suffix ? measure(e.suffix) : 0) + (e.day ? 1 + measure(e.day) : 0) - 1;
+  let labels = entries.map(e => e.label);
+  const total = () => entries.reduce((n, e, i) => n + size(e, labels[i]), 0);
+  // At least 4 pixels between places and `edge` at each side.
+  const fits = () => total() + 4 * (entries.length - 1) <= width - 2 * edge;
+  if (!fits()) labels = labels.map(l => l.slice(0, 3));
+  if (!fits()) labels = labels.map(() => '');
+  const free = width - total(), gap = Math.floor(free / (entries.length + 1));
+  let x = gap + ((free - gap * (entries.length + 1)) >> 1);
+  return entries.map((e, i) => {
+    const label = labels[i], labelX = x + glyph + 2, timeX = labelX + (label ? measure(label) + 2 : 0), suffixX = timeX + tallWidth(e.time), dayX = suffixX + (e.suffix ? measure(e.suffix) : 0) + 1;
+    const item = {...e, label, glyphX: x + (glyph >> 1), labelX, timeX, suffixX, dayX};
+    x += size(e, label) + gap;
+    return item;
+  });
 }

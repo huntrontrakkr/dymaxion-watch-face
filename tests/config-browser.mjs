@@ -14,6 +14,7 @@ const pixels=()=>page.locator('#watch-preview').evaluate(c=>Array.from(c.getCont
 try{
   await page.goto('data:text/html;charset=utf-8,'+encodeURIComponent(html));
   await page.waitForFunction(()=>document.querySelector('#preview-caption').textContent.includes('Sample readings'));
+  assert.equal(await page.locator('#app-version').textContent(),'Dymaxion '+JSON.parse(readFileSync('package.json','utf8')).version,'the settings page names the installed version');
   assert.equal(await page.locator('#preview-error').textContent(),'');
   for(const width of [320,390,768,1100]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'settings fit '+width+'px');}
   // The preview can show the colors as on the watch, and back.

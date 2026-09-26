@@ -7,6 +7,7 @@ import {defaults,validateSettings} from '../shared/settings.js';
 import {zoneExists} from '../shared/protocol.js';
 import {encodeFooter,encodeEnvironment} from '../shared/panel-protocol.js';
 import {environmentService} from '../tools/environment-service.js';
+import {DATA_VERSION} from '../shared/panel-data.js';
 const read=name=>JSON.parse(readFileSync('tests/fixtures/'+name+'.json'));
 const catalog=read('noaa-stations'),details=read('noaa-station-details'),norfolk={lat:36.85,lon:-76.29};
 test('nearest suggestions require hourly reference predictions and usable coordinates',()=>{
@@ -93,10 +94,14 @@ test('tides saved before highs and lows rode along are refetched at once, not ke
   const storage={getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,v)};
   const make=()=>environmentService({getSettings:()=>settings,now:()=>meta.capturedAt,storage,getPosition:()=>null,send:(kind,data)=>messages.push({kind,data}),getJSON:async url=>{urls.push(url);return read(url.includes('interval=hilo')?'nearby-tide-extrema':'nearby-tide-hourly');}});
   await make().refresh();assert.equal(urls.length,2);
-  // What an older phone app saved: the same data without its events.
-  const saved=JSON.parse(store.get('dymaxion-environment-tide'));delete saved.data.events;store.set('dymaxion-environment-tide',JSON.stringify(saved));
+  // What an older phone app saved: the same data without its events, and no data version.
+  const saved=JSON.parse(store.get('dymaxion-environment-tide'));assert.equal(saved.version,DATA_VERSION);delete saved.version;delete saved.data.events;store.set('dymaxion-environment-tide',JSON.stringify(saved));
   messages.length=0;await make().refresh();
   assert.equal(urls.length,4,'the old data is fetched again');
   assert(messages.filter(m=>m.kind==='tide').at(-1).data.events.length>0,'and the watch gets the highs and lows');
   await make().refresh();assert.equal(urls.length,4,'complete data keeps its six-hour cache');
+  // Data from an earlier data version, even with every field, is refetched too.
+  const older=JSON.parse(store.get('dymaxion-environment-tide'));older.version=DATA_VERSION-1;store.set('dymaxion-environment-tide',JSON.stringify(older));
+  await make().refresh();assert.equal(urls.length,6,'a new data version refetches');
+  await make().refresh();assert.equal(urls.length,6);
 });

@@ -47,6 +47,7 @@
   "mapTimeSize": "medium",
   "zoneTimesTall": false,
   "placeIcons": true,
+  "clockArt": "none",
   "power": {
     "daylightMinutes": 5,
     "minuteAnimation": true,

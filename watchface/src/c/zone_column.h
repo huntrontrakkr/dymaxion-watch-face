@@ -12,7 +12,8 @@
 // Display byte 2: bits 2-3 when place times also show outside the panel,
 // bits 4-5 where, bit 6 lets map times turn 90 degrees.
 enum {ZONE_TIMES_PANEL,ZONE_TIMES_WHEN_HIDDEN,ZONE_TIMES_ALWAYS,ZONE_TIMES_COUNT};
-enum {ZONE_POSITION_LEFT,ZONE_POSITION_RIGHT,ZONE_POSITION_MAP,ZONE_POSITION_COUNT};
+// Strip: between the clock and the map, in the nameplate's place.
+enum {ZONE_POSITION_LEFT,ZONE_POSITION_RIGHT,ZONE_POSITION_MAP,ZONE_POSITION_STRIP,ZONE_POSITION_COUNT};
 #define ZONE_TIMES_TURN 64
 #define DISPLAY_NAMEPLATE 128
 typedef struct {char label[8],time[6],suffix[2],day[4];int label_x,time_x,suffix_x,day_x;} ZoneRow;
@@ -21,6 +22,7 @@ typedef int (*ZoneMeasure)(const char *text,const void *font);
 bool zone_column_fits(uint8_t style);
 bool zones_beside(uint8_t style,uint8_t zone_times,uint8_t position,bool panel_shows_zones);
 bool zones_on_map(uint8_t zone_times,uint8_t position,bool panel_shows_zones);
+bool zones_on_strip(uint8_t zone_times,uint8_t position,bool panel_shows_zones);
 // How far the clock strip moves: right for a left column, left for a right one.
 static inline int zone_clock_shift(bool right){return right?-ZONE_COLUMN_SHIFT:ZONE_COLUMN_SHIFT;}
 int zone_row_baseline(int index,int count,bool tall);
@@ -29,5 +31,16 @@ int zone_row_baseline(int index,int count,bool tall);
 // from (x, baseline); returns the advance.
 #define ZONE_TALL_HEIGHT 10
 typedef void (*ZoneTallPlot)(int x,int y,void *context);
+int zone_tall_width(const char *text);
 int zone_tall_draw(const char *text,int x,int baseline,ZoneTallPlot plot,void *context);
 void zone_row(ZoneRow *row,const char *label,int hour,int minute,bool clock24,int delta,bool stale,bool right,bool tall,ZoneMeasure measure,const void *font);
+// Place times between the clock and the map (shared/zone-column.js zoneStrip):
+// one line of glyph, label, tall time, A/P and day offset per place, spread
+// evenly across the width; labels shorten to three letters, then drop, to fit.
+// Offsets from the slot's top left; the glyph's is its centre.
+#define ZONE_STRIP_HEIGHT 16
+#define ZONE_STRIP_BASELINE 13
+#define ZONE_STRIP_GLYPH_Y 9
+typedef struct {char label[8],time[6],suffix[2],day[4];int glyph_x,label_x,time_x,suffix_x,day_x;} ZoneStripItem;
+void zone_strip_entry(ZoneStripItem *item,const char *label,int hour,int minute,bool clock24,int delta,bool stale);
+void zone_strip(ZoneStripItem *items,int n,ZoneMeasure measure,const void *font);

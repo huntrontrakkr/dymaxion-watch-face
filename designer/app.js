@@ -32,7 +32,8 @@ import {displayControls} from '../shared/display-controls.js';
 import {powerControls} from '../shared/power-controls.js';
 import {sinceRelight,minuteAnimationOn,flourishesOn} from '../shared/power.js';
 import {TRAY_MS,TRAY_Y,TRAY_H,traySlide,slideRow,besideProgress,besideShift,columnAlpha,mixColor} from '../shared/transitions.js';
-import {zoneColumn,zonesBeside,zonesOnMap,zoneRow,zoneRowBaseline,tallPixels} from '../shared/zone-column.js';
+import {zoneColumn,zonesBeside,zonesOnMap,zonesOnStrip,artBeside,besideSide,zoneRow,zoneRowBaseline,tallPixels} from '../shared/zone-column.js';
+import {drawClockArt,drawZoneStrip} from '../shared/beside-render.js';
 import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,labelHull,hullRect,MAP_TIME_SIZES} from '../shared/map-times.js';
 import {minuteFlipClock,drawFlipPixels,FLIP_FACES,flipOffset} from '../shared/minute-flip.js';
 import {installWatchColorPicker} from '../shared/color-picker.js';
@@ -74,7 +75,7 @@ let currentCity={name:'Norfolk',sample:true,lat:36.9,lon:-76.3};
 const cityLocation=locationService({getSettings:()=>settings,storage:localStorage,send:city=>{currentCity=city;render();}});
 const cityEditor=cityControls($('city-controls'),()=>settings,value=>{settings=validateSettings({...settings,location:value},zoneExists);save();},()=>cityLocation.refresh());
 const powerEditor=powerControls($('power-controls'),()=>settings,power=>{settings={...settings,power};sync();save();});
-const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,mapTimeSize:value.mapTimeSize,zoneTimesTall:value.zoneTimesTall,placeIcons:value.placeIcons,nameplate:value.nameplate};sync();save();});
+const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,mapTimeSize:value.mapTimeSize,zoneTimesTall:value.zoneTimesTall,placeIcons:value.placeIcons,nameplate:value.nameplate,clockArt:value.clockArt};sync();save();});
 const paletteEditor=paletteControls($('palette-controls'),()=>settings,patch=>{settings=validateSettings({...settings,...patch},zoneExists);sync();save();});
 const environment=environmentService({getSettings:()=>settings,storage:localStorage,send:(kind,data)=>{liveData[kind]=data;render();}});
 const panelEditor=panelControls($('panel-controls'),()=>settings,footer=>{
@@ -303,13 +304,17 @@ function render(){
   // not showing them (another panel, or Quick View covering it).
   const band=visible>=228&&settings.footer.enabled;
   const panelZones=(!band||footerPage==='zones')&&settings.places.some((p,i)=>p.on&&settings.zones[i][1]+36<=visible);
-  const beside=zonesBeside(settings,panelZones),besideP=besideUpdate(beside),besideOn=besideP>0,alpha=columnAlpha(besideP);
+  // The column beside a narrow clock holds the place times, or else the
+  // icosahedron when it is on (the clock then stays aside).
+  const beside=zonesBeside(settings,panelZones),art=artBeside(settings),side=besideSide(settings),besideP=besideUpdate(beside||art),besideOn=besideP>0,alpha=columnAlpha(besideP);
+  const strip=zonesOnStrip(settings,panelZones);canvas.dataset.zonesStrip=String(strip);
   const onMap=zonesOnMap(settings,panelZones);canvas.dataset.zonesOnMap=String(onMap);
   const [tx,timeY]=settings.time,[tw,th]=blockSize(settings,'time');
   // The Dymaxion nameplate, between the clock and the map when there is room
   // (a clock below the map moves down for it).
-  const {plate,clockTop:ty}=settings.nameplate?nameplateLayout({mapY:my,timeY,height:th,visible}):{plate:null,clockTop:clockTopForVisible(timeY,th,visible)};
-  const markers=markerSpots();if(plate)markers.obstacles=[...markers.obstacles,nameplateObstacle(plate,mx,my)];
+  // Place times between the clock and the map take the nameplate's place.
+  const {plate,clockTop:ty}=settings.nameplate||strip?nameplateLayout({mapY:my,timeY,height:th,visible}):{plate:null,clockTop:clockTopForVisible(timeY,th,visible)};
+  const markers=markerSpots();if(plate&&!strip)markers.obstacles=[...markers.obstacles,nameplateObstacle(plate,mx,my)];
   // Clearings (a group's hull ground) first, then map times, then hull outlines
   // (so a grouped leader starts at its hull), then glyphs.
   markers.places.forEach(s=>{if(s&&!s.grouped)drawPixelRows(ctx,MARKER_HALO_ROWS,mx+s.x-3,my+s.y-3,pal.bg);});
@@ -323,8 +328,8 @@ function render(){
   // You: a bullseye one size up, in the clock's ink.
   if(markers.you)drawPixelRows(ctx,HERE_ROWS,mx+markers.you.x-3,my+markers.you.y-3,pal.ink);
   canvas.dataset.here=markers.you?markers.you.x+','+markers.you.y:'';
-  if(plate)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
-  canvas.dataset.nameplate=plate?plate.x+','+plate.y:'';
+  if(plate&&!strip)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
+  canvas.dataset.nameplate=plate&&!strip?plate.x+','+plate.y:'';
   const {h,m:minute,ampm}=clockParts(local);
   const city=settings.location.mode==='manual'?settings.location.name:currentCity.sample?currentCity.name:cityIsUsable(currentCity)?currentCity.name+(currentCity.stale||Date.now()/1000-currentCity.fetched>7200?'?':''):'';
   // Status line: lining capitals, date and city at the top left.
@@ -334,7 +339,10 @@ function render(){
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
   // The strip is taller than the figures (46 pixels for Broad and Span): put the
   // nameplate back on top where it reaches (it never touches the figures).
-  if(plate&&plate.y<ty+th&&plate.y+NAMEPLATE_HEIGHT>ty)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
+  if(plate&&!strip&&plate.y<ty+th&&plate.y+NAMEPLATE_HEIGHT>ty)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
+  if(plate&&strip)drawZoneStrip(ctx,plate.y,settings.places.map((p,i)=>{if(!p.on)return null;const there=moment(now).tz(p.tz);
+    return {icon:p.icon,label:p.label,hour:there.hours(),minute:there.minutes(),delta:Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000),color:markColor(p,settings,i)};}).filter(Boolean),
+    {font:watchTypeface.lining.small,clock24:use24(),ink:pal.ink,accent:pal.accent,bg:pal.bg});
   if(!FLIP_FACES[settings.clockDisplay])minuteClock.reset();
   {
     const value=hourText(h,settings.leadingZero)+':'+two(minute);
@@ -345,12 +353,14 @@ function render(){
     minuteClock.update(value,Math.floor(+now/60000),[pal.ink,pal.bg,settings.format,tx,ty,offset].join('/'),minuteAnimationOn(settings.power,settings.motion,local.hours())&&!reducedMotion.matches&&!document.hidden,style);
     // Beside the place times, the figures shift left and the column fills the
     // right: the clock glides over first, then the column fades in.
-    drawFlipPixels(ctx,minuteClock.frame(),tx+besideShift(besideP,zoneColumn(settings.zonePosition).shift),ty+flipOffset(style),{ink:pal.ink,background:pal.bg});
-    if(alpha){const fade=c=>fadeHex(pal.bg,c,alpha);
+    drawFlipPixels(ctx,minuteClock.frame(),tx+besideShift(besideP,zoneColumn(side).shift),ty+flipOffset(style),{ink:pal.ink,background:pal.bg});
+    // The column shows the place times (fading with the glide), or else the icosahedron.
+    if(alpha&&art&&!beside)drawClockArt(ctx,side,tx,ty,fadeHex(pal.bg,pal.accent,alpha));
+    else if(alpha){const fade=c=>fadeHex(pal.bg,c,alpha);
       const font=watchTypeface.lining.small,shown=settings.places.map((p,i)=>[p,i]).filter(([p])=>p.on);
       shown.forEach(([p,i],row)=>{
         const there=moment(now).tz(p.tz),delta=Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000);
-        const r=zoneRow({label:p.label,hour:there.hours(),minute:there.minutes(),clock24:use24(),delta,side:settings.zonePosition,tall:settings.zoneTimesTall},t=>textWidth(font,t)),base=ty+zoneRowBaseline(row,shown.length,settings.zoneTimesTall);
+        const r=zoneRow({label:p.label,hour:there.hours(),minute:there.minutes(),clock24:use24(),delta,side,tall:settings.zoneTimesTall},t=>textWidth(font,t)),base=ty+zoneRowBaseline(row,shown.length,settings.zoneTimesTall);
         drawBitmapText(ctx,font,r.label,tx+r.labelX,base,fade(markColor(p,settings,i)));
         if(settings.zoneTimesTall){ctx.fillStyle=fade(pal.ink);for(const [x,y] of tallPixels(r.time))ctx.fillRect(tx+r.timeX+x,base+y,1,1);}
         else drawBitmapText(ctx,font,r.time,tx+r.timeX,base,fade(pal.ink));
@@ -393,7 +403,7 @@ function render(){
   $('preview-time').textContent=local.format('ddd HH:mm')+(offset?' / PREVIEW':' / LIVE');
   const lunar=moonDescription(now);$('moon-state').textContent=settings.moonIndicator?`${lunar.name} · ${lunar.illumination}% lit. `:'';
   canvas.dataset.besideProgress=String(besideP);canvas.dataset.traySliding=String(!!trayOld);
-  scheduleMotion(!!trayOld||besideP!==(beside?1000:0));
+  scheduleMotion(!!trayOld||besideP!==(beside||art?1000:0));
 }
 // Transitions (shared/transitions.js), as on the watch: the tray swipes to its
 // next page, and the clock makes room before the place times fade in beside it.

@@ -15,7 +15,11 @@ const cases={
   'tall times beside the clock, 24-hour':{format:1,zoneTimes:'always',zonePosition:'left',zoneTimesTall:true},
   'clock below the map, nameplate on':{format:2,time:[0,134],map:[0,24],nameplate:true},
   'times on the map, largest size, turned':{format:2,zoneTimes:'always',zonePosition:'map',mapTimeSize:'huge',mapTimesTurn:true},
-  'times on the map, wide, 24-hour, dotted background':{format:1,zoneTimes:'always',zonePosition:'map',mapTimeSize:'wide',mapBackground:'lines'}
+  'times on the map, wide, 24-hour, dotted background':{format:1,zoneTimes:'always',zonePosition:'map',mapTimeSize:'wide',mapBackground:'lines'},
+  'times between the clock and the map, 12-hour':{format:2,zoneTimes:'always',zonePosition:'strip'},
+  'times between the clock and the map, below the map':{format:1,zoneTimes:'always',zonePosition:'strip',time:[0,134],map:[0,24]},
+  'icosahedron on the left of Chamfer':{clockArt:'left',zoneTimes:'panel'},
+  'icosahedron on the right of Leco, place times take its place':{clockArt:'right',clockDisplay:'leco',zoneTimes:'always',zonePosition:'left'}
 };
 const browser=await chromium.launch(),errors=[];
 try{

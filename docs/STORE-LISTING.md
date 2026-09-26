@@ -10,32 +10,36 @@ Source and support: https://github.com/huntrontrakkr/dymaxion-watch-face
 ## Published listing
 
 [Dymaxion on the Pebble Appstore](https://apps.repebble.com/6d7f75de20c3406198a5abd6)
-is public, with six Emery screenshots. Version tags publish updates to this
-same listing after CI passes. The workflow verifies the public version,
+is public. Version tags publish updates to this same listing after CI passes. The workflow verifies the public version,
 download checksum and description. Rebble publication is deferred.
 
 ## Description
 
-A watch face built on Buckminster Fuller's Dymaxion map, which unfolds the globe onto the twenty faces of an icosahedron without splitting a continent. Fuller spent decades on it and called the result a deck plan of Spaceship Earth. It shows the planet as one island in one ocean, with no country at the center.
+A watch face built on Buckminster Fuller's Dymaxion map, which unfolds the globe onto the twenty faces of an icosahedron without splitting a continent. Fuller called it a deck plan of Spaceship Earth: one island in one ocean, with no country at the center.
 
-The map is shaded from the sun's actual position, so the terminator moves across it through the day, and city lights appear on the night side. The subsolar point is marked.
+The map is shaded from the sun's actual position, so the terminator moves across it through the day and city lights come on at night.
 
-Up to three additional time zones can be shown in the bottom panel, beside the main clock, or as labels placed on the map near each city. Daylight saving is handled per zone.
+Up to three other time zones can sit in the bottom panel, beside the clock, in a line between the clock and the map, or on the map by each city. Daylight saving is handled per zone. A small wireframe icosahedron can sit beside a narrow clock.
 
-The bottom panel also offers weather, a two-week calendar, humidity, NOAA tide predictions and Pebble Health data. It can change on a wrist flick, on a timer, or automatically based on conditions such as approaching rain or a turning tide.
+The bottom panel also offers weather with sunrise and sunset times, a two-week calendar, humidity, NOAA tides with each high and low marked, and Pebble Health. It can change on a wrist flick, on a timer, or when rain or a turning tide approaches.
 
-Twenty-five palettes are included, custom palettes can be defined, and there are eight clock typefaces. The phone settings page renders an exact preview before anything is sent to the watch.
+The top bar can show the moon, a battery gauge, a Quiet Time mark and a line for the day's steps. Twenty-five palettes, custom palettes and eight clock typefaces are included, and the phone settings page previews every change before it is sent.
 
-Fuller's word for doing more with less was ephemeralization. In that spirit, the map is redrawn at a configurable interval rather than every minute, and an optional night mode reduces redraws further, including during Quiet Time.
+Fuller's word for doing more with less was ephemeralization. The map is redrawn at an interval rather than every minute, and a power saver cuts redraws at night or during Quiet Time.
 
-Requires Pebble Time 2. Weather uses the phone's location. Health data stays on the watch. Weather shown in the screenshots is sample data. Source code is available on GitHub.
+Requires Pebble Time 2. Weather uses the phone's location. Health data stays on the watch. Weather and tides in the screenshots are sample data. Source code is on GitHub.
 
 ## Submission assets
 
+The store gallery is `docs/screenshots/store/`: an animated demo first, then
+five 200 × 228 stills, all rendered by the workshop at the watch's size and in
+its 64 colors. Each release uploads them in place of the listing's screenshots.
+To refresh them, run `npm run dev`, then `npm run demo`. The demo GIF must stay
+under 1.5 MB; the 2× copy for the README is `docs/screenshots/dymaxion-demo.gif`.
+
 Each automated GitHub release includes `dymaxion.pbw`, `SHA256SUMS` and release
-notes. The original six 200 × 228 store screenshots remain on the listing;
-novelty palettes are excluded. The original submission kits are archived with
-the [0.3.5 release](https://github.com/huntrontrakkr/dymaxion-watch-face/releases/tag/v0.3.5).
+notes. The original submission kits are archived with the
+[0.3.5 release](https://github.com/huntrontrakkr/dymaxion-watch-face/releases/tag/v0.3.5).
 
 Manage the existing listing in the
 [Pebble developer dashboard](https://developer.repebble.com/dashboard).

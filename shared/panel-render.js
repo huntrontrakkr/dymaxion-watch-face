@@ -34,7 +34,7 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
     if(!h){text('HEALTH',4,193,pal.accent);text('STEPS AND HEART RATE ARE ON THE WATCH',4,214);}
     else{
       const v=healthView(h,w.rangeLabels,axisTextWidth(clock24?'23':'12A')),l=v.layout;
-      text(v.title,4,191);text(h.demo?'DEMO':v.right,196,191,pal.accent,'right');
+      text(v.title,4,191);text(v.right,196,191,pal.accent,'right');
       for(let i=1;i<24;i++)line(chartX(l,i-1),v.usual[i-1],chartX(l,i),v.usual[i],pal.ink,true);
       for(const b of v.bars)if(b.height)rect(b.x,b.y,b.width,b.height,c.rain);
       for(let i=1;i<24;i++)if(v.pulse[i-1]>=0&&v.pulse[i]>=0)line(chartX(l,i-1),v.pulse[i-1],chartX(l,i),v.pulse[i],c.temperature);
@@ -65,7 +65,8 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
           return [first,second].filter(Boolean).map(e=>({time:e.time,minute:local(e.time),glyph:e.rise?'rise':'set'}));}
         return [[series.rise,series.riseMinute,'rise'],[series.set,series.setMinute,'set']].filter(([t])=>t>=at).map(([time,minute,glyph])=>({time,minute,glyph}));
       };
-      let right=series.demo?'DEMO':stale?'OLD':'';
+      // Sample data shows sample times, and never goes stale.
+      let right=!series.demo&&stale?'OLD':'';
       const times=right?[]:tide?nextTides(series,at).map(t=>({...t,glyph:t.high?'high':'low'})):w.solarTimes?suns():[];
       if(!right&&!times.length&&!tide&&!humidity&&w.precipitation!=='off')right=w.precipitation==='probability'?`RAIN ${Math.max(...samples.map(p=>p.probability))}%`:`MAX ${(Math.max(...samples.map(p=>p.rain))/10/(w.rainUnit==='in'?25.4:1)).toFixed(w.rainUnit==='in'?2:1)}${w.rainUnit.toUpperCase()}`;
       text(title,4,191);text(right,196,191,pal.accent,'right');

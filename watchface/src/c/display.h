@@ -18,5 +18,9 @@
 #define DISPLAY_ZONE_TALL(d) (((d)[3]&32)!=0)
 // Byte 3 bit 6 hides the place icons in the time-zone drawer.
 #define DISPLAY_PLACE_ICONS(d) (((d)[3]&64)==0)
+// Byte 3 bit 7 shows the icosahedron beside a narrow clock; byte 4 bit 7 (the
+// power byte's spare bit) puts it on the right.
+#define DISPLAY_ART(d) (((d)[3]&128)!=0)
+#define DISPLAY_ART_RIGHT(d) (((d)[4]&128)!=0)
 bool display_valid(const uint8_t *data,size_t length);
 bool display_normalize(uint8_t out[DISPLAY_SIZE],const uint8_t *data,size_t length);
