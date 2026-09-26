@@ -148,7 +148,7 @@ C/JavaScript tests, desktop and phone browser tests, a production website build,
 and a clean Emery build using SDK 4.33.1 and `pebble-tool` 5.0.40. The separate
 Pages workflow publishes the workshop from `main`.
 
-Publish a watch update when it is ready by giving it a new version tag:
+Publish a watch update by pushing a new version to `main`:
 
 ```sh
 # Write the user-facing changes in releases/v0.4.1.md first.
@@ -157,16 +157,20 @@ npm run companion
 git add package.json package-lock.json watchface/package.json releases/ watchface/src/pkjs/index.js
 git commit -m "Prepare Dymaxion 0.4.1"
 git push origin main
-git tag v0.4.1
-git push origin v0.4.1
 ```
 
-Commit any implementation changes before the version tag. The workflow checks
+When a push to `main` carries a version that has release notes and no tag yet,
+the workflow tests it, tags that commit `v0.4.1` and publishes it in the same
+run. Pushing the tag yourself (`git tag v0.4.1 && git push origin v0.4.1`)
+still works, and whichever comes first wins; the other finds the tag already
+there. A push that leaves the version alone only runs the checks and updates
+the website.
+
+Commit any implementation changes before the version bump. The workflow checks
 that the tag matches the root package, lockfile, native metadata and PBW, and
 that the commit belongs to `main`. After verification it submits the **same
 tested artifact** to the existing Pebble listing and creates a GitHub release
-with the PBW, release notes and SHA-256 checksum. A plain push to `main` updates
-the website and runs checks; only a version tag publishes a watch update.
+with the PBW, release notes and SHA-256 checksum.
 
 The description under `## Description` in `docs/STORE-LISTING.md` is the source
 for store copy. Publishing updates that text while preserving screenshots and
