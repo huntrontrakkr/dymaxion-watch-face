@@ -63,8 +63,14 @@ bool chamfer_face_init(ClockFace *f,const uint8_t *data,size_t length){
 
 void clock_flip_attach(ClockFlip *flip,const ClockFace *face,uint8_t *memory){
   size_t mask=(size_t)clock_pixels(face)/8;
-  *flip=(ClockFlip){face,memory,memory+mask,memory+2*mask,memory+2*mask+face->cell_count,0,0,0,0,0,0};
+  *flip=(ClockFlip){.face=face,.before=memory,.after=memory+mask,.active=memory+2*mask,.delay=memory+2*mask+face->cell_count};
+  flip->cells=(ClockCell *)(memory+clock_flip_geometry_offset(face));
+  flip->scales=(int16_t *)(flip->cells+face->cell_count);
+  flip->owners=face->cell_count<=256?(uint8_t *)(flip->scales+face->cell_count):NULL;
+  for(int id=0;id<face->cell_count;id++)face->cell(face,id,&flip->cells[id]);
+  if(flip->owners)for(int y=0;y<face->height;y++)for(int x=0;x<CLOCK_WIDTH;x++)flip->owners[y*CLOCK_WIDTH+x]=(uint8_t)face->owner(face,x,y);
 }
+static uint16_t owner(const ClockFlip *flip,int x,int y){return flip->owners?flip->owners[y*CLOCK_WIDTH+x]:flip->face->owner(flip->face,x,y);}
 void clock_mask(const ClockFace *f,const uint8_t digits[4],uint8_t *bits){
   memset(bits,0,(size_t)clock_pixels(f)/8);
   if(f->mask){f->mask(f,digits,bits);return;}
@@ -81,20 +87,20 @@ void clock_flip_prepare(ClockFlip *flip,const uint8_t before[4],const uint8_t af
   memset(flip->active,0,f->cell_count);memset(flip->delay,0,f->cell_count);flip->changed_slots=0;flip->changed_cells=0;
   for(int i=0;i<clock_pixels(f);i++)if(bit(flip->before,i)!=bit(flip->after,i)){
     int slot=f->mask?-1:slot_at(f,i%CLOCK_WIDTH);if(slot<0&&!f->mask)continue;
-    flip->active[f->owner(f,i%CLOCK_WIDTH,i/CLOCK_WIDTH)]=1;if(slot>=0)flip->changed_slots|=1u<<slot;
+    flip->active[owner(flip,i%CLOCK_WIDTH,i/CLOCK_WIDTH)]=1;if(slot>=0)flip->changed_slots|=1u<<slot;
   }
   int32_t min=INT32_MAX,max=INT32_MIN;ClockCell c;
   for(int id=0;id<f->cell_count;id++)if(flip->active[id]){
-    flip->changed_cells++;f->cell(f,id,&c);if(c.cx<min)min=c.cx;if(c.cx>max)max=c.cx;
+    flip->changed_cells++;c=flip->cells[id];if(c.cx<min)min=c.cx;if(c.cx>max)max=c.cx;
   }
   if(max>min)for(int id=0;id<f->cell_count;id++)if(flip->active[id]){
-    f->cell(f,id,&c);flip->delay[id]=(80*(c.cx-min)+(max-min)/2)/(max-min);
+    c=flip->cells[id];flip->delay[id]=(80*(c.cx-min)+(max-min)/2)/(max-min);
   }
   // Tile ownership includes blank pixels around a changed stroke. Bound the
   // complete tiles once, rather than searching the whole strip every frame.
   flip->x0=CLOCK_WIDTH;flip->y0=f->height;flip->x1=flip->y1=0;
   if(flip->changed_cells)for(int y=0;y<f->height;y++)for(int x=0;x<CLOCK_WIDTH;x++){
-    if(!flip->active[f->owner(f,x,y)])continue;
+    if(!flip->active[owner(flip,x,y)])continue;
     if(x<flip->x0)flip->x0=x;
     if(y<flip->y0)flip->y0=y;
     if(x>=flip->x1)flip->x1=x+1;
@@ -109,16 +115,19 @@ void clock_flip_sample(const ClockFlip *flip,uint16_t elapsed,uint8_t *pixels){
   static const uint8_t expand[16]={0,1,4,5,16,17,20,21,64,65,68,69,80,81,84,85};
   for(size_t i=0;i<clock_frame_bytes(f);i++)pixels[i]=expand[(flip->after[i>>1]>>((i&1)*4))&15];
   if(elapsed>=CLOCK_FLIP_MS||!flip->changed_cells)return;
+  // A tile has one phase, scale and centroid throughout this frame.
+  for(int id=0;id<f->cell_count;id++){
+    int local=(int)elapsed-flip->delay[id],scale=0;
+    if(flip->active[id]&&local<320){int phase=local<=0?0:local*32/320;scale=phase?CLOCK_SCALES[phase]:-1;}
+    flip->scales[id]=(int16_t)scale;
+  }
   for(int y=flip->y0;y<flip->y1;y++)for(int x=flip->x0;x<flip->x1;x++){
-    int at=y*W+x,id=f->owner(f,x,y);if(!flip->active[id])continue;
-    int local=(int)elapsed-flip->delay[id];if(local>=320)continue;
-    int phase=local<=0?0:local*32/320;
-    if(!phase){set_pixel(pixels,at,bit(flip->before,at));continue;}
-    int scale=CLOCK_SCALES[phase];if(!scale)continue;
-    ClockCell c;f->cell(f,id,&c);
+    int at=y*W+x,id=owner(flip,x,y),scale=flip->scales[id];if(!scale)continue;
+    if(scale<0){set_pixel(pixels,at,bit(flip->before,at));continue;}
+    ClockCell c=flip->cells[id];
     int32_t sx=c.cx+(x*256+128-c.cx)*1024/scale,sy=c.cy+(y*256+128-c.cy)*1024/scale;
     if(sx<0||sx>=W*256||sy<0||sy>=f->height*256)continue;
-    sx>>=8;sy>>=8;if(f->owner(f,sx,sy)!=id)continue;
+    sx>>=8;sy>>=8;if(owner(flip,sx,sy)!=id)continue;
     set_pixel(pixels,at,bit(flip->before,sy*W+sx));
   }
 }

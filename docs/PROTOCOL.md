@@ -1,7 +1,12 @@
 # Settings packet v7
 
 The watch accepts one 232-byte AppMessage byte array named `SETTINGS` (10000).
-`REQUEST` (10001) asks the companion to refresh. All multi-byte values are
+`REQUEST` (10001) asks the companion to refresh: value 1 requests full state
+(launch/reconnect); value 2 requests a routine refresh and permits omission of
+byte-identical packets already acknowledged in this companion session. Unknown
+requests receive full state. Older companions refresh fully for either value;
+older watches send 1. A failed send invalidates the remembered value for that
+packet kind; it cannot suppress a retry or correction. All multi-byte values are
 little endian. The watch validates the entire packet before replacing its
 configuration, then persists it as one record under key 1 (below Pebble's
 256-byte persistence limit). Invalid and truncated messages are ignored.

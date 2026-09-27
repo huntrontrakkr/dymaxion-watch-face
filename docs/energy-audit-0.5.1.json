@@ -1,0 +1,695 @@
+{
+  "date": "2026-09-27",
+  "version": "0.5.1",
+  "commit": "0f5119afa0da3b8a28ef797d5c7eb30e0fbb2c53",
+  "productionChanges": false,
+  "sdk": "4.33.1",
+  "platform": "emery",
+  "pbwSha256": "bb62f1fff238e705eaae78ec882213be5a2bfdc941b82ef5badbd918b3547b6d",
+  "build": {
+    "resourcesBytes": 99267,
+    "codeAndStaticRamBytes": 58581,
+    "heapAllowanceBeforeRuntimeAllocationsBytes": 72491
+  },
+  "nativeMethod": {
+    "appLoadAddress": "0x20050400",
+    "trace": "Application-only QEMU in_asm,exec,nochain; decode Thumb blocks and count each execution.",
+    "sampleTimesMs": [
+      0,
+      33,
+      66,
+      99,
+      132,
+      165,
+      198,
+      231,
+      264,
+      297,
+      330,
+      363,
+      396,
+      400
+    ],
+    "kernel": "One prepare plus fourteen samples using the default Chamfer clock.",
+    "fullPaint": "One inert AppMessage requests one paint after settling; selected caches explicitly invalidated where named.",
+    "idleDurationSeconds": 1,
+    "ambiguousBlockLengths": 0,
+    "excludes": [
+      "firmware graphics",
+      "LCD transfers",
+      "Bluetooth radio energy",
+      "firmware Health queries",
+      "electrical power"
+    ],
+    "note": "Instruction counts are workload measures, not cycle-accurate hardware timing or battery-life measurements."
+  },
+  "native": [
+    {
+      "case": "default-full",
+      "instructions": 187759,
+      "blocks": 37860,
+      "unmapped_blocks": 0,
+      "hotspots": [
+        [
+          "app:draw_time",
+          113687
+        ],
+        [
+          "app:jump_to_pbl_function",
+          14049
+        ],
+        [
+          "app:line",
+          9996
+        ],
+        [
+          "app:pixel_rows",
+          7690
+        ],
+        [
+          "app:__divsf3",
+          7420
+        ],
+        [
+          "app:caps_draw",
+          3717
+        ],
+        [
+          "app:__aeabi_fadd",
+          2409
+        ],
+        [
+          "app:draw_status_section",
+          2248
+        ],
+        [
+          "app:graphics_context_set_stroke_color",
+          2061
+        ],
+        [
+          "app:caps_span",
+          1948
+        ],
+        [
+          "app:update_proc",
+          1942
+        ],
+        [
+          "app:graphics_draw_pixel",
+          1929
+        ],
+        [
+          "app:__mulsf3",
+          1854
+        ],
+        [
+          "app:graphics_draw_line",
+          1764
+        ]
+      ],
+      "calls": {
+        "app:received": 1,
+        "app:update_proc": 1
+      }
+    },
+    {
+      "case": "default-idle",
+      "instructions": 0,
+      "blocks": 0,
+      "unmapped_blocks": 0,
+      "hotspots": [],
+      "calls": {}
+    },
+    {
+      "case": "default-relight",
+      "instructions": 830744,
+      "blocks": 152017,
+      "unmapped_blocks": 0,
+      "hotspots": [
+        [
+          "app:update_proc",
+          628436
+        ],
+        [
+          "app:draw_time",
+          113699
+        ],
+        [
+          "app:jump_to_pbl_function",
+          14805
+        ],
+        [
+          "app:__divsf3",
+          14236
+        ],
+        [
+          "app:line",
+          9996
+        ],
+        [
+          "app:pixel_rows",
+          7691
+        ],
+        [
+          "app:__aeabi_fadd",
+          5677
+        ],
+        [
+          "app:__mulsf3",
+          4120
+        ],
+        [
+          "app:caps_draw",
+          3719
+        ],
+        [
+          "app:draw_status_section",
+          2250
+        ],
+        [
+          "app:graphics_context_set_stroke_color",
+          2061
+        ],
+        [
+          "app:caps_span",
+          1940
+        ],
+        [
+          "app:graphics_draw_pixel",
+          1926
+        ],
+        [
+          "app:graphics_draw_line",
+          1764
+        ]
+      ],
+      "calls": {
+        "app:received": 1,
+        "app:update_proc": 1
+      }
+    },
+    {
+      "case": "health-cached",
+      "instructions": 225374,
+      "blocks": 45150,
+      "unmapped_blocks": 0,
+      "hotspots": [
+        [
+          "app:draw_time",
+          113676
+        ],
+        [
+          "app:jump_to_pbl_function",
+          17892
+        ],
+        [
+          "app:line",
+          11254
+        ],
+        [
+          "app:glyph_label",
+          8392
+        ],
+        [
+          "app:__divsf3",
+          7400
+        ],
+        [
+          "app:map_time_pixels",
+          5861
+        ],
+        [
+          "app:caps_draw",
+          4691
+        ],
+        [
+          "app:pixel_rows",
+          4422
+        ],
+        [
+          "app:dotted_line",
+          3488
+        ],
+        [
+          "app:graphics_draw_pixel",
+          2907
+        ],
+        [
+          "app:map_pixel",
+          2870
+        ],
+        [
+          "app:panels_draw",
+          2863
+        ],
+        [
+          "app:__aeabi_fadd",
+          2409
+        ],
+        [
+          "app:update_proc",
+          2383
+        ]
+      ],
+      "calls": {
+        "app:received": 1,
+        "app:update_proc": 1
+      }
+    },
+    {
+      "case": "minute-ordinary",
+      "instructions": 6548474,
+      "blocks": 1151780,
+      "unmapped_blocks": 0,
+      "hotspots": [
+        [
+          "app:chamfer_owner",
+          3587555
+        ],
+        [
+          "app:clock_flip_sample",
+          2286332
+        ],
+        [
+          "app:clock_flip_prepare",
+          299996
+        ],
+        [
+          "app:chamfer_cell",
+          230549
+        ],
+        [
+          "app:clock_mask",
+          116632
+        ],
+        [
+          "app:set_bit",
+          25712
+        ],
+        [
+          "app:chamfer_colon",
+          1626
+        ],
+        [
+          "app:chamfer_glyph",
+          32
+        ],
+        [
+          "app:jump_to_pbl_function",
+          28
+        ],
+        [
+          "app:memset",
+          12
+        ]
+      ],
+      "calls": {
+        "app:clock_flip_prepare": 1,
+        "app:clock_flip_sample": 14
+      }
+    },
+    {
+      "case": "minute-rollover",
+      "instructions": 12858292,
+      "blocks": 2267415,
+      "unmapped_blocks": 0,
+      "hotspots": [
+        [
+          "app:chamfer_owner",
+          7193381
+        ],
+        [
+          "app:clock_flip_sample",
+          4600233
+        ],
+        [
+          "app:chamfer_cell",
+          543488
+        ],
+        [
+          "app:clock_flip_prepare",
+          363344
+        ],
+        [
+          "app:clock_mask",
+          123940
+        ],
+        [
+          "app:set_bit",
+          32208
+        ],
+        [
+          "app:chamfer_colon",
+          1626
+        ],
+        [
+          "app:chamfer_glyph",
+          32
+        ],
+        [
+          "app:jump_to_pbl_function",
+          28
+        ],
+        [
+          "app:memset",
+          12
+        ]
+      ],
+      "calls": {
+        "app:clock_flip_prepare": 1,
+        "app:clock_flip_sample": 14
+      }
+    },
+    {
+      "case": "steps-full",
+      "instructions": 188038,
+      "blocks": 37908,
+      "unmapped_blocks": 0,
+      "hotspots": [
+        [
+          "app:draw_time",
+          113723
+        ],
+        [
+          "app:jump_to_pbl_function",
+          14084
+        ],
+        [
+          "app:line",
+          9996
+        ],
+        [
+          "app:pixel_rows",
+          7704
+        ],
+        [
+          "app:__divsf3",
+          7440
+        ],
+        [
+          "app:caps_draw",
+          3726
+        ],
+        [
+          "app:__aeabi_fadd",
+          2409
+        ],
+        [
+          "app:draw_status_section",
+          2292
+        ],
+        [
+          "app:graphics_context_set_stroke_color",
+          2064
+        ],
+        [
+          "app:update_proc",
+          1942
+        ],
+        [
+          "app:caps_span",
+          1940
+        ],
+        [
+          "app:graphics_draw_pixel",
+          1926
+        ],
+        [
+          "app:__mulsf3",
+          1848
+        ],
+        [
+          "app:graphics_draw_line",
+          1764
+        ]
+      ],
+      "calls": {
+        "app:received": 1,
+        "app:update_proc": 1
+      }
+    },
+    {
+      "case": "weather-cached",
+      "instructions": 273002,
+      "blocks": 54236,
+      "unmapped_blocks": 0,
+      "hotspots": [
+        [
+          "app:draw_time",
+          113704
+        ],
+        [
+          "app:jump_to_pbl_function",
+          25529
+        ],
+        [
+          "app:graph_draw",
+          17713
+        ],
+        [
+          "app:line",
+          14119
+        ],
+        [
+          "app:glyph_label",
+          10417
+        ],
+        [
+          "app:caps_draw",
+          7435
+        ],
+        [
+          "app:__divsf3",
+          7400
+        ],
+        [
+          "app:rect",
+          6696
+        ],
+        [
+          "app:map_time_pixels",
+          5861
+        ],
+        [
+          "app:pixel_rows",
+          4422
+        ],
+        [
+          "app:dotted_line",
+          3703
+        ],
+        [
+          "app:graphics_draw_pixel",
+          3165
+        ],
+        [
+          "app:graphics_context_set_stroke_color",
+          2880
+        ],
+        [
+          "app:map_pixel",
+          2870
+        ]
+      ],
+      "calls": {
+        "app:received": 1,
+        "app:update_proc": 1
+      }
+    },
+    {
+      "case": "weather-solar-cold",
+      "instructions": 5317879,
+      "blocks": 662020,
+      "unmapped_blocks": 0,
+      "hotspots": [
+        [
+          "app:__divsf3",
+          2254598
+        ],
+        [
+          "app:__aeabi_fadd",
+          1079604
+        ],
+        [
+          "app:__mulsf3",
+          748400
+        ],
+        [
+          "app:__nesf2",
+          271671
+        ],
+        [
+          "app:solar_sin",
+          223397
+        ],
+        [
+          "app:__subsf3",
+          146496
+        ],
+        [
+          "app:draw_time",
+          113693
+        ],
+        [
+          "app:__aeabi_cfcmple",
+          77604
+        ],
+        [
+          "app:solar_direction",
+          46488
+        ],
+        [
+          "app:__aeabi_fcmpgt",
+          41450
+        ],
+        [
+          "app:__aeabi_fcmplt",
+          34196
+        ],
+        [
+          "app:__floatdisf",
+          29567
+        ],
+        [
+          "app:__aeabi_cfrcmple",
+          28952
+        ],
+        [
+          "app:jump_to_pbl_function",
+          25550
+        ]
+      ],
+      "calls": {
+        "app:received": 1,
+        "app:update_proc": 1
+      }
+    }
+  ],
+  "phone": [
+    {
+      "name": "default hourly weather, automatic city",
+      "hours": 24,
+      "ackDelayMs": 5,
+      "networkRequests": 48,
+      "locationFixes": 24,
+      "messages": 144,
+      "duplicateMessages": 72,
+      "payloadBytes": 37392,
+      "counts": {
+        "SETTINGS+FOOTER+DISPLAY+PALETTE": {
+          "messages": 24,
+          "duplicate": 24,
+          "bytes": 7728
+        },
+        "WEATHER": {
+          "messages": 48,
+          "duplicate": 24,
+          "bytes": 20352
+        },
+        "TIDE": {
+          "messages": 24,
+          "duplicate": 24,
+          "bytes": 6816
+        },
+        "CITY": {
+          "messages": 48,
+          "duplicate": 0,
+          "bytes": 2496
+        }
+      },
+      "logs": [],
+      "duplicatePayloadBytes": 24720,
+      "notes": "Warm 24-hour window; successful sends, 5 ms ACK, 25 ms fixture HTTP responses; excludes transport framing."
+    },
+    {
+      "name": "hourly weather and six-hour tides, automatic city",
+      "hours": 24,
+      "ackDelayMs": 5,
+      "networkRequests": 56,
+      "locationFixes": 24,
+      "messages": 148,
+      "duplicateMessages": 72,
+      "payloadBytes": 38528,
+      "counts": {
+        "SETTINGS+FOOTER+DISPLAY+PALETTE": {
+          "messages": 24,
+          "duplicate": 24,
+          "bytes": 7728
+        },
+        "WEATHER": {
+          "messages": 48,
+          "duplicate": 24,
+          "bytes": 20352
+        },
+        "TIDE": {
+          "messages": 28,
+          "duplicate": 24,
+          "bytes": 7952
+        },
+        "CITY": {
+          "messages": 48,
+          "duplicate": 0,
+          "bytes": 2496
+        }
+      },
+      "logs": [],
+      "duplicatePayloadBytes": 24720,
+      "notes": "Warm 24-hour window; successful sends, 5 ms ACK, 25 ms fixture HTTP responses; excludes transport framing."
+    },
+    {
+      "name": "two-hour weather, automatic city (watch still asks hourly)",
+      "hours": 24,
+      "ackDelayMs": 5,
+      "networkRequests": 36,
+      "locationFixes": 24,
+      "messages": 132,
+      "duplicateMessages": 72,
+      "payloadBytes": 32304,
+      "counts": {
+        "SETTINGS+FOOTER+DISPLAY+PALETTE": {
+          "messages": 24,
+          "duplicate": 24,
+          "bytes": 7728
+        },
+        "WEATHER": {
+          "messages": 36,
+          "duplicate": 24,
+          "bytes": 15264
+        },
+        "TIDE": {
+          "messages": 24,
+          "duplicate": 24,
+          "bytes": 6816
+        },
+        "CITY": {
+          "messages": 48,
+          "duplicate": 0,
+          "bytes": 2496
+        }
+      },
+      "logs": [],
+      "duplicatePayloadBytes": 24720,
+      "notes": "Warm 24-hour window; successful sends, 5 ms ACK, 25 ms fixture HTTP responses; excludes transport framing."
+    }
+  ],
+  "scheduledEventsPerDay": [
+    {
+      "nightSaver": false,
+      "daylightMinutes": 5,
+      "relights": 288,
+      "minuteAnimations": 1440
+    },
+    {
+      "nightSaver": false,
+      "daylightMinutes": 15,
+      "relights": 96,
+      "minuteAnimations": 1440
+    },
+    {
+      "nightSaver": "22:00-07:00",
+      "daylightMinutes": 15,
+      "relights": 65,
+      "minuteAnimations": 900
+    }
+  ]
+}

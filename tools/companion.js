@@ -8,22 +8,20 @@ import {devicePosition} from './device-position.js';
 import {encodeCity} from '../shared/city.js';
 import {encodeDisplay} from '../shared/display.js';
 import {encodePalette} from '../shared/palette-protocol.js';
+import {watchSync} from './watch-sync.js';
 import html from './mobile-config.generated.html';
 const STORAGE='dymaxion-settings-v1';
 let settings=defaults();
 try{const saved=localStorage.getItem(STORAGE);if(saved)settings=validateSettings(JSON.parse(saved),zoneExists);}catch(e){console.log('Using default composition: '+e.message);}
-let sending=false;const queue=[];
-function enqueue(kind,message){const pending=queue.find(item=>item.kind===kind);if(pending){pending.message=message;pending.retries=0;}else queue.push({kind,message,retries:0});flush();}
+const transport=watchSync({send:(message,ok,fail)=>Pebble.sendAppMessage(message,ok,fail)});
+const enqueue=(kind,message)=>transport.enqueue(kind,message);
 const environment=environmentService({getSettings:()=>settings,storage:localStorage,send:(kind,data)=>enqueue(kind,{[kind.toUpperCase()]:Array.from(encodeEnvironment(data,kind))})});
 const location=locationService({getSettings:()=>settings,storage:localStorage,send:city=>enqueue('city',{CITY:Array.from(encodeCity(city))})});
-function sync(){enqueue('settings',{SETTINGS:Array.from(encodeSettings(settings)),FOOTER:Array.from(encodeFooter(settings)),DISPLAY:Array.from(encodeDisplay(settings)),PALETTE:Array.from(encodePalette(settings))});environment.refresh();location.refresh();}
-function flush(){
-  if(sending||!queue.length)return;
-  const item=queue.shift();sending=true;
-  Pebble.sendAppMessage(item.message,()=>{sending=false;flush();},()=>{sending=false;if(item.retries++<3){if(!queue.some(next=>next.kind===item.kind))queue.unshift(item);setTimeout(flush,1000*item.retries);}else{console.log('Watch sync deferred until the next connection.');flush();}});
-}
-Pebble.addEventListener('ready',sync);
-Pebble.addEventListener('appmessage',sync);
+function sync(full=false){if(full)transport.forgetAcknowledged();enqueue('settings',{SETTINGS:Array.from(encodeSettings(settings)),FOOTER:Array.from(encodeFooter(settings)),DISPLAY:Array.from(encodeDisplay(settings)),PALETTE:Array.from(encodePalette(settings))});environment.refresh();location.refresh();}
+Pebble.addEventListener('ready',()=>sync(true));
+// REQUEST=2 is a routine update. Older watches, launch and reconnect request
+// full state with 1; unknown requests also safely receive a full sync.
+Pebble.addEventListener('appmessage',event=>sync((event?.payload?.REQUEST??event?.payload?.[10001])!==2));
 Pebble.addEventListener('showConfiguration',async()=>{
   let city=null;
   try{const cached=JSON.parse(localStorage.getItem('dymaxion-current-city-v1')||'null');if(cached&&Number.isFinite(cached.lat)&&Number.isFinite(cached.lon))city={name:cached.name,lat:cached.lat,lon:cached.lon};}catch{}

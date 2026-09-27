@@ -1,0 +1,867 @@
+{
+  "date": "2026-09-27",
+  "baseVersion": "0.5.1",
+  "baseCommit": "0f5119afa0da3b8a28ef797d5c7eb30e0fbb2c53",
+  "spikeBranch": "spike/energy-efficiency",
+  "sdk": "4.33.1",
+  "platform": "emery",
+  "binaries": {
+    "beforePbwSha256": "bb62f1fff238e705eaae78ec882213be5a2bfdc941b82ef5badbd918b3547b6d",
+    "afterPbwSha256": "e95bf94624d2834113a1828ad20e097c4c38368075ed819747d15ebe88ac753f",
+    "beforeElfSha256": "20b759a6ca9488af7d376a3e0208839d55350d7d9ee0d52489fc690597e64339",
+    "afterElfSha256": "beb322f6a2585ac465c316d1beaff73c452d8aa2e93b2dbfddce3002096bdd86"
+  },
+  "nativeMethod": {
+    "counter": "Decoded Thumb instructions in app-only QEMU in_asm,exec,nochain traces",
+    "appLoadAddress": "0x20050400",
+    "unmappedBlocks": 0,
+    "conflictingBlockLengths": 0,
+    "sampleTimesMs": [
+      0,
+      33,
+      66,
+      99,
+      132,
+      165,
+      198,
+      231,
+      264,
+      297,
+      330,
+      363,
+      396,
+      400
+    ],
+    "excludes": [
+      "firmware execution",
+      "electrical power",
+      "LCD transfers",
+      "Bluetooth radio energy"
+    ]
+  },
+  "native": [
+    {
+      "case": "default-full",
+      "beforeInstructions": 188225,
+      "afterInstructions": 188259,
+      "reductionPercent": -0.018
+    },
+    {
+      "case": "default-idle",
+      "beforeInstructions": 0,
+      "afterInstructions": 0,
+      "reductionPercent": null
+    },
+    {
+      "case": "default-relight",
+      "beforeInstructions": 831175,
+      "afterInstructions": 831248,
+      "reductionPercent": -0.009
+    },
+    {
+      "case": "duplicate-settings",
+      "beforeInstructions": 191002,
+      "afterInstructions": 3404,
+      "reductionPercent": 98.218
+    },
+    {
+      "case": "health-cached",
+      "beforeInstructions": 225981,
+      "afterInstructions": 225975,
+      "reductionPercent": 0.003
+    },
+    {
+      "case": "humidity-visible",
+      "beforeInstructions": 256926,
+      "afterInstructions": 67567,
+      "reductionPercent": 73.702
+    },
+    {
+      "case": "minute-ordinary",
+      "beforeInstructions": 6548474,
+      "afterInstructions": 2834461,
+      "reductionPercent": 56.716
+    },
+    {
+      "case": "minute-rollover",
+      "beforeInstructions": 12858292,
+      "afterInstructions": 5148455,
+      "reductionPercent": 59.96
+    },
+    {
+      "case": "steps-full",
+      "beforeInstructions": 188503,
+      "afterInstructions": 188434,
+      "reductionPercent": 0.037
+    },
+    {
+      "case": "steps-repeated",
+      "beforeInstructions": 1884232,
+      "afterInstructions": 1883664,
+      "reductionPercent": 0.03
+    },
+    {
+      "case": "tide-visible",
+      "beforeInstructions": 240786,
+      "afterInstructions": 51382,
+      "reductionPercent": 78.661
+    },
+    {
+      "case": "weather-cached",
+      "beforeInstructions": 273546,
+      "afterInstructions": 273492,
+      "reductionPercent": 0.02
+    },
+    {
+      "case": "weather-hidden",
+      "beforeInstructions": 189902,
+      "afterInstructions": 2162,
+      "reductionPercent": 98.862
+    },
+    {
+      "case": "weather-solar-cold",
+      "beforeInstructions": 5318200,
+      "afterInstructions": 5318470,
+      "reductionPercent": -0.005
+    },
+    {
+      "case": "weather-visible",
+      "beforeInstructions": 275268,
+      "afterInstructions": 85871,
+      "reductionPercent": 68.805
+    }
+  ],
+  "communication": [
+    {
+      "scenario": "default hourly weather, automatic city",
+      "before": {
+        "name": "default hourly weather, automatic city",
+        "hours": 24,
+        "ackDelayMs": 5,
+        "networkRequests": 48,
+        "locationFixes": 24,
+        "messages": 144,
+        "duplicateMessages": 72,
+        "payloadBytes": 37392,
+        "counts": {
+          "SETTINGS+FOOTER+DISPLAY+PALETTE": {
+            "messages": 24,
+            "duplicate": 24,
+            "bytes": 7728
+          },
+          "WEATHER": {
+            "messages": 48,
+            "duplicate": 24,
+            "bytes": 20352
+          },
+          "TIDE": {
+            "messages": 24,
+            "duplicate": 24,
+            "bytes": 6816
+          },
+          "CITY": {
+            "messages": 48,
+            "duplicate": 0,
+            "bytes": 2496
+          }
+        },
+        "logs": []
+      },
+      "after": {
+        "name": "default hourly weather, automatic city",
+        "hours": 24,
+        "ackDelayMs": 5,
+        "networkRequests": 25,
+        "locationFixes": 24,
+        "messages": 48,
+        "duplicateMessages": 0,
+        "payloadBytes": 11424,
+        "counts": {
+          "CITY": {
+            "messages": 24,
+            "duplicate": 0,
+            "bytes": 1248
+          },
+          "WEATHER": {
+            "messages": 24,
+            "duplicate": 0,
+            "bytes": 10176
+          }
+        },
+        "logs": []
+      }
+    },
+    {
+      "scenario": "hourly weather and six-hour tides, automatic city",
+      "before": {
+        "name": "hourly weather and six-hour tides, automatic city",
+        "hours": 24,
+        "ackDelayMs": 5,
+        "networkRequests": 56,
+        "locationFixes": 24,
+        "messages": 148,
+        "duplicateMessages": 72,
+        "payloadBytes": 38528,
+        "counts": {
+          "SETTINGS+FOOTER+DISPLAY+PALETTE": {
+            "messages": 24,
+            "duplicate": 24,
+            "bytes": 7728
+          },
+          "WEATHER": {
+            "messages": 48,
+            "duplicate": 24,
+            "bytes": 20352
+          },
+          "TIDE": {
+            "messages": 28,
+            "duplicate": 24,
+            "bytes": 7952
+          },
+          "CITY": {
+            "messages": 48,
+            "duplicate": 0,
+            "bytes": 2496
+          }
+        },
+        "logs": []
+      },
+      "after": {
+        "name": "hourly weather and six-hour tides, automatic city",
+        "hours": 24,
+        "ackDelayMs": 5,
+        "networkRequests": 33,
+        "locationFixes": 24,
+        "messages": 52,
+        "duplicateMessages": 0,
+        "payloadBytes": 12560,
+        "counts": {
+          "CITY": {
+            "messages": 24,
+            "duplicate": 0,
+            "bytes": 1248
+          },
+          "WEATHER": {
+            "messages": 24,
+            "duplicate": 0,
+            "bytes": 10176
+          },
+          "TIDE": {
+            "messages": 4,
+            "duplicate": 0,
+            "bytes": 1136
+          }
+        },
+        "logs": []
+      }
+    },
+    {
+      "scenario": "two-hour weather, automatic city (watch still asks hourly)",
+      "before": {
+        "name": "two-hour weather, automatic city (watch still asks hourly)",
+        "hours": 24,
+        "ackDelayMs": 5,
+        "networkRequests": 36,
+        "locationFixes": 24,
+        "messages": 132,
+        "duplicateMessages": 72,
+        "payloadBytes": 32304,
+        "counts": {
+          "SETTINGS+FOOTER+DISPLAY+PALETTE": {
+            "messages": 24,
+            "duplicate": 24,
+            "bytes": 7728
+          },
+          "WEATHER": {
+            "messages": 36,
+            "duplicate": 24,
+            "bytes": 15264
+          },
+          "TIDE": {
+            "messages": 24,
+            "duplicate": 24,
+            "bytes": 6816
+          },
+          "CITY": {
+            "messages": 48,
+            "duplicate": 0,
+            "bytes": 2496
+          }
+        },
+        "logs": []
+      },
+      "after": {
+        "name": "two-hour weather, automatic city (watch still asks hourly)",
+        "hours": 24,
+        "ackDelayMs": 5,
+        "networkRequests": 13,
+        "locationFixes": 24,
+        "messages": 36,
+        "duplicateMessages": 0,
+        "payloadBytes": 6336,
+        "counts": {
+          "CITY": {
+            "messages": 24,
+            "duplicate": 0,
+            "bytes": 1248
+          },
+          "WEATHER": {
+            "messages": 12,
+            "duplicate": 0,
+            "bytes": 5088
+          }
+        },
+        "logs": []
+      }
+    }
+  ],
+  "stepQueriesInTenRepeatedPaints": {
+    "before": {
+      "sumToday": 10,
+      "sumAveraged": 10
+    },
+    "after": {
+      "sumToday": 0,
+      "sumAveraged": 0
+    }
+  },
+  "memory": {
+    "codeAndStaticRamBefore": 58581,
+    "codeAndStaticRamAfter": 59129,
+    "resourcesBytes": 99267,
+    "extraClockHeapChamferBytes": 8340,
+    "extraClockHeapBroadBytes": 8372,
+    "emulator": [
+      {
+        "style": 0,
+        "capacity": 71936,
+        "used": 38756,
+        "peak": 48708,
+        "free": 33180,
+        "freeAtPeak": 23228,
+        "faceLoaded": true,
+        "lookupLoaded": true
+      },
+      {
+        "style": 2,
+        "capacity": 71936,
+        "used": 36440,
+        "peak": 46392,
+        "free": 35496,
+        "freeAtPeak": 25544,
+        "faceLoaded": true,
+        "lookupLoaded": true
+      },
+      {
+        "style": 4,
+        "capacity": 71936,
+        "used": 38756,
+        "peak": 48708,
+        "free": 33180,
+        "freeAtPeak": 23228,
+        "faceLoaded": true,
+        "lookupLoaded": true
+      },
+      {
+        "style": 5,
+        "capacity": 71936,
+        "used": 39584,
+        "peak": 49536,
+        "free": 32352,
+        "freeAtPeak": 22400,
+        "faceLoaded": true,
+        "lookupLoaded": true
+      },
+      {
+        "style": 6,
+        "capacity": 71936,
+        "used": 39668,
+        "peak": 49620,
+        "free": 32268,
+        "freeAtPeak": 22316,
+        "faceLoaded": true,
+        "lookupLoaded": true
+      },
+      {
+        "style": 7,
+        "capacity": 71936,
+        "used": 39628,
+        "peak": 49580,
+        "free": 32308,
+        "freeAtPeak": 22356,
+        "faceLoaded": true,
+        "lookupLoaded": true
+      },
+      {
+        "style": 8,
+        "capacity": 71936,
+        "used": 39652,
+        "peak": 49604,
+        "free": 32284,
+        "freeAtPeak": 22332,
+        "faceLoaded": true,
+        "lookupLoaded": true
+      },
+      {
+        "style": 9,
+        "capacity": 71936,
+        "used": 39584,
+        "peak": 49536,
+        "free": 32352,
+        "freeAtPeak": 22400,
+        "faceLoaded": true,
+        "lookupLoaded": true
+      }
+    ]
+  },
+  "cpuPowerModel": {
+    "modelOnly": true,
+    "frequencyHz": 192000000,
+    "activeCurrentMA": 7.36,
+    "cyclesPerInstructionAssumed": [
+      1,
+      4
+    ],
+    "transitionsPerDay": 1440,
+    "ordinarySavedMAhPerDay": [
+      0.05694819933333333,
+      0.22779279733333332
+    ],
+    "repeatedMidnightSavedMAhPerDay": [
+      0.11821750066666667,
+      0.4728700026666667
+    ],
+    "note": "Module-current proxy and assumed cycles. Repeated midnight is hypothetical. No whole-watch or measured-device energy prediction."
+  },
+  "validation": {
+    "coreTests": 111,
+    "coreFailures": 0,
+    "browserSuites": 9,
+    "builds": [
+      "native SDK",
+      "web production"
+    ],
+    "sanitizers": [
+      "address",
+      "undefined",
+      "leaks"
+    ],
+    "nativeTransitionsCompared": 23152,
+    "packedFramesCompared": 252384,
+    "frameMismatches": 0,
+    "nativeMotionCases": [
+      {
+        "case": "default-minute",
+        "frames": 10,
+        "times": [
+          0,
+          0.4188,
+          0.5121,
+          0.5547,
+          0.6032,
+          0.6468,
+          0.6948,
+          0.7389,
+          0.7856,
+          0.8269
+        ],
+        "trigger_at": 0.0872,
+        "follow_at": null,
+        "map_versions": 1,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      },
+      {
+        "case": "broad-minute",
+        "frames": 11,
+        "times": [
+          0,
+          0.3211,
+          0.3651,
+          0.4091,
+          0.4531,
+          0.4972,
+          0.5415,
+          0.5851,
+          0.6291,
+          0.6731,
+          0.7171
+        ],
+        "trigger_at": 0.0831,
+        "follow_at": null,
+        "map_versions": 1,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      },
+      {
+        "case": "span-minute",
+        "frames": 10,
+        "times": [
+          0,
+          1.1792,
+          1.2677,
+          1.3112,
+          1.3554,
+          1.3992,
+          1.4432,
+          1.4872,
+          1.5312,
+          1.5752
+        ],
+        "trigger_at": 0.0832,
+        "follow_at": null,
+        "map_versions": 1,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      },
+      {
+        "case": "leco-minute",
+        "frames": 10,
+        "times": [
+          0,
+          1.0787,
+          1.1228,
+          1.1668,
+          1.2108,
+          1.255,
+          1.2988,
+          1.3428,
+          1.3918,
+          1.4348
+        ],
+        "trigger_at": 0.0834,
+        "follow_at": null,
+        "map_versions": 1,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      },
+      {
+        "case": "bitham-bold-minute",
+        "frames": 10,
+        "times": [
+          0,
+          0.9362,
+          1.0241,
+          1.0681,
+          1.1121,
+          1.1574,
+          1.2001,
+          1.2442,
+          1.2882,
+          1.3322
+        ],
+        "trigger_at": 0.0834,
+        "follow_at": null,
+        "map_versions": 1,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      },
+      {
+        "case": "bitham-light-minute",
+        "frames": 9,
+        "times": [
+          0,
+          0.8218,
+          0.9138,
+          1.0018,
+          1.055,
+          1.0978,
+          1.1419,
+          1.1859,
+          1.2299
+        ],
+        "trigger_at": 0.0926,
+        "follow_at": null,
+        "map_versions": 1,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      },
+      {
+        "case": "bitham-medium-minute",
+        "frames": 10,
+        "times": [
+          0,
+          0.68,
+          0.768,
+          0.812,
+          0.856,
+          0.9,
+          0.944,
+          0.988,
+          1.0321,
+          1.0761
+        ],
+        "trigger_at": 0.0848,
+        "follow_at": null,
+        "map_versions": 1,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      },
+      {
+        "case": "leco-delta-minute",
+        "frames": 11,
+        "times": [
+          0,
+          0.596,
+          0.64,
+          0.6839,
+          0.7354,
+          0.776,
+          0.82,
+          0.864,
+          0.9152,
+          0.9561,
+          1.0
+        ],
+        "trigger_at": 0.0839,
+        "follow_at": null,
+        "map_versions": 1,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      },
+      {
+        "case": "beside-left-show",
+        "frames": 5,
+        "times": [
+          0,
+          0.0494,
+          0.1374,
+          0.1814,
+          0.2259
+        ],
+        "trigger_at": 0.0068,
+        "follow_at": null,
+        "map_versions": 1,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      },
+      {
+        "case": "beside-left-hide",
+        "frames": 23,
+        "times": [
+          0,
+          0.0886,
+          0.1299,
+          0.1739,
+          0.2233,
+          0.3099,
+          0.446,
+          0.578,
+          0.71,
+          0.842,
+          0.9299,
+          1.0179,
+          1.0619,
+          1.198,
+          1.242,
+          1.286,
+          1.33,
+          1.3791,
+          1.422,
+          1.4662,
+          1.51,
+          1.554,
+          1.598
+        ],
+        "trigger_at": 0.0431,
+        "follow_at": null,
+        "map_versions": 13,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      },
+      {
+        "case": "beside-left-overlap-minute",
+        "frames": 15,
+        "times": [
+          0,
+          0.6393,
+          0.6832,
+          0.7339,
+          0.7752,
+          0.8192,
+          0.8633,
+          0.9072,
+          0.9589,
+          1.0033,
+          1.0477,
+          1.0912,
+          1.1352,
+          1.2258,
+          1.2672
+        ],
+        "trigger_at": 0.0836,
+        "follow_at": 0.7272,
+        "map_versions": 1,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      },
+      {
+        "case": "beside-right-horizon-show",
+        "frames": 11,
+        "times": [
+          0,
+          0.0488,
+          0.0912,
+          0.1382,
+          0.1791,
+          0.2231,
+          0.2671,
+          0.3111,
+          0.3552,
+          0.4431,
+          0.4871
+        ],
+        "trigger_at": 0.0039,
+        "follow_at": null,
+        "map_versions": 1,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      },
+      {
+        "case": "beside-right-horizon-hide",
+        "frames": 18,
+        "times": [
+          0,
+          0.0879,
+          0.1799,
+          0.2266,
+          0.2679,
+          0.3119,
+          0.3558,
+          0.3998,
+          0.4439,
+          0.5758,
+          0.6638,
+          0.7961,
+          0.9279,
+          1.0599,
+          1.1479,
+          1.2799,
+          1.4118,
+          1.5439
+        ],
+        "trigger_at": 0.0451,
+        "follow_at": null,
+        "map_versions": 13,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      },
+      {
+        "case": "beside-right-horizon-overlap-minute",
+        "frames": 13,
+        "times": [
+          0,
+          0.9949,
+          1.0389,
+          1.083,
+          1.1269,
+          1.1709,
+          1.2151,
+          1.3029,
+          1.3469,
+          1.3909,
+          1.435,
+          1.4805,
+          1.5669
+        ],
+        "trigger_at": 0.0837,
+        "follow_at": 1.0829,
+        "map_versions": 1,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      },
+      {
+        "case": "quick-view-show",
+        "frames": 5,
+        "times": [
+          0,
+          0.0887,
+          0.1327,
+          0.1778,
+          0.2208
+        ],
+        "trigger_at": 0.0031,
+        "follow_at": null,
+        "map_versions": 3,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      },
+      {
+        "case": "quick-view-minute",
+        "frames": 9,
+        "times": [
+          0,
+          1.0352,
+          1.0792,
+          1.1233,
+          1.1673,
+          1.2142,
+          1.2553,
+          1.2992,
+          1.3545
+        ],
+        "trigger_at": 0.0836,
+        "follow_at": null,
+        "map_versions": 1,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      },
+      {
+        "case": "quick-view-hide",
+        "frames": 3,
+        "times": [
+          0,
+          0.1344,
+          0.1785
+        ],
+        "trigger_at": 0.0474,
+        "follow_at": null,
+        "map_versions": 1,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      },
+      {
+        "case": "low-clock-minute",
+        "frames": 9,
+        "times": [
+          0,
+          0.9578,
+          1.0018,
+          1.0458,
+          1.0945,
+          1.1378,
+          1.186,
+          1.2298,
+          1.2778
+        ],
+        "trigger_at": 0.0831,
+        "follow_at": null,
+        "map_versions": 1,
+        "final_changed_pixels": 0,
+        "final_diff_box": null
+      }
+    ],
+    "nativeDataCases": [
+      {
+        "case": "weather-hidden",
+        "matchesFull": true,
+        "changedPixels": 0
+      },
+      {
+        "case": "weather-visible",
+        "matchesFull": true,
+        "changedPixels": 231
+      },
+      {
+        "case": "humidity-visible",
+        "matchesFull": true,
+        "changedPixels": 375
+      },
+      {
+        "case": "tide-visible",
+        "matchesFull": true,
+        "changedPixels": 853
+      }
+    ]
+  }
+}
