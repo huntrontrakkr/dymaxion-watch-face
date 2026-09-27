@@ -82,6 +82,8 @@ The selector icon adds 249 resource bytes and no app RAM compared with 0.4.2.
 The settings preview runs on the phone and adds no watch rendering or sensor activity.
 See the [native power profile](POWER-PROFILE.md) for measured rendering
 costs, the animation optimization, and the assumptions behind the battery model.
+The [clock drawing experiment](RENDER-EFFICIENCY.md) measures bitmap rendering
+against 0.5.2, including the firmware graphics routines in the comparison.
 
 The project also remains compatible with opening the `watchface` folder in the
 [Pebble Browser Emulator](https://github.com/huntrontrakkr/pebble-browser-emulator).

@@ -6,6 +6,7 @@
 #include "generated/system_clock.h"
 #include "display.h"
 #include "minute_flip.h"
+#include "clock_bitmap.h"
 #include "clock_styles.h"
 #include "zone_column.h"
 #include "map_times.h"
@@ -50,6 +51,8 @@ static ClockFace s_chamfer,s_styled;
 // Flip state lives in the heap, sized for the active face; see clock_configure.
 static const ClockFace *s_clock_face;
 static uint8_t *s_clock_memory,*s_clock_pixels,*s_chamfer_data,*s_glyph_data,*s_caps;
+static GBitmap *s_clock_bitmap;
+static GColor s_clock_palette[4];
 static uint8_t s_clock_digits[4];
 static bool s_clock_ready,s_clock_running,s_clock_24,s_focused=true;
 static time_t s_clock_minute;
@@ -204,10 +207,19 @@ static void draw_flip_time(GContext *ctx,struct tm *local,time_t now,int x,int y
   clock_prepare(local,now,false);
   uint32_t ms=s_clock_running?clock_milliseconds()-s_clock_started:CLOCK_FLIP_MS;
   uint16_t elapsed=ms<CLOCK_FLIP_MS?ms:CLOCK_FLIP_MS;
-  if(elapsed!=s_clock_frame){clock_flip_sample(&s_clock_flip,elapsed,s_clock_pixels);s_clock_frame=elapsed;}
+  if(elapsed!=s_clock_frame){
+    clock_flip_sample(&s_clock_flip,elapsed,s_clock_pixels);
+    if(s_clock_bitmap)clock_bitmap_order(s_clock_pixels,clock_frame_bytes(s_clock_face));
+    s_clock_frame=elapsed;
+  }
   uint8_t colors[4]={palette()[0],palette()[6],clock_shade(palette()[0],palette()[6]),clock_shade(palette()[6],palette()[0])};
   // Broad figures sit two pixels above the time block; the rest fill it.
   int top=s_clock_face==&BROAD_FACE?y-2:y;
+  if(s_clock_bitmap){
+    for(int i=0;i<4;i++)s_clock_palette[i]=(GColor){.argb=colors[i]};
+    graphics_draw_bitmap_in_rect(ctx,s_clock_bitmap,GRect(x,top,CLOCK_WIDTH,s_clock_face->height));
+    return;
+  }
   for(int row=0;row<s_clock_face->height;row++)for(int start=0;start<CLOCK_WIDTH;){
     uint8_t value=clock_frame_pixel(s_clock_pixels,row*CLOCK_WIDTH+start);int end=start+1;
     while(end<CLOCK_WIDTH&&clock_frame_pixel(s_clock_pixels,row*CLOCK_WIDTH+end)==value)end++;
@@ -216,7 +228,10 @@ static void draw_flip_time(GContext *ctx,struct tm *local,time_t now,int x,int y
 }
 static void clock_release(void){
   clock_stop();s_clock_ready=false;s_clock_face=NULL;
-  free(s_clock_memory);free(s_clock_pixels);free(s_chamfer_data);free(s_glyph_data);
+  free(s_clock_memory);
+  if(s_clock_bitmap)gbitmap_destroy(s_clock_bitmap);else free(s_clock_pixels);
+  s_clock_bitmap=NULL;
+  free(s_chamfer_data);free(s_glyph_data);
   s_clock_memory=s_clock_pixels=s_chamfer_data=s_glyph_data=NULL;
 }
 // One font's glyphs from clock-glyphs.bin, repacked as a one-font resource so
@@ -252,7 +267,12 @@ static void clock_configure(void){
       face=clock_style_face(&s_styled,&s_chamfer,style,font,box_top)?&s_styled:NULL;
     }
   }
-  if(face){s_clock_memory=malloc(clock_flip_bytes(face));s_clock_pixels=malloc(clock_frame_bytes(face));}
+  if(face){
+    s_clock_memory=malloc(clock_flip_bytes(face));
+    s_clock_bitmap=gbitmap_create_blank_with_palette(GSize(CLOCK_WIDTH,face->height),GBitmapFormat2BitPalette,s_clock_palette,false);
+    if(s_clock_bitmap&&gbitmap_get_bytes_per_row(s_clock_bitmap)!=CLOCK_WIDTH/4){gbitmap_destroy(s_clock_bitmap);s_clock_bitmap=NULL;}
+    s_clock_pixels=s_clock_bitmap?gbitmap_get_data(s_clock_bitmap):malloc(clock_frame_bytes(face));
+  }
   if(!face||!s_clock_memory||!s_clock_pixels){clock_release();return;}
   clock_flip_attach(&s_clock_flip,face,s_clock_memory);s_clock_face=face;
 }
