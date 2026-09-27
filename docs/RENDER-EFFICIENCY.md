@@ -2,7 +2,9 @@
 
 27 September 2026. Baseline: **0.5.2**, `main` at
 `8ae32a4f67caa9c69c7183f745bed3254dfb2abd`. Experiment:
-`spike/render-efficiency`; no release version change.
+`spike/render-efficiency`. The measurement builds kept version 0.5.2; this
+optimization is included in [0.5.3](../releases/v0.5.3.md). The results below
+describe the paired builds before the release version bump.
 
 The second sweep found a substantial avoidable cost in drawing the clock.
 Even when its pixels were already cached, the renderer scanned the strip into
