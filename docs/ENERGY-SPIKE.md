@@ -2,8 +2,9 @@
 
 27 September 2026. Baseline: **0.5.1**, `main` at
 `0f5119afa0da3b8a28ef797d5c7eb30e0fbb2c53`. Experiment:
-`spike/energy-efficiency`. This is a measured prototype for review and device
-testing; it keeps the package version at 0.5.1 and does not publish a store update.
+`spike/energy-efficiency`. The original measurement build kept version 0.5.1.
+These optimizations are included in [0.5.2](../releases/v0.5.2.md); the results
+below describe the original paired builds, before the release version bump.
 
 The spike reduces the measured minute-animation kernel by **57–60%** and
 default daily phone-to-watch messages by **67%**, while preserving the rendered
