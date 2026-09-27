@@ -2,7 +2,8 @@
 #include <pebble.h>
 #include "panel_data.h"
 void panels_init(void);
-bool panels_receive(DictionaryIterator *iter);
+enum { PANELS_CONFIG=1, PANELS_WEATHER=2, PANELS_TIDE=4 };
+uint8_t panels_receive(DictionaryIterator *iter);
 // Whether the bottom band shows the place times (the zones page, or no panels).
 bool panels_showing_zones(void);
 // The page showing; the tray swipe draws the page it is leaving for a frame.

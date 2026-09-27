@@ -16,19 +16,23 @@ export function locationService({getSettings,send,storage,getPosition=devicePosi
     if(pending)return pending;
     if(cached&&cityIsUsable(cached,now())&&now()-cached.fetched*1000<CITY_REFRESH)return Promise.resolve(emit());
     if(now()<retryAfter)return Promise.resolve(emit(true));
-    emit(true);const token=generation;
+    emit();const token=generation;
     const job=Promise.resolve().then(async()=>{
       try{
         const position=await getPosition(),c=position?.coords;
         if(token!==generation||getSettings().location.mode!=='auto')return;
         if(!c||!Number.isFinite(c.latitude)||Math.abs(c.latitude)>90||!Number.isFinite(c.longitude)||Math.abs(c.longitude)>180)throw new Error('Location coordinates are unavailable.');
         // Round to roughly 100 m; a city label does not need exact coordinates.
+        const lookupLat=+c.latitude.toFixed(3),lookupLon=+c.longitude.toFixed(3),stamp=Math.floor(now()/1000);
+        const reuse=cityIsUsable(cached,now())&&cached.lookupLat===lookupLat&&cached.lookupLon===lookupLon&&stamp>=cached.lookupAt&&stamp-cached.lookupAt<24*3600;
         const url='https://photon.komoot.io/reverse?lat='+c.latitude.toFixed(3)+'&lon='+c.longitude.toFixed(3)+'&lang=en&limit=1&radius=5';
-        const name=reverseCity(await getJSON(url));
+        const name=reuse?cached.name:reverseCity(await getJSON(url));
         if(token!==generation||getSettings().location.mode!=='auto')return;
         // Coordinates to 0.1 degree (about 11 km) are ample for sunrise and
         // sunset (well under a minute) and go only to the watch.
-        cached={name,fetched:Math.floor(now()/1000),lat:Math.round(c.latitude*10)/10,lon:Math.round(c.longitude*10)/10};retryAfter=0;
+        // Revalidate position hourly, but reuse an unchanged 100 m lookup for
+        // at most a day. The watch still receives only the coarser position.
+        cached={name,fetched:Math.floor(now()/1000),lat:Math.round(c.latitude*10)/10,lon:Math.round(c.longitude*10)/10,lookupLat,lookupLon,lookupAt:reuse?cached.lookupAt:stamp};retryAfter=0;
         try{storage.setItem(key,JSON.stringify(cached));}catch{}
         return emit();
       }catch{

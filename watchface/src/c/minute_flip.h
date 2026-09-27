@@ -27,13 +27,18 @@ typedef struct {
   uint8_t *before,*after,*active,*delay;
   uint16_t changed_cells;uint8_t changed_slots;
   uint8_t x0,y0,x1,y1; // Exclusive bounds of all pixels owned by changing tiles.
+  uint8_t *owners;
+  ClockCell *cells;
+  int16_t *scales;
 } ClockFlip;
 extern const ClockFace BROAD_FACE;
 bool chamfer_face_init(ClockFace *face,const uint8_t *data,size_t length);
 static inline int clock_pixels(const ClockFace *face){return CLOCK_WIDTH*face->height;}
 static inline size_t clock_frame_bytes(const ClockFace *face){return (size_t)clock_pixels(face)/4;}
-// Heap bytes for a flip's working state: both masks, then per-tile flags and delays.
-static inline size_t clock_flip_bytes(const ClockFace *face){return (size_t)clock_pixels(face)/4+2u*face->cell_count;}
+// Both masks, tile flags/delays, aligned geometry, per-frame scales and a byte
+// owner for each pixel. Larger future lattices retain the owner callback.
+static inline size_t clock_flip_geometry_offset(const ClockFace *face){return ((size_t)clock_pixels(face)/4+2u*face->cell_count+3u)&~(size_t)3;}
+static inline size_t clock_flip_bytes(const ClockFace *face){return clock_flip_geometry_offset(face)+face->cell_count*(sizeof(ClockCell)+sizeof(int16_t))+(face->cell_count<=256?(size_t)clock_pixels(face):0);}
 void clock_flip_attach(ClockFlip *flip,const ClockFace *face,uint8_t *memory);
 void clock_mask(const ClockFace *face,const uint8_t digits[4],uint8_t *bits);
 void clock_flip_prepare(ClockFlip *flip,const uint8_t before[4],const uint8_t after[4]);

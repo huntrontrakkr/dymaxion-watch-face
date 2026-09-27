@@ -79,16 +79,16 @@ void panels_init(void){
   if(!storage_read(120,s_tide,TIDE_SIZE)||!environment_valid(s_tide,TIDE_SIZE,true))memset(s_tide,0,TIDE_SIZE);
   s_page=s_footer[F_HOME];s_changed=time(NULL);
 }
-bool panels_receive(DictionaryIterator *iter){
-  bool changed=false;Tuple *t=dict_find(iter,MESSAGE_KEY_FOOTER);
+uint8_t panels_receive(DictionaryIterator *iter){
+  uint8_t changed=0;Tuple *t=dict_find(iter,MESSAGE_KEY_FOOTER);
   if(t&&t->type==TUPLE_BYTE_ARRAY&&footer_valid(t->value->data,t->length)&&memcmp(t->value->data,s_footer,FOOTER_SIZE)){
-    memcpy(s_footer,t->value->data,FOOTER_SIZE);storage_write(100,s_footer,FOOTER_SIZE);s_page=s_footer[F_HOME];s_changed=time(NULL);changed=true;
+    memcpy(s_footer,t->value->data,FOOTER_SIZE);storage_write(100,s_footer,FOOTER_SIZE);s_page=s_footer[F_HOME];s_changed=time(NULL);changed|=PANELS_CONFIG;
   }
   for(int i=0;i<2;i++){
     t=dict_find(iter,i?MESSAGE_KEY_TIDE:MESSAGE_KEY_WEATHER);int n=i?TIDE_SIZE:WEATHER_SIZE;
     if(t&&t->type==TUPLE_BYTE_ARRAY&&environment_valid(t->value->data,t->length,i)){
       uint8_t *dest=i?s_tide:s_weather;
-      if(memcmp(dest,t->value->data,n)){memcpy(dest,t->value->data,n);storage_write(i?120:110,dest,n);}
+      if(memcmp(dest,t->value->data,n)){memcpy(dest,t->value->data,n);storage_write(i?120:110,dest,n);changed|=i?PANELS_TIDE:PANELS_WEATHER;}
     }
   }
   return changed;
@@ -133,7 +133,7 @@ bool panels_tick(time_t now){
   if(!s_footer[F_ENABLED]||s_footer[F_COUNT]<2||now-s_manual<SMART_HOLD)return false;
   SmartInputs in={s_footer+F_ORDER,s_footer[F_COUNT],s_footer[F_HOME],localtime(&now)->tm_hour,smart_rain(now),smart_tide(now),-1};
   // Steps are read only when a Health page could be chosen.
-  for(int i=0;i<in.count;i++)if(in.pages[i]==PANEL_HEALTH)in.recent_steps=smart_steps(now);
+  if(smart_needs_steps(&in))in.recent_steps=smart_steps(now);
   int page=smart_page(&in);
   if(page==s_page)return false;
   s_page=page;s_changed=now;return true;

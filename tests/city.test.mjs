@@ -48,3 +48,12 @@ test('the watch accepts the city packet and expires automatic names without expi
   execFileSync('cc',['-std=c11','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/city-test.c','watchface/src/c/city.c','watchface/src/c/settings.c','-o','test-results/city-test']);
   execFileSync('test-results/city-test',['test-results/city-auto.bin','test-results/city-manual.bin']);
 });
+test('an unchanged coarse fix reuses the name for a bounded day without making fresh data stale',async()=>{
+  let now=epoch,point=position,requests=0;const cache=new Map(),sent=[];
+  const options={getSettings:defaults,now:()=>now,send:c=>sent.push(c),storage:{getItem:k=>cache.get(k),setItem:(k,v)=>cache.set(k,v)},getPosition:async()=>point,getJSON:async()=>{requests++;return fixture;}};
+  let service=locationService(options);await service.refresh();assert.equal(requests,1);
+  now+=3600000;sent.length=0;await service.refresh();assert.equal(requests,1);assert(sent.every(c=>!c.stale));assert.equal(sent.at(-1).fetched,now/1000);
+  service=locationService(options);now+=3600000;await service.refresh();assert.equal(requests,1,'lookup cache survives companion restart');
+  now=epoch+24*3600000;await service.refresh();assert.equal(requests,2,'periodic name revalidation');
+  point={coords:{latitude:36.95,longitude:-76.2}};now+=3600000;await service.refresh();assert.equal(requests,3,'travel is detected by a fresh position fix');
+});

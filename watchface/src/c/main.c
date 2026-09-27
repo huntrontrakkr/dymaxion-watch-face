@@ -20,6 +20,7 @@
 #include "generated/markers.h"
 #include "transitions.h"
 #include "power.h"
+#include "step_cache.h"
 
 static Window *s_window;
 static Layer *s_layer;
@@ -694,16 +695,23 @@ static void draw_tray_section(GContext *ctx,time_t now,struct tm *local,int visi
   else if(city_usable(s_city,now)&&city_position(s_city,&lat,&lon)){solar_place(lat,lon,daylight);position=daylight;}
   draw_tray(ctx,now,local,visible,position);
 }
+#if defined(PBL_HEALTH)
+static StepCache s_step_cache;
+static int read_steps(void *context,StepQuery query){
+  time_t now=*(time_t *)context,today=time_start_of_today();
+  if(query==STEP_ACCESSIBLE)return (health_service_metric_accessible(HealthMetricStepCount,today,now>today?now:today+1)&HealthServiceAccessibilityMaskAvailable)!=0;
+  if(query==STEP_TODAY)return (int)health_service_sum_today(HealthMetricStepCount);
+  return (int)health_service_sum_averaged(HealthMetricStepCount,today,today+SECONDS_PER_DAY,HealthServiceTimeScopeDailyWeekdayOrWeekend);
+}
+#endif
 static void draw_status_section(GContext *ctx,struct tm *local,time_t now){
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(0,0,200,18),0,GCornerNone);
 #if defined(PBL_HEALTH)
   // Steps today against a typical day's total, as a line under the bar
   // (shared/status-bar.js stepLineWidth); 10,000 without a typical day.
   if(s_settings[HEADER_SIZE+2*ZONE_SIZE+17]){
-    time_t today=time_start_of_today();int steps=(int)health_service_sum_today(HealthMetricStepCount);
-    int typical=(int)health_service_sum_averaged(HealthMetricStepCount,today,today+SECONDS_PER_DAY,HealthServiceTimeScopeDailyWeekdayOrWeekend);
-    int width=(int)((int64_t)steps*200/(typical>0?typical:10000));
-    graphics_context_set_fill_color(ctx,color(7));graphics_fill_rect(ctx,GRect(0,17,width>200?200:width,1),0,GCornerNone);
+    int width=step_cache_width(&s_step_cache,(int32_t)(now/60),ordinal(local),read_steps,&now);
+    graphics_context_set_fill_color(ctx,color(7));graphics_fill_rect(ctx,GRect(0,17,width,1),0,GCornerNone);
   }
 #endif
   char battery[8];snprintf(battery,sizeof(battery),"%d%%",s_battery.charge_percent);
@@ -832,9 +840,9 @@ static void configure_shake(void) {
   if(wanted)accel_tap_service_subscribe(tapped);else accel_tap_service_unsubscribe();
   s_accel_subscribed=wanted;
 }
-static void request_sync(void) {
+static void request_sync(bool full) {
   DictionaryIterator *iter;
-  if(app_message_outbox_begin(&iter)==APP_MSG_OK){dict_write_uint8(iter,MESSAGE_KEY_REQUEST,1);app_message_outbox_send();}
+  if(app_message_outbox_begin(&iter)==APP_MSG_OK){dict_write_uint8(iter,MESSAGE_KEY_REQUEST,full?1:2);app_message_outbox_send();}
 }
 static void tick(struct tm *local_time,TimeUnits changed) {
   // The terminator moves about a pixel every few minutes: relight the map on the
@@ -852,7 +860,7 @@ static void tick(struct tm *local_time,TimeUnits changed) {
   int page=panels_page();if(panels_tick(now))tray_start(page);pulse_on_zones();
   if(s_clock_face)clock_prepare(local_time,now,true);
   int interval=panels_refresh_minutes();if(!(s_city[1]&1)&&interval>60)interval=60;
-  if((now/60)%interval==0)request_sync();
+  if((now/60)%interval==0)request_sync(false);
 }
 static void obstruction_changed(AnimationProgress progress,void *context){redraw();}
 static void obstruction_done(void *context){redraw();}
@@ -869,13 +877,15 @@ static void connection_changed(bool connected) {
   if(connection_buzz(&s_buzz,connected,(uint32_t)time(NULL),s_settings[FLAGS])&&!quiet_time_is_active()){
     if(connected)vibes_short_pulse();else vibes_double_pulse();
   }
-  s_connected=connected;redraw();if(connected)request_sync();
+  s_connected=connected;redraw();if(connected)request_sync(true);
 }
 static void received(DictionaryIterator *iter,void *context) {
-  if(panels_receive(iter))memset(&s_tap,0,sizeof(s_tap));
+  uint8_t panel_changes=panels_receive(iter);bool full=panel_changes&PANELS_CONFIG;
+  if(full)memset(&s_tap,0,sizeof(s_tap));
   Tuple *display=dict_find(iter,MESSAGE_KEY_DISPLAY);
   uint8_t next_display[DISPLAY_SIZE];
   if(display&&display->type==TUPLE_BYTE_ARRAY&&display_normalize(next_display,display->value->data,display->length)&&memcmp(s_display,next_display,DISPLAY_SIZE)){
+    full=true;
     clock_stop();s_clock_ready=false;
     if(DISPLAY_MAP_BACKGROUND(s_display)!=DISPLAY_MAP_BACKGROUND(next_display))s_map_dirty=true;
     memcpy(s_display,next_display,DISPLAY_SIZE);persist_write_data(3,s_display,DISPLAY_SIZE);
@@ -883,10 +893,12 @@ static void received(DictionaryIterator *iter,void *context) {
   }
   Tuple *city=dict_find(iter,MESSAGE_KEY_CITY);
   if(city&&city->type==TUPLE_BYTE_ARRAY&&city_valid(city->value->data,city->length)&&memcmp(s_city,city->value->data,CITY_SIZE)){
+    full=true;
     memcpy(s_city,city->value->data,CITY_SIZE);persist_write_data(2,s_city,CITY_SIZE);
   }
   Tuple *t=dict_find(iter,MESSAGE_KEY_SETTINGS);
   if(t&&t->type==TUPLE_BYTE_ARRAY&&settings_valid(t->value->data,t->length)&&memcmp(s_settings,t->value->data,SETTINGS_SIZE)){
+    full=true;
     clock_stop();s_clock_ready=false;
     memcpy(s_settings,t->value->data,SETTINGS_SIZE);persist_write_data(1,s_settings,SETTINGS_SIZE);s_map_dirty=true;
     clock_configure();
@@ -895,17 +907,22 @@ static void received(DictionaryIterator *iter,void *context) {
   if(custom&&custom->type==TUPLE_BYTE_ARRAY&&palette_valid(custom->value->data,custom->length)){
     uint8_t candidate[PALETTE_SIZE];memcpy(candidate,custom->value->data,PALETTE_SIZE);
     if(candidate[PAL_THEME]==s_settings[THEME]&&memcmp(s_palette,candidate,PALETTE_SIZE)){
+      full=true;
       clock_stop();s_clock_ready=false;
       memcpy(s_palette,candidate,PALETTE_SIZE);persist_write_data(4,s_palette,PALETTE_SIZE);s_map_dirty=true;
     }
   }else if(!custom&&t&&t->type==TUPLE_BYTE_ARRAY&&settings_valid(t->value->data,t->length)&&s_palette[PAL_ENABLED]){
+    full=true;
     // An older companion knows only presets. Do not leave a saved custom
     // palette active over its newly received preset settings.
     memset(s_palette,0,PALETTE_SIZE);persist_delete(4);s_map_dirty=true;
     clock_stop();s_clock_ready=false;
   }
-  configure_shake();
-  redraw();pulse_on_zones();
+  if(full){configure_shake();redraw();pulse_on_zones();}
+  else {
+    int page=panels_page();
+    if(((panel_changes&PANELS_WEATHER)&&(page==PANEL_WEATHER||page==PANEL_HUMIDITY))||((panel_changes&PANELS_TIDE)&&page==PANEL_TIDE))redraw_part(PART_TRAY);
+  }
 }
 static void init(void) {
   panels_init();
@@ -937,7 +954,7 @@ static void init(void) {
   unobstructed_area_service_subscribe((UnobstructedAreaHandlers){.change=obstruction_changed,.did_change=obstruction_done},NULL);
   app_focus_service_subscribe(focus_changed);
   app_message_register_inbox_received(received);app_message_open(1024,64);
-  request_sync();s_zones_shown=panels_showing_zones();pulse();
+  request_sync(true);s_zones_shown=panels_showing_zones();pulse();
 }
 static void deinit(void) {
   clock_stop();app_focus_service_unsubscribe();if(s_map_timer)app_timer_cancel(s_map_timer);
