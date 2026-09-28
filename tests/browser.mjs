@@ -20,6 +20,8 @@ const checkPixels=async()=>{
   assert.deepEqual(result,{blended:0,smoothing:false,width:200,height:228},'watch graphics use opaque native pixels without smoothing');
 };
 try{
+  // Fix the sample health day independently of CI's wall clock; animation timers still run.
+  await page.clock.setFixedTime(new Date('2026-09-28T00:06:20-04:00'));
   await page.goto(base);await page.waitForFunction(()=>document.querySelector('#preview-time').textContent.includes('LIVE'));
   await page.locator('#reset').click();
   await checkPixels();
@@ -52,7 +54,12 @@ try{
   await page.locator('#preview-battery').selectOption('low');assert.notEqual(await corner(),plain,'the accent color when low');
   await page.locator('#preview-battery').selectOption('normal');assert.equal(await corner(),plain);
   const underBar=()=>page.locator('#screen').evaluate(c=>Array.from(c.getContext('2d').getImageData(0,17,200,1).data).join());
-  const bare=await underBar();await page.locator('#stepLine').check();assert.equal((await saved()).stepLine,true);assert.notEqual(await underBar(),bare,'the step line');
+  const bare=await underBar();await page.locator('#stepLine').check();assert.equal((await saved()).stepLine,true);
+  assert.equal(await underBar(),bare,'zero steps just after midnight leave the step line empty');
+  await page.locator('#stepLine').uncheck();assert.equal(await underBar(),bare);
+  await page.clock.setFixedTime(new Date('2026-09-28T12:34:20-04:00'));
+  await page.locator('#stepLine').check();assert.equal((await saved()).stepLine,true);
+  assert.notEqual(await underBar(),bare,'daytime steps draw the step line');
   await page.locator('#stepLine').uncheck();assert.equal(await underBar(),bare);
   assert.equal(await page.getByRole('button',{name:'Original axis',exact:true}).count(),0);
   await page.getByRole('tab',{name:'Places',exact:true}).click();
