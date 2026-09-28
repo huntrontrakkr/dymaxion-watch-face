@@ -11,12 +11,12 @@ static int measure(const char *text,const void *font){return caps_width(font,tex
 int main(int argc,char **argv){
   static uint8_t font[CAPS_BYTES];FILE *f=fopen(argv[1],"rb");assert(f);assert(fread(font,1,sizeof(font),f)==CAPS_BYTES);fclose(f);
   if(argc>2&&!strcmp(argv[2],"strip")){
-    // strip: lines of "n" then n × "label hour minute clock24 delta stale".
-    int n;
-    while(scanf("%d",&n)==1){
+    // strip: lines of "n compact" then n × "label hour minute clock24 delta stale".
+    int n,compact;
+    while(scanf("%d %d",&n,&compact)==2){
       ZoneStripItem items[3];
       for(int i=0;i<n;i++){char label[16];int hour,minute,clock24,delta,stale;if(scanf("%15s %d %d %d %d %d",label,&hour,&minute,&clock24,&delta,&stale)!=6)return 1;zone_strip_entry(&items[i],label,hour,minute,clock24,delta,stale);}
-      zone_strip(items,n,measure,font);
+      zone_strip(items,n,compact,measure,font);
       for(int i=0;i<n;i++)printf("%s%s|%s|%s|%s|%d|%d|%d|%d|%d",i?" ":"",items[i].label,items[i].time,items[i].suffix,items[i].day,items[i].glyph_x,items[i].label_x,items[i].time_x,items[i].suffix_x,items[i].day_x);
       puts("");
     }

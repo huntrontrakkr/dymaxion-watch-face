@@ -79,7 +79,7 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
   if(plate&&!strip)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
   if(plate&&!strip&&plate.y<ty+th&&plate.y+NAMEPLATE_HEIGHT>ty)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
-  if(plate&&strip)drawZoneStrip(ctx,plate.y,enabled.map(({p,i})=>({icon:p.icon,label:p.label,hour:times[i].h,minute:times[i].m,delta:Math.round((times[i].day-local.day)/86400000),color:markColor(p,s,i)})),{font:font.lining.small,clock24,ink:pal.ink,accent:pal.accent,bg:pal.bg});
+  if(plate&&strip)drawZoneStrip(ctx,plate.y,enabled.map(({p,i})=>({icon:p.icon,label:p.label,hour:times[i].h,minute:times[i].m,delta:Math.round((times[i].day-local.day)/86400000),color:markColor(p,s,i)})),{font:font.lining.small,clock24,ink:pal.ink,accent:pal.accent,bg:pal.bg,compact:s.zoneStripCompact});
   const cityName=s.location.mode==='manual'?s.location.name:city?.name||'YOUR CITY',ampm=now.getHours()<12?'AM':'PM';
   const date=`${['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()]} ${two(now.getDate())} ${['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][now.getMonth()]}`;
   // The clock as the workshop draws it, with AM/PM beside Chamfer when nothing

@@ -36,9 +36,9 @@ const panelEditor=panelControls($('panel-controls'),()=>s,footer=>{const before=
   return {coords:{latitude:p.lat,longitude:p.lon}};
 }});
 const cityEditor=cityControls($('city-controls'),()=>s,location=>{s.location=validateSettings({...s,location},exists).location;changed();});
-const displayEditor=displayControls($('display-controls'),()=>s,value=>{s={...withClockDisplay(s,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,mapTimeSize:value.mapTimeSize,zoneTimesTall:value.zoneTimesTall,placeIcons:value.placeIcons,nameplate:value.nameplate,clockArt:value.clockArt};refresh();});
+const displayEditor=displayControls($('display-controls'),()=>s,value=>{s={...withClockDisplay(s,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,mapTimeSize:value.mapTimeSize,zoneTimesTall:value.zoneTimesTall,zoneStripCompact:value.zoneStripCompact,placeIcons:value.placeIcons,nameplate:value.nameplate,clockArt:value.clockArt};refresh();});
 // Everything about how place times look lives with where they appear.
-for(const selector of ['[data-zone-times]','[data-zone-position]','[data-zone-tall]','[data-map-time-size]','[data-map-turn]','[data-place-icons]'])$('place-clock-options').append($('display-controls').querySelector(selector).closest('label'));
+for(const selector of ['[data-zone-times]','[data-zone-position]','[data-zone-tall]','[data-zone-strip-compact]','[data-map-time-size]','[data-map-turn]','[data-place-icons]'])$('place-clock-options').append($('display-controls').querySelector(selector).closest('label'));
 $('place-clock-options').append($('display-controls').querySelector('[data-zone-note]'));
 const powerEditor=powerControls($('power-controls'),()=>s,power=>{s=validateSettings({...s,power},exists);refresh();});
 const paletteEditor=paletteControls($('palette-controls'),()=>s,patch=>{s=validateSettings({...s,...patch},exists);refresh();});

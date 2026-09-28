@@ -21,6 +21,8 @@ const cases={
   'times on the map, wide, 24-hour, dotted background':{format:1,zoneTimes:'always',zonePosition:'map',mapTimeSize:'wide',mapBackground:'lines'},
   'times between the clock and the map, 12-hour':{format:2,zoneTimes:'always',zonePosition:'strip'},
   'times between the clock and the map, below the map':{format:1,zoneTimes:'always',zonePosition:'strip',time:[0,134],map:[0,24]},
+  'compact strip times, 24-hour':{format:1,zoneTimes:'always',zonePosition:'strip',zoneStripCompact:true},
+  'compact strip below the map, 12-hour, independent of tall column':{format:2,zoneTimes:'always',zonePosition:'strip',zoneStripCompact:true,zoneTimesTall:true,time:[0,134],map:[0,24]},
   'icosahedron on the left of Chamfer':{clockArt:'left',zoneTimes:'panel'},
   'icosahedron on the right of Leco, place times take its place':{clockArt:'right',clockDisplay:'leco',zoneTimes:'always',zonePosition:'left'}
 };

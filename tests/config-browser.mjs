@@ -89,6 +89,9 @@ try{
   for(let i=0;i<8;i++)await page.locator('#preview-next').click();assert.equal(await page.locator('#preview-error').textContent(),'');
   await page.locator('details').evaluateAll(nodes=>nodes.forEach(d=>d.open=true));
   await page.locator('#mapMoon').check();await page.locator('#mapRotation').selectOption('180');
+  await page.getByLabel('Place times',{exact:true}).selectOption('always');
+  await page.getByLabel('Place times position',{exact:true}).selectOption('strip');
+  await page.getByLabel('Compact strip times',{exact:true}).check();
   assert(await page.locator('#moonIndicator').isChecked(),'map Moon leaves the top-bar Moon enabled');
   assert.equal(await page.locator('#preview-error').textContent(),'');
   for(const width of [320,390,768,1100]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'expanded settings fit '+width+'px');}
@@ -102,5 +105,6 @@ try{
   assert.equal(saved.footer.weather.place,'current');
   assert.equal(saved.footer.flicks,3);
   assert.equal(saved.mapMoon,true);assert.equal(saved.mapRotation,180);assert.equal(saved.moonIndicator,true);
+  assert.equal(saved.zonePosition,'strip');assert.equal(saved.zoneStripCompact,true);
   assert.deepEqual(errors,[]);console.log('PASS: phone settings, city search, offline fallback, race handling, native palette preview and save.');
 }finally{await browser.close();}

@@ -548,11 +548,11 @@ static void draw_clock_art(GContext *ctx,int x,int y,int alpha){
     if((ICOSAHEDRON_GLYPH[r]>>(ICOSAHEDRON_WIDTH-1-c))&1)graphics_draw_pixel(ctx,GPoint(left+c,y+ICOSAHEDRON_Y+r));
 }
 // Place times between the clock and the map (zone_column.c zone_strip): each
-// place's glyph and label in its color, the time in tall figures, A/P and the
+// place's glyph and label in its color, the time in tall or compact figures, A/P and the
 // day offset in the accent.
 static void draw_zone_strip(GContext *ctx,time_t now,const struct tm *local,int top){
   if(!s_caps)return;
-  ZoneStripItem items[3];int index[3],n=0;
+  ZoneStripItem items[3];int index[3],n=0;bool compact=DISPLAY_ZONE_STRIP_COMPACT(s_display);
   for(int i=0;i<3;i++){
     if(!(s_settings[ENABLED]&(1<<i)))continue;
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;int delta;bool stale;char label[8];
@@ -560,13 +560,14 @@ static void draw_zone_strip(GContext *ctx,time_t now,const struct tm *local,int 
     zone_strip_entry(&items[n],label,zone.tm_hour,zone.tm_min,is_24(),delta,stale);index[n++]=i;
   }
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,GRect(0,top,200,ZONE_STRIP_HEIGHT),0,GCornerNone);
-  zone_strip(items,n,caps_measure,s_caps);
-  int base=top+ZONE_STRIP_BASELINE;CapsPen ink={ctx,color(6)},accent={ctx,color(7)};
+  zone_strip(items,n,compact,caps_measure,s_caps);
+  int base=top+(compact?ZONE_STRIP_COMPACT_BASELINE:ZONE_STRIP_BASELINE),glyph_y=top+(compact?ZONE_STRIP_COMPACT_GLYPH_Y:ZONE_STRIP_GLYPH_Y);CapsPen ink={ctx,color(6)},accent={ctx,color(7)};
   for(int k=0;k<n;k++){
     const ZoneStripItem *e=&items[k];int i=index[k];CapsPen mark={ctx,mark_color(i)};
-    marker_glyph(ctx,GPoint(e->glyph_x,top+ZONE_STRIP_GLYPH_Y),s_settings[HEADER_SIZE+i*ZONE_SIZE+10],mark_color(i));
+    marker_glyph(ctx,GPoint(e->glyph_x,glyph_y),s_settings[HEADER_SIZE+i*ZONE_SIZE+10],mark_color(i));
     caps_draw(s_caps,e->label,e->label_x,base,false,caps_span,&mark);
-    graphics_context_set_stroke_color(ctx,ink.color);zone_tall_draw(e->time,e->time_x,base,tall_plot,ctx);
+    if(compact)caps_draw(s_caps,e->time,e->time_x,base,false,caps_span,&ink);
+    else{graphics_context_set_stroke_color(ctx,ink.color);zone_tall_draw(e->time,e->time_x,base,tall_plot,ctx);}
     caps_draw(s_caps,e->suffix,e->suffix_x,base,false,caps_span,&accent);
     caps_draw(s_caps,e->day,e->day_x,base,false,caps_span,&accent);
   }

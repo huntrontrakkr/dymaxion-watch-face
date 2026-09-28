@@ -63,7 +63,7 @@ const LEGACY_PRESETS=[{
 }];
 export function defaults() {
   return {version:1,markerSet:2,theme:0,customPalettes:[],customPalette:null,format:1,dayNight:true,edges:false,lights:true,motion:true,sun:true,mapMoon:false,mapRotation:0,moonIndicator:true,batteryGauge:false,stepLine:false,connectionBuzz:'disconnect',
-    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',leadingZero:true,mapBackground:'none',zoneTimes:'when-hidden',zonePosition:'map',mapTimesTurn:false,nameplate:false,mapTimeSize:'medium',zoneTimesTall:false,placeIcons:true,clockArt:'none',power:defaultPower(),location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
+    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',leadingZero:true,mapBackground:'none',zoneTimes:'when-hidden',zonePosition:'map',mapTimesTurn:false,nameplate:false,mapTimeSize:'medium',zoneTimesTall:false,zoneStripCompact:false,placeIcons:true,clockArt:'none',power:defaultPower(),location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
 }
 // Quick View: a clock the peek would cover moves up to sit just above it,
 // never into the status line (clock_top_for_visible in settings.c).
@@ -150,6 +150,8 @@ export function validateSettings(input,zoneExists) {
   out.mapTimeSize=input.mapTimeSize??'medium';
   if(input.zoneTimesTall!==undefined&&typeof input.zoneTimesTall!=='boolean')throw new Error('Invalid tall place times.');
   out.zoneTimesTall=input.zoneTimesTall??false;
+  if(input.zoneStripCompact!==undefined&&typeof input.zoneStripCompact!=='boolean')throw new Error('Invalid compact strip times.');
+  out.zoneStripCompact=input.zoneStripCompact??false;
   if(input.clockArt!==undefined&&!CLOCK_ART.includes(input.clockArt))throw new Error('Invalid clock art.');
   out.clockArt=input.clockArt??'none';
   // Place icons beside the names in the time-zone drawer: the wearer's choice,

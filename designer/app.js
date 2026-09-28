@@ -75,7 +75,7 @@ let currentCity={name:'Norfolk',sample:true,lat:36.9,lon:-76.3};
 const cityLocation=locationService({getSettings:()=>settings,storage:localStorage,send:city=>{currentCity=city;render();}});
 const cityEditor=cityControls($('city-controls'),()=>settings,value=>{settings=validateSettings({...settings,location:value},zoneExists);save();},()=>cityLocation.refresh());
 const powerEditor=powerControls($('power-controls'),()=>settings,power=>{settings={...settings,power};sync();save();});
-const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,mapTimeSize:value.mapTimeSize,zoneTimesTall:value.zoneTimesTall,placeIcons:value.placeIcons,nameplate:value.nameplate,clockArt:value.clockArt};sync();save();});
+const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,mapTimeSize:value.mapTimeSize,zoneTimesTall:value.zoneTimesTall,zoneStripCompact:value.zoneStripCompact,placeIcons:value.placeIcons,nameplate:value.nameplate,clockArt:value.clockArt};sync();save();});
 const paletteEditor=paletteControls($('palette-controls'),()=>settings,patch=>{settings=validateSettings({...settings,...patch},zoneExists);sync();save();});
 const environment=environmentService({getSettings:()=>settings,storage:localStorage,send:(kind,data)=>{liveData[kind]=data;render();}});
 const panelEditor=panelControls($('panel-controls'),()=>settings,footer=>{
@@ -347,7 +347,7 @@ function render(){
   if(plate&&!strip&&plate.y<ty+th&&plate.y+NAMEPLATE_HEIGHT>ty)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
   if(plate&&strip)drawZoneStrip(ctx,plate.y,settings.places.map((p,i)=>{if(!p.on)return null;const there=moment(now).tz(p.tz);
     return {icon:p.icon,label:p.label,hour:there.hours(),minute:there.minutes(),delta:Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000),color:markColor(p,settings,i)};}).filter(Boolean),
-    {font:watchTypeface.lining.small,clock24:use24(),ink:pal.ink,accent:pal.accent,bg:pal.bg});
+    {font:watchTypeface.lining.small,clock24:use24(),ink:pal.ink,accent:pal.accent,bg:pal.bg,compact:settings.zoneStripCompact});
   if(!FLIP_FACES[settings.clockDisplay])minuteClock.reset();
   {
     const value=hourText(h,settings.leadingZero)+':'+two(minute);

@@ -5,6 +5,8 @@
 // Version 3 packets are 8 bytes; versions 1 and 2 (4 bytes) still load.
 #define DISPLAY_SIZE 8
 #define DISPLAY_LEGACY_SIZE 4
+// Version 3 byte 2 bit 0: small capitals for the times between clock and map.
+#define DISPLAY_ZONE_STRIP_COMPACT(d) (((d)[2]&1)!=0)
 // Byte 3: 0 none, 1 triangle points, 2 triangle lines, 3 fine triangle points;
 // background n is flag bit 4<<n in the map data.
 #define MAP_BACKGROUND_COUNT 4

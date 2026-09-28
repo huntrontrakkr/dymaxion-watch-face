@@ -39,6 +39,7 @@ const cases={
   'turned map, Moon without day-night shading':{mapRotation:180,mapMoon:true,dayNight:false,moonIndicator:false},
   'turned map, current city and place times':{mapRotation:180,mapMoon:true,zoneTimes:'always',zonePosition:'map',location:{mode:'auto',name:''}},
   'place times between the clock and the map':{zoneTimes:'always',zonePosition:'strip'},
+  'compact place times between the clock and the map':{zoneTimes:'always',zonePosition:'strip',zoneStripCompact:true},
   'icosahedron beside the clock, battery gauge':{clockArt:'left',zoneTimes:'panel',batteryGauge:true,theme:theme('Paper')},
   'Ultraviolet, 12-hour':{theme:theme('Ultraviolet'),format:2},
   'tides with highs and lows':{footer:{...defaults().footer,pages:['tide','zones'],home:'tide',tide:{...defaults().footer.tide,station:'8638610'}}}

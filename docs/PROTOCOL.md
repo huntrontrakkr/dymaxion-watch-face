@@ -217,7 +217,14 @@ Bitham 42 Bold, Bitham 42 Light, Bitham 42 Medium Numbers) and 9 Leco Delta
 figures so the minute transition can run over them. Byte 2 bits 2–3 say when
 place times also show outside the bottom panel: 0 never, 1 whenever the band
 shows something else (another panel, or a Quick View card), 2 always. Bits 4–5
-say where: 0 left of the clock (the default), 1 right of it, 2 on the map. Bit 6
+say where: 0 left of the clock, 1 right of it, 2 on the map, 3 between the clock
+and the map. In version 3, bit 0 selects compact strip times: the same 7-pixel
+capitals used beside the clock, instead of the strip's default 10-pixel figures.
+The strip measures the selected font before spacing and shortening labels;
+markers, A/P and day offsets remain in place. JSON `zoneStripCompact` defaults
+to false, preserving saved layouts. This choice is independent of the
+beside-clock tall-time option. Legacy version 1's unlit-grid bit is still cleared
+on migration; version 2 still rejects bit 0. Bit 6
 lets map times turn 90° when that sits clearly closer. Bit 7 shows the Dymaxion
 nameplate (the original pixel script) between the clock and the map, when it
 clears both by a pixel; a clock below the map moves down (six pixels in

@@ -90,18 +90,20 @@ export function zoneRow({label, hour, minute, clock24, delta = 0, stale = false,
 // Position option "Between the clock and the map"): one line per place of its
 // glyph, label and time, the places spread evenly across the width. Labels
 // shorten to three letters, then drop, if the line would not fit. Times use
-// the tall figures, labels and A/P the capitals. Offsets are from the slot's
+// the tall figures by default, or the same capitals as beside-clock times in
+// compact mode. Labels and A/P use the capitals. Offsets are from the slot's
 // top left; the watch mirrors this in zone_strip (zone_column.c).
-export const ZONE_STRIP = Object.freeze({height: 16, baseline: 13, glyphY: 9, glyph: 5, width: 200, edge: 2});
+export const ZONE_STRIP = Object.freeze({height: 16, baseline: 13, glyphY: 9, compactBaseline: 11, compactGlyphY: 7, glyph: 5, width: 200, edge: 2});
 export function zoneStripEntry({label, hour, minute, clock24, delta = 0, stale = false}) {
   // 12-hour hours drop their leading zero here, to leave the labels room.
   const two = n => String(n).padStart(2, '0'), h = clock24 ? two(hour) : String(hour % 12 || 12);
   return {label: label.toUpperCase().slice(0, 7), time: h + ':' + two(minute), suffix: clock24 ? '' : hour < 12 ? 'A' : 'P', day: stale ? '?' : delta ? (delta > 0 ? '+' : '') + delta : ''};
 }
-export function zoneStrip(entries, measure) {
+export function zoneStrip(entries, measure, compact = false) {
   const {glyph, width, edge} = ZONE_STRIP;
+  const timeWidth = compact ? measure : tallWidth;
   // Advances: glyph and 2, label and 2, the time, A/P, then 1 and the day offset.
-  const size = (e, label) => glyph + 2 + (label ? measure(label) + 2 : 0) + tallWidth(e.time) + (e.suffix ? measure(e.suffix) : 0) + (e.day ? 1 + measure(e.day) : 0) - 1;
+  const size = (e, label) => glyph + 2 + (label ? measure(label) + 2 : 0) + timeWidth(e.time) + (e.suffix ? measure(e.suffix) : 0) + (e.day ? 1 + measure(e.day) : 0) - 1;
   let labels = entries.map(e => e.label);
   const total = () => entries.reduce((n, e, i) => n + size(e, labels[i]), 0);
   // At least 4 pixels between places and `edge` at each side.
@@ -111,7 +113,7 @@ export function zoneStrip(entries, measure) {
   const free = width - total(), gap = Math.floor(free / (entries.length + 1));
   let x = gap + ((free - gap * (entries.length + 1)) >> 1);
   return entries.map((e, i) => {
-    const label = labels[i], labelX = x + glyph + 2, timeX = labelX + (label ? measure(label) + 2 : 0), suffixX = timeX + tallWidth(e.time), dayX = suffixX + (e.suffix ? measure(e.suffix) : 0) + 1;
+    const label = labels[i], labelX = x + glyph + 2, timeX = labelX + (label ? measure(label) + 2 : 0), suffixX = timeX + timeWidth(e.time), dayX = suffixX + (e.suffix ? measure(e.suffix) : 0) + 1;
     const item = {...e, label, glyphX: x + (glyph >> 1), labelX, timeX, suffixX, dayX};
     x += size(e, label) + gap;
     return item;
