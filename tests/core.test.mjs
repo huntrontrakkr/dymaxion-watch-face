@@ -81,7 +81,7 @@ test('each place can retain a distinct watch-palette color',()=>{
   const clean=validateSettings(s,zoneExists);
   assert.equal(clean.places[0].color,'#AA5500');assert.equal(clean.places[1].color,'#00FF55');
   const packet=encodeSettings(clean);
-  assert.equal(packet[0],7);assert.equal(packet[16+10],4);
+  assert.equal(packet[0],8);assert.equal(packet[16+10],4);
   assert.equal(packet[16+70],0xe4);assert.equal(packet[16+72+70],0xcd);
   assert.equal(packet[16+2*72+70],pebbleColor(markColor(clean.places[2],clean,2)));
   assert.throws(()=>validateSettings({...s,places:[{...s.places[0],color:'red'},...s.places.slice(1)]},zoneExists));
@@ -141,7 +141,7 @@ test('full-width clock and top-bar moon migrate old widget settings',()=>{
   const s=defaults();assert.deepEqual(s.time,PRESETS.meridian.time);assert.equal(s.moonIndicator,true);
   assert.equal('statusLine' in s,false,'the status line is the only header');assert.equal(s.clockDisplay,'chamfer');
   assert.equal(encodeSettings({...s,connectionBuzz:'off'})[2]&64,0,'flag 64 no longer means the status line; it is the disconnect buzz');
-  const packet=encodeSettings(s);assert.equal(packet[0],7);assert.equal(packet[16+17],1);
+  const packet=encodeSettings(s);assert.equal(packet[0],8);assert.equal(packet[16+17],1);
   assert.equal(packet[16+72+17],0);assert.equal(packet[16+71],0);assert.ok(packet[16+70]>=0xc0);
   const disabled=encodeSettings({...s,moonIndicator:false});assert.equal(disabled[16+17],0);
   const old={...s,time:[28,20],widgets:[{type:4,pos:[2,29]},{type:2,pos:[174,29]}]};delete old.moonIndicator;delete old.statusLine;

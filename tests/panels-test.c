@@ -39,6 +39,16 @@ int main(int argc,char **argv){
   // 0 (older phones) and 4 (the retired lit-screen mode) are accepted and read as two flicks.
   memcpy(copy,f,sizeof(f));for(int mode=0;mode<=4;mode++){copy[F_FLICKS]=mode;assert(footer_valid(copy,sizeof(f)));}
   copy[F_FLICKS]=5;assert(!footer_valid(copy,sizeof(f)));
+  memcpy(copy,f,sizeof(f));copy[F_TIDE_AUTO]=0;assert(footer_valid(copy,sizeof(f)));
+  copy[F_TIDE_AUTO]=1;assert(footer_valid(copy,sizeof(f)));
+  copy[F_TIDE_AUTO]=2;assert(!footer_valid(copy,sizeof(f)));
+  memcpy(copy,f,sizeof(f));copy[54]=1;assert(!footer_valid(copy,sizeof(f)));
+  memcpy(copy,f,sizeof(f));copy[F_ENABLED]=1;copy[F_COUNT]=1;copy[F_ORDER]=PANEL_TIDE;copy[F_TIDE_AUTO]=1;
+  assert(footer_refresh_minutes(copy)==60);copy[F_TIDE_AUTO]=0;assert(footer_refresh_minutes(copy)==360);
+  copy[F_TIDE_AUTO]=1;copy[F_ENABLED]=0;assert(footer_refresh_minutes(copy)==360);
+  copy[F_ENABLED]=1;copy[F_COUNT]=2;copy[F_ORDER+1]=PANEL_WEATHER;copy[F_WEATHER_ON]=1;copy[F_REFRESH]=120;
+  assert(footer_refresh_minutes(copy)==60);copy[F_REFRESH]=30;assert(footer_refresh_minutes(copy)==30);
+  copy[F_TIDE_AUTO]=0;copy[F_REFRESH]=120;assert(footer_refresh_minutes(copy)==120);
   memcpy(copy,w,sizeof(w));copy[32+2]=101;assert(!environment_valid(copy,sizeof(w),false));
   memcpy(copy,w,sizeof(w));copy[1]=50;assert(!environment_valid(copy,sizeof(w),false));
   memcpy(copy,t,sizeof(t));copy[48+2]=24;assert(!environment_valid(copy,sizeof(t),true));

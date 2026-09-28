@@ -35,12 +35,14 @@ int zone_tall_width(const char *text);
 int zone_tall_draw(const char *text,int x,int baseline,ZoneTallPlot plot,void *context);
 void zone_row(ZoneRow *row,const char *label,int hour,int minute,bool clock24,int delta,bool stale,bool right,bool tall,ZoneMeasure measure,const void *font);
 // Place times between the clock and the map (shared/zone-column.js zoneStrip):
-// one line of glyph, label, tall time, A/P and day offset per place, spread
+// one line of glyph, label, time (tall by default, small capitals if compact), A/P and day offset per place, spread
 // evenly across the width; labels shorten to three letters, then drop, to fit.
 // Offsets from the slot's top left; the glyph's is its centre.
 #define ZONE_STRIP_HEIGHT 16
 #define ZONE_STRIP_BASELINE 13
 #define ZONE_STRIP_GLYPH_Y 9
+#define ZONE_STRIP_COMPACT_BASELINE 11
+#define ZONE_STRIP_COMPACT_GLYPH_Y 7
 typedef struct {char label[8],time[6],suffix[2],day[4];int glyph_x,label_x,time_x,suffix_x,day_x;} ZoneStripItem;
 void zone_strip_entry(ZoneStripItem *item,const char *label,int hour,int minute,bool clock24,int delta,bool stale);
-void zone_strip(ZoneStripItem *items,int n,ZoneMeasure measure,const void *font);
+void zone_strip(ZoneStripItem *items,int n,bool compact,ZoneMeasure measure,const void *font);

@@ -1,6 +1,6 @@
 import mapBase64 from '../designer/public/maps/map-0.bin';
 import font from '../designer/public/type/draft.json' with {type:'json'};
-import {MAP_SIZE,makeMap,direction,dot} from '../shared/map.js';
+import {MAP_SIZE,makeMap,direction,dot,mapPoint} from '../shared/map.js';
 import {paletteFor} from '../shared/palette-settings.js';
 import {clockMask,drawFlipPixels,flipOffset} from '../shared/minute-flip.js';
 import {drawBitmapText,fitLabel,textWidth} from '../shared/type.js';
@@ -14,7 +14,7 @@ import {drawFooter} from '../shared/panel-render.js';
 import {drawBatteryStatus,stepLineWidth,STEP_LINE_Y} from '../shared/status-bar.js';
 import {sampleHealth} from '../shared/health.js';
 import {sampleEnvironment} from '../shared/panel-data.js';
-import {MOON_GLYPHS,moonFrame} from '../shared/moon.js';
+import {MOON_GLYPHS,moonFrame,mapMoonVector,moonPixelDistance,drawMapMoon} from '../shared/moon.js';
 import {BLUETOOTH_ROWS,SUN_ROWS,SUN_HALO_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS} from '../shared/status-glyphs.js';
 import {drawPixelRows} from '../shared/pixels.js';
 import {BACKGROUND_BITS} from '../shared/map-background.js';
@@ -37,30 +37,33 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
   ctx.imageSmoothingEnabled=false;ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,228);
   const image=ctx.createImageData(w,h),colors=[pal.bg,pal.ocean,pal.land,pal.nightOcean,pal.nightLand,pal.edge].map(c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)));
   let best=-Infinity,sunPoint=[0,0];const sunLight=mapSun(sun);
+  let moonBest=Infinity,moonPoint=[0,0];const moon=s.mapMoon?mapMoonVector(new Date(Math.floor(+now/300000)*300000)):null;
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
     const i=(y*w+x)*4,kind=pixels[i+3]&3;let color=0;
     if(kind){const light=mapLight(signed,i,sunLight);
-      if(light>best){best=light;sunPoint=[x,y];}const night=s.dayNight&&mapNight(light,x,y);
+      if(light>best){best=light;sunPoint=mapPoint([x,y],s.mapRotation);}const night=s.dayNight&&mapNight(light,x,y);
+      if(moon){const d=moonPixelDistance(signed,i,moon);if(d<moonBest){moonBest=d;moonPoint=mapPoint([x,y],s.mapRotation);}}
       color=kind+(night?2:0);if(s.edges&&(pixels[i+3]&4))color=5;
     }else if(pixels[i+3]&BACKGROUND_BITS[s.mapBackground])color=5;
-    image.data.set([...colors[color],255],i);
+    const [dx,dy]=mapPoint([x,y],s.mapRotation);image.data.set([...colors[color],255],(dy*w+dx)*4);
   }
   ctx.putImageData(image,mx,my);
-  if(s.dayNight&&s.lights)for(const [la,lo]of CITIES){if(dot(direction(la,lo),sun)>=-.03)continue;const [x,y]=map.project(la,lo);ctx.fillStyle=pal.accent;ctx.fillRect(mx+Math.round(x),my+Math.round(y),1,1);}
+  if(s.dayNight&&s.lights)for(const [la,lo]of CITIES){if(dot(direction(la,lo),sun)>=-.03)continue;const [x,y]=mapPoint(map.project(la,lo).map(Math.round),s.mapRotation);ctx.fillStyle=pal.accent;ctx.fillRect(mx+x,my+y,1,1);}
   if(s.dayNight&&s.sun){drawPixelRows(ctx,SUN_HALO_ROWS,mx+sunPoint[0]-3,my+sunPoint[1]-3,pal.bg);drawPixelRows(ctx,SUN_ROWS,mx+sunPoint[0]-2,my+sunPoint[1]-2,pal.accent);}
+  if(s.mapMoon)drawMapMoon(ctx,mx+moonPoint[0],my+moonPoint[1],now,pal);
   const clock24=s.format===1||(s.format===0&&!new Intl.DateTimeFormat(undefined,{hour:'numeric'}).resolvedOptions().hour12);
   const local={h:now.getHours(),m:now.getMinutes(),day:Date.UTC(now.getFullYear(),now.getMonth(),now.getDate())};
   const times=s.places.map(p=>zoned(now,p.tz)),time=t=>`${hourText(clock24?t.h:t.h%12||12,s.leadingZero)}:${two(t.m)}`;
   const panelZones=!s.footer.enabled||page==='zones',beside=zonesBeside(s,panelZones),onMap=zonesOnMap(s,panelZones),strip=zonesOnStrip(s,panelZones),art=artBeside(s),side=besideSide(s);
   const enabled=s.places.map((p,i)=>({p,i})).filter(({p})=>p.on);
-  const points=enabled.map(({p})=>{const [x,y]=map.project(p.lat,p.lon);return {x:Math.round(x),y:Math.round(y),half:2};});
+  const points=enabled.map(({p})=>{const [x,y]=mapPoint(map.project(p.lat,p.lon).map(Math.round),s.mapRotation);return {x,y,half:2};});
   const spots=layoutMarkers(points,w,h);
   if(onMap){
     // The same inputs as the workshop and the watch: each place's own clearing,
     // everyone's clearings as obstacles, and every glyph for leaders to miss.
     const {own,markers}=markerClearance(points,spots);
     const templates=spots.map((point,j)=>({x:point.x,y:point.y,own:own[j],template:mapTimeTemplate(clock24,times[enabled[j].i].h!==local.h||times[enabled[j].i].m!==local.m)}));
-    const labels=placeMapTimes(templates,(x,y)=>!!(pixels[(y*w+x)*4+3]&3),w,h,{turn:s.mapTimesTurn,obstacles:own,markers,size:MAP_TIME_SIZES.indexOf(s.mapTimeSize)});
+    const labels=placeMapTimes(templates,(x,y)=>{const [sx,sy]=mapPoint([x,y],s.mapRotation);return !!(pixels[(sy*w+sx)*4+3]&3);},w,h,{turn:s.mapTimesTurn,obstacles:own,markers,size:MAP_TIME_SIZES.indexOf(s.mapTimeSize)});
     labels.forEach((label,j)=>{if(!label)return;const {p,i}=enabled[j],t=times[i],color=markColor(p,s,i);
       for(const [x,y]of routePixels(label.points)){ctx.fillStyle=pal.bg;ctx.fillRect(mx+x-1,my+y-1,3,3);}
       const figures=tinyPixels(mapTimeText({hour:t.h,minute:t.m,clock24,delta:Math.round((t.day-local.day)/86400000)}),label.orientation,label.total,label.size);
@@ -76,7 +79,7 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
   if(plate&&!strip)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
   if(plate&&!strip&&plate.y<ty+th&&plate.y+NAMEPLATE_HEIGHT>ty)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
-  if(plate&&strip)drawZoneStrip(ctx,plate.y,enabled.map(({p,i})=>({icon:p.icon,label:p.label,hour:times[i].h,minute:times[i].m,delta:Math.round((times[i].day-local.day)/86400000),color:markColor(p,s,i)})),{font:font.lining.small,clock24,ink:pal.ink,accent:pal.accent,bg:pal.bg});
+  if(plate&&strip)drawZoneStrip(ctx,plate.y,enabled.map(({p,i})=>({icon:p.icon,label:p.label,hour:times[i].h,minute:times[i].m,delta:Math.round((times[i].day-local.day)/86400000),color:markColor(p,s,i)})),{font:font.lining.small,clock24,ink:pal.ink,accent:pal.accent,bg:pal.bg,compact:s.zoneStripCompact});
   const cityName=s.location.mode==='manual'?s.location.name:city?.name||'YOUR CITY',ampm=now.getHours()<12?'AM':'PM';
   const date=`${['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()]} ${two(now.getDate())} ${['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][now.getMonth()]}`;
   // The clock as the workshop draws it, with AM/PM beside Chamfer when nothing

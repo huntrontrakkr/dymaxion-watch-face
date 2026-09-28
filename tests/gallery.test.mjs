@@ -35,7 +35,7 @@ test('published gallery contains distinct native-size frames with matching setti
     const entry=manifest.entries[i];
     const {settings,...metadata}=recipe;
     assert.deepEqual(entry,{...metadata,image:recipe.id+'.png',preset:recipe.id+'.json'});
-    assert.deepEqual(JSON.parse(readFileSync(new URL(entry.preset,root),'utf8')),settings);
+    assert.deepEqual(validateSettings(JSON.parse(readFileSync(new URL(entry.preset,root),'utf8')),zoneExists),settings);
     const png=readFileSync(new URL(entry.image,root));
     assert.equal(png.subarray(1,4).toString(),'PNG');
     assert.deepEqual([png.readUInt32BE(16),png.readUInt32BE(20)],[200,228]);

@@ -155,6 +155,7 @@ try{
   const times=await page.getByLabel('Place times',{exact:true}).inputValue(),where=await page.getByLabel('Place times position',{exact:true}).inputValue();
   if(times==='panel')await page.getByLabel('Place times',{exact:true}).selectOption('when-hidden');
   await page.getByLabel('Place times position',{exact:true}).selectOption('map');
+  assert(await page.getByLabel('Compact strip times',{exact:true}).isDisabled(),'compact strip control only applies to the strip');
   assert.equal(await page.getByLabel('Map time size',{exact:true}).inputValue(),'medium');
   await page.getByLabel('Map time size',{exact:true}).selectOption('large');
   assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).mapTimeSize,'large');
@@ -165,6 +166,17 @@ try{
   assert.equal(await screen.getAttribute('data-zones-strip'),'true');assert.equal(await screen.getAttribute('data-nameplate'),'','no nameplate while the times are there');
   const stripInk=await screen.evaluate(c=>Array.from(c.getContext('2d').getImageData(0,62,200,16).data).some((v,i)=>i%4!==3&&v>200));assert(stripInk,'the times are drawn in the band');
   assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).zonePosition,'strip');
+  const stripPixels=()=>screen.evaluate(c=>Array.from(c.getContext('2d').getImageData(0,62,200,16).data).join());
+  const largeStrip=await stripPixels();
+  await page.getByLabel('Compact strip times',{exact:true}).check();
+  assert.equal(JSON.parse(await page.evaluate(()=>localStorage.getItem('dymaxion-workshop-v1'))).zoneStripCompact,true);
+  const smallStrip=await stripPixels();assert.notEqual(smallStrip,largeStrip,'compact times use the smaller bitmap font');
+  await page.getByLabel('Place times position',{exact:true}).selectOption('left');
+  assert(await page.getByLabel('Compact strip times',{exact:true}).isDisabled());
+  await page.getByLabel('Place times position',{exact:true}).selectOption('strip');
+  assert(await page.getByLabel('Compact strip times',{exact:true}).isChecked(),'switching positions preserves the choice');
+  assert.equal(await stripPixels(),smallStrip);
+  await page.getByLabel('Compact strip times',{exact:true}).uncheck();assert.equal(await stripPixels(),largeStrip,'large figures restore cleanly');
   await page.getByLabel('Place times',{exact:true}).selectOption('panel');
   // The icosahedron beside the clock: the column on its side, off for Broad.
   const artColumn=()=>screen.evaluate(c=>Array.from(c.getContext('2d').getImageData(0,22,72,40).data).join());

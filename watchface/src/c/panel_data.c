@@ -9,7 +9,7 @@ bool footer_valid(const uint8_t *p,unsigned length){
   const uint8_t rotations[]={0,1,2,5,10,15,30,60,ROTATE_SMART},horizons[]={12,24,48},refresh[]={30,60,120,180};
   if(!one_of(p[F_ROTATE],rotations,9)||!one_of(p[F_HORIZON],horizons,3)||!one_of(p[F_REFRESH],refresh,4)||p[F_RAIN]>2||p[F_WEEKENDS]>2)return false;
   if((p[F_WEEK_START]>1&&p[F_WEEK_START]!=6)||p[F_HOLIDAYS]>=HOLIDAY_REGION_COUNT)return false;
-  const uint8_t booleans[]={F_FAHRENHEIT,F_DAYLIGHT,F_GRID,F_SOLAR,F_PREVIOUS,F_TODAY_OUTLINE,F_TEMP_FIXED,F_HUMID_AUTO,F_RAIN_INCH,F_TIDE_FEET,F_WEATHER_ON,F_RANGE_LABELS,F_TIDE_ZERO,F_TIDE_ON,F_SHAKE};
+  const uint8_t booleans[]={F_FAHRENHEIT,F_DAYLIGHT,F_GRID,F_SOLAR,F_PREVIOUS,F_TODAY_OUTLINE,F_TEMP_FIXED,F_HUMID_AUTO,F_RAIN_INCH,F_TIDE_FEET,F_WEATHER_ON,F_RANGE_LABELS,F_TIDE_ZERO,F_TIDE_ON,F_SHAKE,F_TIDE_AUTO};
   for(unsigned i=0;i<sizeof(booleans);i++)if(p[booleans[i]]>1)return false;
   for(int i=21;i<=28;i++)if((p[i]&0xc0)!=0xc0)return false;
   int lo=read_i16(p+F_TEMP_MIN),hi=read_i16(p+F_TEMP_MAX);if(lo< -1500||hi>1500||hi-lo<10)return false;
@@ -17,8 +17,17 @@ bool footer_valid(const uint8_t *p,unsigned length){
   if(rain<1||rain>1000||p[F_TIDE_FIXED]>1||tlo< -10000||thi>10000||thi-tlo<10)return false;
   // 1-3 flicks. Legacy 0, and 4 (the retired lit-screen mode), mean two.
   if(p[F_WEATHER_PLACE]>3||p[F_HUMID_LINE]>1||p[F_FLICKS]>4)return false;
-  for(int i=53;i<FOOTER_SIZE;i++)if(p[i])return false;
+  for(int i=54;i<FOOTER_SIZE;i++)if(p[i])return false;
   return true;
+}
+int footer_refresh_minutes(const uint8_t *p){
+  int interval=360;if(!p[F_ENABLED])return interval;
+  for(int i=0;i<p[F_COUNT];i++){
+    int page=p[F_ORDER+i];
+    if(page==PANEL_TIDE&&p[F_TIDE_AUTO]&&interval>60)interval=60;
+    if((page==PANEL_WEATHER||page==PANEL_HUMIDITY)&&p[F_WEATHER_ON]&&p[F_REFRESH]<interval)interval=p[F_REFRESH];
+  }
+  return interval;
 }
 static bool label_valid(const uint8_t *p){if(p[7])return false;for(int i=0;i<7&&p[i];i++)if(!((p[i]>='A'&&p[i]<='Z')||(p[i]>='0'&&p[i]<='9')||p[i]==' '||p[i]=='-'||p[i]=='+'))return false;return true;}
 bool environment_valid(const uint8_t *p,unsigned length,bool tide){

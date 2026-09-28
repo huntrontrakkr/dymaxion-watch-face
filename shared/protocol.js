@@ -2,12 +2,12 @@ import moment from 'moment-timezone';
 import {makeMap,direction} from './map.js';
 import {validateSettings,markColor,pebbleColor} from './settings.js';
 export const PACKET_SIZE=232,ZONE_SIZE=72,HEADER_SIZE=16;
-export const PACKET_VERSION=7; // Small map glyph set; per-place RGB222 colors unchanged.
+export const PACKET_VERSION=8; // Flag 32: map Moon. Orientation 2: 180° map rotation.
 export const zoneExists = name => !!moment.tz.zone(name);
 export function encodeSettings(input,now=Date.now()) {
   const s=validateSettings(input,zoneExists),bytes=new Uint8Array(PACKET_SIZE),v=new DataView(bytes.buffer);
-  const flags=(s.dayNight?1:0)|(s.edges?2:0)|(s.lights?4:0)|(s.motion?8:0)|(s.sun?16:0)|(s.connectionBuzz!=='off'?64:0)|(s.connectionBuzz==='both'?128:0);
-  bytes.set([PACKET_VERSION,s.theme,flags,s.format,s.orientation,...s.time,...s.map,...s.zones.flat(),s.places.reduce((n,p,i)=>n|(p.on?1<<i:0),0)]);
+  const flags=(s.dayNight?1:0)|(s.edges?2:0)|(s.lights?4:0)|(s.motion?8:0)|(s.sun?16:0)|(s.mapMoon?32:0)|(s.connectionBuzz!=='off'?64:0)|(s.connectionBuzz==='both'?128:0);
+  bytes.set([PACKET_VERSION,s.theme,flags,s.format,s.mapRotation===180?2:0,...s.time,...s.map,...s.zones.flat(),s.places.reduce((n,p,i)=>n|(p.on?1<<i:0),0)]);
   const map=makeMap();
   s.places.forEach((p,i)=>{
     const base=HEADER_SIZE+i*ZONE_SIZE,zone=moment.tz.zone(p.tz),pos=map.project(p.lat,p.lon);

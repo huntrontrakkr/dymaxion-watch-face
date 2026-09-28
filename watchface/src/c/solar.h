@@ -6,6 +6,8 @@
 void solar_place(int lat10,int lon10,float out[3]);
 void solar_place_vector(const int8_t v[3],float out[3]);
 void solar_direction(uint32_t epoch,float out[3]);
+// Sub-lunar direction in the rotating Earth frame; mirrors shared/moon.js.
+void lunar_direction(uint32_t epoch,float out[3]);
 bool solar_up(uint32_t epoch,const float place[3]);
 // Next sunrise or sunset after `now` within `hours`, to 30 seconds; 0 when the
 // sun neither rises nor sets (polar day or night).

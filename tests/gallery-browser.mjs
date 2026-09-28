@@ -35,13 +35,14 @@ try{
   await page.locator('.face:visible a').first().click();
   const download=await downloaded;await download.saveAs('test-results/gallery-import.json');
   const settings=JSON.parse(readFileSync('test-results/gallery-import.json','utf8'));
-  assert.equal(settings.theme,14);assert.deepEqual(validateSettings(settings,zoneExists),settings);
+  assert.equal(settings.theme,14);assert.equal(validateSettings(settings,zoneExists).mapRotation,0,'older presets migrate without turning the map');
   assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('dymaxion-workshop-v1'))),saved,'browsing and downloading must preserve the existing composition');
   await page.getByRole('link',{name:'Open the workshop'}).click();
   await page.waitForFunction(()=>document.querySelector('#screen')?.dataset.clockDisplay);
   await page.locator('#import-file').setInputFiles('test-results/gallery-import.json');
   await page.waitForFunction(()=>document.querySelector('#notice').textContent==='Composition imported.');
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('dymaxion-workshop-v1')).theme),14);
+  assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('dymaxion-workshop-v1'))),validateSettings(settings,zoneExists),'import applies the current schema to older gallery presets');
   await page.goto(new URL('gallery.html',base).href);
   await page.waitForFunction(count=>document.querySelector('#count').textContent===`${count} of ${count} faces`,GALLERY_COUNT);
   await page.screenshot({path:'test-results/gallery-desktop.png'});

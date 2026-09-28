@@ -33,6 +33,7 @@ try{
   assert.equal(await h.page.getByLabel('Tide station time zone',{exact:true}).inputValue(),'America/New_York','station zone differs from the phone');
   assert.equal(h.requests.length,2);assert(h.requests.every(u=>!u.searchParams.has('latitude')&&!u.searchParams.has('longitude')),'coordinates stay on the phone');
   await h.open();assert.equal(await h.page.locator('optgroup[label="Near your location"] option').count(),5);
+  assert.equal(await h.page.getByLabel('Tide location',{exact:true}).inputValue(),'auto');
   assert.match(await h.page.locator('[data-tide-status]').textContent(),/Nearest hourly station selected/);
   await h.page.getByLabel('Starting panel',{exact:true}).selectOption('tide');
   for(const width of [320,390,768]){await h.page.setViewportSize({width,height:844});assert(await h.page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'station controls fit '+width);}
@@ -41,6 +42,7 @@ try{
   await h.page.screenshot({path:'test-results/noaa-stations/nearby-phone.png'});
   await h.page.getByLabel('Tide station',{exact:true}).selectOption('8638671');await waitStation(h.page,'8638671');
   assert.equal(await h.page.getByLabel('Tide label',{exact:true}).inputValue(),'LAFAYET');
+  assert.equal(await h.page.getByLabel('Tide location',{exact:true}).inputValue(),'fixed','an explicit station pins the choice');
   await h.page.getByRole('button',{name:'Find nearby NOAA stations',exact:true}).click();await h.settled();
   assert.equal(await h.station(),'8638671','finding again preserves the chosen station');assert.equal(h.requests.length,3,'same-page catalog is cached');
   let response='';const cdp=await h.page.context().newCDPSession(h.page);await cdp.send('Page.enable');
@@ -48,8 +50,11 @@ try{
   await h.page.locator('#apply').click();await h.page.waitForTimeout(100);
   const saved=JSON.parse(decodeURIComponent(response.split('#')[1]));
   assert.equal(saved.footer.tide.station,'8638671');assert.equal(saved.footer.tide.label,'LAFAYET');assert.equal(saved.footer.tide.tz,'America/New_York');
+  assert.equal(saved.footer.tide.mode,'fixed');
   const existing=await phone({settings:saved});await existing.open();assert.equal(existing.requests.length,0,'saved station never starts an automatic lookup');
   await existing.page.getByRole('button',{name:'Find nearby NOAA stations',exact:true}).click();await existing.settled();assert.equal(await existing.station(),'8638671');assert.equal(existing.requests.length,1);
+  await existing.page.getByLabel('Tide location',{exact:true}).selectOption('auto');await waitStation(existing.page,'8638660');
+  assert.equal(await existing.page.getByLabel('Tide location',{exact:true}).inputValue(),'auto','returning to automatic previews the nearest station');
   await existing.page.close();await h.page.close();
 
   for(const location of [null,{...position(),fetched:Date.now()-16*60000}]){

@@ -9,9 +9,10 @@
 static bool options_valid(const uint8_t *p){
   return !(p[2]&~0xfe)&&((p[2]>>2)&3)<ZONE_TIMES_COUNT&&((p[2]>>4)&3)<ZONE_POSITION_COUNT&&p[3]<MAP_BACKGROUND_COUNT;
 }
-// Version 3 byte 3 also carries the map time size (bits 2-4).
+// Version 3 byte 2 bit 0 selects compact strip times; byte 3 also carries the
+// map time size (bits 2-4). Versions 1/2 never interpret this as compact times.
 static bool v3_options_valid(const uint8_t *p){
-  return !(p[2]&~0xfe)&&((p[2]>>2)&3)<ZONE_TIMES_COUNT&&((p[2]>>4)&3)<ZONE_POSITION_COUNT&&
+  return ((p[2]>>2)&3)<ZONE_TIMES_COUNT&&((p[2]>>4)&3)<ZONE_POSITION_COUNT&&
     (p[3]&3)<MAP_BACKGROUND_COUNT&&((p[3]>>2)&7)<MAP_TIME_SIZE_CODES;
 }
 bool display_valid(const uint8_t *p,size_t length){

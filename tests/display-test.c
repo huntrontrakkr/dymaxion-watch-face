@@ -44,7 +44,10 @@ int main(void){
   v3[4]=0x7f;assert(display_valid(v3,8));v3[4]=0x80;assert(display_valid(v3,8));assert(DISPLAY_ART_RIGHT(v3));v3[4]=0;
   v3[5]=24;assert(!display_valid(v3,8));v3[5]=22;v3[6]=24;assert(!display_valid(v3,8));v3[6]=7;
   for(int low=0;low<256;low++){v3[7]=low;assert(display_valid(v3,8)==(low==5||low==10||low==20||low==30));}v3[7]=10;v3[0]=2;assert(!display_valid(v3,8));v3[0]=3;
-  v3[2]=1;assert(!display_valid(v3,8));
+  // Compact strip times reuse bit 0 only in v3; the v1 grid bit above is cleared.
+  v3[2]=1;assert(display_valid(v3,8));assert(DISPLAY_ZONE_STRIP_COMPACT(v3));
+  assert(display_normalize(normalized,v3,8));assert(DISPLAY_ZONE_STRIP_COMPACT(normalized));
+  v3[2]=0;assert(!DISPLAY_ZONE_STRIP_COMPACT(v3));
   // Byte 3: bits 0-1 background, bits 2-4 map time size (0 medium, 1 small, 2 large, 3 extra large, 4 wide, 5 largest),
   // bit 5 tall place times, bit 6 no place icons, bit 7 the icosahedron.
   v3[2]=2;for(int b=0;b<256;b++){v3[3]=b;assert(display_valid(v3,8)==(((b>>2)&7)<6));assert(DISPLAY_ART(v3)==((b&128)!=0));}v3[3]=1;

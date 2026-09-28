@@ -32,6 +32,14 @@ test('display preferences migrate, validate, and travel separately from the stab
   assert.throws(()=>validateSettings({...s,zonePosition:'top'},zoneExists));
   // Place times between the clock and the map: position 3 (bits 4-5).
   assert.deepEqual([...encodeDisplay({...defaults(),zoneTimes:'always',zonePosition:'strip'})],[3,4,56,0,0,22,7,10]);
+  assert.equal(defaults().zoneStripCompact,false,'the strip retains its larger figures by default');
+  const oldStrip={...defaults()};delete oldStrip.zoneStripCompact;
+  assert.equal(validateSettings(oldStrip,zoneExists).zoneStripCompact,false,'old settings keep the larger strip');
+  const compactStrip=validateSettings({...oldStrip,zoneTimes:'always',zonePosition:'strip',zoneStripCompact:true},zoneExists);
+  assert.deepEqual([...encodeDisplay(compactStrip)],[3,4,57,0,0,22,7,10],'byte 2 bit 0 selects compact strip times');
+  assert.equal(validateSettings(compactStrip,zoneExists).zoneStripCompact,true,'the choice survives a round trip');
+  assert.equal(encodeDisplay({...compactStrip,zoneTimesTall:true})[3]&32,32,'beside-clock size remains independent');
+  assert.throws(()=>validateSettings({...oldStrip,zoneStripCompact:'yes'},zoneExists));
   // The icosahedron: byte 3 bit 7 on, byte 4 bit 7 on the right; off by default.
   assert.equal(defaults().clockArt,'none');
   assert.deepEqual([...encodeDisplay({...defaults(),clockArt:'left'})],[3,4,36,128,0,22,7,10]);

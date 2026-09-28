@@ -28,7 +28,7 @@ export function panelControls(root,getSettings,onChange,{getPosition}={}){
     +toggle('weather.humidityLine','Humidity on the weather chart','A dotted line on a fixed 0–100% scale; the header gives the value.')+`</details></details>`
     +`<details><summary>Two-week calendar</summary>`+select('calendar.weekStart','First day of week',[[0,'Sunday'],[1,'Monday'],[6,'Saturday']])+select('calendar.weeks','Calendar weeks',[['current-next','This week and next'],['previous-current','Last week and this week']])
     +select('calendar.weekends','Weekend highlighting',[['sat-sun','Saturday and Sunday'],['fri-sat','Friday and Saturday'],['none','Off']])+select('calendar.holidays','Holiday highlighting',HOLIDAY_REGIONS.map(([id,name])=>[id,id==='us'?'United States — federal, observed dates':id==='none'?name:name+' — national public holidays']))+select('calendar.todayStyle','Today highlight',[['fill','Filled cell'],['outline','Outline']])+`</details>`
-    +`<details data-tide-section><summary>NOAA tides</summary><div data-tide-picker></div><details data-tide-details><summary>Station details & custom station</summary>`
+    +`<details data-tide-section><summary>NOAA tides</summary>`+select('tide.mode','Tide location',[['auto','Follow current location'],['fixed','Keep a fixed station']])+`<p class="micro">Follow current location checks hourly and chooses the nearest NOAA station with hourly predictions within 150 km. Outside coverage, local tides are unavailable. Choosing a station below keeps that station fixed.</p><div data-tide-picker></div><details data-tide-details><summary>Station details & custom station</summary>`
     +input('tide.station','NOAA station ID',7)+input('tide.label','Tide label',7)+input('tide.tz','Tide station time zone')+`</details>`+select('tide.unit','Tide height units',[['m','Meters relative to MLLW'],['ft','Feet relative to MLLW']])
     +toggle('tide.zeroLine','Show tide zero line')+select('tide.scale','Tide scale',[['auto','Fit the prediction'],['fixed','Fixed bounds in selected units']])+`<div class="panel-pair">`+number('tide.min','Tide minimum',-100,99,.1)+number('tide.max','Tide maximum',-99,100,.1)+`</div>`
     +`<p class="micro">Hourly NOAA harmonic predictions, refreshed every six hours. High and low times use the station’s time zone. These are astronomical predictions, not observed water levels or storm surge. <a href="https://tidesandcurrents.noaa.gov/tide_predictions.html" target="_blank" rel="noreferrer">Find a NOAA station</a>.</p></details>`
@@ -37,7 +37,7 @@ export function panelControls(root,getSettings,onChange,{getPosition}={}){
   const tidePicker=tideStationPicker(root.querySelector('[data-tide-picker]'),{
     getTide:()=>getSettings().footer.tide,getPosition,
     onSelect:station=>{const f=clone(getSettings().footer);Object.assign(f.tide,station);commit(f);},
-    onCustom:()=>{root.querySelector('[data-tide-details]').open=true;root.querySelector('[data-panel="tide.station"]').focus();}
+    onCustom:()=>{const f=clone(getSettings().footer);f.tide.mode='fixed';commit(f);root.querySelector('[data-tide-details]').open=true;root.querySelector('[data-panel="tide.station"]').focus();}
   });
   root.querySelector('[data-tide-section]').ontoggle=e=>{if(e.target.open)tidePicker.suggest();};
   root.querySelectorAll('[data-panel]').forEach(el=>{
@@ -48,6 +48,7 @@ export function panelControls(root,getSettings,onChange,{getPosition}={}){
       if(path==='rotationMinutes')value=el.value==='smart'?'smart':Number(el.value);
       if(path.startsWith('colors.')){if(f.colorMode!=='custom')f.colors={...panelColors(getSettings())};f.colorMode='custom';}
       if(path==='tide.station'||path==='tide.label')value=value.trim().toUpperCase();if(path==='tide.tz')value=value.trim();
+      if(['tide.station','tide.label','tide.tz'].includes(path))f.tide.mode='fixed';
       set(f,path,value);
       if(path==='weather.temperatureUnit'&&value!==old)for(const k of ['temperatureMin','temperatureMax'])f.weather[k]=Math.round(value==='f'?f.weather[k]*1.8+32:(f.weather[k]-32)/1.8);
       if(path==='tide.unit'&&value!==old)for(const k of ['min','max'])f.tide[k]=Math.round(f.tide[k]*(value==='ft'?3.28084:1/3.28084)*10)/10;
