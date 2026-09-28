@@ -1,17 +1,18 @@
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {ICOSAHEDRON_ROWS,ICOSAHEDRON_WIDTH,ICOSAHEDRON_HEIGHT,clockArtSpot} from '../shared/clock-art.js';
-import {MOON_GLYPHS,MOON_FRAMES,MOON_NAMES,MOON_SIZE} from '../shared/moon.js';
+import {MOON_GLYPHS,MOON_FRAMES,MOON_NAMES,MOON_SIZE,MAP_MOON_GLYPHS,MAP_MOON_SIZE} from '../shared/moon.js';
 import {BLUETOOTH_ROWS,QUIET_ROWS,CHARGE_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS,SUN_ROWS,SUN_HALO_ROWS,SUN_SIZE,HERE_ROWS,HERE_HALO_ROWS,HERE_SIZE,PULSE_ROWS,PULSE_SIZE} from '../shared/status-glyphs.js';
 
-if(MOON_GLYPHS.length!==MOON_FRAMES || MOON_GLYPHS.some(frame=>
-  frame.length!==MOON_SIZE || frame.some(row=>row.length!==MOON_SIZE || /[^.o#]/.test(row))))
-  throw new Error('Invalid Moon glyphs.');
+for(const [glyphs,size] of [[MOON_GLYPHS,MOON_SIZE],[MAP_MOON_GLYPHS,MAP_MOON_SIZE]])
+  if(glyphs.length!==MOON_FRAMES || glyphs.some(frame=>
+    frame.length!==size || frame.some(row=>row.length!==size || /[^.o#]/.test(row))))
+    throw new Error('Invalid Moon glyphs.');
 if(BLUETOOTH_ROWS.length!==11 || BLUETOOTH_ROWS.some(row=>row.length!==7 || /[^.#]/.test(row)))
   throw new Error('Invalid Bluetooth glyph.');
 if(QUIET_ROWS.length!==12 || QUIET_ROWS.some(row=>row.length!==10 || /[^.#]/.test(row)))
   throw new Error('Invalid Quiet Time glyph.');
 const mask=(row,pixel)=>parseInt([...row].map(ch=>ch===pixel?'1':'0').join(''),2);
-const matrix=pixel=>MOON_GLYPHS.map(frame=>'{'+frame.map(row=>mask(row,pixel)).join(',')+'}').join(',\n  ');
+const matrix=(glyphs,pixel)=>glyphs.map(frame=>'{'+frame.map(row=>mask(row,pixel)).join(',')+'}').join(',\n  ');
 const bt=BLUETOOTH_ROWS.map(row=>mask(row,'#')).join(',');
 const pixelRows=rows=>'{'+rows.map(row=>mask(row,'#')).join(',')+'}';
 mkdirSync('watchface/src/c/generated',{recursive:true});
@@ -19,8 +20,11 @@ writeFileSync('watchface/src/c/generated/status_glyphs.h',
   '// Generated from shared/moon.js and shared/status-glyphs.js.\n'
   +`#define MOON_GLYPH_SIZE ${MOON_SIZE}\n#define MOON_GLYPH_COUNT ${MOON_FRAMES}\n`
   +`#define BLUETOOTH_WIDTH 7\n#define BLUETOOTH_HEIGHT 11\n`
-  +`static const uint16_t MOON_SHADE_ROWS[MOON_GLYPH_COUNT][MOON_GLYPH_SIZE] = {\n  ${matrix('o')}\n};\n`
-  +`static const uint16_t MOON_LIGHT_ROWS[MOON_GLYPH_COUNT][MOON_GLYPH_SIZE] = {\n  ${matrix('#')}\n};\n`
+  +`static const uint16_t MOON_SHADE_ROWS[MOON_GLYPH_COUNT][MOON_GLYPH_SIZE] = {\n  ${matrix(MOON_GLYPHS,'o')}\n};\n`
+  +`static const uint16_t MOON_LIGHT_ROWS[MOON_GLYPH_COUNT][MOON_GLYPH_SIZE] = {\n  ${matrix(MOON_GLYPHS,'#')}\n};\n`
+  +`#define MAP_MOON_GLYPH_SIZE ${MAP_MOON_SIZE}\n`
+  +`static const uint8_t MAP_MOON_SHADE_ROWS[MOON_GLYPH_COUNT][MAP_MOON_GLYPH_SIZE] = {\n  ${matrix(MAP_MOON_GLYPHS,'o')}\n};\n`
+  +`static const uint8_t MAP_MOON_LIGHT_ROWS[MOON_GLYPH_COUNT][MAP_MOON_GLYPH_SIZE] = {\n  ${matrix(MAP_MOON_GLYPHS,'#')}\n};\n`
   +`static const uint8_t BLUETOOTH_GLYPH[BLUETOOTH_HEIGHT] = {${bt}};\n`
   +`#define QUIET_WIDTH 10\n#define QUIET_HEIGHT 12\nstatic const uint16_t QUIET_GLYPH[QUIET_HEIGHT] = ${pixelRows(QUIET_ROWS)};\n`
   +`static const uint8_t CHARGE_GLYPH[7] = ${pixelRows(CHARGE_ROWS)};\n`

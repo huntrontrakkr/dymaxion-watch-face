@@ -23,6 +23,27 @@ static const uint16_t MOON_LIGHT_ROWS[MOON_GLYPH_COUNT][MOON_GLYPH_SIZE] = {
   {16,112,240,240,496,240,240,112,16},
   {16,64,128,128,384,128,128,64,16}
 };
+#define MAP_MOON_GLYPH_SIZE 5
+static const uint8_t MAP_MOON_SHADE_ROWS[MOON_GLYPH_COUNT][MAP_MOON_GLYPH_SIZE] = {
+  {14,17,17,17,14},
+  {12,30,30,30,12},
+  {8,24,24,24,8},
+  {0,16,16,16,0},
+  {0,0,0,0,0},
+  {0,1,1,1,0},
+  {2,3,3,3,2},
+  {6,15,15,15,6}
+};
+static const uint8_t MAP_MOON_LIGHT_ROWS[MOON_GLYPH_COUNT][MAP_MOON_GLYPH_SIZE] = {
+  {0,0,0,0,0},
+  {2,1,1,1,2},
+  {6,7,7,7,6},
+  {14,15,15,15,14},
+  {14,31,31,31,14},
+  {14,30,30,30,14},
+  {12,28,28,28,12},
+  {8,16,16,16,8}
+};
 static const uint8_t BLUETOOTH_GLYPH[BLUETOOTH_HEIGHT] = {8,12,74,41,30,8,30,41,74,12,8};
 #define QUIET_WIDTH 10
 #define QUIET_HEIGHT 12

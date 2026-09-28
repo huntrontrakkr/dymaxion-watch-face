@@ -69,13 +69,14 @@ their transformed positions. Raw map resources, directions and place packets
 retain their original orientation. JSON adds `mapRotation` (0 or 180, default 0)
 and `mapMoon` (boolean, default false).
 
-The Moon uses eight 9×9 pixel glyphs packed into native row masks. The watch
+The top-bar Moon uses eight 9×9 pixel glyphs packed into native row masks. The watch
 selects the glyph from UTC date and time once per minute. Three theme colors
 (background, shadow, light) are generated from `shared/palettes.js`; no lunar
 image resource or phase data is sent in the settings packet. Bluetooth status
 comes from the watch connection service and uses its own 7×11 pixel rune.
 
-The optional map Moon reuses those phase masks with a one-pixel clearing. A
+The optional map Moon has its own eight 5×5 phase glyphs, matching the Sun's
+footprint and 7×7 clearing. Both Moon indicators use the same phase calculation. A
 truncated lunar longitude/latitude series and Greenwich sidereal time determine
 its Earth-fixed direction. During an existing map rebuild, integer squared
 distance selects the nearest baked direction. It allocates no additional map

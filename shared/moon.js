@@ -1,3 +1,6 @@
+import {MARKER_HALO_ROWS} from './status-glyphs.js';
+import {drawPixelRows} from './pixels.js';
+
 // Low-precision geocentric ecliptic longitudes (degrees). The dominant lunar
 // terms resolve the phase to better than one of the eight familiar phase steps.
 // J2000 epoch: 2000-01-01 12:00 UTC.
@@ -16,6 +19,17 @@ export const MOON_GLYPHS=Array.from({length:MOON_FRAMES},(_,phase)=>
       const edge=Math.cos(phase*Math.PI/4)*half;
       return (phase<=4?dx>=edge-.25:dx<=-edge+.25)?'#':'o';
     }).join('')));
+// The map needs the same footprint as the Sun, rather than the larger status
+// icon. Draw these phases directly on a 5×5 grid so the crescents stay crisp.
+export const MAP_MOON_SIZE=5;
+const mapWaxing=[
+  ['.ooo.','o...o','o...o','o...o','.ooo.'],
+  ['.oo#.','oooo#','oooo#','oooo#','.oo#.'],
+  ['.o##.','oo###','oo###','oo###','.o##.'],
+  ['.###.','o####','o####','o####','.###.'],
+  ['.###.','#####','#####','#####','.###.']
+];
+export const MAP_MOON_GLYPHS=[...mapWaxing,...[3,2,1].map(i=>mapWaxing[i].map(row=>[...row].reverse().join('')))];
 const rad=Math.PI/180;
 const sin=x=>Math.sin(x*rad);
 export function lunarPhase(date) {
@@ -61,9 +75,9 @@ export function moonDirection(date){
 export const mapMoonVector=date=>moonDirection(date).map(v=>Math.round(v*127));
 export const moonPixelDistance=(pixels,i,moon)=>[0,1,2].reduce((s,c)=>s+(pixels[i+c]-moon[c])**2,0);
 export function drawMapMoon(ctx,cx,cy,date,palette){
-  ctx.fillStyle=palette.bg;
-  for(let y=-5;y<=5;y++)for(let x=-5;x<=5;x++)if(x*x+y*y<=25)ctx.fillRect(cx+x,cy+y,1,1);
-  MOON_GLYPHS[moonFrame(date)].forEach((row,y)=>[...row].forEach((p,x)=>{
-    if(p!=='.'){ctx.fillStyle=p==='#'?palette.ink:palette.moonShadow;ctx.fillRect(cx-4+x,cy-4+y,1,1);}
+  const radius=MAP_MOON_SIZE>>1,halo=MARKER_HALO_ROWS.length>>1;
+  drawPixelRows(ctx,MARKER_HALO_ROWS,cx-halo,cy-halo,palette.bg);
+  MAP_MOON_GLYPHS[moonFrame(date)].forEach((row,y)=>[...row].forEach((p,x)=>{
+    if(p!=='.'){ctx.fillStyle=p==='#'?palette.ink:palette.moonShadow;ctx.fillRect(cx-radius+x,cy-radius+y,1,1);}
   }));
 }

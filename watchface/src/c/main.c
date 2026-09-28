@@ -317,14 +317,13 @@ static void draw_moon_indicator(GContext *ctx,time_t now) {
   }
 }
 static void draw_map_moon(GContext *ctx,time_t now,int mx,int my){
-  int cx=mx+s_moon_point.x,cy=my+s_moon_point.y;
-  graphics_context_set_stroke_color(ctx,color(0));
-  for(int y=-5;y<=5;y++)for(int x=-5;x<=5;x++)if(x*x+y*y<=25)graphics_draw_pixel(ctx,GPoint(cx+x,cy+y));
+  int cx=mx+s_moon_point.x,cy=my+s_moon_point.y,radius=MAP_MOON_GLYPH_SIZE/2;
+  pixel_rows(ctx,MARKER_HALO,7,7,cx-3,cy-3,color(0));
   int frame=moon_frame(now);
   GColor shadow=(GColor){.argb=custom_palette()?s_palette[PAL_MOON_SHADOW]:MOON_PALETTES[s_settings[THEME]][1]};
-  for(int y=0;y<MOON_GLYPH_SIZE;y++)for(int x=0;x<MOON_GLYPH_SIZE;x++){
-    uint16_t bit=1u<<(MOON_GLYPH_SIZE-1-x);
-    if((MOON_SHADE_ROWS[frame][y]|MOON_LIGHT_ROWS[frame][y])&bit){graphics_context_set_stroke_color(ctx,MOON_LIGHT_ROWS[frame][y]&bit?color(6):shadow);graphics_draw_pixel(ctx,GPoint(cx-4+x,cy-4+y));}
+  for(int y=0;y<MAP_MOON_GLYPH_SIZE;y++)for(int x=0;x<MAP_MOON_GLYPH_SIZE;x++){
+    uint8_t bit=1u<<(MAP_MOON_GLYPH_SIZE-1-x);
+    if((MAP_MOON_SHADE_ROWS[frame][y]|MAP_MOON_LIGHT_ROWS[frame][y])&bit){graphics_context_set_stroke_color(ctx,MAP_MOON_LIGHT_ROWS[frame][y]&bit?color(6):shadow);graphics_draw_pixel(ctx,GPoint(cx-radius+x,cy-radius+y));}
   }
 }
 // Quiet Time: three Zs beside the Bluetooth rune while it is on.
