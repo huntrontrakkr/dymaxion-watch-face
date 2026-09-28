@@ -1,4 +1,4 @@
-# Settings packet v7
+# Settings packet v8
 
 The watch accepts one 232-byte AppMessage byte array named `SETTINGS` (10000).
 `REQUEST` (10001) asks the companion to refresh: value 1 requests full state
@@ -13,11 +13,11 @@ configuration, then persists it as one record under key 1 (below Pebble's
 
 | Byte | Meaning |
 | --- | --- |
-| 0 | Version = 7 |
-| 1 | Theme, 0–13; IDs listed in `PALETTES.md` |
-| 2 | Flags: day/night 1, edges 2, lights 4, motion 8, sun 16, buzz on disconnect 64, also buzz on reconnect 128. Bit 32 was the retired stacked clock and is ignored. |
+| 0 | Version = 8; the reader also accepts v7 |
+| 1 | Theme, 0 through generated `THEME_COUNT - 1`; IDs listed in `PALETTES.md` |
+| 2 | Flags: day/night 1, edges 2, lights 4, motion 8, sun 16, map Moon 32, buzz on disconnect 64, also buzz on reconnect 128. Bit 32 is ignored for v7 (the retired stacked clock). |
 | 3 | Format: device 0, 24h 1, 12h 2 |
-| 4 | Reserved orientation byte; always 0 |
+| 4 | Map rotation: 0 normal, 2 turned 180°. Code 1 remains invalid (retired portrait layout). V7 requires 0. |
 | 5–6 | Local time x/y |
 | 7–8 | Map x/y |
 | 9–14 | Three time-block x/y pairs |
@@ -27,12 +27,12 @@ configuration, then persists it as one record under key 1 (below Pebble's
 | Place-relative byte | Meaning |
 | --- | --- |
 | 0–7 | ASCII label, max 7 characters plus NUL |
-| 8–9 | Projected map pixel x/y, relative to map origin |
+| 8–9 | Projected map pixel x/y, relative to the unrotated map origin. The watch applies rotation. |
 | 10 | Map glyph ID, 0–11: diamond, point, ring, triangle, plus, dagger, double dagger, asterisk, pilcrow, check, cross, number |
 | 11–13 | Signed unit direction components scaled by 127 |
 | 14–15 | Current UTC offset in minutes, signed int16 |
 | 16 | Number of cached transitions, 0–8 |
-| 17 | Top-bar Moon enabled 1 or disabled 0 in record 0. Records 1 and 2 always 0. |
+| 17 | Enabled (1) or disabled (0): top-bar Moon in record 0, battery gauge in record 1, step line in record 2. |
 | 18–21 | Stale-after Unix UTC seconds, uint32; 0xffffffff if no ninth transition |
 | 22–69 | Eight records: uint32 transition UTC seconds, int16 new offset minutes |
 | 70 | Opaque Pebble RGB222 place color, `0xc0 | R2<<4 | G2<<2 | B2` |
@@ -51,10 +51,10 @@ then a flag byte. Low two bits: empty 0, ocean 1, land 2. Bit 2 indicates an edg
 The map is 200×104. The watch reads one row at a time and
 caches only the 8-bit color bitmap, keeping peak map memory around 23 KB.
 
-Version 7 keeps the independent marker color and replaces the pictogram set
-with five smaller glyphs. The 232-byte packet length stays the same. The native
-reader rejects older packets and persisted records; the companion regenerates
-v7 packets from saved JSON on connection. Exported layout JSON remains version
+Version 8 adds independent map Moon and map rotation settings without changing
+the 232-byte packet length. The native reader retains v7 persisted layouts;
+the companion regenerates v8 packets from saved JSON on connection. Versions
+before 7 are rejected. Exported layout JSON remains version
 1 with `markerSet: 2`. Imports without `markerSet` migrate the former 21 icon
 IDs to geometric glyphs while keeping places and colors. Earlier widget
 selections are discarded, while old Atlas positions become Meridian and old
@@ -62,15 +62,33 @@ Horizon positions adopt the full-width clock. Existing portrait
 layouts migrate to Meridian, preserving places and display preferences. Packets
 with orientation 1 are rejected.
 
+Rotation maps each pixel `(x,y)` to `(199-x,103-y)`. The same transform applies
+to city lights, saved places, the current-city marker, Sun, Moon, map backgrounds
+and the occupancy mask for map labels. Glyphs and labels are drawn upright at
+their transformed positions. Raw map resources, directions and place packets
+retain their original orientation. JSON adds `mapRotation` (0 or 180, default 0)
+and `mapMoon` (boolean, default false).
+
 The Moon uses eight 9×9 pixel glyphs packed into native row masks. The watch
 selects the glyph from UTC date and time once per minute. Three theme colors
 (background, shadow, light) are generated from `shared/palettes.js`; no lunar
 image resource or phase data is sent in the settings packet. Bluetooth status
 comes from the watch connection service and uses its own 7×11 pixel rune.
 
+The optional map Moon reuses those phase masks with a one-pixel clearing. A
+truncated lunar longitude/latitude series and Greenwich sidereal time determine
+its Earth-fixed direction. During an existing map rebuild, integer squared
+distance selects the nearest baked direction. It allocates no additional map
+bitmap, has no per-second timer and requires no phone ephemeris packets. The
+normal map refresh and night-saver cadence apply even with day/night shading off.
+Tests compare the spherical model to [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/manual.html)
+sub-observer coordinates every five days through 2026 (under 0.5°) and compare
+native single precision to JavaScript through 2035. This is a display model,
+not a navigation ephemeris.
+
 # Bottom-panel packets v1
 
-The original `SETTINGS` packet stays at v7. Three additional AppMessage byte
+The `SETTINGS` packet stays at 232 bytes. Three additional AppMessage byte
 arrays carry the footer and its caches; the watch inbox is 1,024 bytes. The
 companion sends `SETTINGS`, `FOOTER` and `DISPLAY` together, then each data packet separately
 through a coalescing, retried queue. Multi-byte values remain little endian.
@@ -79,7 +97,7 @@ through a coalescing, retried queue. Multi-byte values remain little endian.
 | --- | --- | --- | --- |
 | 10002 | `FOOTER` | 64 | 100 |
 | 10003 | `WEATHER` | 424 | 110, 111 |
-| 10004 | `TIDE` | 244 | 120, 121 |
+| 10004 | `TIDE` | 284 | 120, 121 |
 
 Data persistence is split into chunks of at most 240 bytes. Length, version,
 enums, boolean fields, labels, sample ranges and hourly count are validated
@@ -105,14 +123,27 @@ declares the `health` capability) and nothing about it leaves the watch.
 | 29–30 | Fixed temperature range; automatic humidity range |
 | 31–34 | Two int16 temperature bounds, tenths of selected °C/°F |
 | 35–36 | Rain in inches; tide in feet |
-| 37–42 | Weather refresh minutes (30/60/120/180); weather enabled; range labels; tide zero line; station configured; shake enabled |
+| 37–42 | Weather refresh minutes (30/60/120/180); weather enabled; range labels; tide zero line; tide source configured (auto mode or a fixed station); shake enabled |
 | 43–44 | Rain scale maximum, uint16 tenths of mm/hour |
 | 45 | Fixed tide range |
 | 46–49 | Two int16 tide bounds, hundredths of selected meters/feet |
 | 50 | Forecast source: saved place 0–2, or current phone location 3 (default since 0.4.1). Daylight follows that source; absent current-city coordinates use forecast daylight flags. |
 | 51 | Humidity line on the weather chart (0/1) |
 | 52 | Panel gesture: 1–3 flicks; 0 from older phones, and 4 (the retired lit-screen mode), mean 2. |
-| 53–63 | Reserved zero |
+| 53 | Tide follows phone location (1) or uses a fixed station (0). Legacy zero remains valid. |
+| 54–63 | Reserved zero |
+
+JSON `footer.tide.mode` defaults to `auto`, including imports without the field;
+`fixed` preserves a selected station. Automatic selection is active only when
+the footer is enabled and includes the tide page. Byte 53 caps routine phone
+sync at 60 minutes for this mode, including tide-only layouts with manual city
+captions. It does not force prediction downloads: the companion reuses a shared
+coarse fix, a seven-day NOAA metadata cache, hourly station selection and six-hour
+predictions. A station change invalidates the prediction cache. Failed fixes
+back off 15 minutes; stale data carries the failed-refresh flag. No station
+within 150 km clears the old chart. Late automatic replies cannot override a
+fixed selection. Coordinates and metadata stay on the phone; NOAA receives
+station IDs rather than user coordinates.
 
 The phone resolves `footer.colorMode` (`theme` or `custom`) to explicit colors
 before encoding bytes 21–28. There is no footer wire-version change. Legacy
@@ -138,9 +169,13 @@ uint16 tenths mm, daylight byte 0/1, and local hour byte 0–23.
 
 `TIDE` continues with next high UTC (12–15), next low UTC (16–19), their int16
 heights in centimeters (20–23), their local minute-of-day uint16 values (24–27),
-label (28–35), station ID (36–43), and four reserved zero bytes (44–47).
+label (28–35), station ID (36–43), event count (44, at most 10), and three
+reserved zero bytes (45–47).
 Its 49 four-byte samples begin at 48: int16 predicted height in centimeters
 relative to MLLW, station-local hour byte, and reserved zero byte.
+At 244, ten four-byte event slots hold uint16 minutes since the series start
+(high tide flag in bit 15), followed by int16 height in centimeters. Unused
+slots are zero. The header advances to upcoming events as previous ones pass.
 
 The phone supplies integer, rounded canonical units; the native renderer handles
 °F, inches and feet. Sample timestamps stay in UTC while cached hour and event

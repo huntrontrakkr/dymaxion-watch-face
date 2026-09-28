@@ -143,11 +143,7 @@ void panels_note_manual(time_t now){s_manual=now;}
 int panels_weather_place(void){return s_footer[F_WEATHER_PLACE];}
 int panels_flicks(void){return s_footer[F_FLICKS]>=1&&s_footer[F_FLICKS]<=3?s_footer[F_FLICKS]:2;}
 bool panels_shake_enabled(void){return s_footer[F_ENABLED]&&s_footer[F_SHAKE]&&s_footer[F_COUNT]>1;}
-int panels_refresh_minutes(void){
-  if(s_footer[F_ENABLED]&&s_footer[F_WEATHER_ON])for(int i=0;i<s_footer[F_COUNT];i++)
-    if(s_footer[F_ORDER+i]==PANEL_WEATHER||s_footer[F_ORDER+i]==PANEL_HUMIDITY)return s_footer[F_REFRESH];
-  return 360;
-}
+int panels_refresh_minutes(void){return footer_refresh_minutes(s_footer);}
 static void clock_label(char *out,int size,int minute){int h=minute/60;if(s_clock24)snprintf(out,size,"%02d:%02d",h,minute%60);else snprintf(out,size,"%d:%02d%c",h%12?h%12:12,minute%60,h<12?'A':'P');}
 static void decimal(char *out,int size,int tenth){tenth=MAX(-100000,MIN(100000,tenth));snprintf(out,size,"%s%d.%d",tenth<0?"-":"",abs(tenth)/10,abs(tenth)%10);}
 static void page_dots(GContext *ctx){for(int i=0;i<s_footer[F_COUNT];i++)rect(ctx,196-4*(s_footer[F_COUNT]-i),227,s_footer[F_ORDER+i]==s_page?3:1,1,s_footer[F_ORDER+i]==s_page?color(6):color(5));}

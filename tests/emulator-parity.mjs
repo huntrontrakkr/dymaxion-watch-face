@@ -26,7 +26,7 @@ const pebble=async(...args)=>{
   for(let attempt=1;;attempt++){
     try{execFileSync('pebble',[...args,'--emulator','emery'],{cwd:'watchface',stdio:['ignore','inherit','inherit'],timeout:60000});return;}
     catch(error){
-      if(attempt===4){try{console.log(readFileSync('/tmp/pb-emulator.json','utf8'));console.log(execFileSync('ps',['-eo','pid,stat,cmd']).toString().split('\n').filter(l=>/qemu|pypkjs/.test(l)).join('\n'));}catch{}throw error;}
+      if(attempt===4){try{console.log(readFileSync('/tmp/pb-emulator.json','utf8'));console.log(execFileSync('ps',['-eo','pid,stat,comm']).toString().split('\n').filter(l=>/qemu|python/.test(l)).join('\n'));}catch{}throw error;}
       console.log(`pebble ${args[0]} failed (attempt ${attempt}); retrying`);await sleep(5000);
     }
   }
@@ -34,6 +34,10 @@ const pebble=async(...args)=>{
 const theme=name=>THEMES.findIndex(t=>t.name===name);
 const cases={
   'default':{},
+  'map Moon, current phase':{mapMoon:true},
+  'turned map, Moon and place times':{mapRotation:180,mapMoon:true,zoneTimes:'always',zonePosition:'map'},
+  'turned map, Moon without day-night shading':{mapRotation:180,mapMoon:true,dayNight:false,moonIndicator:false},
+  'turned map, current city and place times':{mapRotation:180,mapMoon:true,zoneTimes:'always',zonePosition:'map',location:{mode:'auto',name:''}},
   'place times between the clock and the map':{zoneTimes:'always',zonePosition:'strip'},
   'icosahedron beside the clock, battery gauge':{clockArt:'left',zoneTimes:'panel',batteryGauge:true,theme:theme('Paper')},
   'Ultraviolet, 12-hour':{theme:theme('Ultraviolet'),format:2},
@@ -46,14 +50,16 @@ await sleep(15000);
 const browser=await chromium.launch(),rows=[];let failed=0;
 try{
   for(const [name,change] of Object.entries(cases)){
-    const settings={...defaults(),...change,location:{mode:'manual',name:'Norfolk'}},slug=name.replace(/\W+/g,'-');
+    if(process.env.EMULATOR_CASE&&!name.includes(process.env.EMULATOR_CASE))continue;
+    const settings={...defaults(),location:{mode:'manual',name:'Norfolk'},...change},slug=name.replace(/\W+/g,'-');
     // Capture within one minute, clear of the minute change and its animation.
     let shot,at;
     for(let attempt=0;attempt<3&&!shot;attempt++){
       while(new Date().getUTCSeconds()<8||new Date().getUTCSeconds()>40)await sleep(1000);
       // The city arrives in its own packet on the watch, as the phone app sends it;
       // a typed-in name marks no position on the map.
-      const files={SETTINGS:encodeSettings(settings),FOOTER:encodeFooter(settings),DISPLAY:encodeDisplay(settings),PALETTE:encodePalette(settings),CITY:encodeCity({name:'Norfolk',manual:true})};
+      const city=settings.location.mode==='auto'?{name:'Norfolk',lat:36.9,lon:-76.3,fetched:Math.floor(Date.now()/1000)}:{name:'Norfolk',manual:true};
+      const files={SETTINGS:encodeSettings(settings),FOOTER:encodeFooter(settings),DISPLAY:encodeDisplay(settings),PALETTE:encodePalette(settings),CITY:encodeCity(city)};
       if(settings.footer.pages.includes('tide'))files.TIDE=encodeEnvironment(sampleEnvironment(Date.now()).tide,'tide');
       const entries=Object.entries(files).map(([k,bytes])=>{const f=join(process.cwd(),out,`${slug}-${k}.bin`);writeFileSync(f,bytes);return `${KEY[k]}=${f}`;});
       await pebble('send-app-message','--bytes-file',...entries);

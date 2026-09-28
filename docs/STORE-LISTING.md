@@ -17,17 +17,17 @@ download checksum and description. Rebble publication is deferred.
 
 A watch face built on Buckminster Fuller's Dymaxion map, which unfolds the globe onto the twenty faces of an icosahedron without splitting a continent. Fuller called it a deck plan of Spaceship Earth: one island in one ocean, with no country at the center.
 
-The map is shaded from the sun's actual position, so the terminator moves across it through the day and city lights come on at night.
+Sunlight crosses the map through the day; city lights come on at night. An optional Moon marks where it is overhead, shaded for its phase. Turn the map 180° while keeping its labels upright.
 
-Up to three other time zones can sit in the bottom panel, beside the clock, in a line between the clock and the map, or on the map by each city. Daylight saving is handled per zone. A small wireframe icosahedron can sit beside a narrow clock.
+Up to three other time zones can sit in the bottom panel, beside the clock, between the clock and map, or by each city on the map. Daylight saving is handled per zone.
 
-The bottom panel also offers weather with sunrise and sunset times, a two-week calendar, humidity, NOAA tides with each high and low marked, and Pebble Health. It can change on a wrist flick, on a timer, or when rain or a turning tide approaches.
+The bottom panel offers weather, sunrise and sunset, a two-week calendar, humidity, NOAA tides and Pebble Health. Tides follow the nearest supported NOAA station as you travel, or a station you pin. Panels change on a wrist flick, a timer, or when rain or a turning tide approaches.
 
-The top bar can show the moon, a battery gauge, a Quiet Time mark and a line for the day's steps. Twenty-five palettes, custom palettes and eight clock typefaces are included, and the phone settings page previews every change before it is sent.
+The top bar has its own Moon, battery gauge, Quiet Time mark and step line. Choose from twenty-five palettes, custom colors and eight clock typefaces, with a preview in the phone settings.
 
 Fuller's word for doing more with less was ephemeralization. The map is redrawn at an interval rather than every minute, and a power saver cuts redraws at night or during Quiet Time.
 
-Requires Pebble Time 2. Weather uses the phone's location. Health data stays on the watch. Weather and tides in the screenshots are sample data. Source code is on GitHub.
+Requires Pebble Time 2. Automatic city, weather and tides use the phone's location. Health stays on the watch. Screenshot weather and tides are examples. Source code is on GitHub.
 
 ## Submission assets
 

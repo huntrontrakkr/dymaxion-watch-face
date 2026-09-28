@@ -21,6 +21,8 @@ and [Fuller](https://www.bfi.org/about-fuller/) at the Buckminster Fuller Instit
 
 - **Map.** Day and night shading from the sun's position, city lights on the
   night side, a marker where the sun is overhead, and a marker for each place.
+  Optionally show the Moon overhead with its waxing or waning phase, independently
+  of the top-bar Moon. Turn the map 180° while keeping text and glyphs upright.
 - **Time zones.** Up to three places with their own IANA time zones, including
   daylight saving and fractional-hour offsets. Show them in the bottom panel,
   beside the clock (in regular or larger digits), or as labels on the map in
@@ -73,13 +75,30 @@ and daylight stay together; a saved city is an optional override. Upgrading keep
 existing choices: select **Weather & humidity → Forecast location → Current
 location** once if your previous version was set to a saved place.
 
-Enable **Tide** under **A window on the day** to suggest the nearest NOAA station
-with hourly predictions, within 150 km of your phone. **NOAA tides** shows nearby
-alternatives and distances; the station ID, short label and time zone fill in
-automatically. Choose the station that fits your waterway, then **Save to watch**.
-Saved stations stay selected when you travel. Use **Find nearby NOAA stations**
-to look again; coastal presets and custom stations remain available without
-location permission.
+After a flight, the main clock follows Pebble's system time: let the phone and
+watch synchronize their time zone. **Clock location → Current city from phone**
+checks the phone's location about once an hour while the face is running, and
+updates the city name and your map marker. Weather refreshes on its configured
+interval (hourly by default). These features need location permission and phone
+connectivity; they catch up after reconnecting, rather than tracking the flight
+continuously. A manually entered city name changes only the caption.
+
+Enable **Tide** under **Bottom panels**. **NOAA tides → Tide location → Follow
+current location** is the default, including when upgrading older settings. The
+phone checks about hourly for the nearest NOAA station with hourly predictions
+within 150 km, updates the station label and its local time zone, and fetches
+new tides when the station changes. Predictions from the same station stay
+cached for six hours. Outside NOAA coverage the chart shows unavailable data;
+if location access fails, usable cached predictions are marked **OLD**.
+
+Choose a particular station to switch to **Keep a fixed station**, useful when a
+different station better represents your waterway. Nearby alternatives, coastal
+presets and custom stations remain available. Save the changes to the watch.
+
+Under **Map**, enable **Moon on the map** or select **Map rotation → 180°**.
+The Moon marks the point on Earth where it is overhead, using eight small phase
+glyphs. It follows the map's existing refresh interval and night saver, needs
+no downloaded ephemerides, and leaves the top-bar Moon option unchanged.
 
 To change bottom panels, flick your wrist twice within two seconds, pausing
 briefly between flicks. One or three flicks are also available under **Bottom

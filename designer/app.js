@@ -8,10 +8,10 @@ import moment from 'moment-timezone';
 import {drawBitmapText,fitLabel,textWidth} from '../shared/type.js';
 import {defaults,THEMES,PLACES,PRESETS,activePreset,presetFor,withClockDisplay,validateSettings,clampPosition,blockSize,markColor,quantizeColor,clockTopForVisible,QUICK_VIEW_HEIGHT,hourText} from '../shared/settings.js';
 import {MARKERS,drawMarkerPixels} from '../shared/markers.js';
-import {makeMap,direction,dot,MAP_SIZE} from '../shared/map.js';
+import {makeMap,direction,dot,MAP_SIZE,mapPoint} from '../shared/map.js';
 import {BACKGROUND_BITS} from '../shared/map-background.js';
 import {sunDirection,mapNight,mapSun,mapLight} from '../shared/solar.js';
-import {moonFrame,moonDescription,MOON_GLYPHS,MOON_SIZE} from '../shared/moon.js';
+import {moonFrame,moonDescription,MOON_GLYPHS,MOON_SIZE,mapMoonVector,moonPixelDistance,drawMapMoon} from '../shared/moon.js';
 import {BLUETOOTH_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS,SUN_ROWS,SUN_HALO_ROWS,HERE_ROWS,HERE_HALO_ROWS,PULSE_ROWS} from '../shared/status-glyphs.js';
 import {drawPixelRows,drawPixelLine} from '../shared/pixels.js';
 import {CITIES} from '../shared/cities.js';
@@ -173,7 +173,8 @@ function placesUI(){
 }
 markerGallery();
 function sync(){
-  for(const key of ['dayNight','edges','lights','sun','motion','moonIndicator','batteryGauge','stepLine'])$(key).checked=settings[key];
+  for(const key of ['dayNight','edges','lights','sun','mapMoon','motion','moonIndicator','batteryGauge','stepLine'])$(key).checked=settings[key];
+  $('mapRotation').value=settings.mapRotation;
   $('format').value=settings.format;$('connectionBuzz').value=settings.connectionBuzz;$('mapBackground').value=settings.mapBackground;
   document.querySelectorAll('[data-theme]').forEach(b=>{
     const id=+b.dataset.theme;b.hidden=!!THEMES[id].hidden&&id!==settings.theme;
@@ -182,7 +183,8 @@ function sync(){
   const current=activePreset(settings);document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.preset===current)));
   positionFields();placesUI();panelEditor.refresh();cityEditor.refresh();displayEditor.refresh();powerEditor.refresh();paletteEditor.refresh();
 }
-for(const key of ['dayNight','edges','lights','sun','motion','moonIndicator','batteryGauge','stepLine'])$(key).onchange=()=>{settings[key]=$(key).checked;move('time',settings.time);positionFields();displayEditor.refresh();powerEditor.refresh();save();};
+for(const key of ['dayNight','edges','lights','sun','mapMoon','motion','moonIndicator','batteryGauge','stepLine'])$(key).onchange=()=>{settings[key]=$(key).checked;move('time',settings.time);positionFields();displayEditor.refresh();powerEditor.refresh();save();};
+$('mapRotation').onchange=()=>{settings.mapRotation=+$('mapRotation').value;save();};
 $('format').onchange=()=>{settings.format=+$('format').value;save();};
 $('connectionBuzz').onchange=()=>{settings.connectionBuzz=$('connectionBuzz').value;save();};
 $('mapBackground').onchange=()=>{settings.mapBackground=$('mapBackground').value;save();};
@@ -210,23 +212,25 @@ function drawBluetoothIndicator(){
   drawPixelRows(ctx,BLUETOOTH_ROWS,148,2,paletteFor(settings).ink);
 }
 function mapImage(now,pal,sun){
-  const key=[pal.bg,pal.ocean,pal.land,pal.nightOcean,pal.nightLand,pal.edge,settings.dayNight,settings.edges,settings.mapBackground,sun.join(',')].join('/');
+  const key=[pal.bg,pal.ocean,pal.land,pal.nightOcean,pal.nightLand,pal.edge,settings.dayNight,settings.edges,settings.mapBackground,settings.mapRotation,settings.mapMoon,sun.join(',')].join('/');
   if(key===cacheKey&&mapCache)return mapCache;
   const [w,h]=MAP_SIZE,data=mapPixels;
   const offscreen=document.createElement('canvas');offscreen.width=w;offscreen.height=h;
   const g=offscreen.getContext('2d'),img=g.createImageData(w,h),signed=new Int8Array(data.buffer);
   const colors=[pal.bg,pal.ocean,pal.land,pal.nightOcean,pal.nightLand,pal.edge].map(c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)));
   let best=-Infinity,sunPoint=[0,0];const sunLight=mapSun(sun);
+  let moonBest=Infinity,moonPoint=[0,0];const moon=settings.mapMoon?mapMoonVector(new Date(Math.floor(+now/300000)*300000)):null;
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
     const i=(y*w+x)*4,kind=data[i+3]&3;let c=0;
     if(kind){const light=mapLight(signed,i,sunLight);
-      if(light>best){best=light;sunPoint=[x,y];}
+      if(light>best){best=light;sunPoint=mapPoint([x,y],settings.mapRotation);}
+      if(moon){const d=moonPixelDistance(signed,i,moon);if(d<moonBest){moonBest=d;moonPoint=mapPoint([x,y],settings.mapRotation);}}
       const night=settings.dayNight&&mapNight(light,x,y);
       c=kind+(night?2:0);if(settings.edges&&(data[i+3]&4))c=5;
     }else if(data[i+3]&BACKGROUND_BITS[settings.mapBackground])c=5; // background dots in the edge colour
-    img.data.set([...colors[c],255],i);
+    const [dx,dy]=mapPoint([x,y],settings.mapRotation);img.data.set([...colors[c],255],(dy*w+dx)*4);
   }
-  g.putImageData(img,0,0);cacheKey=key;mapCache={canvas:offscreen,sunPoint};return mapCache;
+  g.putImageData(img,0,0);cacheKey=key;mapCache={canvas:offscreen,sunPoint,moonPoint};return mapCache;
 }
 // Place times on the map: placed once per change of places, format or
 // turning (the watch does the same in map_times.c), drawn each frame.
@@ -240,6 +244,7 @@ function markerSpots(){
     points.push({x:Math.max(0,Math.min(w-1,Math.round(px))),y:Math.max(0,Math.min(h-1,Math.round(py))),half:2});});
   const here=settings.location.mode==='auto'&&cityHasPosition(currentCity)&&(currentCity.sample||cityIsUsable(currentCity));
   let you=-1;if(here){const [x,y]=mapPixel(currentCity.lat,currentCity.lon);you=points.length;points.push({x,y,half:3});}
+  for(const p of points)[p.x,p.y]=mapPoint([p.x,p.y],settings.mapRotation);
   const out=layoutMarkers(points,w,h),{hulls,own,markers}=markerClearance(points,out);
   // Where a leader's line is hidden: inside its clearing, or inside its hull's outline.
   const inner=points.map((p,i)=>{const hull=hulls.find(h=>h.members.includes(i));return hull?hull.inner:{x0:out[i].x-3,y0:out[i].y-3,x1:out[i].x+3,y1:out[i].y+3};});
@@ -249,8 +254,8 @@ function markerSpots(){
 function drawMapTimes(now,local,mx,my,pal,markers){
   const [w,h]=MAP_SIZE,clock24=use24();
   const places=settings.places.map((p,i)=>{const m=markers.places[i];return m&&{x:m.x,y:m.y,own:m.own,template:mapTimeTemplate(clock24,moment(now).tz(p.tz).utcOffset()!==local.utcOffset())};});
-  const {obstacles}=markers,key=JSON.stringify([places,obstacles,markers.markers,settings.mapTimesTurn,settings.mapTimeSize]);
-  if(key!==mapTimesCache.key)mapTimesCache={key,spots:placeMapTimes(places,(x,y)=>!!(mapPixels[(y*w+x)*4+3]&3),w,h,{turn:settings.mapTimesTurn,obstacles,markers:markers.markers,size:MAP_TIME_SIZES.indexOf(settings.mapTimeSize)})};
+  const {obstacles}=markers,key=JSON.stringify([places,obstacles,markers.markers,settings.mapTimesTurn,settings.mapTimeSize,settings.mapRotation]);
+  if(key!==mapTimesCache.key)mapTimesCache={key,spots:placeMapTimes(places,(x,y)=>{const [sx,sy]=mapPoint([x,y],settings.mapRotation);return !!(mapPixels[(sy*w+sx)*4+3]&3);},w,h,{turn:settings.mapTimesTurn,obstacles,markers:markers.markers,size:MAP_TIME_SIZES.indexOf(settings.mapTimeSize)})};
   const spots=mapTimesCache.spots,px=(x,y,c)=>{ctx.fillStyle=c;ctx.fillRect(mx+x,my+y,1,1);};
   // Leaders outlined and each time in a hull (a cleared box, corners cut) first,
   // so map lines and background dots never touch them; then the leaders and
@@ -295,8 +300,9 @@ function render(){
   ctx.clearRect(0,0,200,228);ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,228);
   const m=makeMap(),[mx,my]=settings.map,cached=mapImage(now,pal,sun);
   ctx.drawImage(cached.canvas,mx,my);
-  if(settings.lights&&settings.dayNight)for(const [lat,lon]of CITIES){if(dot(direction(lat,lon),sun)>=-.03)continue;const [x,y]=m.project(lat,lon);ctx.fillStyle=pal.accent;ctx.fillRect(mx+Math.round(x),my+Math.round(y),1,1);}
+  if(settings.lights&&settings.dayNight)for(const [lat,lon]of CITIES){if(dot(direction(lat,lon),sun)>=-.03)continue;const [x,y]=mapPoint(m.project(lat,lon).map(Math.round),settings.mapRotation);ctx.fillStyle=pal.accent;ctx.fillRect(mx+x,my+y,1,1);}
   if(settings.sun&&settings.dayNight){const [sx,sy]=[mx+cached.sunPoint[0],my+cached.sunPoint[1]];const h=SUN_HALO_ROWS.length>>1,s=SUN_ROWS.length>>1;drawPixelRows(ctx,SUN_HALO_ROWS,sx-h,sy-h,pal.bg);drawPixelRows(ctx,SUN_ROWS,sx-s,sy-s,pal.accent);}
+  if(settings.mapMoon)drawMapMoon(ctx,mx+cached.moonPoint[0],my+cached.moonPoint[1],now,pal);
   // Quick View preview: the bottom band hides and the clock stays above the card.
   const visible=$('quick-view').checked?228-QUICK_VIEW_HEIGHT:228;
   // Place times go beside the clock or onto the map when chosen, or when the bottom band is

@@ -44,7 +44,7 @@ const powerEditor=powerControls($('power-controls'),()=>s,power=>{s=validateSett
 const paletteEditor=paletteControls($('palette-controls'),()=>s,patch=>{s=validateSettings({...s,...patch},exists);refresh();});
 function options(select,entries){select.replaceChildren();entries.forEach(([label,value])=>select.add(new Option(label,value)));}
 for(const [key,title,note,root] of [['moonIndicator','Moon','The current phase of the moon.','top-bar-switches'],['batteryGauge','Battery gauge','Frames the percentage in a small battery, filled as far as the charge.','top-bar-switches'],['stepLine','Step line','A thin line under the top bar that grows with today’s steps and reaches the edge at a typical day’s total.','top-bar-switches'],
-  ['dayNight','Day and night','','switches'],['lights','City lights','','switches'],['sun','Sun on the map','','switches'],['edges','Triangle edges','','switches']]){
+  ['dayNight','Day and night','','switches'],['lights','City lights','','switches'],['sun','Sun on the map','','switches'],['mapMoon','Moon on the map','Where the Moon is overhead, shaded for its waxing or waning phase. Separate from the top-bar Moon.','switches'],['edges','Triangle edges','','switches']]){
   const label=document.createElement('label');label.className='toggle';const span=document.createElement('span');span.textContent=title;
   if(note){const small=document.createElement('small');small.textContent=note;span.append(small);}
   const input=document.createElement('input');input.type='checkbox';input.id=key;input.setAttribute('aria-label',title);label.append(span,input);$(root).append(label);
@@ -68,8 +68,8 @@ function refresh(){
   powerEditor.refresh();
   paletteEditor.refresh();
   paletteChoices();
-  $('theme').value=s.theme;$('format').value=s.format;$('connectionBuzz').value=s.connectionBuzz;$('mapBackground').value=s.mapBackground;
-  for(const k of ['moonIndicator','batteryGauge','stepLine','dayNight','lights','sun','edges','motion'])$(k).checked=s[k];
+  $('theme').value=s.theme;$('format').value=s.format;$('connectionBuzz').value=s.connectionBuzz;$('mapBackground').value=s.mapBackground;$('mapRotation').value=s.mapRotation;
+  for(const k of ['moonIndicator','batteryGauge','stepLine','dayNight','lights','sun','mapMoon','edges','motion'])$(k).checked=s[k];
   const openPlaces=[...$('places').querySelectorAll('details')].map(d=>d.open);
   searches.forEach(search=>search.destroy());searches=[];$('places').replaceChildren();
   s.places.forEach((p,i)=>{
@@ -96,9 +96,10 @@ function refresh(){
 }
 $('preset').onchange=()=>{const preset=$('preset').value;if(preset!=='custom')Object.assign(s,presetFor(preset,s.clockDisplay));refresh();};
 $('connectionBuzz').onchange=()=>{s.connectionBuzz=$('connectionBuzz').value;};
+$('mapRotation').onchange=()=>{s.mapRotation=+$('mapRotation').value;changed();};
 $('mapBackground').onchange=()=>{s.mapBackground=$('mapBackground').value;changed();};
 for(const key of ['theme','format'])$(key).onchange=()=>{s[key]=Number($(key).value);if(key==='theme'){s.customPalette=null;refresh();}changed();};
-for(const key of ['moonIndicator','batteryGauge','stepLine','dayNight','lights','sun','edges','motion'])$(key).onchange=()=>{s[key]=$(key).checked;powerEditor.refresh();changed();};
+for(const key of ['moonIndicator','batteryGauge','stepLine','dayNight','lights','sun','mapMoon','edges','motion'])$(key).onchange=()=>{s[key]=$(key).checked;powerEditor.refresh();changed();};
 function importText(text){try{s=validateSettings(JSON.parse(text),exists);$('error').textContent='Composition loaded.';$('preset').value='custom';refresh();}catch(e){$('error').textContent=e.message;}}
 $('file').onchange=async()=>{const file=$('file').files[0];if(!file)return;if(file.size>50000){$('error').textContent='Settings file is too large.';return;}importText(await file.text());};
 $('import').onclick=()=>importText($('json').value);

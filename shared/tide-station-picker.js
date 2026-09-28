@@ -2,19 +2,20 @@ import {TIDE_STATIONS} from './panel-settings.js';
 import {NEARBY_TIDE_KM,tideStationLookup} from './tide-stations.js';
 import {devicePosition} from '../tools/device-position.js';
 
-// A setup suggestion, saved as an ordinary fixed station. Travelling never
-// silently swaps the waterway behind an existing tide chart.
+// Setup previews the automatic choice. Explicit choices pin a fixed station;
+// the phone companion keeps following location only in automatic mode.
 export function tideStationPicker(root,{getTide,onSelect,onCustom,getPosition=devicePosition,lookup=tideStationLookup()}){
   root.innerHTML=`<button type="button" data-nearby-tides>Find nearby NOAA stations</button><p class="micro" role="status" aria-live="polite" data-tide-status>The nearest station with hourly tides is suggested. You can pick a different one.</p><label class="field">Tide station<select data-station aria-label="Tide station"></select></label><p class="micro" data-tide-selected></p>`;
   const select=root.querySelector('[data-station]'),button=root.querySelector('[data-nearby-tides]'),status=root.querySelector('[data-tide-status]'),selected=root.querySelector('[data-tide-selected]');
-  let nearby=[],known=new Map(),generation=0,signature='',attempted=false,busy=false;
-  const fingerprint=()=>JSON.stringify([getTide().station,getTide().label,getTide().tz]);
+  let nearby=[],known=new Map(),generation=0,signature='',attempted=false,busy=false,lastMode=getTide().mode;
+  const fingerprint=()=>JSON.stringify([getTide().mode,getTide().station,getTide().label,getTide().tz]);
   const distance=s=>`${s.distanceKm<10?s.distanceKm.toFixed(1):Math.round(s.distanceKm)} km away`;
   function message(text){status.textContent=text;}
   function cancel(){generation++;busy=false;button.disabled=false;}
   function refresh(){
     const next=fingerprint();if(next!==signature){cancel();signature=next;}
-    const tide=getTide();select.replaceChildren(new Option('Choose a station',''));
+    const tide=getTide();if(tide.mode!==lastMode){lastMode=tide.mode;attempted=false;}
+    select.replaceChildren(new Option('Choose a station',''));
     if(nearby.length){
       const group=document.createElement('optgroup');group.label='Near your location';
       nearby.forEach((s,i)=>group.append(new Option(`${s.name} · ${distance(s)}${i===0?' · nearest':''}`,s.id)));select.append(group);
@@ -24,18 +25,18 @@ export function tideStationPicker(root,{getTide,onSelect,onCustom,getPosition=de
     if(tide.station&&!nearby.some(s=>s.id===tide.station)&&!TIDE_STATIONS.some(s=>s.id===tide.station))select.add(new Option(known.get(tide.station)?.name||'NOAA '+tide.station,tide.station));
     select.add(new Option('Custom NOAA harmonic station','custom'));select.value=tide.station;
     const found=nearby.find(s=>s.id===tide.station),name=known.get(tide.station)?.name||TIDE_STATIONS.find(s=>s.id===tide.station)?.name;
-    selected.textContent=tide.station?[name||'NOAA '+tide.station,tide.station,found?distance(found):'',tide.tz.replace(/_/g,' ')].filter(Boolean).join(' · '):'';
+    selected.textContent=tide.station?[tide.mode==='auto'?'Automatic estimate':'Fixed station',name||'NOAA '+tide.station,tide.station,found?distance(found):'',tide.tz.replace(/_/g,' ')].filter(Boolean).join(' · '):'';
     button.disabled=busy;
   }
-  async function choose(s,token){
+  async function choose(s,token,manual=false){
     const details=await lookup.resolve(s);
     if(token!==generation)return false;
     known.set(s.id,details);busy=false;
-    onSelect({station:details.station,label:details.label,tz:details.tz});refresh();
+    onSelect({station:details.station,label:details.label,tz:details.tz,...(manual?{mode:'fixed'}:{})});refresh();
     return true;
   }
   async function find(){
-    cancel();const token=generation,fillDefault=!getTide().station;
+    cancel();const token=generation,automatic=getTide().mode==='auto',fillDefault=automatic||!getTide().station;
     attempted=true;busy=true;button.disabled=true;message('Finding your location and nearby hourly tide stations…');
     try{
       const p=await getPosition();if(token!==generation)return;
@@ -43,9 +44,9 @@ export function tideStationPicker(root,{getTide,onSelect,onCustom,getPosition=de
       if(token!==generation)return;
       nearby=found;
       refresh();
-      if(!nearby.length){message(`No hourly NOAA tide stations within ${NEARBY_TIDE_KM} km. Choose a coastal station manually.`);return;}
-      if(fillDefault&&!getTide().station){
-        if(await choose(nearby[0],token))message('Nearest hourly station selected. Its label and time zone are filled in; choose another if it better matches your waterway.');
+      if(!nearby.length){if(automatic){onSelect({station:'',label:'TIDE'});refresh();}message(`No hourly NOAA tide stations within ${NEARBY_TIDE_KM} km. Choose a coastal station manually.`);return;}
+      if(fillDefault&&(automatic||!getTide().station)){
+        if(await choose(nearby[0],token))message(automatic?'Nearest hourly station selected for this location. The watch will follow your phone as you travel. Choosing a different station fixes it in place.':'Nearest hourly station selected. Its label and time zone are filled in; choose another if it better matches your waterway.');
       }else message(`${nearby.length} nearby hourly stations found. Your saved station remains selected.`);
     }catch(error){
       if(token===generation)message(error?.message||'Nearby station lookup is unavailable. You can choose a station manually.');
@@ -54,16 +55,16 @@ export function tideStationPicker(root,{getTide,onSelect,onCustom,getPosition=de
   select.onchange=async()=>{
     const value=select.value;cancel();attempted=true;
     if(value==='custom'){onCustom();return;}
-    if(!value){onSelect({station:''});refresh();message('Choose a station or find nearby NOAA stations.');return;}
+    if(!value){onSelect({station:'',mode:'fixed'});refresh();message('Choose a station or find nearby NOAA stations.');return;}
     const preset=TIDE_STATIONS.find(s=>s.id===value);
-    if(preset){onSelect({station:preset.id,label:preset.label,tz:preset.tz});refresh();message('Station selected.');return;}
+    if(preset){onSelect({station:preset.id,label:preset.label,tz:preset.tz,mode:'fixed'});refresh();message('Fixed station selected.');return;}
     const found=nearby.find(s=>s.id===value);if(!found)return;
     const token=generation;busy=true;button.disabled=true;message('Filling in this station’s time zone…');
-    try{if(await choose(found,token))message('Station selected. Its label and time zone are filled in.');}
+    try{if(await choose(found,token,true))message('Fixed station selected. Its label and time zone are filled in.');}
     catch(error){if(token===generation){refresh();message(error?.message||'Station lookup failed.');}}
     finally{if(token===generation){busy=false;button.disabled=false;}}
   };
   button.onclick=find;
   refresh();
-  return {refresh,suggest:()=>{if(!attempted&&!getTide().station)find();}};
+  return {refresh,suggest:()=>{if(!attempted&&(getTide().mode==='auto'||!getTide().station))find();}};
 }

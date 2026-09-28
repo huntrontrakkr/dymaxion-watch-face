@@ -62,7 +62,7 @@ const LEGACY_PRESETS=[{
   horizon:{orientation:0,time:[20,132],map:[4,19],zones:[[4,189],[70,189],[136,189]]}
 }];
 export function defaults() {
-  return {version:1,markerSet:2,theme:0,customPalettes:[],customPalette:null,format:1,dayNight:true,edges:false,lights:true,motion:true,sun:true,moonIndicator:true,batteryGauge:false,stepLine:false,connectionBuzz:'disconnect',
+  return {version:1,markerSet:2,theme:0,customPalettes:[],customPalette:null,format:1,dayNight:true,edges:false,lights:true,motion:true,sun:true,mapMoon:false,mapRotation:0,moonIndicator:true,batteryGauge:false,stepLine:false,connectionBuzz:'disconnect',
     ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',leadingZero:true,mapBackground:'none',zoneTimes:'when-hidden',zonePosition:'map',mapTimesTurn:false,nameplate:false,mapTimeSize:'medium',zoneTimesTall:false,placeIcons:true,clockArt:'none',power:defaultPower(),location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
 }
 // Quick View: a clock the peek would cover moves up to sit just above it,
@@ -119,6 +119,9 @@ export function validateSettings(input,zoneExists) {
   if(input.connectionBuzz!==undefined&&!CONNECTION_BUZZ.includes(input.connectionBuzz))throw new Error('Invalid Bluetooth buzz.');
   out.connectionBuzz=input.connectionBuzz??'disconnect';
   out.moonIndicator=input.moonIndicator??true;out.batteryGauge=input.batteryGauge??false;out.stepLine=input.stepLine??false;
+  if(input.mapMoon!==undefined&&typeof input.mapMoon!=='boolean')throw new Error('Invalid map Moon.');
+  if(input.mapRotation!==undefined&&![0,180].includes(input.mapRotation))throw new Error('Choose a map rotation of 0° or 180°.');
+  out.mapMoon=input.mapMoon??false;out.mapRotation=input.mapRotation??0;
   out.footer=validateFooter(input.footer,zoneExists,quantizeColor);
   out.location=validateLocation(input.location);
   // Retired LCD/framing experiments return to the open broad clock. Keep all

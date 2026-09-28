@@ -63,6 +63,9 @@ export function lonLatToNet(T,lat,lon) {
   return [0,1].map(i=>(1-u-w)*ent.p[0][i]+u*ent.p[1][i]+w*ent.p[2][i]);
 }
 export const MAP_SIZE = [200,104];
+// Rotate native pixel coordinates, never glyph contents or geographic vectors.
+// This transform is its own inverse and uses the same bounds as the watch.
+export const mapPoint=([x,y],rotation=0)=>rotation===180?[MAP_SIZE[0]-1-x,MAP_SIZE[1]-1-y]:[x,y];
 function visibleVertices(T) {
   // A split placement contains only its selected LCD sixths. Including the
   // unused half of triangle 16 used to reserve an extra half-edge of space.

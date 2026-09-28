@@ -61,7 +61,7 @@ test('catalog and details coalesce requests, cache a week, recover from corrupti
 });
 test('a resolved nearby station delivers actual NOAA hourly and high/low data through the phone packet',async()=>{
   const meta=read('nearby-tide-meta'),settings=defaults(),messages=[],urls=[];
-  settings.footer.pages=['tide'];settings.footer.home='tide';Object.assign(settings.footer.tide,tideStationDetails(details,'8638660'));
+  settings.footer.pages=['tide'];settings.footer.home='tide';Object.assign(settings.footer.tide,tideStationDetails(details,'8638660'),{mode:'fixed'});
   const service=environmentService({getSettings:()=>settings,now:()=>meta.capturedAt,storage:null,getPosition:()=>assert.fail('a saved tide station needs no location tracking'),send:(kind,data)=>messages.push({kind,data}),getJSON:async url=>{urls.push(new URL(url));return read(url.includes('interval=hilo')?'nearby-tide-extrema':'nearby-tide-hourly');}});
   await service.refresh();const tide=messages.findLast(m=>m.kind==='tide').data;
   assert.equal(urls.length,2);assert(urls.every(u=>u.searchParams.get('station')==='8638660'));
@@ -90,7 +90,7 @@ test('the tide header lists the next high and low, soonest first, from the event
 });
 test('tides saved before highs and lows rode along are refetched at once, not kept for six hours',async()=>{
   const meta=read('nearby-tide-meta'),settings=defaults(),messages=[],urls=[],store=new Map();
-  settings.footer.pages=['tide'];settings.footer.home='tide';Object.assign(settings.footer.tide,tideStationDetails(details,'8638660'));
+  settings.footer.pages=['tide'];settings.footer.home='tide';Object.assign(settings.footer.tide,tideStationDetails(details,'8638660'),{mode:'fixed'});
   const storage={getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,v)};
   const make=()=>environmentService({getSettings:()=>settings,now:()=>meta.capturedAt,storage,getPosition:()=>null,send:(kind,data)=>messages.push({kind,data}),getJSON:async url=>{urls.push(url);return read(url.includes('interval=hilo')?'nearby-tide-extrema':'nearby-tide-hourly');}});
   await make().refresh();assert.equal(urls.length,2);

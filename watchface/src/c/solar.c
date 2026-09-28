@@ -38,6 +38,21 @@ bool solar_up(uint32_t epoch,const float place[3]){
   float s[3];solar_direction(epoch,s);
   return s[0]*place[0]+s[1]*place[1]+s[2]*place[2]>=SUNRISE_SINE;
 }
+static float lunar_sin_deg(float d){return solar_sin(solar_reduce(d)*(PI/180));}
+static float lunar_cos_deg(float d){return lunar_sin_deg(d+90);}
+void lunar_direction(uint32_t epoch,float out[3]){
+  int32_t s=(int32_t)(epoch-J2000),day=s/86400,second=s%86400;
+  if(second<0){second+=86400;day--;}
+  float n=day+second/86400.0f;
+  float L=solar_reduce(218.3164477f+13.17639648f*n),D=solar_reduce(297.8501921f+12.19074912f*n);
+  float M=solar_reduce(134.9633964f+13.06499295f*n),S=solar_reduce(357.5291092f+.98560028f*n),F=solar_reduce(93.272095f+13.22935024f*n);
+  float lon=L+6.289f*lunar_sin_deg(M)+1.274f*lunar_sin_deg(2*D-M)+.658f*lunar_sin_deg(2*D)+.214f*lunar_sin_deg(2*M)-.186f*lunar_sin_deg(S)-.114f*lunar_sin_deg(2*F);
+  float lat=5.128f*lunar_sin_deg(F)+.280f*lunar_sin_deg(M+F)+.277f*lunar_sin_deg(M-F)+.173f*lunar_sin_deg(2*D-F)+.055f*lunar_sin_deg(2*D-M+F)+.046f*lunar_sin_deg(2*D-M-F)+.033f*lunar_sin_deg(2*D+F)+.017f*lunar_sin_deg(2*M+F);
+  float tilt=23.439f-.0000004f*n,theta=solar_reduce(280.46061837f+solar_reduce(.98564736629f*day)+.98564736629f*second/86400+second/240.0f);
+  float a=lunar_cos_deg(lat),b=lunar_sin_deg(lat),c=lunar_cos_deg(tilt),d=lunar_sin_deg(tilt),e=lunar_sin_deg(lon);
+  float x=a*lunar_cos_deg(lon),y=a*e*c-b*d,z=a*e*d+b*c;
+  out[0]=x*lunar_cos_deg(theta)+y*lunar_sin_deg(theta);out[1]=y*lunar_cos_deg(theta)-x*lunar_sin_deg(theta);out[2]=z;
+}
 uint32_t solar_next_event(uint32_t now,const float place[3],int hours,bool *rise){
   bool up=solar_up(now,place);
   for(uint32_t t=now+600;t<=now+(uint32_t)hours*3600;t+=600){

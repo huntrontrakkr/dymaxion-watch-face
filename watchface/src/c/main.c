@@ -34,7 +34,8 @@ static uint8_t s_display[DISPLAY_SIZE]=DEFAULT_DISPLAY;
 static bool s_map_dirty=true,s_connected=true;
 static BatteryChargeState s_battery;
 static int16_t s_sun[3];
-static GPoint s_sun_point;
+static GPoint s_sun_point,s_moon_point;
+static GPoint map_point(int x,int y){bool r=settings_map_rotated(s_settings);return GPoint(map_x(x,r),map_y(y,r));}
 // The marker pulse: four rings, 120 ms each, for each enabled place in turn
 // (one redraw per ring; under a second and a half for three places).
 #define PULSE_RING_MS 120
@@ -118,20 +119,23 @@ static void rebuild_map(void) {
   uint8_t row[200*4];
   uint8_t *data=gbitmap_get_data(s_map);int stride=gbitmap_get_bytes_per_row(s_map);
   const uint8_t *p=palette();int32_t closest=-200000;
+  bool moon_on=settings_map_moon(s_settings),rotated=settings_map_rotated(s_settings);int16_t moon[3]={0};int moon_best=200000;
+  if(moon_on){time_t now=time(NULL);float d[3];lunar_direction((uint32_t)(now-now%300),d);for(int k=0;k<3;k++)moon[k]=(int16_t)(127*d[k]+(d[k]<0?-.5f:.5f));}
   for(int y=0;y<h;y++) {
     if(resource_load_byte_range(resource,y*w*4,row,w*4)!=(size_t)w*4){gbitmap_destroy(s_map);s_map=NULL;return;}
     for(int x=0;x<w;x++) {
       uint8_t *r=row+x*4;int kind=r[3]&3;uint8_t c=p[0];
       if(kind) {
         int32_t light=illumination((int8_t)r[0],(int8_t)r[1],(int8_t)r[2]);
-        if(light>closest){closest=light;s_sun_point=GPoint(x,y);}
+        if(light>closest){closest=light;s_sun_point=map_point(x,y);}
+        if(moon_on){int distance=0;for(int k=0;k<3;k++){int d=(int8_t)r[k]-moon[k];distance+=d*d;}if(distance<moon_best){moon_best=distance;s_moon_point=map_point(x,y);}}
         // Day while the sun is up, a checkerboard through civil twilight, then
         // night (mapNight() in shared/solar.js).
         bool night=(s_settings[FLAGS]&DAY_NIGHT)&&(light<MAP_CIVIL_TWILIGHT||(light<MAP_SUNRISE&&((x+y)&1)));
         c=p[kind+(night?2:0)];
         if((s_settings[FLAGS]&EDGES)&&(r[3]&4))c=p[5];
       }else if(DISPLAY_MAP_BACKGROUND(s_display)&&(r[3]&(4<<DISPLAY_MAP_BACKGROUND(s_display))))c=p[5]; // map background, in the edge colour
-      data[y*stride+x]=c;
+      data[map_y(y,rotated)*stride+map_x(x,rotated)]=c;
     }
   }
   s_map_dirty=false;
@@ -310,6 +314,17 @@ static void draw_moon_indicator(GContext *ctx,time_t now) {
     uint16_t bit=1u<<(MOON_GLYPH_SIZE-1-x);
     uint8_t index=(MOON_LIGHT_ROWS[frame][y]&bit)?2:(MOON_SHADE_ROWS[frame][y]&bit)?1:0;
     if(index){graphics_context_set_stroke_color(ctx,(GColor){.argb=colors[index]});graphics_draw_pixel(ctx,GPoint(134+x,3+y));}
+  }
+}
+static void draw_map_moon(GContext *ctx,time_t now,int mx,int my){
+  int cx=mx+s_moon_point.x,cy=my+s_moon_point.y;
+  graphics_context_set_stroke_color(ctx,color(0));
+  for(int y=-5;y<=5;y++)for(int x=-5;x<=5;x++)if(x*x+y*y<=25)graphics_draw_pixel(ctx,GPoint(cx+x,cy+y));
+  int frame=moon_frame(now);
+  GColor shadow=(GColor){.argb=custom_palette()?s_palette[PAL_MOON_SHADOW]:MOON_PALETTES[s_settings[THEME]][1]};
+  for(int y=0;y<MOON_GLYPH_SIZE;y++)for(int x=0;x<MOON_GLYPH_SIZE;x++){
+    uint16_t bit=1u<<(MOON_GLYPH_SIZE-1-x);
+    if((MOON_SHADE_ROWS[frame][y]|MOON_LIGHT_ROWS[frame][y])&bit){graphics_context_set_stroke_color(ctx,MOON_LIGHT_ROWS[frame][y]&bit?color(6):shadow);graphics_draw_pixel(ctx,GPoint(cx-4+x,cy-4+y));}
   }
 }
 // Quiet Time: three Zs beside the Bluetooth rune while it is on.
@@ -581,6 +596,7 @@ static void marker_spots(time_t now,int visible,MarkerSpots *s){
   for(int i=0;i<3;i++){s->index[i]=-1;if(s_settings[ENABLED]&(1<<i)){
     const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;s->index[i]=s->n;s->points[s->n++]=(MapMarker){z[8],z[9],2};}}
   if(city_usable(s_city,now)&&city_map_pixel(s_city,&hx,&hy)){s->you=s->n;s->points[s->n++]=(MapMarker){(int16_t)hx,(int16_t)hy,3};}
+  if(settings_map_rotated(s_settings))for(int i=0;i<s->n;i++){s->points[i].x=map_x(s->points[i].x,true);s->points[i].y=map_y(s->points[i].y,true);}
   map_markers_layout(s->points,s->n,MAP_TIMES_W,MAP_TIMES_H,s->layout,s->group);
   s->hull_count=map_markers_hulls(s->points,s->layout,s->group,s->n,s->hulls);
   map_markers_own(s->points,s->layout,s->group,s->n,s->hulls,s->hull_count,s->own);
@@ -622,7 +638,7 @@ static void map_times_place_now(void *context){
   ResHandle resource=resource_get_handle(RESOURCE_ID_MAP_LANDSCAPE);uint8_t row[MAP_TIMES_W*4];
   for(int y=0;y<MAP_TIMES_H;y++){
     if(resource_load_byte_range(resource,y*MAP_TIMES_W*4,row,sizeof(row))!=sizeof(row)){free(blocked);return;}
-    for(int x=0;x<MAP_TIMES_W;x++)if(row[x*4+3]&3){int i=y*MAP_TIMES_W+x;blocked[i>>3]|=1u<<(i&7);}
+    for(int x=0;x<MAP_TIMES_W;x++)if(row[x*4+3]&3){GPoint p=map_point(x,y);int i=p.y*MAP_TIMES_W+p.x;blocked[i>>3]|=1u<<(i&7);}
   }
   // Everyone's areas, and the nameplate's, in map coordinates.
   MapRect obstacles[MAP_MARKERS_MAX+1];int count=spots.n;memcpy(obstacles,spots.own,sizeof(MapRect)*spots.n);
@@ -774,7 +790,7 @@ static void update_proc(Layer *layer,GContext *ctx) {
     for(int i=0;i<CITY_COUNT;i++) {
       const City *c=&CITIES[i];
       if(illumination(c->dx,c->dy,c->dz)>=-4000)continue;
-      graphics_context_set_stroke_color(ctx,color(7));graphics_draw_pixel(ctx,GPoint(mx+c->x,my+c->y));
+      GPoint p=map_point(c->x,c->y);graphics_context_set_stroke_color(ctx,color(7));graphics_draw_pixel(ctx,GPoint(mx+p.x,my+p.y));
     }
   }
   if((s_settings[FLAGS]&SUN)&&(s_settings[FLAGS]&DAY_NIGHT)&&s_map){
@@ -782,6 +798,7 @@ static void update_proc(Layer *layer,GContext *ctx) {
     pixel_rows(ctx,SUN_HALO,SUN_SIZE+2,SUN_SIZE+2,sun.x-SUN_SIZE/2-1,sun.y-SUN_SIZE/2-1,color(0));
     pixel_rows(ctx,SUN_GLYPH,SUN_SIZE,SUN_SIZE,sun.x-SUN_SIZE/2,sun.y-SUN_SIZE/2,color(7));
   }
+  if(s_map&&settings_map_moon(s_settings))draw_map_moon(ctx,now,mx,my);
   // Quick View (timeline peek) covers the bottom of the screen: the bottom band
   // is skipped and the clock kept above the card.
   int visible=layer_get_unobstructed_bounds(layer).size.h;bool panel_zones=zones_in_panel(visible);
@@ -867,11 +884,11 @@ static void request_sync(bool full) {
 static void tick(struct tm *local_time,TimeUnits changed) {
   // The terminator moves about a pixel every few minutes: relight the map on the
   // chosen interval (every other hour in the night saver) instead of reading
-  // and shading all 20,800 pixels each minute, and never while day and night
-  // is off, when the map does not change with time. The place times' daylight
-  // dots still follow the sun every five minutes then.
+  // and shading all 20,800 pixels each minute. The optional Moon follows the
+  // same cadence, including when day/night shading is off. With both off,
+  // only the place times' daylight dots follow the sun every five minutes.
   time_t now=time(NULL);
-  if(power_relight(power(),s_settings[FLAGS]&DAY_NIGHT,local_time->tm_hour,local_time->tm_min,quiet()))s_map_dirty=true;
+  if(power_relight(power(),(s_settings[FLAGS]&DAY_NIGHT)||settings_map_moon(s_settings),local_time->tm_hour,local_time->tm_min,quiet()))s_map_dirty=true;
   else if(!(s_settings[FLAGS]&DAY_NIGHT)&&local_time->tm_min%5==0)sun_update(now-now%300);
   // Paused in the dark (night saver): with the backlight off the screen keeps
   // its last frame; the backlight coming on redraws it (backlight_changed),
@@ -920,7 +937,7 @@ static void received(DictionaryIterator *iter,void *context) {
   if(t&&t->type==TUPLE_BYTE_ARRAY&&settings_valid(t->value->data,t->length)&&memcmp(s_settings,t->value->data,SETTINGS_SIZE)){
     full=true;
     clock_stop();s_clock_ready=false;
-    memcpy(s_settings,t->value->data,SETTINGS_SIZE);persist_write_data(1,s_settings,SETTINGS_SIZE);s_map_dirty=true;
+    memcpy(s_settings,t->value->data,SETTINGS_SIZE);persist_write_data(1,s_settings,SETTINGS_SIZE);s_map_dirty=true;s_map_key_valid=false;
     clock_configure();
   }
   Tuple *custom=dict_find(iter,MESSAGE_KEY_PALETTE);

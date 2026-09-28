@@ -16,8 +16,9 @@ export function encodeFooter(s){
   b[13]=+w.daylight;b[14]=+w.grid;b[15]=+w.solarTimes;b[16]=c.weekStart;b[17]=+(c.weeks==='previous-current');b[18]=['sat-sun','fri-sat','none'].indexOf(c.weekends);b[19]=HOLIDAY_REGIONS.findIndex(([id])=>id===c.holidays);b[20]=+(c.todayStyle==='outline');
   const colors=panelColors(s);PANEL_COLOR_ROLES.forEach((role,i)=>b[21+i]=pebbleColor(colors[role]));
   b[29]=+(w.temperatureScale==='fixed');b[30]=+(w.humidityScale==='auto');v.setInt16(31,Math.round(w.temperatureMin*10),true);v.setInt16(33,Math.round(w.temperatureMax*10),true);
-  b[35]=+(w.rainUnit==='in');b[36]=+(t.unit==='ft');b[37]=w.refreshMinutes;b[38]=+w.enabled;b[39]=+w.rangeLabels;b[40]=+t.zeroLine;b[41]=+!!t.station;b[42]=+f.shake;
+  b[35]=+(w.rainUnit==='in');b[36]=+(t.unit==='ft');b[37]=w.refreshMinutes;b[38]=+w.enabled;b[39]=+w.rangeLabels;b[40]=+t.zeroLine;b[41]=+(t.mode==='auto'||!!t.station);b[42]=+f.shake;
   v.setUint16(43,Math.round(w.rainMax*10),true);b[45]=+(t.scale==='fixed');v.setInt16(46,Math.round(t.min*100),true);v.setInt16(48,Math.round(t.max*100),true);b[50]=w.place==='current'?3:w.place;b[51]=+w.humidityLine;b[52]=f.flicks;
+  b[53]=+(t.mode==='auto'); // Travel mode needs an hourly position check even without weather/city.
   return b;
 }
 const putText=(b,offset,text)=>[...(text||'').slice(0,7)].forEach((ch,i)=>b[offset+i]=ch.charCodeAt(0));

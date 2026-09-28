@@ -41,6 +41,14 @@ int main(int argc,char **argv) {
   memcpy(bad,bytes,sizeof(bytes));bad[VERSION]=6;assert(!settings_valid(bad,sizeof(bad)));
   memcpy(bad,bytes,sizeof(bytes));bad[TIME_X]=1;assert(!settings_valid(bad,sizeof(bad)));
   memcpy(bad,bytes,sizeof(bytes));bad[ORIENTATION]=1;assert(!settings_valid(bad,sizeof(bad)));
+  memcpy(bad,bytes,sizeof(bytes));bad[VERSION]=8;bad[ORIENTATION]=2;bad[FLAGS]|=MAP_MOON;
+  assert(settings_valid(bad,sizeof(bad)));assert(settings_map_rotated(bad));assert(settings_map_moon(bad));
+  bad[VERSION]=7;assert(!settings_valid(bad,sizeof(bad)));bad[ORIENTATION]=0;
+  assert(settings_valid(bad,sizeof(bad)));assert(!settings_map_rotated(bad));assert(!settings_map_moon(bad));
+  for(int y=0;y<104;y++)for(int x=0;x<200;x++){
+    assert(map_x(x,false)==x&&map_y(y,false)==y);
+    assert(map_x(map_x(x,true),true)==x&&map_y(map_y(y,true),true)==y);
+  }
   memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+16]=9;assert(!settings_valid(bad,sizeof(bad)));
   memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+7]='X';assert(!settings_valid(bad,sizeof(bad)));
   memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+14]=255;bad[HEADER_SIZE+15]=127;assert(!settings_valid(bad,sizeof(bad)));

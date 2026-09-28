@@ -88,6 +88,9 @@ try{
   assert.equal(await page.locator('#preview-error').textContent(),'');
   for(let i=0;i<8;i++)await page.locator('#preview-next').click();assert.equal(await page.locator('#preview-error').textContent(),'');
   await page.locator('details').evaluateAll(nodes=>nodes.forEach(d=>d.open=true));
+  await page.locator('#mapMoon').check();await page.locator('#mapRotation').selectOption('180');
+  assert(await page.locator('#moonIndicator').isChecked(),'map Moon leaves the top-bar Moon enabled');
+  assert.equal(await page.locator('#preview-error').textContent(),'');
   for(const width of [320,390,768,1100]){await page.setViewportSize({width,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'expanded settings fit '+width+'px');}
   await page.setViewportSize({width:390,height:844});
   // Exercise the actual Pebble return URL, with no mutation hook in production.
@@ -98,5 +101,6 @@ try{
   const saved=JSON.parse(decodeURIComponent(response.split('#')[1]));assert.equal(saved.places[0].label,'ORF');assert.equal(saved.places[0].icon,4);assert.equal(saved.theme,4);assert.equal(saved.footer.home,'weather');
   assert.equal(saved.footer.weather.place,'current');
   assert.equal(saved.footer.flicks,3);
+  assert.equal(saved.mapMoon,true);assert.equal(saved.mapRotation,180);assert.equal(saved.moonIndicator,true);
   assert.deepEqual(errors,[]);console.log('PASS: phone settings, city search, offline fallback, race handling, native palette preview and save.');
 }finally{await browser.close();}
