@@ -134,7 +134,7 @@ jobs:
               if [ $variant = noanim ]; then pbw=reference; settings=noanim; fi
               (cd watchface && pebble install --emulator emery /tmp/builds/$pbw.pbw)
               sleep 15
-              MEASURE_SETTINGS=$settings node tools/energy/measure.mjs $variant-$round 2 watchface/build/js/message_keys.json
+              MEASURE_SETTINGS=$settings node tools/energy/measure.mjs $variant-$round 3 watchface/build/js/message_keys.json
             done
           done
           node tools/energy/count.mjs "$QEMU_TRACE_DIR" test-results/energy/variants.json
