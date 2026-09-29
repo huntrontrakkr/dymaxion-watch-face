@@ -513,7 +513,7 @@ static void draw_zones(GContext *ctx,time_t now,struct tm *local,int visible) {
     if(!is_24()){hour%=12;if(!hour)hour=12;}
     snprintf(hours,sizeof(hours),"%02d:%02d",hour,zone.tm_min);
     text(ctx,hours,s_zone,GRect(x+2,y+13,52,22),GTextAlignmentLeft,color(6));
-    if(!is_24())text(ctx,zone.tm_hour<12?"A":"P",s_small,GRect(x+53,y+16,7,15),GTextAlignmentLeft,color(7));
+    if(!is_24())text(ctx,zone.tm_hour<12?"A":"P",s_small,GRect(x+53,y+18,7,15),GTextAlignmentLeft,color(7));
     if(i==pulsing_place())line(ctx,x,y+35,x+59,y+35,mark_color(i));
   }
 }

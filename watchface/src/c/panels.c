@@ -45,8 +45,10 @@ static void line(GContext *ctx,int x,int y,int xx,int yy,GColor c){graphics_cont
 // Dotted line, even columns only, as drawPixelLine(..., dotted) in shared/pixels.js.
 static void dotted_line(GContext *ctx,int x,int y,int xx,int yy,GColor c){
   graphics_context_set_stroke_color(ctx,c);
-  int dx=abs(xx-x),sx=x<xx?1:-1,dy=-abs(yy-y),sy=y<yy?1:-1,error=dx+dy;
-  for(;;){if(x%2==0)graphics_draw_pixel(ctx,GPoint(x,y));if(x==xx&&y==yy)break;int twice=2*error;if(twice>=dy){error+=dy;x+=sx;}if(twice<=dx){error+=dx;y+=sy;}}
+  // The same steps as graphics_draw_line (drawPixelLine in shared/pixels.js),
+  // lighting only even columns.
+  int dx=abs(xx-x),sx=x<xx?1:-1,dy=abs(yy-y),sy=y<yy?1:-1,error=(dx>dy?dx:-dy)/2;
+  for(;;){if(x%2==0)graphics_draw_pixel(ctx,GPoint(x,y));if(x==xx&&y==yy)break;int was=error;if(was>-dx){error-=dy;x+=sx;}if(was<dy){error+=dx;y+=sy;}}
 }
 typedef struct {GContext *ctx;GColor color;} PanelPen;
 static void panel_span(void *context,int x,int y,int length){PanelPen *pen=context;line(pen->ctx,x,y,x+length-1,y,pen->color);}
