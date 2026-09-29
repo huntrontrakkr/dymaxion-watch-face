@@ -9,6 +9,8 @@
 // long the firmware spins waiting on emulated devices) is the same for both.
 // Windows are named <label>~<kind>-<n>; count.mjs counts them afterwards.
 // Usage: node tools/energy/measure.mjs <label> [repeats] [message_keys.json]
+// MEASURE_KINDS (default idle,minute,relight) picks the windows; MEASURE_SETTINGS
+// names a settings variant: noanim turns the minute animation off.
 import {execFileSync} from 'node:child_process';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {join,resolve} from 'node:path';
@@ -46,10 +48,12 @@ async function window(name,ms){
 }
 // Default settings, as the phone sends them on Save; a typed-in city.
 const KEY=JSON.parse(readFileSync(process.argv[4]||'watchface/build/js/message_keys.json','utf8')),settings={...defaults(),location:{mode:'manual',name:'Norfolk'}};
+if(process.env.MEASURE_SETTINGS==='noanim')settings.power={...settings.power,minuteAnimation:false};
 const files={SETTINGS:encodeSettings(settings),FOOTER:encodeFooter(settings),DISPLAY:encodeDisplay(settings),PALETTE:encodePalette(settings),CITY:encodeCity({name:'Norfolk',manual:true})};
 pebble('send-app-message','--bytes-file',...Object.entries(files).map(([k,b])=>{const f=join(out,`${label}-${k}.bin`);writeFileSync(f,b);return `${KEY[k]}=${f}`;}));
 await sleep(20000);
-const want={minute:repeats,relight:repeats,idle:repeats},got={minute:0,relight:0,idle:0},names=[];
+const kinds=(process.env.MEASURE_KINDS||'idle,minute,relight').split(',');
+const want={minute:0,relight:0,idle:0},got={minute:0,relight:0,idle:0},names=[];for(const k of kinds)want[k]=repeats;
 const until=async second=>{while(new Date().getUTCSeconds()!==second)await sleep(200);};
 while(Object.keys(want).some(k=>got[k]<want[k])){
   const s=new Date().getUTCSeconds();

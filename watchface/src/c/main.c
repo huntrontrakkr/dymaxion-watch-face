@@ -827,7 +827,16 @@ static void minute_redraw(void){
   if(s_map_dirty||s_map_relight||s_animation||visible!=s_spots_visible||zones_on_map((s_display[2]>>2)&3,zone_position(),zones_in_panel(visible))){redraw();return;}
   static MarkerSpots now_spots;marker_spots(time(NULL),visible,&now_spots);
   if(memcmp(&now_spots,&s_spots,sizeof(now_spots))){redraw();return;}
-  redraw_part(PART_STATUS|PART_CLOCK|PART_TRAY|(strip_on(visible)?PART_PLATE:0));
+  uint8_t parts=PART_STATUS|PART_CLOCK|PART_TRAY|(strip_on(visible)?PART_PLATE:0);
+  // Measurement-only builds (tools/energy/): what the top bar's and the
+  // bottom panel's minute repaints cost. Never defined in a release.
+#ifdef MEASURE_NO_STATUS
+  parts&=~PART_STATUS;
+#endif
+#ifdef MEASURE_NO_TRAY
+  parts&=~PART_TRAY;
+#endif
+  redraw_part(parts);
 }
 static void update_proc(Layer *layer,GContext *ctx) {
   time_t now=time(NULL);struct tm local=*localtime(&now);

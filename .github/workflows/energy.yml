@@ -87,3 +87,61 @@ jobs:
           name: energy-counts
           path: test-results/energy/counts.json
           retention-days: 30
+
+  # What the remaining minute work is made of: the same build with the minute
+  # animation off (a setting), and measurement-only builds that skip the top
+  # bar's or the bottom panel's minute repaint. Minute and idle windows only.
+  variants:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    env:
+      TZ: UTC
+      SDL_VIDEODRIVER: dummy
+      QEMU_TRACE_DIR: /tmp/qemu-trace
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11'
+      - name: Install pinned build tools
+        run: |
+          npm ci
+          pip install pebble-tool==5.0.40
+          pebble sdk install 4.33.1
+          sudo apt-get install -y --no-install-recommends libsdl2-2.0-0 libpixman-1-0 libfdt1
+      - name: Build the variants
+        run: |
+          echo "Pebble.addEventListener('ready',function(){console.log('stub phone app');});" > watchface/src/pkjs/index.js
+          mkdir -p /tmp/builds
+          for variant in reference:'' nostatus:-DMEASURE_NO_STATUS notray:-DMEASURE_NO_TRAY; do
+            name=${variant%%:*}; flags=${variant#*:}
+            (cd watchface && pebble clean && DYMAXION_CFLAGS="$flags" pebble build)
+            cp watchface/build/watchface.pbw /tmp/builds/$name.pbw
+          done
+      - name: Count instructions in the emulator
+        run: |
+          export QEMU_REAL="$(command -v qemu-pebble || ls "$HOME"/.local/share/pebble-sdk/SDKs/4.33.1/toolchain/bin/qemu-pebble 2>/dev/null)"
+          test -n "$QEMU_REAL" || { echo "::error::qemu-pebble not found"; exit 1; }
+          export PEBBLE_QEMU_PATH="$GITHUB_WORKSPACE/tools/energy/qemu-trace.sh" MEASURE_KINDS=idle,minute
+          mkdir -p "$QEMU_TRACE_DIR" test-results/energy
+          for round in 1 2; do
+            for variant in reference noanim nostatus notray; do
+              pbw=$variant; settings=''
+              if [ $variant = noanim ]; then pbw=reference; settings=noanim; fi
+              (cd watchface && pebble install --emulator emery /tmp/builds/$pbw.pbw)
+              sleep 15
+              MEASURE_SETTINGS=$settings node tools/energy/measure.mjs $variant-$round 2 watchface/build/js/message_keys.json
+            done
+          done
+          node tools/energy/count.mjs "$QEMU_TRACE_DIR" test-results/energy/variants.json
+          node tools/energy/report.mjs test-results/energy/variants.json "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: energy-variants
+          path: test-results/energy/variants.json
+          retention-days: 30
