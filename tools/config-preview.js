@@ -6,7 +6,8 @@ import {clockMask,drawFlipPixels,flipOffset} from '../shared/minute-flip.js';
 import {drawBitmapText,fitLabel,textWidth} from '../shared/type.js';
 import {clockCaption} from '../shared/city.js';
 import {markColor,hourText,blockSize} from '../shared/settings.js';
-import {drawMarkerPixels} from '../shared/markers.js';
+import {drawMarkerPixels,placeGlyph} from '../shared/markers.js';
+import {projectToMap} from '../shared/map-net.js';
 import {sunDirection,mapNight,mapSun,mapLight} from '../shared/solar.js';
 import {sinceRelight} from '../shared/power.js';
 import {CITIES} from '../shared/cities.js';
@@ -14,7 +15,7 @@ import {drawFooter} from '../shared/panel-render.js';
 import {drawBatteryStatus,stepLineWidth,STEP_LINE_Y} from '../shared/status-bar.js';
 import {sampleHealth} from '../shared/health.js';
 import {sampleEnvironment} from '../shared/panel-data.js';
-import {MOON_GLYPHS,moonFrame,mapMoonVector,moonPixelDistance,drawMapMoon} from '../shared/moon.js';
+import {MOON_GLYPHS,moonFrame,moonDirection,drawMapMoon} from '../shared/moon.js';
 import {BLUETOOTH_ROWS,SUN_ROWS,SUN_HALO_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS} from '../shared/status-glyphs.js';
 import {drawPixelRows} from '../shared/pixels.js';
 import {BACKGROUND_BITS} from '../shared/map-background.js';
@@ -36,13 +37,14 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
   const sun=sunDirection(new Date(+now-sinceRelight(s.power,now.getHours(),now.getMinutes())*60000)),[w,h]=MAP_SIZE,[mx,my]=s.map;
   ctx.imageSmoothingEnabled=false;ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,228);
   const image=ctx.createImageData(w,h),colors=[pal.bg,pal.ocean,pal.land,pal.nightOcean,pal.nightLand,pal.edge].map(c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)));
-  let best=-Infinity,sunPoint=[0,0];const sunLight=mapSun(sun);
-  let moonBest=Infinity,moonPoint=[0,0];const moon=s.mapMoon?mapMoonVector(new Date(Math.floor(+now/300000)*300000)):null;
+  // The Sun and Moon markers are projected where each is overhead (shared/map-net.js),
+  // as the watch places them.
+  const sunLight=mapSun(sun),sunPoint=mapPoint(projectToMap(sun),s.mapRotation);
+  const moonPoint=s.mapMoon?mapPoint(projectToMap(moonDirection(new Date(Math.floor(+now/300000)*300000))),s.mapRotation):[0,0];
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
     const i=(y*w+x)*4,kind=pixels[i+3]&3;let color=0;
     if(kind){const light=mapLight(signed,i,sunLight);
-      if(light>best){best=light;sunPoint=mapPoint([x,y],s.mapRotation);}const night=s.dayNight&&mapNight(light,x,y);
-      if(moon){const d=moonPixelDistance(signed,i,moon);if(d<moonBest){moonBest=d;moonPoint=mapPoint([x,y],s.mapRotation);}}
+const night=s.dayNight&&mapNight(light,x,y);
       color=kind+(night?2:0);if(s.edges&&(pixels[i+3]&4))color=5;
     }else if(pixels[i+3]&BACKGROUND_BITS[s.mapBackground])color=5;
     const [dx,dy]=mapPoint([x,y],s.mapRotation);image.data.set([...colors[color],255],(dy*w+dx)*4);
@@ -72,14 +74,14 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
       for(const [x,y]of figures)ctx.fillRect(mx+label.x+x,my+label.y+y,1,1);
     });
   }
-  spots.forEach((point,j)=>{const {p,i}=enabled[j];drawPixelRows(ctx,MARKER_HALO_ROWS,mx+point.x-3,my+point.y-3,pal.bg);drawMarkerPixels(ctx,p.icon,mx+point.x,my+point.y,markColor(p,s,i));});
+  spots.forEach((point,j)=>{const {p,i}=enabled[j];drawPixelRows(ctx,MARKER_HALO_ROWS,mx+point.x-3,my+point.y-3,pal.bg);drawMarkerPixels(ctx,placeGlyph(p),mx+point.x,my+point.y,markColor(p,s,i));});
   const [tx,timeY]=s.time,[tw,th]=blockSize(s,'time');
   // Place times between the clock and the map take the nameplate's place.
   const {plate,clockTop:ty}=s.nameplate||strip?nameplateLayout({mapY:my,timeY,height:th,visible:228}):{plate:null,clockTop:timeY};
   if(plate&&!strip)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
   if(plate&&!strip&&plate.y<ty+th&&plate.y+NAMEPLATE_HEIGHT>ty)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
-  if(plate&&strip)drawZoneStrip(ctx,plate.y,enabled.map(({p,i})=>({icon:p.icon,label:p.label,hour:times[i].h,minute:times[i].m,delta:Math.round((times[i].day-local.day)/86400000),color:markColor(p,s,i)})),{font:font.lining.small,clock24,ink:pal.ink,accent:pal.accent,bg:pal.bg,compact:s.zoneStripCompact});
+  if(plate&&strip)drawZoneStrip(ctx,plate.y,enabled.map(({p,i})=>({icon:placeGlyph(p),label:p.label,hour:times[i].h,minute:times[i].m,delta:Math.round((times[i].day-local.day)/86400000),color:markColor(p,s,i)})),{font:font.lining.small,clock24,ink:pal.ink,accent:pal.accent,bg:pal.bg,compact:s.zoneStripCompact});
   const cityName=s.location.mode==='manual'?s.location.name:city?.name||'YOUR CITY',ampm=now.getHours()<12?'AM':'PM';
   const date=`${['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()]} ${two(now.getDate())} ${['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][now.getMonth()]}`;
   // The clock as the workshop draws it, with AM/PM beside Chamfer when nothing
@@ -89,7 +91,8 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
   if(art&&!beside)drawClockArt(ctx,side,tx,ty,pal.accent);
   if(!beside&&!art&&s.clockDisplay==='chamfer'&&!clock24)drawBitmapText(ctx,font.lining.small,ampm,tx+167,ty+9,pal.accent);
   if(beside)enabled.forEach(({p,i},row)=>{
-    const t=times[i],r=zoneRow({label:p.label,hour:t.h,minute:t.m,clock24,delta:Math.round((t.day-local.day)/86400000),side,tall:s.zoneTimesTall},text=>[...text].reduce((n,c)=>n+(font.lining.small[c]||font.lining.small['?']).a,0)),base=ty+zoneRowBaseline(row,enabled.length,s.zoneTimesTall);
+    const t=times[i],r=zoneRow({label:p.label,hour:t.h,minute:t.m,clock24,delta:Math.round((t.day-local.day)/86400000),side,tall:s.zoneTimesTall,icon:s.placeIconsBeside},text=>[...text].reduce((n,c)=>n+(font.lining.small[c]||font.lining.small['?']).a,0)),base=ty+zoneRowBaseline(row,enabled.length,s.zoneTimesTall);
+    if(s.placeIconsBeside)drawMarkerPixels(ctx,placeGlyph(p),tx+r.glyphX,base-4,markColor(p,s,i));
     drawBitmapText(ctx,font.lining.small,r.label,tx+r.labelX,base,markColor(p,s,i));
     if(s.zoneTimesTall){ctx.fillStyle=pal.ink;for(const [x,y] of tallPixels(r.time))ctx.fillRect(tx+r.timeX+x,base+y,1,1);}
     else drawBitmapText(ctx,font.lining.small,r.time,tx+r.timeX,base,pal.ink);
@@ -100,7 +103,7 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
     // Laid out exactly as the workshop and the watch draw the drawer.
     const delta=Math.round((t.day-local.day)/86400000);
     drawPixelRows(ctx,DAY_NIGHT_ROWS[+(dot(direction(p.lat,p.lon),sun)>=0)],x+1,y+5,ink);
-    if(s.placeIcons)drawMarkerPixels(ctx,p.icon,x+10,y+7,ink);
+    if(s.placeIcons)drawMarkerPixels(ctx,placeGlyph(p),x+10,y+7,ink);
     drawBitmapText(ctx,font.text.small,fitLabel(font.text.small,p.label,s.placeIcons?28:34),x+(s.placeIcons?16:9),y+12,ink);
     if(delta)drawBitmapText(ctx,font.text.small,(delta>0?'+':'')+delta,x+60,y+12,pal.accent,'right');
     drawBitmapText(ctx,font.lining.zone,`${two(clock24?t.h:t.h%12||12)}:${two(t.m)}`,x+2,y+31,pal.ink);

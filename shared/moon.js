@@ -72,8 +72,6 @@ export function moonDirection(date){
 }
 // Quantized Euclidean distance avoids the length bias of a dot product on
 // the map's rounded direction vectors. Only evaluated at map refresh time.
-export const mapMoonVector=date=>moonDirection(date).map(v=>Math.round(v*127));
-export const moonPixelDistance=(pixels,i,moon)=>[0,1,2].reduce((s,c)=>s+(pixels[i+c]-moon[c])**2,0);
 export function drawMapMoon(ctx,cx,cy,date,palette){
   const radius=MAP_MOON_SIZE>>1,halo=MARKER_HALO_ROWS.length>>1;
   drawPixelRows(ctx,MARKER_HALO_ROWS,cx-halo,cy-halo,palette.bg);

@@ -3,6 +3,8 @@
 #include "panels.h"
 #include "city.h"
 #include "solar.h"
+#include "map_net.h"
+#include "map_light.h"
 #include "generated/system_clock.h"
 #include "display.h"
 #include "minute_flip.h"
@@ -18,7 +20,7 @@
 #include "generated/cities.h"
 #include "generated/moon_palette.h"
 #include "generated/status_glyphs.h"
-#include "generated/markers.h"
+#include "place_glyphs.h"
 #include "transitions.h"
 #include "power.h"
 #include "step_cache.h"
@@ -31,7 +33,10 @@ static uint8_t s_settings[SETTINGS_SIZE];
 static uint8_t s_palette[PALETTE_SIZE];
 static uint8_t s_city[CITY_SIZE]={1};
 static uint8_t s_display[DISPLAY_SIZE]=DEFAULT_DISPLAY;
-static bool s_map_dirty=true,s_connected=true;
+static uint8_t s_glyphs[GLYPHS_SIZE]={1};
+// s_map_dirty: rebuild every map pixel (launch, settings); s_map_relight: the
+// Sun or Moon moved, so only what that changes is repainted.
+static bool s_map_dirty=true,s_map_relight,s_connected=true;
 static BatteryChargeState s_battery;
 static int16_t s_sun[3];
 static GPoint s_sun_point,s_moon_point;
@@ -72,8 +77,13 @@ static AppTimer *s_motion_timer;
 // last frame between redraws: most redraws repaint everything, but animation
 // frames repaint only what moves, the clock strip (minute change, glide) or
 // the bottom tray (swipe), and everything else stays as it was.
+// An ordinary minute tick paints parts too (minute_redraw): the top bar, the
+// clock, the tray and the place times between clock and map, which is all a
+// minute changes while the map keeps its light, markers and labels.
 #define PART_CLOCK 1
 #define PART_TRAY 2
+#define PART_STATUS 4
+#define PART_PLATE 8
 static bool s_full=true;static uint8_t s_parts;
 static void redraw(void){s_full=true;layer_mark_dirty(s_layer);}
 static void redraw_part(uint8_t part){s_parts|=part;layer_mark_dirty(s_layer);}
@@ -96,19 +106,34 @@ static bool beside_right(void){return art_on()?DISPLAY_ART_RIGHT(s_display):zone
 
 static float fsin(float r) { return (float)sin_lookup((int32_t)(r*TRIG_MAX_ANGLE/6.283185307f))/TRIG_MAX_RATIO; }
 // The map's light: the same sun as the panels' sunrise and sunset (solar.c).
+// The Sun marker sits where the Sun is overhead, projected onto the net
+// (map_net.c) rather than searched for among the map's pixels.
 static void sun_update(time_t now) {
   float sun[3];solar_direction((uint32_t)now,sun);
   for(int i=0;i<3;i++)s_sun[i]=(int16_t)(1024*sun[i]);
+  int x,y;map_net_project(sun,&x,&y);s_sun_point=map_point(x,y);
 }
 static int32_t illumination(int8_t x,int8_t y,int8_t z) { return x*s_sun[0]+y*s_sun[1]+z*s_sun[2]; }
-// sin(-0.833 degrees) and sin(-6 degrees) in illumination's units (127 x 1024).
-#define MAP_SUNRISE -1891
-#define MAP_CIVIL_TWILIGHT -13594
 static bool custom_palette(void) { return palette_applies(s_palette,s_settings[THEME]); }
 static const uint8_t *palette(void) { return custom_palette()?s_palette+PAL_COLORS:PALETTES[s_settings[THEME]]; }
 static GColor color(int i) { return (GColor){.argb=palette()[i]}; }
 static GColor mark_color(int i) { return (GColor){.argb=s_settings[HEADER_SIZE+i*ZONE_SIZE+70]}; }
 
+// The Moon marker, like the Sun's, is projected where the Moon is overhead.
+static void moon_update(void){
+  if(!settings_map_moon(s_settings))return;
+  time_t now=time(NULL);float d[3];int x,y;lunar_direction((uint32_t)(now-now%300),d);map_net_project(d,&x,&y);s_moon_point=map_point(x,y);
+}
+static uint8_t s_light_classes[MAP_LIGHT_TILES];
+static bool read_light(void *context,uint32_t offset,void *buffer,uint32_t length){
+  (void)context;static ResHandle handle;if(!handle)handle=resource_get_handle(RESOURCE_ID_MAP_LIGHT);
+  return resource_load_byte_range(handle,offset,buffer,length)==length;
+}
+typedef struct {uint8_t *data;int stride;const uint8_t *palette;bool rotated,edges;} MapPaint;
+static void paint_light(void *context,int x,int y,uint8_t flags,bool night){
+  const MapPaint *m=context;
+  m->data[map_y(y,m->rotated)*m->stride+map_x(x,m->rotated)]=m->edges&&(flags&4)?m->palette[5]:m->palette[(flags&3)+(night?2:0)];
+}
 static void rebuild_map(void) {
   int w=200,h=104;
   if(s_map && (w!=s_map_w || h!=s_map_h)){gbitmap_destroy(s_map);s_map=NULL;}
@@ -118,27 +143,38 @@ static void rebuild_map(void) {
   ResHandle resource=resource_get_handle(RESOURCE_ID_MAP_LANDSCAPE);
   uint8_t row[200*4];
   uint8_t *data=gbitmap_get_data(s_map);int stride=gbitmap_get_bytes_per_row(s_map);
-  const uint8_t *p=palette();int32_t closest=-200000;
-  bool moon_on=settings_map_moon(s_settings),rotated=settings_map_rotated(s_settings);int16_t moon[3]={0};int moon_best=200000;
-  if(moon_on){time_t now=time(NULL);float d[3];lunar_direction((uint32_t)(now-now%300),d);for(int k=0;k<3;k++)moon[k]=(int16_t)(127*d[k]+(d[k]<0?-.5f:.5f));}
+  const uint8_t *p=palette();bool rotated=settings_map_rotated(s_settings);
+  moon_update();
   for(int y=0;y<h;y++) {
     if(resource_load_byte_range(resource,y*w*4,row,w*4)!=(size_t)w*4){gbitmap_destroy(s_map);s_map=NULL;return;}
     for(int x=0;x<w;x++) {
       uint8_t *r=row+x*4;int kind=r[3]&3;uint8_t c=p[0];
       if(kind) {
         int32_t light=illumination((int8_t)r[0],(int8_t)r[1],(int8_t)r[2]);
-        if(light>closest){closest=light;s_sun_point=map_point(x,y);}
-        if(moon_on){int distance=0;for(int k=0;k<3;k++){int d=(int8_t)r[k]-moon[k];distance+=d*d;}if(distance<moon_best){moon_best=distance;s_moon_point=map_point(x,y);}}
         // Day while the sun is up, a checkerboard through civil twilight, then
         // night (mapNight() in shared/solar.js).
-        bool night=(s_settings[FLAGS]&DAY_NIGHT)&&(light<MAP_CIVIL_TWILIGHT||(light<MAP_SUNRISE&&((x+y)&1)));
+        bool night=(s_settings[FLAGS]&DAY_NIGHT)&&map_night(light,x,y);
         c=p[kind+(night?2:0)];
         if((s_settings[FLAGS]&EDGES)&&(r[3]&4))c=p[5];
       }else if(DISPLAY_MAP_BACKGROUND(s_display)&&(r[3]&(4<<DISPLAY_MAP_BACKGROUND(s_display))))c=p[5]; // map background, in the edge colour
       data[map_y(y,rotated)*stride+map_x(x,rotated)]=c;
     }
   }
-  s_map_dirty=false;
+  // Each tile's shading, for the relights that follow (relight_map).
+  if(s_settings[FLAGS]&DAY_NIGHT)map_light_update(s_sun,read_light,NULL,NULL,NULL,s_light_classes,NULL);
+  s_map_dirty=s_map_relight=false;
+}
+// A relight: only tiles whose shading can have changed are read and repainted
+// (map_light.c), with the same result as rebuild_map. Without day and night,
+// only the Moon moves.
+static void relight_map(void){
+  s_map_relight=false;
+  if(!s_map){rebuild_map();return;}
+  moon_update();
+  if(!(s_settings[FLAGS]&DAY_NIGHT))return;
+  MapPaint paint={gbitmap_get_data(s_map),gbitmap_get_bytes_per_row(s_map),palette(),settings_map_rotated(s_settings),(s_settings[FLAGS]&EDGES)!=0};
+  // A failed read leaves tiles half done: paint the whole map instead.
+  if(!map_light_update(s_sun,read_light,NULL,paint_light,&paint,s_light_classes,NULL))rebuild_map();
 }
 static void text(GContext *ctx,const char *str,GFont font,GRect rect,GTextAlignment align,GColor ink) {
   graphics_context_set_text_color(ctx,ink);
@@ -152,18 +188,16 @@ static void pixel_rows(GContext *ctx,const uint32_t *rows,int width,int height,i
   for(int row=0;row<height;row++)for(int col=0;col<width;col++)
     if(rows[row]&(1u<<(width-1-col)))graphics_draw_pixel(ctx,GPoint(x+col,y+row));
 }
-static void marker_glyph(GContext *ctx,GPoint p,uint8_t icon,GColor c) {
+// Place `place`'s glyph, built in or drawn by the wearer, centred on p.
+static void marker_glyph(GContext *ctx,GPoint p,int place,GColor c) {
+  uint8_t rows[GLYPH_ROWS];place_glyph_rows(s_glyphs,place,s_settings[HEADER_SIZE+place*ZONE_SIZE+10],rows);
   graphics_context_set_stroke_color(ctx,c);
-  for(int y=0;y<MARKER_SIZE;y++)for(int x=0;x<MARKER_SIZE;x++)
-    if(MARKER_ROWS[icon][y] & (1u<<(MARKER_SIZE-1-x)))
-      graphics_draw_pixel(ctx,GPoint(p.x+x-MARKER_SIZE/2,p.y+y-MARKER_SIZE/2));
+  for(int y=0;y<GLYPH_ROWS;y++)for(int x=0;x<GLYPH_ROWS;x++)
+    if(rows[y]&(1u<<(GLYPH_ROWS-1-x)))graphics_draw_pixel(ctx,GPoint(p.x+x-GLYPH_ROWS/2,p.y+y-GLYPH_ROWS/2));
 }
-static void marker(GContext *ctx,GPoint p,uint8_t icon,GColor c) {
+static void marker(GContext *ctx,GPoint p,int place,GColor c) {
   pixel_rows(ctx,MARKER_HALO,7,7,p.x-3,p.y-3,color(0));
-  graphics_context_set_stroke_color(ctx,c);
-  for(int y=0;y<MARKER_SIZE;y++)for(int x=0;x<MARKER_SIZE;x++)
-    if(MARKER_ROWS[icon][y] & (1u<<(MARKER_SIZE-1-x)))
-      graphics_draw_pixel(ctx,GPoint(p.x+x-MARKER_SIZE/2,p.y+y-MARKER_SIZE/2));
+  marker_glyph(ctx,p,place,c);
 }
 static int ordinal(const struct tm *t) {
   return calendar_ordinal(t->tm_year+1900,t->tm_mon+1,t->tm_mday);
@@ -471,7 +505,7 @@ static void draw_zones(GContext *ctx,time_t now,struct tm *local,int visible) {
       label[strlen(label)-1]=0;
     bool daylight=illumination((int8_t)z[11],(int8_t)z[12],(int8_t)z[13])>=0;
     pixel_rows(ctx,DAY_NIGHT_GLYPHS[daylight],5,5,x+1,y+5,mark_color(i));
-    if(glyph)marker(ctx,GPoint(x+10,y+7),z[10],mark_color(i));
+    if(glyph)marker(ctx,GPoint(x+10,y+7),i,mark_color(i));
     text(ctx,label,s_small,GRect(x+(glyph?16:9),y,glyph?28:38,14),GTextAlignmentLeft,mark_color(i));
     if(stale)snprintf(day,sizeof(day),"?");
     else if(delta)snprintf(day,sizeof(day),"%+d",delta);else day[0]=0;
@@ -479,7 +513,7 @@ static void draw_zones(GContext *ctx,time_t now,struct tm *local,int visible) {
     if(!is_24()){hour%=12;if(!hour)hour=12;}
     snprintf(hours,sizeof(hours),"%02d:%02d",hour,zone.tm_min);
     text(ctx,hours,s_zone,GRect(x+2,y+13,52,22),GTextAlignmentLeft,color(6));
-    if(!is_24())text(ctx,zone.tm_hour<12?"A":"P",s_small,GRect(x+53,y+16,7,15),GTextAlignmentLeft,color(7));
+    if(!is_24())text(ctx,zone.tm_hour<12?"A":"P",s_small,GRect(x+53,y+18,7,15),GTextAlignmentLeft,color(7));
     if(i==pulsing_place())line(ctx,x,y+35,x+59,y+35,mark_color(i));
   }
 }
@@ -529,9 +563,12 @@ static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int
     struct tm zone=zone_time(z,now,local,&delta,&stale);char label[8];
     snprintf(label,sizeof(label),"%.7s",(const char *)z);
     bool tall=DISPLAY_ZONE_TALL(s_display);
-    ZoneRow r;zone_row(&r,label,zone.tm_hour,zone.tm_min,is_24(),delta,stale,beside_right(),tall,caps_measure,s_caps);
+    bool icon=glyphs_beside(s_glyphs);
+    ZoneRow r;zone_row(&r,label,zone.tm_hour,zone.tm_min,is_24(),delta,stale,beside_right(),tall,icon,caps_measure,s_caps);
     int base=y+zone_row_baseline(row++,count,tall);
     CapsPen mark={ctx,faded(mark_color(i),alpha)},ink={ctx,faded(color(6),alpha)},accent={ctx,faded(color(7),alpha)};
+    // The icon is centred on the capitals, as in the strip.
+    if(icon)marker_glyph(ctx,GPoint(x+r.glyph_x,base-4),i,mark.color);
     caps_draw(s_caps,r.label,x+r.label_x,base,false,caps_span,&mark);
     if(tall){graphics_context_set_stroke_color(ctx,ink.color);zone_tall_draw(r.time,x+r.time_x,base,tall_plot,ctx);}
     else caps_draw(s_caps,r.time,x+r.time_x,base,false,caps_span,&ink);
@@ -564,7 +601,7 @@ static void draw_zone_strip(GContext *ctx,time_t now,const struct tm *local,int 
   int base=top+(compact?ZONE_STRIP_COMPACT_BASELINE:ZONE_STRIP_BASELINE),glyph_y=top+(compact?ZONE_STRIP_COMPACT_GLYPH_Y:ZONE_STRIP_GLYPH_Y);CapsPen ink={ctx,color(6)},accent={ctx,color(7)};
   for(int k=0;k<n;k++){
     const ZoneStripItem *e=&items[k];int i=index[k];CapsPen mark={ctx,mark_color(i)};
-    marker_glyph(ctx,GPoint(e->glyph_x,glyph_y),s_settings[HEADER_SIZE+i*ZONE_SIZE+10],mark_color(i));
+    marker_glyph(ctx,GPoint(e->glyph_x,glyph_y),i,mark_color(i));
     caps_draw(s_caps,e->label,e->label_x,base,false,caps_span,&mark);
     if(compact)caps_draw(s_caps,e->time,e->time_x,base,false,caps_span,&ink);
     else{graphics_context_set_stroke_color(ctx,ink.color);zone_tall_draw(e->time,e->time_x,base,tall_plot,ctx);}
@@ -608,6 +645,12 @@ static void marker_spots(time_t now,int visible,MarkerSpots *s){
     s->inner[i]=(MapRect){(int16_t)(s->layout[i].x-3),(int16_t)(s->layout[i].y-3),(int16_t)(s->layout[i].x+3),(int16_t)(s->layout[i].y+3)};
     for(int k=0;k<s->hull_count;k++)if(s->grouped[i]&&!memcmp(&s->hulls[k].outer,o,sizeof(*o)))s->inner[i]=s->hulls[k].inner;
   }
+}
+// The marker layout of the last full paint, which the partial paints keep
+// (the nameplate or place-time strip, your bullseye) and a minute tick checks.
+static MarkerSpots s_spots;static int s_spots_visible=-1;
+static void draw_you(GContext *ctx,int mx,int my){
+  if(s_spots.you>=0)pixel_rows(ctx,HERE_GLYPH,HERE_SIZE,HERE_SIZE,mx+s_spots.layout[s_spots.you].x-HERE_SIZE/2,my+s_spots.layout[s_spots.you].y-HERE_SIZE/2,color(6));
 }
 // Placement inputs from this frame's marker layout.
 // Map time size from DISPLAY byte 3 (display.h): code 0 medium, 1 small, 2 large,
@@ -766,23 +809,46 @@ static void update_beside(int visible){
 // it, the status line when AM/PM moves there with the glide).
 static void draw_parts(GContext *ctx,time_t now,struct tm *local,int visible){
   bool beside=s_beside,tray=s_parts&PART_TRAY;
+  // The strip fills its own band; in a full paint only your bullseye and the
+  // clock come after it, so they follow it here too.
+  if(s_parts&PART_PLATE&&s_spots.plate){draw_plate(ctx,now,local,visible,s_spots.plate_x,s_spots.plate_y);draw_you(ctx,s_settings[MAP_X],s_settings[MAP_Y]);}
   if(s_parts&PART_CLOCK){
     update_beside(visible);draw_time(ctx,local,now,visible);
     if(clock_layout(visible,NULL,NULL,NULL)+clock_height()>TRAY_Y)tray=true;
   }
   if(tray)draw_tray_section(ctx,now,local,visible);
-  if(s_beside!=beside)draw_status_section(ctx,local,now);
+  if(s_parts&PART_STATUS||s_beside!=beside)draw_status_section(ctx,local,now);
+}
+// A minute tick. The map keeps its pixels unless it was relit, carries place
+// times, or its markers moved (your city going stale, say): then, or while
+// the markers pulse, the whole face is painted as before.
+static void minute_redraw(void){
+  int visible=layer_get_unobstructed_bounds(s_layer).size.h;
+  if(s_map_dirty||s_map_relight||s_animation||visible!=s_spots_visible||zones_on_map((s_display[2]>>2)&3,zone_position(),zones_in_panel(visible))){redraw();return;}
+  static MarkerSpots now_spots;marker_spots(time(NULL),visible,&now_spots);
+  if(memcmp(&now_spots,&s_spots,sizeof(now_spots))){redraw();return;}
+  uint8_t parts=PART_STATUS|PART_CLOCK|PART_TRAY|(strip_on(visible)?PART_PLATE:0);
+  // Measurement-only builds (tools/energy/): what the top bar's and the
+  // bottom panel's minute repaints cost. Never defined in a release.
+#ifdef MEASURE_NO_STATUS
+  parts&=~PART_STATUS;
+#endif
+#ifdef MEASURE_NO_TRAY
+  parts&=~PART_TRAY;
+#endif
+  redraw_part(parts);
 }
 static void update_proc(Layer *layer,GContext *ctx) {
   time_t now=time(NULL);struct tm local=*localtime(&now);
   graphics_context_set_antialiased(ctx,false);
-  if(!s_full&&s_parts&&!s_map_dirty){
+  if(!s_full&&s_parts&&!s_map_dirty&&!s_map_relight){
     draw_parts(ctx,now,&local,layer_get_unobstructed_bounds(layer).size.h);
     s_parts=0;motion_continue();return;
   }
   s_full=false;s_parts=0;
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,layer_get_bounds(layer),0,GCornerNone);
   if(s_map_dirty){sun_update(now-now%300);rebuild_map();}
+  else if(s_map_relight){sun_update(now-now%300);relight_map();}
   int mx=s_settings[MAP_X],my=s_settings[MAP_Y];
   if(s_map)graphics_draw_bitmap_in_rect(ctx,s_map,GRect(mx,my,s_map_w,s_map_h));
   else text(ctx,"MAP UNAVAILABLE",s_small,GRect(0,90,200,30),GTextAlignmentCenter,color(6));
@@ -805,25 +871,25 @@ static void update_proc(Layer *layer,GContext *ctx) {
   uint8_t when=(s_display[2]>>2)&3;
   // Clearings (a group's hull inside) first, then map times, then hull outlines
   // (so a grouped leader starts at its hull), then glyphs.
-  static MarkerSpots spots;marker_spots(now,visible,&spots);
-  for(int i=0;i<3;i++){int k=spots.index[i];if(k>=0&&!spots.grouped[k])pixel_rows(ctx,MARKER_HALO,7,7,mx+spots.layout[k].x-3,my+spots.layout[k].y-3,color(0));}
+  marker_spots(now,visible,&s_spots);
+  for(int i=0;i<3;i++){int k=s_spots.index[i];if(k>=0&&!s_spots.grouped[k])pixel_rows(ctx,MARKER_HALO,7,7,mx+s_spots.layout[k].x-3,my+s_spots.layout[k].y-3,color(0));}
   // Your bullseye keeps its clearing even in a group: it stands proud of the hull.
-  if(spots.you>=0)pixel_rows(ctx,HERE_HALO,HERE_SIZE+2,HERE_SIZE+2,mx+spots.layout[spots.you].x-HERE_SIZE/2-1,my+spots.layout[spots.you].y-HERE_SIZE/2-1,color(0));
+  if(s_spots.you>=0)pixel_rows(ctx,HERE_HALO,HERE_SIZE+2,HERE_SIZE+2,mx+s_spots.layout[s_spots.you].x-HERE_SIZE/2-1,my+s_spots.layout[s_spots.you].y-HERE_SIZE/2-1,color(0));
   HullPen ground={ctx,mx,my};graphics_context_set_stroke_color(ctx,color(0));
-  for(int k=0;k<spots.hull_count;k++)map_hull_ground(&spots.hulls[k],hull_pixel,&ground);
-  if(s_map&&zones_on_map(when,zone_position(),panel_zones))draw_map_times(ctx,now,&local,mx,my,&spots);
+  for(int k=0;k<s_spots.hull_count;k++)map_hull_ground(&s_spots.hulls[k],hull_pixel,&ground);
+  if(s_map&&zones_on_map(when,zone_position(),panel_zones))draw_map_times(ctx,now,&local,mx,my,&s_spots);
   // Hull outlines in the ground color, like each glyph's clearing ring.
   graphics_context_set_stroke_color(ctx,color(0));
-  for(int k=0;k<spots.hull_count;k++)map_hull_outline(&spots.hulls[k],hull_pixel,&ground);
-  for(int i=0;i<3;i++)if(spots.index[i]>=0) {
-    const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;const MapMarker *m=&spots.layout[spots.index[i]];GPoint pos=GPoint(mx+m->x,my+m->y);
-    marker_glyph(ctx,pos,z[10],mark_color(i));
+  for(int k=0;k<s_spots.hull_count;k++)map_hull_outline(&s_spots.hulls[k],hull_pixel,&ground);
+  for(int i=0;i<3;i++)if(s_spots.index[i]>=0) {
+    const MapMarker *m=&s_spots.layout[s_spots.index[i]];GPoint pos=GPoint(mx+m->x,my+m->y);
+    marker_glyph(ctx,pos,i,mark_color(i));
     if(i==pulsing_place())pixel_rows(ctx,PULSE_GLYPHS[s_frame%4],PULSE_SIZE,PULSE_SIZE,pos.x-8,pos.y-8,mark_color(i));
   }
   // You: a bullseye one size up, in the clock's ink.
   // The Dymaxion nameplate, in the accent color, when there is room.
-  if(spots.plate)draw_plate(ctx,now,&local,visible,spots.plate_x,spots.plate_y);
-  if(spots.you>=0)pixel_rows(ctx,HERE_GLYPH,HERE_SIZE,HERE_SIZE,mx+spots.layout[spots.you].x-HERE_SIZE/2,my+spots.layout[spots.you].y-HERE_SIZE/2,color(6));
+  if(s_spots.plate)draw_plate(ctx,now,&local,visible,s_spots.plate_x,s_spots.plate_y);
+  draw_you(ctx,mx,my);s_spots_visible=visible;
   update_beside(visible);
   draw_time(ctx,&local,now,visible);
   draw_tray_section(ctx,now,&local,visible);
@@ -883,17 +949,17 @@ static void request_sync(bool full) {
 }
 static void tick(struct tm *local_time,TimeUnits changed) {
   // The terminator moves about a pixel every few minutes: relight the map on the
-  // chosen interval (every other hour in the night saver) instead of reading
-  // and shading all 20,800 pixels each minute. The optional Moon follows the
+  // chosen interval (every other hour in the night saver), repainting only the
+  // tiles near the terminator (relight_map). The optional Moon follows the
   // same cadence, including when day/night shading is off. With both off,
   // only the place times' daylight dots follow the sun every five minutes.
   time_t now=time(NULL);
-  if(power_relight(power(),(s_settings[FLAGS]&DAY_NIGHT)||settings_map_moon(s_settings),local_time->tm_hour,local_time->tm_min,quiet()))s_map_dirty=true;
+  if(power_relight(power(),(s_settings[FLAGS]&DAY_NIGHT)||settings_map_moon(s_settings),local_time->tm_hour,local_time->tm_min,quiet()))s_map_relight=true;
   else if(!(s_settings[FLAGS]&DAY_NIGHT)&&local_time->tm_min%5==0)sun_update(now-now%300);
   // Paused in the dark (night saver): with the backlight off the screen keeps
   // its last frame; the backlight coming on redraws it (backlight_changed),
   // and while it stays on the minute keeps up.
-  if(!power_dark_paused(power(),local_time->tm_hour,quiet())||light_is_on())redraw();
+  if(!power_dark_paused(power(),local_time->tm_hour,quiet())||light_is_on())minute_redraw();
   int page=panels_page();if(panels_tick(now))tray_start(page);pulse_on_zones();
   if(s_clock_face)clock_prepare(local_time,now,true);
   int interval=panels_refresh_minutes();if(!(s_city[1]&1)&&interval>60)interval=60;
@@ -933,6 +999,11 @@ static void received(DictionaryIterator *iter,void *context) {
     full=true;
     memcpy(s_city,city->value->data,CITY_SIZE);persist_write_data(2,s_city,CITY_SIZE);
   }
+  Tuple *glyphs=dict_find(iter,MESSAGE_KEY_GLYPHS);
+  if(glyphs&&glyphs->type==TUPLE_BYTE_ARRAY&&glyphs_valid(glyphs->value->data,glyphs->length)&&memcmp(s_glyphs,glyphs->value->data,GLYPHS_SIZE)){
+    full=true;
+    memcpy(s_glyphs,glyphs->value->data,GLYPHS_SIZE);persist_write_data(5,s_glyphs,GLYPHS_SIZE);
+  }
   Tuple *t=dict_find(iter,MESSAGE_KEY_SETTINGS);
   if(t&&t->type==TUPLE_BYTE_ARRAY&&settings_valid(t->value->data,t->length)&&memcmp(s_settings,t->value->data,SETTINGS_SIZE)){
     full=true;
@@ -971,6 +1042,8 @@ static void init(void) {
   uint8_t display[DISPLAY_SIZE];int display_length=persist_read_data(3,display,sizeof(display));
   if(display_normalize(s_display,display,display_length)&&memcmp(display,s_display,DISPLAY_SIZE))
     persist_write_data(3,s_display,DISPLAY_SIZE);
+  uint8_t glyphs[GLYPHS_SIZE];int glyphs_length=persist_read_data(5,glyphs,sizeof(glyphs));
+  if(glyphs_valid(glyphs,glyphs_length))memcpy(s_glyphs,glyphs,GLYPHS_SIZE);
   uint8_t custom[PALETTE_SIZE];int palette_length=persist_read_data(4,custom,sizeof(custom));
   if(palette_valid(custom,palette_length))memcpy(s_palette,custom,PALETTE_SIZE);
   s_small=fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_DRAFT_12));

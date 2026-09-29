@@ -74,8 +74,11 @@ export function tallPixels(text) {
 // `measure` returns a string's advance width in the capitals.
 // Tall rows drop the pixel after A/P at the edge, a pixel of the gap before
 // the time and the extra pixel between label and day offset.
-export function zoneRow({label, hour, minute, clock24, delta = 0, stale = false, side = 'left', tall = false}, measure) {
-  const {x, right} = zoneColumn(side), two = n => String(n).padStart(2, '0');
+// With `icon`, the place glyph leads the row (centred at glyphX) and the label
+// starts 7 pixels later: the glyph and 2.
+export const ZONE_ROW_GLYPH_ADVANCE = 7;
+export function zoneRow({label, hour, minute, clock24, delta = 0, stale = false, side = 'left', tall = false, icon = false}, measure) {
+  const {x: start, right} = zoneColumn(side), x = start + (icon ? ZONE_ROW_GLYPH_ADVANCE : 0), two = n => String(n).padStart(2, '0');
   const h = clock24 ? hour : hour % 12 || 12;
   const time = two(h) + ':' + two(minute), suffix = clock24 ? '' : hour < 12 ? 'A' : 'P';
   const day = stale ? '?' : delta ? (delta > 0 ? '+' : '') + delta : '';
@@ -83,7 +86,9 @@ export function zoneRow({label, hour, minute, clock24, delta = 0, stale = false,
   const room = timeX - ZONE_COLUMN.gap + trim - x - (day ? measure(day) + 1 - trim : 0);
   let text = label.toUpperCase().slice(0, 7);
   while (text && measure(text) > room) text = text.slice(0, -1);
-  return {label: text, labelX: x, day, dayX: x + measure(text) + 1 - trim, time, timeX, suffix, suffixX};
+  // With an icon, the glyph names the place: a label cut to one letter is dropped.
+  if (icon && text.length < 2 && label.length > 1) text = '';
+  return {glyphX: start + 2, label: text, labelX: x, day, dayX: x + measure(text) + 1 - trim, time, timeX, suffix, suffixX};
 }
 
 // Place times between the clock and the map, in the nameplate's place (the

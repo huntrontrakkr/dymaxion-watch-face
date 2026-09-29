@@ -84,6 +84,9 @@ See the [native power profile](POWER-PROFILE.md) for measured rendering
 costs, the animation optimization, and the assumptions behind the battery model.
 The [clock drawing experiment](RENDER-EFFICIENCY.md) measures bitmap rendering
 against 0.5.2, including the firmware graphics routines in the comparison.
+[Drawing the map less often](MAP-RELIGHT.md) covers the minute tick that
+leaves the map alone, the tile relight that reads only what the terminator can
+reach, and the projected Sun and Moon markers.
 
 The project also remains compatible with opening the `watchface` folder in the
 [Pebble Browser Emulator](https://github.com/huntrontrakkr/pebble-browser-emulator).

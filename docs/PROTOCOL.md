@@ -28,7 +28,7 @@ configuration, then persists it as one record under key 1 (below Pebble's
 | --- | --- |
 | 0–7 | ASCII label, max 7 characters plus NUL |
 | 8–9 | Projected map pixel x/y, relative to the unrotated map origin. The watch applies rotation. |
-| 10 | Map glyph ID, 0–11: diamond, point, ring, triangle, plus, dagger, double dagger, asterisk, pilcrow, check, cross, number |
+| 10 | Map glyph ID, 0–11: diamond, point, ring, triangle, plus, dagger, double dagger, asterisk, pilcrow, check, cross, number; 12: the place's own drawn glyph, from `GLYPHS` |
 | 11–13 | Signed unit direction components scaled by 127 |
 | 14–15 | Current UTC offset in minutes, signed int16 |
 | 16 | Number of cached transitions, 0–8 |
@@ -291,3 +291,15 @@ legacy `segmentGrid` field is dropped; legacy
 `framing` objects are discarded without changing palettes, locations or layout.
 `SETTINGS` remains unchanged at 232 bytes / version 7. The city and display
 records are independently validated and persisted only when changed.
+
+`GLYPHS` is 17 bytes, persisted under key 5 (`shared/glyph-protocol.js`,
+`place_glyphs.c`): version 1; an options byte whose bit 0 shows each place's
+glyph before its name in the place times beside the clock (off by default,
+and in watches that have never received the packet); then five row bytes for
+each of the three places, bit 4 the leftmost pixel. A place draws its rows
+only when its glyph ID is 12; places with a built-in glyph send zero rows.
+The watch refuses other versions, other option bits, rows of 32 or more and
+any other length. In exported JSON a drawn glyph is `glyph`, five strings of
+`.` and `#`, beside `icon: 12`; a place with a built-in glyph may keep an
+earlier drawing in `glyph` for later, and JSON `placeIconsBeside` defaults to
+false.

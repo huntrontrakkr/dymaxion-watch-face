@@ -37,8 +37,17 @@ export const LEGACY_MARKER_IDS=[
   0,1,2,3,3,0,0,2,3,0,2,4,1,3,2,1,1,3,2,4,3
 ];
 
+// A place can instead carry its own drawn glyph (place.glyph, five rows of
+// '.' and '#'): its icon is then CUSTOM_MARKER, one past the built-in set.
+export const CUSTOM_MARKER=MARKERS.length;
+export const BLANK_GLYPH=Object.freeze(Array(MARKER_SIZE).fill('.'.repeat(MARKER_SIZE)));
+export const validGlyph=rows=>Array.isArray(rows)&&rows.length===MARKER_SIZE&&rows.every(r=>typeof r==='string'&&/^[.#]{5}$/.test(r));
+export const placeGlyph=place=>place.icon===CUSTOM_MARKER?(validGlyph(place.glyph)?place.glyph:BLANK_GLYPH):MARKERS[place.icon].rows;
+export const placeGlyphMeaning=place=>place.icon===CUSTOM_MARKER?'Your own drawing':MARKERS[place.icon].meaning;
+// `marker` is a built-in glyph's index or a drawn glyph's rows.
 export function drawMarkerPixels(ctx,marker,x,y,color){
+  const rows=Array.isArray(marker)?marker:MARKERS[marker].rows;
   ctx.fillStyle=color;
   for(let row=0;row<MARKER_SIZE;row++)for(let col=0;col<MARKER_SIZE;col++)
-    if(MARKERS[marker].rows[row][col]==='#')ctx.fillRect(x+col-2,y+row-2,1,1);
+    if(rows[row][col]==='#')ctx.fillRect(x+col-2,y+row-2,1,1);
 }

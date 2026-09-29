@@ -1,4 +1,5 @@
 import {chromium} from '@playwright/test';
+import {MARKERS} from '../shared/markers.js';
 import assert from 'node:assert/strict';
 import {mkdirSync,readFileSync} from 'node:fs';
 import vm from 'node:vm';
@@ -65,7 +66,22 @@ try{
   await page.getByRole('tab',{name:'Places',exact:true}).click();
   assert.equal(await page.locator('.marker-control canvas').first().evaluate(c=>c.clientWidth/c.width),3,'marker samples enlarge each pixel exactly three times');
   assert.equal(await page.locator('#marker-gallery .marker-tile').count(),12);
-  assert.equal(await page.getByLabel('Symbol for place 1',{exact:true}).locator('option').count(),12);
+  assert.equal(await page.getByLabel('Symbol for place 1',{exact:true}).locator('option').count(),13,'twelve glyphs and Draw your own');
+  // Drawing your own glyph starts from the one chosen before; a tap toggles a pixel.
+  const stored=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('dymaxion-workshop-v1')).places[2]);
+  const before=await stored();
+  await page.getByLabel('Symbol for place 3',{exact:true}).selectOption('12');
+  const grid=page.getByRole('group',{name:'Draw the glyph for place 3',exact:true});
+  assert.equal(await grid.getByRole('button').count(),25);
+  assert.deepEqual((await stored()).glyph,MARKERS[before.icon].rows,'the drawing starts from the glyph chosen before');
+  assert.equal((await stored()).icon,12);
+  const drawnFirst=(await stored()).glyph;
+  await grid.getByRole('button',{name:'Row 1, column 1',exact:true}).click();
+  assert.equal((await stored()).glyph[0][0],drawnFirst[0][0]==='#'?'.':'#','a tap toggles the pixel');
+  await page.locator('[data-glyph-clear]').nth(2).click();
+  assert.deepEqual((await stored()).glyph,Array(5).fill('.....'),'Clear empties the grid');
+  await page.getByLabel('Symbol for place 3',{exact:true}).selectOption(String(before.icon));
+  assert.equal(await grid.isVisible(),false,'the grid shows only for a drawn glyph');
   await page.getByLabel('Enable place 1',{exact:true}).uncheck();
   await page.getByLabel('Symbol for place 1',{exact:true}).selectOption('4');
   await page.getByLabel('Color for place 1',{exact:true}).fill('#cc7700');
@@ -156,7 +172,14 @@ try{
   assert.equal(await mobile.locator('#stacked').count(),0,'the stacked clock is retired');
   await mobile.locator('#moonIndicator').uncheck();assert.equal(await mobile.locator('#moonIndicator').isChecked(),false);
   assert.equal(await mobile.locator('#batteryGauge').isChecked(),false);await mobile.locator('#batteryGauge').check();
-  assert.equal(await mobile.locator('[data-key=icon]').first().locator('option').count(),12);
+  assert.equal(await mobile.locator('[data-key=icon]').first().locator('option').count(),13);
+  // The phone offers the same drawing grid.
+  await mobile.locator('[data-key=icon]').nth(1).selectOption('12');
+  const phoneGrid=mobile.getByRole('group',{name:'Draw the glyph for place 2',exact:true});
+  assert.equal(await phoneGrid.getByRole('button').count(),25);
+  assert.match(await mobile.locator('[data-symbol-meaning]').nth(1).textContent(),/own drawing/);
+  const cell=phoneGrid.getByRole('button',{name:'Row 3, column 3',exact:true}),was=await cell.getAttribute('aria-pressed');
+  await cell.click();assert.notEqual(await cell.getAttribute('aria-pressed'),was,'a tap toggles the pixel');
   await mobile.locator('[data-key=icon]').first().selectOption('3');
   assert.match(await mobile.locator('[data-symbol-meaning]').first().textContent(),/point up/);
   await mobile.getByLabel('Color for place 1',{exact:true}).fill('#cc7700');

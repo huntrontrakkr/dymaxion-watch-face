@@ -16,7 +16,10 @@ enum {ZONE_TIMES_PANEL,ZONE_TIMES_WHEN_HIDDEN,ZONE_TIMES_ALWAYS,ZONE_TIMES_COUNT
 enum {ZONE_POSITION_LEFT,ZONE_POSITION_RIGHT,ZONE_POSITION_MAP,ZONE_POSITION_STRIP,ZONE_POSITION_COUNT};
 #define ZONE_TIMES_TURN 64
 #define DISPLAY_NAMEPLATE 128
-typedef struct {char label[8],time[6],suffix[2],day[4];int label_x,time_x,suffix_x,day_x;} ZoneRow;
+typedef struct {char label[8],time[6],suffix[2],day[4];int glyph_x,label_x,time_x,suffix_x,day_x;} ZoneRow;
+// With icons, the place glyph leads the row: glyph_x is its centre, and the
+// label starts ZONE_ROW_GLYPH_ADVANCE (the glyph and 2) later.
+#define ZONE_ROW_GLYPH_ADVANCE 7
 typedef int (*ZoneMeasure)(const char *text,const void *font);
 // Chamfer (4) and the system fonts (5-9) leave room; Broad and Span do not.
 bool zone_column_fits(uint8_t style);
@@ -33,7 +36,7 @@ int zone_row_baseline(int index,int count,bool tall);
 typedef void (*ZoneTallPlot)(int x,int y,void *context);
 int zone_tall_width(const char *text);
 int zone_tall_draw(const char *text,int x,int baseline,ZoneTallPlot plot,void *context);
-void zone_row(ZoneRow *row,const char *label,int hour,int minute,bool clock24,int delta,bool stale,bool right,bool tall,ZoneMeasure measure,const void *font);
+void zone_row(ZoneRow *row,const char *label,int hour,int minute,bool clock24,int delta,bool stale,bool right,bool tall,bool icon,ZoneMeasure measure,const void *font);
 // Place times between the clock and the map (shared/zone-column.js zoneStrip):
 // one line of glyph, label, time (tall by default, small capitals if compact), A/P and day offset per place, spread
 // evenly across the width; labels shorten to three letters, then drop, to fit.
