@@ -163,8 +163,14 @@ try{
   const tapPhone=await browser.newPage({viewport:{width:390,height:844}});tapPhone.on('pageerror',e=>errors.push(e.message));await tapPhone.goto(opened);
   await tapPhone.locator('details').evaluateAll(nodes=>nodes.forEach(d=>d.open=true));await tapPhone.locator('#theme').selectOption('0');
   assert.equal(await tapPhone.locator('#theme option').filter({hasText:'Glizzy'}).count(),0);
-  for(let i=0;i<5;i++)await tapPhone.locator('.page-header .eyebrow').click();
-  assert.equal(await tapPhone.locator('#theme').inputValue(),String(egg));
+  for(let i=0;i<4;i++)await tapPhone.locator('.page-header .eyebrow').click();
+  assert.equal(await tapPhone.locator('#palette-options button',{hasText:'Glizzy'}).count(),0,'four taps are not enough');
+  await tapPhone.locator('.page-header .eyebrow').click();
+  assert.equal(await tapPhone.locator('#theme option').filter({hasText:'Glizzy'}).count(),1,'five taps list it');
+  assert.equal(await tapPhone.locator('#theme').inputValue(),'0','without choosing it');
+  const glizzyChoice=tapPhone.getByRole('button',{name:'People’s Glizzy Stand',exact:true});
+  assert(await glizzyChoice.isVisible(),'the palette picker opens to show it');
+  await glizzyChoice.click();assert.equal(await tapPhone.locator('#theme').inputValue(),String(egg));
   assert.equal(await tapPhone.locator('#save-status').textContent(),'Changes ready to save');await tapPhone.close();
   const eggPage=await browser.newPage();eggPage.on('pageerror',e=>errors.push(e.message));
   await eggPage.goto(base+'?palette=peoples-glizzy-stand');
@@ -179,7 +185,9 @@ try{
   for(let i=0;i<4;i++)await eggPage.locator('.edition').click();
   assert(await eggPage.getByRole('button',{name:'People’s Glizzy Stand',exact:true}).isHidden(),'four taps are not enough');
   await eggPage.locator('.edition').click();
-  assert.equal(await eggPage.getByRole('button',{name:'People’s Glizzy Stand',exact:true}).getAttribute('aria-pressed'),'true');await eggPage.close();
+  const glizzy=eggPage.getByRole('button',{name:'People’s Glizzy Stand',exact:true});
+  assert(await glizzy.isVisible(),'five taps show it');assert.equal(await glizzy.getAttribute('aria-pressed'),'false','and do not choose it');
+  await glizzy.click();assert.equal(await glizzy.getAttribute('aria-pressed'),'true');await eggPage.close();
   await mobile.locator('#preset').selectOption('horizon');await mobile.locator('#theme').selectOption('1');
   assert.equal(await mobile.locator('#stacked').count(),0,'the stacked clock is retired');
   await mobile.locator('#moonIndicator').uncheck();assert.equal(await mobile.locator('#moonIndicator').isChecked(),false);

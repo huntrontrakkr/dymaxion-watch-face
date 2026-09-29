@@ -111,7 +111,9 @@ for(const [id,name] of [['meridian','Meridian'],['horizon','Horizon']]){
   button.innerHTML=`<svg viewBox="0 0 40 46" aria-hidden="true"><path d="${drawings[id]}"/></svg><span>${name}</span>`;
   button.onclick=()=>{Object.assign(settings,presetFor(id,settings.clockDisplay));sync();save();};$('presets').append(button);
 }
-onSecretTaps(document.querySelector('.edition'),()=>{settings.theme=hiddenTheme;settings.customPalette=null;sync();save();});
+// Five taps on the edition mark add the hidden palette to the list for this visit.
+let unlocked=false;
+onSecretTaps(document.querySelector('.edition'),()=>{if(unlocked)return;unlocked=true;sync();switchTab($('tab-character'));document.querySelector(`[data-theme="${hiddenTheme}"]`).scrollIntoView({block:'center'});});
 THEMES.forEach((t,i)=>{
   const button=document.createElement('button');button.type='button';button.dataset.theme=i;button.setAttribute('aria-pressed','false');
   button.setAttribute('aria-label',t.name);
@@ -189,7 +191,7 @@ function sync(){
   $('mapRotation').value=settings.mapRotation;
   $('format').value=settings.format;$('connectionBuzz').value=settings.connectionBuzz;$('mapBackground').value=settings.mapBackground;
   document.querySelectorAll('[data-theme]').forEach(b=>{
-    const id=+b.dataset.theme;b.hidden=!!THEMES[id].hidden&&id!==settings.theme;
+    const id=+b.dataset.theme;b.hidden=!!THEMES[id].hidden&&id!==settings.theme&&!unlocked;
     b.setAttribute('aria-pressed',String(settings.customPalette===null&&id===settings.theme));
   });
   const current=activePreset(settings);document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.preset===current)));
