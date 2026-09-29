@@ -1,7 +1,8 @@
 // Counts the instructions the emulated watch executed in each measured window,
 // from QEMU's logs (tools/energy/qemu-trace.sh, measure.mjs). Every translated
-// block is logged when it is translated (in_asm): its address and its Thumb
-// bytes (OBJD-T, when QEMU has no disassembler) or one line per instruction.
+// block is logged when it is translated (in_asm): its address, then, when QEMU
+// has no disassembler, its Thumb bytes on following lines of up to 32 bytes
+// ("0x08001234:  " then "OBJD-T: 80b5..."); with one, a line per instruction.
 // Inside a window every executed block is logged too (exec, with chaining off
 // so none is skipped). A window's count is the sum, over executed blocks, of
 // the instructions in the block's latest translation.
@@ -49,17 +50,21 @@ export async function countTrace(dir){
       }
       if(line.startsWith('IN:')){close();inBlock=true;continue;}
       if(!inBlock)continue;
-      const m=/^0x([0-9a-f]+):\s+(.*)$/.exec(line);
+      if(line.startsWith('OBJD-T:')){hex+=line.slice(7).replace(/\s+/g,'');continue;}
+      const m=/^0x([0-9a-f]+):\s*(.*)$/.exec(line);
       if(m){
         if(pc===null)pc=parseInt(m[1],16);
         const rest=m[2].trim();
         if(rest.startsWith('OBJD-T:'))hex+=rest.slice(7).replace(/\s+/g,'');
-        else lines++;
+        else if(rest)lines++;
       }else if(!line.trim()||line.startsWith('---')){close();inBlock=false;}
     }
     close();
     if(w)windows.push(w);
   }
+  // Every block one instruction long means the translations were not read.
+  const executed=windows.reduce((n,w)=>n+w.blocks,0),counted=windows.reduce((n,w)=>n+w.total,0);
+  if(executed&&counted<=executed)throw new Error(`count: ${counted} instructions in ${executed} executed blocks; the translation log was not understood`);
   return {windows,unknown,ambiguous};
 }
 if(import.meta.url===`file://${process.argv[1]}`)console.log(JSON.stringify(await countTrace(process.argv[2]),null,1));

@@ -1,4 +1,5 @@
 #include "map_light.h"
+#include <stdlib.h>
 enum {LIGHT_DAY,LIGHT_NIGHT,LIGHT_CHECKER,LIGHT_MIXED};
 #define CHUNK 16
 // The shading every pixel within `reach` of light `c` shares, if any.
@@ -21,12 +22,18 @@ static bool fetch(MapLightRead read,void *context,uint32_t offset,void *buffer,u
   if(stats){stats->reads++;stats->bytes+=length;}
   return read(context,offset,buffer,length);
 }
+// The table is read whole (1,848 bytes, freed on return) so every later read
+// moves forward through the file: blocks follow the table in tile order.
+// Without the memory, it is read in chunks between the blocks instead.
 bool map_light_update(const int16_t sun[3],MapLightRead read,void *rc,MapLightPaint paint,void *pc,uint8_t classes[MAP_LIGHT_TILES],MapLightStats *stats){
   int32_t size=length_ceil(sun);
-  uint8_t table[CHUNK*8];
-  for(int first=0;first<MAP_LIGHT_TILES;first+=CHUNK){
+  uint8_t chunk[CHUNK*8],*whole=malloc(MAP_LIGHT_TILES*8);
+  if(whole&&!fetch(read,rc,MAP_LIGHT_TABLE,whole,MAP_LIGHT_TILES*8,stats)){free(whole);return false;}
+  bool ok=true;
+  for(int first=0;ok&&first<MAP_LIGHT_TILES;first+=CHUNK){
     int count=MAP_LIGHT_TILES-first<CHUNK?MAP_LIGHT_TILES-first:CHUNK;
-    if(!fetch(read,rc,MAP_LIGHT_TABLE+first*8,table,count*8,stats))return false;
+    const uint8_t *table=whole?whole+first*8:chunk;
+    if(!whole&&!fetch(read,rc,MAP_LIGHT_TABLE+first*8,chunk,count*8,stats)){ok=false;break;}
     for(int k=0;k<count;k++){
       const uint8_t *e=table+k*8;int i=first+k;
       int shade=shading(light_of((const int8_t *)e,sun),size*e[3]);
@@ -37,7 +44,7 @@ bool map_light_update(const int16_t sun[3],MapLightRead read,void *rc,MapLightPa
       uint8_t block[32+64+MAP_LIGHT_TILE*MAP_LIGHT_TILE*3];
       uint32_t at=MAP_LIGHT_BLOCKS+(e[4]|e[5]<<8);int pos=(e[6]|e[7]<<8)&511,pixels=e[7]>>1;
       int tx=pos%MAP_LIGHT_TILES_X*MAP_LIGHT_TILE,ty=pos/MAP_LIGHT_TILES_X*MAP_LIGHT_TILE;
-      if(!fetch(read,rc,at,block,shade==LIGHT_MIXED?96+pixels*3:32,stats))return false;
+      if(!fetch(read,rc,at,block,shade==LIGHT_MIXED?96+pixels*3:32,stats)){ok=false;break;}
       const int8_t *normal=(const int8_t *)block+96;
       for(int s=0;s<16;s++){
         const uint8_t *b=block+32+s*4;int sx=s%4*2,sy=s/4*2,sub=shade;
@@ -55,5 +62,6 @@ bool map_light_update(const int16_t sun[3],MapLightRead read,void *rc,MapLightPa
       classes[i]=shade;
     }
   }
-  return true;
+  free(whole);
+  return ok;
 }

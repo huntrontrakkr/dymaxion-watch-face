@@ -14,7 +14,8 @@ test('Thumb instruction lengths: 16-bit, and 32-bit from the first halfword',()=
 test('a window counts each executed block by its translation, split between app and firmware',async()=>{
   const dir=mkdtempSync(join(tmpdir(),'energy-'));
   writeFileSync(join(dir,'0000-boot.log'),[
-    '----------------','IN: firmware','0x08001000:  OBJD-T: 80b500f000f8','',
+    // QEMU's fallback: the bytes on their own lines, 32 to a line.
+    '----------------','IN: firmware','0x08001000:  ','OBJD-T: 80b500f0','OBJD-T: 00f8','',
     '----------------','IN: ','0x20050500:  OBJD-T: 7047','',
   ].join('\n'));
   writeFileSync(join(dir,'0001-window-minute-1.log'),[
