@@ -136,3 +136,56 @@ numbers. `tests/map-net.test.mjs` checks two things:
   holds it;
 - the watch and the previews agree. The few points where they differ sit on a
   seam or a pixel edge, and both answers pass the first check.
+
+## Measured in the emulator
+
+`.github/workflows/energy.yml` builds the base (0.6.0) and this version, then
+installs them in turn in one Pebble emulator: before, after, before, after.
+QEMU logs every block it translates, and the workflow turns on execution
+logging only for nine-second windows (`tools/energy/`). Those windows cover
+an ordinary minute change, a relight minute (the default five-minute
+relight) and an idle stretch, which is subtracted as background. Every
+executed Thumb instruction is counted, firmware included: drawing, flash
+reads and the display driver.
+
+| Instructions, over idle | 0.6.0 | 0.7.0 | Change |
+|---|---:|---:|---:|
+| Ordinary minute change | 3,850,747 | 3,484,931 | −9.5% |
+| Relight minute | 6,584,876 | 4,171,833 | −36.6% |
+| A day: 1,152 minute changes and 288 relights | 6.33 billion | 5.22 billion | −17.6% |
+| Of a minute change, in the app | 775,369 | 820,438 | +5.8% |
+| Of a minute change, in the firmware | 3,075,378 | 2,664,493 | −13.4% |
+| Of a relight minute, in the app | 1,478,788 | 923,783 | −37.5% |
+| Of a relight minute, in the firmware | 5,106,088 | 3,248,050 | −36.4% |
+
+Idle windows matched between the builds to 0.1% (3.67 million
+instructions each), and repeated windows within a build agreed to about 1%.
+The figures are medians of six windows per build.
+
+What the numbers say:
+
+- **The relight** saves the most. The largest single drop, about 850,000
+  instructions, is in one 4 KB page of firmware code (0x22000). The
+  likeliest cause is the smaller reads (about 13 KB instead of 83 KB), but
+  without firmware symbols that is not confirmed.
+- **The minute change** saves about a tenth. Skipping the map saves work in
+  Pebble's drawing code. The app's own minute work is almost all the clock's
+  flip animation, which is unchanged. It rose 6%; the cause has not been
+  traced.
+- **Reading order matters.** The first version of the relight read its tile
+  table in chunks between tile reads, moving back and forth in the file. That
+  made the relight cost more than the dense rebuild. It now reads the table
+  once, and every later read moves forward.
+
+A day's saving is about 1.1 billion instructions. At 1–4 cycles per
+instruction, 192 MHz and 7.36 mA active (the assumptions in
+[POWER-PROFILE.md](POWER-PROFILE.md)), that is roughly 0.01–0.05 mAh a day:
+a small share of the watch's daily use, which the display, Bluetooth and
+sleep current dominate.
+
+These are instruction counts, not current. Flash, display and radio energy
+are not modelled, and firmware that waits on emulated devices spins for as
+long as the host takes, which is why both builds are measured on one
+machine. Some addresses (240 of them) were translated more than once with
+different lengths, as code was reloaded. Each execution is counted with the
+translation in force when it ran.
