@@ -18,6 +18,26 @@ groups to edit day/night land and ocean, map edges, default place colors, moon
 shadow, and chart/calendar colors. Color picks snap to the
 nearest color the Pebble can display.
 
+Every color control opens a picker of the watch's 64 colors
+(`shared/color-picker.js`) in one of four arrangements, remembered per viewer
+(`shared/color-science.js`):
+
+- **Honeycomb**: Pebble's own layout, hues round the edge and greys in the middle.
+- **RGB cube**: four 4×4 grids, red across and green down, one per level of blue.
+- **Lightness**: CIELAB. The greys (chroma under 8) come first; the rest follow
+  in order of hue angle from red round to purple, six to a column, each column
+  lightest at the top.
+- **Chromaticity**: each color at its CIE 1931 xy chromaticity, inside the
+  spectral locus (380–700 nm). The solid triangle is sRGB; the dashed one joins
+  the watch screen's own red, green and blue as Pebble sampled them. Colors that
+  share a chromaticity (one hue at several lightnesses, or the greys; black sits
+  at the D65 white point) are set side by side, darkest first.
+
+**As on the watch** shows each color as Pebble sampled it on a Pebble Time
+screen. In the Lightness and Chromaticity arrangements the colors also move to
+where those sampled colors fall. Arrow keys move to the nearest color in that
+direction in any arrangement.
+
 Keep up to 12 named palettes. The designer saves edits locally as you make them;
 switching to a preset retains the saved library. Creating a new palette while a
 custom palette is selected makes an independent copy. **Delete palette** removes
