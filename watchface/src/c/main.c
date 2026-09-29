@@ -4,6 +4,7 @@
 #include "city.h"
 #include "solar.h"
 #include "map_net.h"
+#include "map_light.h"
 #include "generated/system_clock.h"
 #include "display.h"
 #include "minute_flip.h"
@@ -32,7 +33,9 @@ static uint8_t s_settings[SETTINGS_SIZE];
 static uint8_t s_palette[PALETTE_SIZE];
 static uint8_t s_city[CITY_SIZE]={1};
 static uint8_t s_display[DISPLAY_SIZE]=DEFAULT_DISPLAY;
-static bool s_map_dirty=true,s_connected=true;
+// s_map_dirty: rebuild every map pixel (launch, settings); s_map_relight: the
+// Sun or Moon moved, so only what that changes is repainted.
+static bool s_map_dirty=true,s_map_relight,s_connected=true;
 static BatteryChargeState s_battery;
 static int16_t s_sun[3];
 static GPoint s_sun_point,s_moon_point;
@@ -110,14 +113,25 @@ static void sun_update(time_t now) {
   int x,y;map_net_project(sun,&x,&y);s_sun_point=map_point(x,y);
 }
 static int32_t illumination(int8_t x,int8_t y,int8_t z) { return x*s_sun[0]+y*s_sun[1]+z*s_sun[2]; }
-// sin(-0.833 degrees) and sin(-6 degrees) in illumination's units (127 x 1024).
-#define MAP_SUNRISE -1891
-#define MAP_CIVIL_TWILIGHT -13594
 static bool custom_palette(void) { return palette_applies(s_palette,s_settings[THEME]); }
 static const uint8_t *palette(void) { return custom_palette()?s_palette+PAL_COLORS:PALETTES[s_settings[THEME]]; }
 static GColor color(int i) { return (GColor){.argb=palette()[i]}; }
 static GColor mark_color(int i) { return (GColor){.argb=s_settings[HEADER_SIZE+i*ZONE_SIZE+70]}; }
 
+// The Moon marker, like the Sun's, is projected where the Moon is overhead.
+static void moon_update(void){
+  if(!settings_map_moon(s_settings))return;
+  time_t now=time(NULL);float d[3];int x,y;lunar_direction((uint32_t)(now-now%300),d);map_net_project(d,&x,&y);s_moon_point=map_point(x,y);
+}
+static uint8_t s_light_classes[MAP_LIGHT_TILES];
+static bool read_light(void *context,uint32_t offset,void *buffer,uint32_t length){
+  (void)context;return resource_load_byte_range(resource_get_handle(RESOURCE_ID_MAP_LIGHT),offset,buffer,length)==length;
+}
+typedef struct {uint8_t *data;int stride;const uint8_t *palette;bool rotated,edges;} MapPaint;
+static void paint_light(void *context,int x,int y,uint8_t flags,bool night){
+  const MapPaint *m=context;
+  m->data[map_y(y,m->rotated)*m->stride+map_x(x,m->rotated)]=m->edges&&(flags&4)?m->palette[5]:m->palette[(flags&3)+(night?2:0)];
+}
 static void rebuild_map(void) {
   int w=200,h=104;
   if(s_map && (w!=s_map_w || h!=s_map_h)){gbitmap_destroy(s_map);s_map=NULL;}
@@ -128,8 +142,7 @@ static void rebuild_map(void) {
   uint8_t row[200*4];
   uint8_t *data=gbitmap_get_data(s_map);int stride=gbitmap_get_bytes_per_row(s_map);
   const uint8_t *p=palette();bool rotated=settings_map_rotated(s_settings);
-  // The Moon marker, like the Sun's, is projected where the Moon is overhead.
-  if(settings_map_moon(s_settings)){time_t now=time(NULL);float d[3];int x,y;lunar_direction((uint32_t)(now-now%300),d);map_net_project(d,&x,&y);s_moon_point=map_point(x,y);}
+  moon_update();
   for(int y=0;y<h;y++) {
     if(resource_load_byte_range(resource,y*w*4,row,w*4)!=(size_t)w*4){gbitmap_destroy(s_map);s_map=NULL;return;}
     for(int x=0;x<w;x++) {
@@ -138,14 +151,28 @@ static void rebuild_map(void) {
         int32_t light=illumination((int8_t)r[0],(int8_t)r[1],(int8_t)r[2]);
         // Day while the sun is up, a checkerboard through civil twilight, then
         // night (mapNight() in shared/solar.js).
-        bool night=(s_settings[FLAGS]&DAY_NIGHT)&&(light<MAP_CIVIL_TWILIGHT||(light<MAP_SUNRISE&&((x+y)&1)));
+        bool night=(s_settings[FLAGS]&DAY_NIGHT)&&map_night(light,x,y);
         c=p[kind+(night?2:0)];
         if((s_settings[FLAGS]&EDGES)&&(r[3]&4))c=p[5];
       }else if(DISPLAY_MAP_BACKGROUND(s_display)&&(r[3]&(4<<DISPLAY_MAP_BACKGROUND(s_display))))c=p[5]; // map background, in the edge colour
       data[map_y(y,rotated)*stride+map_x(x,rotated)]=c;
     }
   }
-  s_map_dirty=false;
+  // Each tile's shading, for the relights that follow (relight_map).
+  if(s_settings[FLAGS]&DAY_NIGHT)map_light_update(s_sun,read_light,NULL,NULL,NULL,s_light_classes,NULL);
+  s_map_dirty=s_map_relight=false;
+}
+// A relight: only tiles whose shading can have changed are read and repainted
+// (map_light.c), with the same result as rebuild_map. Without day and night,
+// only the Moon moves.
+static void relight_map(void){
+  s_map_relight=false;
+  if(!s_map){rebuild_map();return;}
+  moon_update();
+  if(!(s_settings[FLAGS]&DAY_NIGHT))return;
+  MapPaint paint={gbitmap_get_data(s_map),gbitmap_get_bytes_per_row(s_map),palette(),settings_map_rotated(s_settings),(s_settings[FLAGS]&EDGES)!=0};
+  // A failed read leaves tiles half done: paint the whole map instead.
+  if(!map_light_update(s_sun,read_light,NULL,paint_light,&paint,s_light_classes,NULL))rebuild_map();
 }
 static void text(GContext *ctx,const char *str,GFont font,GRect rect,GTextAlignment align,GColor ink) {
   graphics_context_set_text_color(ctx,ink);
@@ -794,7 +821,7 @@ static void draw_parts(GContext *ctx,time_t now,struct tm *local,int visible){
 // the markers pulse, the whole face is painted as before.
 static void minute_redraw(void){
   int visible=layer_get_unobstructed_bounds(s_layer).size.h;
-  if(s_map_dirty||s_animation||visible!=s_spots_visible||zones_on_map((s_display[2]>>2)&3,zone_position(),zones_in_panel(visible))){redraw();return;}
+  if(s_map_dirty||s_map_relight||s_animation||visible!=s_spots_visible||zones_on_map((s_display[2]>>2)&3,zone_position(),zones_in_panel(visible))){redraw();return;}
   static MarkerSpots now_spots;marker_spots(time(NULL),visible,&now_spots);
   if(memcmp(&now_spots,&s_spots,sizeof(now_spots))){redraw();return;}
   redraw_part(PART_STATUS|PART_CLOCK|PART_TRAY|(strip_on(visible)?PART_PLATE:0));
@@ -802,13 +829,14 @@ static void minute_redraw(void){
 static void update_proc(Layer *layer,GContext *ctx) {
   time_t now=time(NULL);struct tm local=*localtime(&now);
   graphics_context_set_antialiased(ctx,false);
-  if(!s_full&&s_parts&&!s_map_dirty){
+  if(!s_full&&s_parts&&!s_map_dirty&&!s_map_relight){
     draw_parts(ctx,now,&local,layer_get_unobstructed_bounds(layer).size.h);
     s_parts=0;motion_continue();return;
   }
   s_full=false;s_parts=0;
   graphics_context_set_fill_color(ctx,color(0));graphics_fill_rect(ctx,layer_get_bounds(layer),0,GCornerNone);
   if(s_map_dirty){sun_update(now-now%300);rebuild_map();}
+  else if(s_map_relight){sun_update(now-now%300);relight_map();}
   int mx=s_settings[MAP_X],my=s_settings[MAP_Y];
   if(s_map)graphics_draw_bitmap_in_rect(ctx,s_map,GRect(mx,my,s_map_w,s_map_h));
   else text(ctx,"MAP UNAVAILABLE",s_small,GRect(0,90,200,30),GTextAlignmentCenter,color(6));
@@ -909,12 +937,12 @@ static void request_sync(bool full) {
 }
 static void tick(struct tm *local_time,TimeUnits changed) {
   // The terminator moves about a pixel every few minutes: relight the map on the
-  // chosen interval (every other hour in the night saver) instead of reading
-  // and shading all 20,800 pixels each minute. The optional Moon follows the
+  // chosen interval (every other hour in the night saver), repainting only the
+  // tiles near the terminator (relight_map). The optional Moon follows the
   // same cadence, including when day/night shading is off. With both off,
   // only the place times' daylight dots follow the sun every five minutes.
   time_t now=time(NULL);
-  if(power_relight(power(),(s_settings[FLAGS]&DAY_NIGHT)||settings_map_moon(s_settings),local_time->tm_hour,local_time->tm_min,quiet()))s_map_dirty=true;
+  if(power_relight(power(),(s_settings[FLAGS]&DAY_NIGHT)||settings_map_moon(s_settings),local_time->tm_hour,local_time->tm_min,quiet()))s_map_relight=true;
   else if(!(s_settings[FLAGS]&DAY_NIGHT)&&local_time->tm_min%5==0)sun_update(now-now%300);
   // Paused in the dark (night saver): with the backlight off the screen keeps
   // its last frame; the backlight coming on redraws it (backlight_changed),

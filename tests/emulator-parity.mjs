@@ -101,15 +101,18 @@ try{
   // A minute tick paints only the parts a minute changes (main.c
   // minute_redraw). The face it leaves must be the one a full paint draws:
   // after a tick, resending the same settings repaints everything, and the two
-  // screenshots must match exactly. Minutes when the map is relit (every five,
-  // by default) paint in full anyway, so the tick is taken on another minute.
-  const minuteCases=['default','place times between the clock and the map','icosahedron beside the clock, battery gauge','tides with highs and lows','turned map, current city and place times'];
-  for(const name of minuteCases){
+  // screenshots must match exactly. On minutes when the map is relit (every
+  // five, by default) only the tiles near the terminator are repainted
+  // (main.c relight_map): those ticks are checked the same way.
+  const minuteCases=[...['default','place times between the clock and the map','icosahedron beside the clock, battery gauge','tides with highs and lows','turned map, current city and place times'].map(name=>({name,relight:false})),
+    ...['default','map Moon, current phase','turned map, Moon and place times','turned map, Moon without day-night shading','Ultraviolet, 12-hour'].map(name=>({name,relight:true}))];
+  for(const {name:base,relight} of minuteCases){
+    const name=(relight?'relight, ':'')+base;
     if(process.env.EMULATOR_CASE&&!name.includes(process.env.EMULATOR_CASE))continue;
-    const settings={...defaults(),location:{mode:'manual',name:'Norfolk'},...cases[name]},slug='minute-'+name.replace(/\W+/g,'-');
+    const settings={...defaults(),location:{mode:'manual',name:'Norfolk'},...cases[base]},slug='minute-'+name.replace(/\W+/g,'-');
     let result=null;
     for(let attempt=0;attempt<3&&!result;attempt++){
-      while(new Date().getUTCSeconds()<5||new Date().getUTCSeconds()>40||(new Date().getUTCMinutes()+1)%5===0)await sleep(1000);
+      while(new Date().getUTCSeconds()<5||new Date().getUTCSeconds()>40||((new Date().getUTCMinutes()+1)%5===0)!==relight)await sleep(1000);
       await send(settings,slug);
       const minute=Math.floor(Date.now()/60000);
       while(Math.floor(Date.now()/60000)===minute)await sleep(250);
