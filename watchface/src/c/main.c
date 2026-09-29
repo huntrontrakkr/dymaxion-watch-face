@@ -3,6 +3,7 @@
 #include "panels.h"
 #include "city.h"
 #include "solar.h"
+#include "map_net.h"
 #include "generated/system_clock.h"
 #include "display.h"
 #include "minute_flip.h"
@@ -101,9 +102,12 @@ static bool beside_right(void){return art_on()?DISPLAY_ART_RIGHT(s_display):zone
 
 static float fsin(float r) { return (float)sin_lookup((int32_t)(r*TRIG_MAX_ANGLE/6.283185307f))/TRIG_MAX_RATIO; }
 // The map's light: the same sun as the panels' sunrise and sunset (solar.c).
+// The Sun marker sits where the Sun is overhead, projected onto the net
+// (map_net.c) rather than searched for among the map's pixels.
 static void sun_update(time_t now) {
   float sun[3];solar_direction((uint32_t)now,sun);
   for(int i=0;i<3;i++)s_sun[i]=(int16_t)(1024*sun[i]);
+  int x,y;map_net_project(sun,&x,&y);s_sun_point=map_point(x,y);
 }
 static int32_t illumination(int8_t x,int8_t y,int8_t z) { return x*s_sun[0]+y*s_sun[1]+z*s_sun[2]; }
 // sin(-0.833 degrees) and sin(-6 degrees) in illumination's units (127 x 1024).
@@ -123,17 +127,15 @@ static void rebuild_map(void) {
   ResHandle resource=resource_get_handle(RESOURCE_ID_MAP_LANDSCAPE);
   uint8_t row[200*4];
   uint8_t *data=gbitmap_get_data(s_map);int stride=gbitmap_get_bytes_per_row(s_map);
-  const uint8_t *p=palette();int32_t closest=-200000;
-  bool moon_on=settings_map_moon(s_settings),rotated=settings_map_rotated(s_settings);int16_t moon[3]={0};int moon_best=200000;
-  if(moon_on){time_t now=time(NULL);float d[3];lunar_direction((uint32_t)(now-now%300),d);for(int k=0;k<3;k++)moon[k]=(int16_t)(127*d[k]+(d[k]<0?-.5f:.5f));}
+  const uint8_t *p=palette();bool rotated=settings_map_rotated(s_settings);
+  // The Moon marker, like the Sun's, is projected where the Moon is overhead.
+  if(settings_map_moon(s_settings)){time_t now=time(NULL);float d[3];int x,y;lunar_direction((uint32_t)(now-now%300),d);map_net_project(d,&x,&y);s_moon_point=map_point(x,y);}
   for(int y=0;y<h;y++) {
     if(resource_load_byte_range(resource,y*w*4,row,w*4)!=(size_t)w*4){gbitmap_destroy(s_map);s_map=NULL;return;}
     for(int x=0;x<w;x++) {
       uint8_t *r=row+x*4;int kind=r[3]&3;uint8_t c=p[0];
       if(kind) {
         int32_t light=illumination((int8_t)r[0],(int8_t)r[1],(int8_t)r[2]);
-        if(light>closest){closest=light;s_sun_point=map_point(x,y);}
-        if(moon_on){int distance=0;for(int k=0;k<3;k++){int d=(int8_t)r[k]-moon[k];distance+=d*d;}if(distance<moon_best){moon_best=distance;s_moon_point=map_point(x,y);}}
         // Day while the sun is up, a checkerboard through civil twilight, then
         // night (mapNight() in shared/solar.js).
         bool night=(s_settings[FLAGS]&DAY_NIGHT)&&(light<MAP_CIVIL_TWILIGHT||(light<MAP_SUNRISE&&((x+y)&1)));

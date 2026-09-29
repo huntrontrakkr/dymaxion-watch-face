@@ -7,6 +7,7 @@ import {drawBitmapText,fitLabel,textWidth} from '../shared/type.js';
 import {clockCaption} from '../shared/city.js';
 import {markColor,hourText,blockSize} from '../shared/settings.js';
 import {drawMarkerPixels} from '../shared/markers.js';
+import {projectToMap} from '../shared/map-net.js';
 import {sunDirection,mapNight,mapSun,mapLight} from '../shared/solar.js';
 import {sinceRelight} from '../shared/power.js';
 import {CITIES} from '../shared/cities.js';
@@ -14,7 +15,7 @@ import {drawFooter} from '../shared/panel-render.js';
 import {drawBatteryStatus,stepLineWidth,STEP_LINE_Y} from '../shared/status-bar.js';
 import {sampleHealth} from '../shared/health.js';
 import {sampleEnvironment} from '../shared/panel-data.js';
-import {MOON_GLYPHS,moonFrame,mapMoonVector,moonPixelDistance,drawMapMoon} from '../shared/moon.js';
+import {MOON_GLYPHS,moonFrame,moonDirection,drawMapMoon} from '../shared/moon.js';
 import {BLUETOOTH_ROWS,SUN_ROWS,SUN_HALO_ROWS,DAY_NIGHT_ROWS,MARKER_HALO_ROWS} from '../shared/status-glyphs.js';
 import {drawPixelRows} from '../shared/pixels.js';
 import {BACKGROUND_BITS} from '../shared/map-background.js';
@@ -36,13 +37,14 @@ export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,c
   const sun=sunDirection(new Date(+now-sinceRelight(s.power,now.getHours(),now.getMinutes())*60000)),[w,h]=MAP_SIZE,[mx,my]=s.map;
   ctx.imageSmoothingEnabled=false;ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,228);
   const image=ctx.createImageData(w,h),colors=[pal.bg,pal.ocean,pal.land,pal.nightOcean,pal.nightLand,pal.edge].map(c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)));
-  let best=-Infinity,sunPoint=[0,0];const sunLight=mapSun(sun);
-  let moonBest=Infinity,moonPoint=[0,0];const moon=s.mapMoon?mapMoonVector(new Date(Math.floor(+now/300000)*300000)):null;
+  // The Sun and Moon markers are projected where each is overhead (shared/map-net.js),
+  // as the watch places them.
+  const sunLight=mapSun(sun),sunPoint=mapPoint(projectToMap(sun),s.mapRotation);
+  const moonPoint=s.mapMoon?mapPoint(projectToMap(moonDirection(new Date(Math.floor(+now/300000)*300000))),s.mapRotation):[0,0];
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
     const i=(y*w+x)*4,kind=pixels[i+3]&3;let color=0;
     if(kind){const light=mapLight(signed,i,sunLight);
-      if(light>best){best=light;sunPoint=mapPoint([x,y],s.mapRotation);}const night=s.dayNight&&mapNight(light,x,y);
-      if(moon){const d=moonPixelDistance(signed,i,moon);if(d<moonBest){moonBest=d;moonPoint=mapPoint([x,y],s.mapRotation);}}
+const night=s.dayNight&&mapNight(light,x,y);
       color=kind+(night?2:0);if(s.edges&&(pixels[i+3]&4))color=5;
     }else if(pixels[i+3]&BACKGROUND_BITS[s.mapBackground])color=5;
     const [dx,dy]=mapPoint([x,y],s.mapRotation);image.data.set([...colors[color],255],(dy*w+dx)*4);

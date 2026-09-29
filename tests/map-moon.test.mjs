@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,mkdirSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
-import {moonDirection,moonFrame,mapMoonVector,moonPixelDistance} from '../shared/moon.js';
+import {moonDirection,moonFrame} from '../shared/moon.js';
+import {projectToMap} from '../shared/map-net.js';
 import {defaults,validateSettings} from '../shared/settings.js';
 import {encodeSettings,zoneExists} from '../shared/protocol.js';
 import {mapPoint,direction} from '../shared/map.js';
@@ -25,13 +26,14 @@ test('watch single-precision lunar coordinates match the browser across seasons 
   const native=execFileSync('test-results/moon-test',{input:times.join('\n'),encoding:'utf8'}).trim().split('\n').map(r=>r.split(' ').map(Number));
   times.forEach((t,i)=>{assert(Math.abs(Math.hypot(...native[i])-1)<.00001);assert(angle(native[i],moonDirection(new Date(t*1000)))<.06,new Date(t*1000).toISOString());});
 });
-test('the nearest baked map pixel follows the Moon, and rotation preserves its geographic direction',()=>{
+test('the Moon marker is projected where the Moon is overhead, and rotation preserves its geographic direction',()=>{
   const bytes=new Int8Array(readFileSync('watchface/resources/maps/map-0.bin'));
   for(let day=0;day<30;day++)for(const hour of [0,5,11,17,23]){
-    const date=new Date(Date.UTC(2026,8,1+day,hour)),d=moonDirection(date),v=mapMoonVector(date);let best=Infinity,index=-1;
-    for(let i=0;i<bytes.length;i+=4)if(bytes[i+3]&3){const dist=moonPixelDistance(bytes,i,v);if(dist<best){best=dist;index=i;}}
-    assert(angle(d,[...bytes.slice(index,index+3)])<2.5,date.toISOString());
-    const p=[(index/4)%200,Math.floor(index/800)],rot=mapPoint(p,180);
+    const date=new Date(Date.UTC(2026,8,1+day,hour)),d=moonDirection(date),p=projectToMap(d);
+    // Within a pixel of the Moon: the nearest map pixel around the projected one.
+    let best=180;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const x=p[0]+dx,y=p[1]+dy,i=(y*200+x)*4;if(x>=0&&x<200&&y>=0&&y<104&&bytes[i+3]&3)best=Math.min(best,angle(d,[...bytes.slice(i,i+3)]));}
+    assert(best<2.5,date.toISOString());
+    const rot=mapPoint(p,180);
     assert.deepEqual(mapPoint(rot,180),p);assert.deepEqual(rot,[199-p[0],103-p[1]]);
   }
 });
