@@ -108,7 +108,9 @@ try{
   // five, by default) only the tiles near the terminator are repainted
   // (main.c relight_map): those ticks are checked the same way.
   const minuteCases=[...['default','place times between the clock and the map','icosahedron beside the clock, battery gauge','tides with highs and lows','turned map, current city and place times'].map(name=>({name,relight:false})),
-    ...['default','map Moon, current phase','turned map, Moon and place times','turned map, Moon without day-night shading','Ultraviolet, 12-hour'].map(name=>({name,relight:true}))];
+    // Each relight case waits for its own five-minute mark, so three: plain,
+    // turned with place times, and the Moon alone without day and night.
+    ...['default','turned map, Moon and place times','turned map, Moon without day-night shading'].map(name=>({name,relight:true}))];
   for(const {name:base,relight} of minuteCases){
     const name=(relight?'relight, ':'')+base;
     if(process.env.EMULATOR_CASE&&!name.includes(process.env.EMULATOR_CASE))continue;

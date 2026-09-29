@@ -97,7 +97,7 @@ jobs:
   # artifact. Releases never wait on it.
   emulator:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 45
     env:
       TZ: UTC
       # The emulator has no screen to open here; screenshots read its framebuffer.
