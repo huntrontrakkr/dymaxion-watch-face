@@ -40,6 +40,7 @@ import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,labelHu
 import {minuteFlipClock,drawFlipPixels,FLIP_FACES,flipOffset} from '../shared/minute-flip.js';
 import {installWatchColorPicker} from '../shared/color-picker.js';
 import {colorView,setColorView,onColorViewChange,watchViewOverlay} from '../shared/watch-view.js';
+import {onSecretTaps} from '../shared/secret-taps.js';
 installWatchColorPicker();
 
 const $=id=>document.getElementById(id),zoneExists=tz=>!!moment.tz.zone(tz);
@@ -68,6 +69,7 @@ const STORAGE='dymaxion-workshop-v1';
 try {const saved=localStorage.getItem(STORAGE);if(saved)settings=validateSettings(JSON.parse(saved),zoneExists);}catch{notice('Saved settings could not be read, so the defaults are loaded.');}
 const paletteLink=new URLSearchParams(location.search).get('palette');
 const linkedTheme=THEMES.findIndex(theme=>theme.slug&&theme.slug===paletteLink);
+const hiddenTheme=THEMES.findIndex(theme=>theme.hidden);
 if(linkedTheme>=0){
   settings.theme=linkedTheme;settings.customPalette=null;
   const url=new URL(location.href);url.searchParams.delete('palette');history.replaceState(null,'',url);
@@ -109,6 +111,7 @@ for(const [id,name] of [['meridian','Meridian'],['horizon','Horizon']]){
   button.innerHTML=`<svg viewBox="0 0 40 46" aria-hidden="true"><path d="${drawings[id]}"/></svg><span>${name}</span>`;
   button.onclick=()=>{Object.assign(settings,presetFor(id,settings.clockDisplay));sync();save();};$('presets').append(button);
 }
+onSecretTaps(document.querySelector('.edition'),()=>{settings.theme=hiddenTheme;settings.customPalette=null;sync();save();});
 THEMES.forEach((t,i)=>{
   const button=document.createElement('button');button.type='button';button.dataset.theme=i;button.setAttribute('aria-pressed','false');
   button.setAttribute('aria-label',t.name);

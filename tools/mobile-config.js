@@ -11,6 +11,7 @@ import {citySearch} from '../shared/place-search.js';
 import {renderConfigPreview} from './config-preview.js';
 import {PANEL_PAGES} from '../shared/panel-settings.js';
 import {quoteOfTheDay} from '../shared/fuller-quotes.js';
+import {onSecretTaps} from '../shared/secret-taps.js';
 import {installWatchColorPicker} from '../shared/color-picker.js';
 import {colorView,setColorView,onColorViewChange,watchViewOverlay} from '../shared/watch-view.js';
 installWatchColorPicker();
@@ -101,6 +102,7 @@ $('preset').onchange=()=>{const preset=$('preset').value;if(preset!=='custom')Ob
 $('connectionBuzz').onchange=()=>{s.connectionBuzz=$('connectionBuzz').value;};
 $('mapRotation').onchange=()=>{s.mapRotation=+$('mapRotation').value;changed();};
 $('mapBackground').onchange=()=>{s.mapBackground=$('mapBackground').value;changed();};
+onSecretTaps(document.querySelector('.page-header .eyebrow'),()=>{s.theme=THEMES.findIndex(t=>t.hidden);s.customPalette=null;refresh();changed();});
 for(const key of ['theme','format'])$(key).onchange=()=>{s[key]=Number($(key).value);if(key==='theme'){s.customPalette=null;refresh();}changed();};
 for(const key of ['moonIndicator','batteryGauge','stepLine','dayNight','lights','sun','mapMoon','edges','motion'])$(key).onchange=()=>{s[key]=$(key).checked;powerEditor.refresh();changed();};
 function importText(text){try{s=validateSettings(JSON.parse(text),exists);$('error').textContent='Composition loaded.';$('preset').value='custom';refresh();}catch(e){$('error').textContent=e.message;}}

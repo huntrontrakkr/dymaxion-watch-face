@@ -126,7 +126,7 @@ try{
   const mobile=await browser.newPage({viewport:{width:390,height:844}});mobile.on('pageerror',e=>errors.push(e.message));await mobile.goto(opened);
   await mobile.locator('details').evaluateAll(nodes=>nodes.forEach(d=>d.open=true));
   assert.equal(await mobile.locator('#theme option').count(),THEMES.filter(t=>!t.hidden).length);
-  assert.equal(await mobile.locator('#theme option').filter({hasText:'Hot Dog Stand'}).count(),0);
+  assert.equal(await mobile.locator('#theme option').filter({hasText:'Glizzy'}).count(),0);
   // Power and motion on the phone: the night hours and dark pause wait for the night saver.
   assert(await mobile.getByLabel('Pause in the dark',{exact:true}).isDisabled());
   const saver=mobile.getByLabel('Night saver',{exact:true});
@@ -157,17 +157,29 @@ try{
   const position=await eggPhone.evaluate(()=>window.DYMAXION_CONFIG.position);
   assert.equal(position.lat,36.851);assert.equal(position.lon,-76.286);
   await handlers.showConfiguration();assert.equal(fixes,1,'configuration reuses the shared low-power location fix');
-  const egg=THEMES.findIndex(t=>t.slug==='hot-dog-stand');
+  const egg=THEMES.findIndex(t=>t.slug==='peoples-glizzy-stand');
   assert.equal(await eggPhone.locator('#theme').inputValue(),String(egg));await eggPhone.close();
+  // On the phone, five quick taps on the page's eyebrow choose it.
+  const tapPhone=await browser.newPage({viewport:{width:390,height:844}});tapPhone.on('pageerror',e=>errors.push(e.message));await tapPhone.goto(opened);
+  await tapPhone.locator('details').evaluateAll(nodes=>nodes.forEach(d=>d.open=true));await tapPhone.locator('#theme').selectOption('0');
+  assert.equal(await tapPhone.locator('#theme option').filter({hasText:'Glizzy'}).count(),0);
+  for(let i=0;i<5;i++)await tapPhone.locator('.page-header .eyebrow').click();
+  assert.equal(await tapPhone.locator('#theme').inputValue(),String(egg));
+  assert.equal(await tapPhone.locator('#save-status').textContent(),'Changes ready to save');await tapPhone.close();
   const eggPage=await browser.newPage();eggPage.on('pageerror',e=>errors.push(e.message));
-  await eggPage.goto(base+'?palette=hot-dog-stand');
+  await eggPage.goto(base+'?palette=peoples-glizzy-stand');
   await eggPage.getByRole('tab',{name:'Character',exact:true}).click();
-  assert.equal(await eggPage.getByRole('button',{name:'Hot Dog Stand',exact:true}).getAttribute('aria-pressed'),'true');
+  assert.equal(await eggPage.getByRole('button',{name:'People’s Glizzy Stand',exact:true}).getAttribute('aria-pressed'),'true');
   await eggPage.reload();await eggPage.getByRole('tab',{name:'Character',exact:true}).click();
-  assert.equal(await eggPage.getByRole('button',{name:'Hot Dog Stand',exact:true}).getAttribute('aria-pressed'),'true');
-  await eggPage.locator('#screen').screenshot({path:'test-results/hot-dog-stand.png'});
+  assert.equal(await eggPage.getByRole('button',{name:'People’s Glizzy Stand',exact:true}).getAttribute('aria-pressed'),'true');
+  await eggPage.locator('#screen').screenshot({path:'test-results/peoples-glizzy-stand.png'});
   await eggPage.getByRole('button',{name:'Airocean',exact:true}).click();
-  assert(await eggPage.getByRole('button',{name:'Hot Dog Stand',exact:true}).isHidden());await eggPage.close();
+  assert(await eggPage.getByRole('button',{name:'People’s Glizzy Stand',exact:true}).isHidden());
+  // Five quick taps on the edition mark bring it back.
+  for(let i=0;i<4;i++)await eggPage.locator('.edition').click();
+  assert(await eggPage.getByRole('button',{name:'People’s Glizzy Stand',exact:true}).isHidden(),'four taps are not enough');
+  await eggPage.locator('.edition').click();
+  assert.equal(await eggPage.getByRole('button',{name:'People’s Glizzy Stand',exact:true}).getAttribute('aria-pressed'),'true');await eggPage.close();
   await mobile.locator('#preset').selectOption('horizon');await mobile.locator('#theme').selectOption('1');
   assert.equal(await mobile.locator('#stacked').count(),0,'the stacked clock is retired');
   await mobile.locator('#moonIndicator').uncheck();assert.equal(await mobile.locator('#moonIndicator').isChecked(),false);
