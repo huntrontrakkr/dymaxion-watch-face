@@ -126,7 +126,8 @@ static void moon_update(void){
 }
 static uint8_t s_light_classes[MAP_LIGHT_TILES];
 static bool read_light(void *context,uint32_t offset,void *buffer,uint32_t length){
-  (void)context;return resource_load_byte_range(resource_get_handle(RESOURCE_ID_MAP_LIGHT),offset,buffer,length)==length;
+  (void)context;static ResHandle handle;if(!handle)handle=resource_get_handle(RESOURCE_ID_MAP_LIGHT);
+  return resource_load_byte_range(handle,offset,buffer,length)==length;
 }
 typedef struct {uint8_t *data;int stride;const uint8_t *palette;bool rotated,edges;} MapPaint;
 static void paint_light(void *context,int x,int y,uint8_t flags,bool night){

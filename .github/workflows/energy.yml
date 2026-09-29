@@ -21,13 +21,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Both builds run in one emulator in turn (before, after, before, after):
+  # the firmware spins while it waits on emulated devices for as long as the
+  # host takes, so counts are only comparable on one machine.
   measure:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
-    strategy:
-      fail-fast: false
-      matrix:
-        build: [before, after]
+    timeout-minutes: 55
     env:
       TZ: UTC
       SDL_VIDEODRIVER: dummy
@@ -51,45 +50,40 @@ jobs:
           sudo apt-get install -y --no-install-recommends libsdl2-2.0-0 libpixman-1-0 libfdt1
       # The measurement tools always come from this checkout; only the watch
       # build differs. The phone side is a stub, as in the emulator check.
-      - name: Build the ${{ matrix.build }} watch face
+      - name: Build both watch faces
         env:
           BASE: ${{ github.event.pull_request.base.sha || 'origin/main' }}
         run: |
-          src=.
-          if [ "${{ matrix.build }}" = before ]; then git worktree add /tmp/base "$BASE"; src=/tmp/base; fi
-          echo "Pebble.addEventListener('ready',function(){console.log('stub phone app');});" > $src/watchface/src/pkjs/index.js
-          (cd $src/watchface && pebble build)
-          if [ "$src" != . ]; then rm -rf watchface/build && cp -r $src/watchface/build watchface/build; fi
-          (cd $src && git log -1 --format='%H %s')
+          git worktree add /tmp/base "$BASE"
+          for src in /tmp/base .; do
+            echo "Pebble.addEventListener('ready',function(){console.log('stub phone app');});" > $src/watchface/src/pkjs/index.js
+            (cd $src/watchface && pebble build)
+          done
+          mkdir -p /tmp/builds
+          cp /tmp/base/watchface/build/watchface.pbw /tmp/builds/before.pbw
+          cp watchface/build/watchface.pbw /tmp/builds/after.pbw
+          (cd /tmp/base && git log -1 --format='before: %H %s'); git log -1 --format='after: %H %s'
       - name: Count instructions in the emulator
         run: |
           # pebble-tool puts the SDK's toolchain on PATH only for itself.
           export QEMU_REAL="$(command -v qemu-pebble || ls "$HOME"/.local/share/pebble-sdk/SDKs/4.33.1/toolchain/bin/qemu-pebble 2>/dev/null)"
           test -n "$QEMU_REAL" || { echo "::error::qemu-pebble not found"; exit 1; }
           export PEBBLE_QEMU_PATH="$GITHUB_WORKSPACE/tools/energy/qemu-trace.sh"
-          mkdir -p "$QEMU_TRACE_DIR"
-          (cd watchface && pebble install -vv --emulator emery build/watchface.pbw)
-          sleep 15
-          node tools/energy/measure.mjs ${{ matrix.build }} 3 || { grep -m2 -A5 '^IN:' "$QEMU_TRACE_DIR/0000-boot.log"; exit 1; }
+          mkdir -p "$QEMU_TRACE_DIR" test-results/energy
+          for round in 1 2; do
+            for build in before after; do
+              (cd watchface && pebble install --emulator emery /tmp/builds/$build.pbw)
+              sleep 15
+              node tools/energy/measure.mjs $build-$round 1 watchface/build/js/message_keys.json
+            done
+          done
           du -sh "$QEMU_TRACE_DIR"
-          # A sample of the translation log, to check what the counter reads.
           grep -m2 -A5 '^IN:' "$QEMU_TRACE_DIR/0000-boot.log" || true
+          node tools/energy/count.mjs "$QEMU_TRACE_DIR" test-results/energy/counts.json
+          node tools/energy/report.mjs test-results/energy/counts.json "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
-          name: energy-${{ matrix.build }}
-          path: test-results/energy/*.json
+          name: energy-counts
+          path: test-results/energy/counts.json
           retention-days: 30
-
-  report:
-    needs: measure
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
-        with:
-          pattern: energy-*
-          merge-multiple: true
-          path: energy
-      - run: node tools/energy/report.mjs energy/before.json energy/after.json "$GITHUB_STEP_SUMMARY"

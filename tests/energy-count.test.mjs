@@ -27,6 +27,6 @@ test('a window counts each executed block by its translation, split between app 
   ].join('\n'));
   writeFileSync(join(dir,'0002-gap.log'),'Trace 0: 0x7f0000001000 [00000000/08001000/00000000/ff200000] firmware\n');
   const r=await countTrace(dir);
-  assert.deepEqual(r.windows,[{name:'minute-1',total:2+2+2+1,app:3,blocks:4}]);
+  assert.deepEqual(r.windows,[{name:'minute-1',total:2+2+2+1,app:3,blocks:4,pages:{8001:4}}]);
   assert.equal(r.unknown,0);assert.equal(r.ambiguous,0);
 });

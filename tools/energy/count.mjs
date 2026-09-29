@@ -28,7 +28,7 @@ export async function countTrace(dir){
   let unknown=0,ambiguous=0;
   for(const file of files){
     const window=/^\d{4}-window-(.+)\.log$/.exec(file);
-    const w=window?{name:window[1],total:0,app:0,blocks:0}:null;
+    const w=window?{name:window[1],total:0,app:0,blocks:0,pages:{}}:null;
     let pc=null,hex='',lines=0;
     const close=()=>{
       if(pc===null)return;
@@ -45,7 +45,7 @@ export async function countTrace(dir){
         const m=/\[[0-9a-f]+\/([0-9a-f]+)\/[0-9a-f]+\/[0-9a-f]+\]/.exec(line);if(!m)continue;
         const at=parseInt(m[1],16),n=length.get(at);
         if(n===undefined){unknown++;continue;}
-        w.total+=n;w.blocks++;if(inApp(at))w.app+=n;
+        w.total+=n;w.blocks++;if(inApp(at))w.app+=n;else{const page=(at>>>12).toString(16);w.pages[page]=(w.pages[page]||0)+n;}
         continue;
       }
       if(line.startsWith('IN:')){close();inBlock=true;continue;}
@@ -67,4 +67,4 @@ export async function countTrace(dir){
   if(executed&&counted<=executed)throw new Error(`count: ${counted} instructions in ${executed} executed blocks; the translation log was not understood`);
   return {windows,unknown,ambiguous};
 }
-if(import.meta.url===`file://${process.argv[1]}`)console.log(JSON.stringify(await countTrace(process.argv[2]),null,1));
+if(import.meta.url===`file://${process.argv[1]}`){const r=await countTrace(process.argv[2]);const {writeFileSync}=await import('node:fs');writeFileSync(process.argv[3]||'/dev/stdout',JSON.stringify(r));}

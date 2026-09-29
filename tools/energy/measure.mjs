@@ -5,7 +5,10 @@
 //   minute  an ordinary minute change (the clock, top bar and tray change)
 //   relight a minute that also relights the map (every five minutes by default)
 //   idle    nine seconds with no minute change: the background to subtract
-// Usage: node tools/energy/measure.mjs <label> [repeats]
+// Both builds run in one emulator in turn, so the host's speed (which sets how
+// long the firmware spins waiting on emulated devices) is the same for both.
+// Windows are named <label>~<kind>-<n>; count.mjs counts them afterwards.
+// Usage: node tools/energy/measure.mjs <label> [repeats] [message_keys.json]
 import {execFileSync} from 'node:child_process';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {join,resolve} from 'node:path';
@@ -16,7 +19,6 @@ import {encodeFooter} from '../../shared/panel-protocol.js';
 import {encodeDisplay} from '../../shared/display.js';
 import {encodePalette} from '../../shared/palette-protocol.js';
 import {encodeCity} from '../../shared/city.js';
-import {countTrace} from './count.mjs';
 
 const label=process.argv[2]||'build',repeats=Number(process.argv[3]||2);
 const dir=resolve(process.env.QEMU_TRACE_DIR),out=resolve('test-results/energy');mkdirSync(out,{recursive:true});
@@ -35,14 +37,15 @@ const monitor=command=>new Promise((ok,fail)=>{
   });
   s.on('error',e=>{clearTimeout(timer);fail(e);});
 });
-let file=1;const next=name=>join(dir,String(file++).padStart(4,'0')+'-'+name+'.log');
+import {readdirSync} from 'node:fs';
+let file=1+Math.max(0,...readdirSync(dir).map(f=>parseInt(f,10)).filter(Number.isFinite));const next=name=>join(dir,String(file++).padStart(4,'0')+'-'+name+'.log');
 async function window(name,ms){
-  await monitor('logfile '+next('window-'+name));await monitor('log in_asm,exec,nochain');
+  await monitor('logfile '+next('window-'+label+'~'+name));await monitor('log in_asm,exec,nochain');
   await sleep(ms);
   await monitor('log in_asm,nochain');await monitor('logfile '+next('gap'));
 }
 // Default settings, as the phone sends them on Save; a typed-in city.
-const KEY=JSON.parse(readFileSync('watchface/build/js/message_keys.json','utf8')),settings={...defaults(),location:{mode:'manual',name:'Norfolk'}};
+const KEY=JSON.parse(readFileSync(process.argv[4]||'watchface/build/js/message_keys.json','utf8')),settings={...defaults(),location:{mode:'manual',name:'Norfolk'}};
 const files={SETTINGS:encodeSettings(settings),FOOTER:encodeFooter(settings),DISPLAY:encodeDisplay(settings),PALETTE:encodePalette(settings),CITY:encodeCity({name:'Norfolk',manual:true})};
 pebble('send-app-message','--bytes-file',...Object.entries(files).map(([k,b])=>{const f=join(out,`${label}-${k}.bin`);writeFileSync(f,b);return `${KEY[k]}=${f}`;}));
 await sleep(20000);
@@ -60,6 +63,4 @@ while(Object.keys(want).some(k=>got[k]<want[k])){
   const n=kind+'-'+(++got[kind]);await window(n,9000);names.push(n);
 }
 await monitor('log in_asm,nochain');
-const counts=await countTrace(dir);
-writeFileSync(join(out,label+'.json'),JSON.stringify({label,...counts},null,1));
-console.log(label,JSON.stringify(counts,null,1));
+console.log(label,'windows:',names.join(' '));
