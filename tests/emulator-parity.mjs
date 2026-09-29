@@ -31,6 +31,17 @@ const pebble=async(...args)=>{
     }
   }
 };
+// Sends a set-up's packets, as the phone app does on Save; the watch then
+// paints its whole face. The city arrives in its own packet on the watch; a
+// typed-in name marks no position on the map.
+const send=async(settings,slug)=>{
+  const city=settings.location.mode==='auto'?{name:'Norfolk',lat:36.9,lon:-76.3,fetched:Math.floor(Date.now()/1000)}:{name:'Norfolk',manual:true};
+  const files={SETTINGS:encodeSettings(settings),FOOTER:encodeFooter(settings),DISPLAY:encodeDisplay(settings),PALETTE:encodePalette(settings),CITY:encodeCity(city)};
+  if(settings.footer.pages.includes('tide'))files.TIDE=encodeEnvironment(sampleEnvironment(Date.now()).tide,'tide');
+  const entries=Object.entries(files).map(([k,bytes])=>{const f=join(process.cwd(),out,`${slug}-${k}.bin`);writeFileSync(f,bytes);return `${KEY[k]}=${f}`;});
+  await pebble('send-app-message','--bytes-file',...entries);
+};
+const screenshot=async name=>{const f=join(process.cwd(),out,name+'.png');await pebble('screenshot','--no-open','--no-correction',f);return readFileSync(f);};
 const theme=name=>THEMES.findIndex(t=>t.name===name);
 const cases={
   'default':{},
@@ -48,7 +59,7 @@ const cases={
 await pebble('emu-battery','--percent','86');await pebble('emu-bt-connection','--connected','yes');
 // Let the phone app's own start-up sync finish before sending ours.
 await sleep(15000);
-const browser=await chromium.launch(),rows=[];let failed=0;
+const browser=await chromium.launch(),rows=[],minuteRows=[];let failed=0,minuteFailed=0;
 try{
   for(const [name,change] of Object.entries(cases)){
     if(process.env.EMULATOR_CASE&&!name.includes(process.env.EMULATOR_CASE))continue;
@@ -57,13 +68,7 @@ try{
     let shot,at;
     for(let attempt=0;attempt<3&&!shot;attempt++){
       while(new Date().getUTCSeconds()<8||new Date().getUTCSeconds()>40)await sleep(1000);
-      // The city arrives in its own packet on the watch, as the phone app sends it;
-      // a typed-in name marks no position on the map.
-      const city=settings.location.mode==='auto'?{name:'Norfolk',lat:36.9,lon:-76.3,fetched:Math.floor(Date.now()/1000)}:{name:'Norfolk',manual:true};
-      const files={SETTINGS:encodeSettings(settings),FOOTER:encodeFooter(settings),DISPLAY:encodeDisplay(settings),PALETTE:encodePalette(settings),CITY:encodeCity(city)};
-      if(settings.footer.pages.includes('tide'))files.TIDE=encodeEnvironment(sampleEnvironment(Date.now()).tide,'tide');
-      const entries=Object.entries(files).map(([k,bytes])=>{const f=join(process.cwd(),out,`${slug}-${k}.bin`);writeFileSync(f,bytes);return `${KEY[k]}=${f}`;});
-      await pebble('send-app-message','--bytes-file',...entries);
+      await send(settings,slug);
       await sleep(4000);
       const before=new Date();await pebble('screenshot','--no-open','--no-correction',join(process.cwd(),out,slug+'-watch.png'));const after=new Date();
       if(Math.floor(+before/60000)===Math.floor(+after/60000)){shot=readFileSync(join(out,slug+'-watch.png'));at=before;}
@@ -93,10 +98,47 @@ try{
     // Where they differ, so a mismatch can be read from the log alone.
     for(const [band,r] of Object.entries(result.regions))console.log(`  ${band}: ${r.count} pixels in x ${r.x0}-${r.x1}, y ${r.y0}-${r.y1}; ${r.samples.join('; ')}`);
   }
+  // A minute tick paints only the parts a minute changes (main.c
+  // minute_redraw). The face it leaves must be the one a full paint draws:
+  // after a tick, resending the same settings repaints everything, and the two
+  // screenshots must match exactly. Minutes when the map is relit (every five,
+  // by default) paint in full anyway, so the tick is taken on another minute.
+  const minuteCases=['default','place times between the clock and the map','icosahedron beside the clock, battery gauge','tides with highs and lows','turned map, current city and place times'];
+  for(const name of minuteCases){
+    if(process.env.EMULATOR_CASE&&!name.includes(process.env.EMULATOR_CASE))continue;
+    const settings={...defaults(),location:{mode:'manual',name:'Norfolk'},...cases[name]},slug='minute-'+name.replace(/\W+/g,'-');
+    let result=null;
+    for(let attempt=0;attempt<3&&!result;attempt++){
+      while(new Date().getUTCSeconds()<5||new Date().getUTCSeconds()>40||(new Date().getUTCMinutes()+1)%5===0)await sleep(1000);
+      await send(settings,slug);
+      const minute=Math.floor(Date.now()/60000);
+      while(Math.floor(Date.now()/60000)===minute)await sleep(250);
+      await sleep(4000); // the minute change and its 400 ms animation
+      const tick=await screenshot(slug+'-tick'),at=Math.floor(Date.now()/60000);
+      await send(settings,slug);await sleep(3000);
+      const full=await screenshot(slug+'-full');
+      if(Math.floor(Date.now()/60000)!==at)continue; // crossed another minute: try again
+      const page=await browser.newPage();
+      result=await page.evaluate(async([a,b])=>{
+        const load=async src=>{const img=new Image();img.src='data:image/png;base64,'+src;await img.decode();const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const x=c.getContext('2d');x.drawImage(img,0,0);return x.getImageData(0,0,c.width,c.height).data;};
+        const p=await load(a),q=await load(b);let off=0,first='';
+        for(let i=0;i<p.length;i+=4)if(p[i]!==q[i]||p[i+1]!==q[i+1]||p[i+2]!==q[i+2]){if(!off)first=`(${(i/4)%200},${Math.floor(i/800)})`;off++;}
+        return {off,first};
+      },[tick.toString('base64'),full.toString('base64')]);
+      await page.close();
+    }
+    if(!result)throw new Error(name+': no minute tick captured');
+    minuteRows.push(`| ${name} | ${result.off} |`);
+    console.log(`minute tick, ${name}: ${result.off} pixels differ from a full paint${result.off?' first at '+result.first:''}`);
+    if(result.off)minuteFailed++;
+  }
 }finally{await browser.close();}
-const report=['### Emulator against the preview','','| Set-up | Time | Screenshot | Pixels that differ |','|---|---|---|---|',...rows,''].join('\n');
+const report=['### Emulator against the preview','','| Set-up | Time | Screenshot | Pixels that differ |','|---|---|---|---|',...rows,'','### A minute tick against a full paint','','| Set-up | Pixels that differ |','|---|---|',...minuteRows,''].join('\n');
 if(process.env.GITHUB_STEP_SUMMARY)appendFileSync(process.env.GITHUB_STEP_SUMMARY,report+'\n');
 console.log(report);
 // Reports only for now: a difference is a warning with side-by-sides in the
 // artifact, not a failed check, until the comparison has settled in.
 if(failed)console.log(`::warning title=Emulator against the preview::${failed} of ${rows.length} set-ups differ; see the job summary and the emulator-comparison artifact.`);
+// A minute tick that leaves a different face from a full paint is a bug in the
+// watch's own drawing, not a preview difference: that fails the check.
+if(minuteFailed){console.log(`::error title=Minute tick::${minuteFailed} set-ups differ from a full paint after a minute tick.`);process.exit(1);}

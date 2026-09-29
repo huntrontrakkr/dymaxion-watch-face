@@ -72,8 +72,13 @@ static AppTimer *s_motion_timer;
 // last frame between redraws: most redraws repaint everything, but animation
 // frames repaint only what moves, the clock strip (minute change, glide) or
 // the bottom tray (swipe), and everything else stays as it was.
+// An ordinary minute tick paints parts too (minute_redraw): the top bar, the
+// clock, the tray and the place times between clock and map, which is all a
+// minute changes while the map keeps its light, markers and labels.
 #define PART_CLOCK 1
 #define PART_TRAY 2
+#define PART_STATUS 4
+#define PART_PLATE 8
 static bool s_full=true;static uint8_t s_parts;
 static void redraw(void){s_full=true;layer_mark_dirty(s_layer);}
 static void redraw_part(uint8_t part){s_parts|=part;layer_mark_dirty(s_layer);}
@@ -609,6 +614,12 @@ static void marker_spots(time_t now,int visible,MarkerSpots *s){
     for(int k=0;k<s->hull_count;k++)if(s->grouped[i]&&!memcmp(&s->hulls[k].outer,o,sizeof(*o)))s->inner[i]=s->hulls[k].inner;
   }
 }
+// The marker layout of the last full paint, which the partial paints keep
+// (the nameplate or place-time strip, your bullseye) and a minute tick checks.
+static MarkerSpots s_spots;static int s_spots_visible=-1;
+static void draw_you(GContext *ctx,int mx,int my){
+  if(s_spots.you>=0)pixel_rows(ctx,HERE_GLYPH,HERE_SIZE,HERE_SIZE,mx+s_spots.layout[s_spots.you].x-HERE_SIZE/2,my+s_spots.layout[s_spots.you].y-HERE_SIZE/2,color(6));
+}
 // Placement inputs from this frame's marker layout.
 // Map time size from DISPLAY byte 3 (display.h): code 0 medium, 1 small, 2 large,
 // 3 extra large, 4 wide.
@@ -766,12 +777,25 @@ static void update_beside(int visible){
 // it, the status line when AM/PM moves there with the glide).
 static void draw_parts(GContext *ctx,time_t now,struct tm *local,int visible){
   bool beside=s_beside,tray=s_parts&PART_TRAY;
+  // The strip fills its own band; in a full paint only your bullseye and the
+  // clock come after it, so they follow it here too.
+  if(s_parts&PART_PLATE&&s_spots.plate){draw_plate(ctx,now,local,visible,s_spots.plate_x,s_spots.plate_y);draw_you(ctx,s_settings[MAP_X],s_settings[MAP_Y]);}
   if(s_parts&PART_CLOCK){
     update_beside(visible);draw_time(ctx,local,now,visible);
     if(clock_layout(visible,NULL,NULL,NULL)+clock_height()>TRAY_Y)tray=true;
   }
   if(tray)draw_tray_section(ctx,now,local,visible);
-  if(s_beside!=beside)draw_status_section(ctx,local,now);
+  if(s_parts&PART_STATUS||s_beside!=beside)draw_status_section(ctx,local,now);
+}
+// A minute tick. The map keeps its pixels unless it was relit, carries place
+// times, or its markers moved (your city going stale, say): then, or while
+// the markers pulse, the whole face is painted as before.
+static void minute_redraw(void){
+  int visible=layer_get_unobstructed_bounds(s_layer).size.h;
+  if(s_map_dirty||s_animation||visible!=s_spots_visible||zones_on_map((s_display[2]>>2)&3,zone_position(),zones_in_panel(visible))){redraw();return;}
+  static MarkerSpots now_spots;marker_spots(time(NULL),visible,&now_spots);
+  if(memcmp(&now_spots,&s_spots,sizeof(now_spots))){redraw();return;}
+  redraw_part(PART_STATUS|PART_CLOCK|PART_TRAY|(strip_on(visible)?PART_PLATE:0));
 }
 static void update_proc(Layer *layer,GContext *ctx) {
   time_t now=time(NULL);struct tm local=*localtime(&now);
@@ -805,25 +829,25 @@ static void update_proc(Layer *layer,GContext *ctx) {
   uint8_t when=(s_display[2]>>2)&3;
   // Clearings (a group's hull inside) first, then map times, then hull outlines
   // (so a grouped leader starts at its hull), then glyphs.
-  static MarkerSpots spots;marker_spots(now,visible,&spots);
-  for(int i=0;i<3;i++){int k=spots.index[i];if(k>=0&&!spots.grouped[k])pixel_rows(ctx,MARKER_HALO,7,7,mx+spots.layout[k].x-3,my+spots.layout[k].y-3,color(0));}
+  marker_spots(now,visible,&s_spots);
+  for(int i=0;i<3;i++){int k=s_spots.index[i];if(k>=0&&!s_spots.grouped[k])pixel_rows(ctx,MARKER_HALO,7,7,mx+s_spots.layout[k].x-3,my+s_spots.layout[k].y-3,color(0));}
   // Your bullseye keeps its clearing even in a group: it stands proud of the hull.
-  if(spots.you>=0)pixel_rows(ctx,HERE_HALO,HERE_SIZE+2,HERE_SIZE+2,mx+spots.layout[spots.you].x-HERE_SIZE/2-1,my+spots.layout[spots.you].y-HERE_SIZE/2-1,color(0));
+  if(s_spots.you>=0)pixel_rows(ctx,HERE_HALO,HERE_SIZE+2,HERE_SIZE+2,mx+s_spots.layout[s_spots.you].x-HERE_SIZE/2-1,my+s_spots.layout[s_spots.you].y-HERE_SIZE/2-1,color(0));
   HullPen ground={ctx,mx,my};graphics_context_set_stroke_color(ctx,color(0));
-  for(int k=0;k<spots.hull_count;k++)map_hull_ground(&spots.hulls[k],hull_pixel,&ground);
-  if(s_map&&zones_on_map(when,zone_position(),panel_zones))draw_map_times(ctx,now,&local,mx,my,&spots);
+  for(int k=0;k<s_spots.hull_count;k++)map_hull_ground(&s_spots.hulls[k],hull_pixel,&ground);
+  if(s_map&&zones_on_map(when,zone_position(),panel_zones))draw_map_times(ctx,now,&local,mx,my,&s_spots);
   // Hull outlines in the ground color, like each glyph's clearing ring.
   graphics_context_set_stroke_color(ctx,color(0));
-  for(int k=0;k<spots.hull_count;k++)map_hull_outline(&spots.hulls[k],hull_pixel,&ground);
-  for(int i=0;i<3;i++)if(spots.index[i]>=0) {
-    const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;const MapMarker *m=&spots.layout[spots.index[i]];GPoint pos=GPoint(mx+m->x,my+m->y);
+  for(int k=0;k<s_spots.hull_count;k++)map_hull_outline(&s_spots.hulls[k],hull_pixel,&ground);
+  for(int i=0;i<3;i++)if(s_spots.index[i]>=0) {
+    const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;const MapMarker *m=&s_spots.layout[s_spots.index[i]];GPoint pos=GPoint(mx+m->x,my+m->y);
     marker_glyph(ctx,pos,z[10],mark_color(i));
     if(i==pulsing_place())pixel_rows(ctx,PULSE_GLYPHS[s_frame%4],PULSE_SIZE,PULSE_SIZE,pos.x-8,pos.y-8,mark_color(i));
   }
   // You: a bullseye one size up, in the clock's ink.
   // The Dymaxion nameplate, in the accent color, when there is room.
-  if(spots.plate)draw_plate(ctx,now,&local,visible,spots.plate_x,spots.plate_y);
-  if(spots.you>=0)pixel_rows(ctx,HERE_GLYPH,HERE_SIZE,HERE_SIZE,mx+spots.layout[spots.you].x-HERE_SIZE/2,my+spots.layout[spots.you].y-HERE_SIZE/2,color(6));
+  if(s_spots.plate)draw_plate(ctx,now,&local,visible,s_spots.plate_x,s_spots.plate_y);
+  draw_you(ctx,mx,my);s_spots_visible=visible;
   update_beside(visible);
   draw_time(ctx,&local,now,visible);
   draw_tray_section(ctx,now,&local,visible);
@@ -893,7 +917,7 @@ static void tick(struct tm *local_time,TimeUnits changed) {
   // Paused in the dark (night saver): with the backlight off the screen keeps
   // its last frame; the backlight coming on redraws it (backlight_changed),
   // and while it stays on the minute keeps up.
-  if(!power_dark_paused(power(),local_time->tm_hour,quiet())||light_is_on())redraw();
+  if(!power_dark_paused(power(),local_time->tm_hour,quiet())||light_is_on())minute_redraw();
   int page=panels_page();if(panels_tick(now))tray_start(page);pulse_on_zones();
   if(s_clock_face)clock_prepare(local_time,now,true);
   int interval=panels_refresh_minutes();if(!(s_city[1]&1)&&interval>60)interval=60;
