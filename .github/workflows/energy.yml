@@ -63,7 +63,8 @@ jobs:
           (cd $src && git log -1 --format='%H %s')
       - name: Count instructions in the emulator
         run: |
-          export QEMU_REAL="$(command -v qemu-pebble)"
+          # pebble-tool puts the SDK's toolchain on PATH only for itself.
+          export QEMU_REAL="$(command -v qemu-pebble || ls "$HOME"/.local/share/pebble-sdk/SDKs/4.33.1/toolchain/bin/qemu-pebble 2>/dev/null)"
           test -n "$QEMU_REAL" || { echo "::error::qemu-pebble not found"; exit 1; }
           export PEBBLE_QEMU_PATH="$GITHUB_WORKSPACE/tools/energy/qemu-trace.sh"
           mkdir -p "$QEMU_TRACE_DIR"
