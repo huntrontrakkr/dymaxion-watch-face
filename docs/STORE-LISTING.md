@@ -37,6 +37,14 @@ its 64 colors. Each release uploads them in place of the listing's screenshots.
 To refresh them, run `npm run dev`, then `npm run demo`. The demo GIF must stay
 under 1.5 MB; the 2× copy for the README is `docs/screenshots/dymaxion-demo.gif`.
 
+The listing's banner is `docs/screenshots/store/banner-720x320.png`, with a
+1440 × 640 copy for the README at `docs/screenshots/dymaxion-banner.png`. It
+shows the net lit at an equinox afternoon, on the triangular lattice its faces
+are cut from. The lattice grows finer toward the map, and the wordmark sits
+above it, all in the Airocean palette's colors. `npm run hero` redraws both.
+Releases do not upload the banner. Set it once in the developer dashboard's
+listing editor.
+
 Each automated GitHub release includes `dymaxion.pbw`, `SHA256SUMS` and release
 notes. The original submission kits are archived with the
 [0.3.5 release](https://github.com/huntrontrakkr/dymaxion-watch-face/releases/tag/v0.3.5).
