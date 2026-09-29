@@ -5,6 +5,8 @@
 #define ZONE_SIZE 72
 #define HEADER_SIZE 16
 #define MARKER_COUNT 12
+// Glyph ID 12: the place's own drawn glyph (place_glyphs.h).
+#define MARKER_CUSTOM MARKER_COUNT
 enum { VERSION, THEME, FLAGS, FORMAT, ORIENTATION, TIME_X, TIME_Y, MAP_X, MAP_Y, ZONE_X, ZONE_Y, ZONE2_X, ZONE2_Y, ZONE3_X, ZONE3_Y, ENABLED };
 // Version 8 reuses flag 32 for the map Moon; ignore it in older packets.
 enum { DAY_NIGHT=1, EDGES=2, LIGHTS=4, MOTION=8, SUN=16, MAP_MOON=32, BUZZ_DISCONNECT=64, BUZZ_RECONNECT=128 };

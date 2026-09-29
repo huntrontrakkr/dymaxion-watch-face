@@ -1,6 +1,6 @@
 # Drawing the map less often, and less of it
 
-29 September 2026, for [0.6.1](../releases/v0.6.1.md). There are three changes:
+29 September 2026, for [0.7.0](../releases/v0.7.0.md). There are three changes:
 
 - A minute tick no longer repaints the map.
 - A relight repaints only the tiles the terminator can reach.

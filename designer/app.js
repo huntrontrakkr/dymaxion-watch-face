@@ -7,7 +7,8 @@ import {paletteControls} from '../shared/palette-controls.js';
 import moment from 'moment-timezone';
 import {drawBitmapText,fitLabel,textWidth} from '../shared/type.js';
 import {defaults,THEMES,PLACES,PRESETS,activePreset,presetFor,withClockDisplay,validateSettings,clampPosition,blockSize,markColor,quantizeColor,clockTopForVisible,QUICK_VIEW_HEIGHT,hourText} from '../shared/settings.js';
-import {MARKERS,drawMarkerPixels} from '../shared/markers.js';
+import {MARKERS,CUSTOM_MARKER,drawMarkerPixels,placeGlyph,placeGlyphMeaning} from '../shared/markers.js';
+import {glyphEditor} from '../shared/glyph-editor.js';
 import {makeMap,direction,dot,MAP_SIZE,mapPoint} from '../shared/map.js';
 import {BACKGROUND_BITS} from '../shared/map-background.js';
 import {projectToMap} from '../shared/map-net.js';
@@ -76,7 +77,7 @@ let currentCity={name:'Norfolk',sample:true,lat:36.9,lon:-76.3};
 const cityLocation=locationService({getSettings:()=>settings,storage:localStorage,send:city=>{currentCity=city;render();}});
 const cityEditor=cityControls($('city-controls'),()=>settings,value=>{settings=validateSettings({...settings,location:value},zoneExists);save();},()=>cityLocation.refresh());
 const powerEditor=powerControls($('power-controls'),()=>settings,power=>{settings={...settings,power};sync();save();});
-const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,mapTimeSize:value.mapTimeSize,zoneTimesTall:value.zoneTimesTall,zoneStripCompact:value.zoneStripCompact,placeIcons:value.placeIcons,nameplate:value.nameplate,clockArt:value.clockArt};sync();save();});
+const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,mapTimeSize:value.mapTimeSize,zoneTimesTall:value.zoneTimesTall,zoneStripCompact:value.zoneStripCompact,placeIcons:value.placeIcons,placeIconsBeside:value.placeIconsBeside,nameplate:value.nameplate,clockArt:value.clockArt};sync();save();});
 const paletteEditor=paletteControls($('palette-controls'),()=>settings,patch=>{settings=validateSettings({...settings,...patch},zoneExists);sync();save();});
 const environment=environmentService({getSettings:()=>settings,storage:localStorage,send:(kind,data)=>{liveData[kind]=data;render();}});
 const panelEditor=panelControls($('panel-controls'),()=>settings,footer=>{
@@ -114,6 +115,8 @@ THEMES.forEach((t,i)=>{
   button.innerHTML=`<span class="swatches" aria-hidden="true">${[t.bg,t.ink,t.ocean,t.land,t.nightLand,t.accent].map(c=>`<i style="background:${c}"></i>`).join('')}</span><span class="theme-name">${t.name}</span><span class="theme-note">${t.description}</span>`;
   button.onclick=()=>{settings.theme=i;settings.customPalette=null;sync();save();};$('themes').append(button);
 });
+// A new city keeps the place's switch, glyph (drawn or not) and color.
+const keepMarker=p=>({on:p.on,icon:p.icon,...(p.glyph?{glyph:p.glyph}:{}),color:p.color});
 function markerSample(canvas,icon,color,bg='#000000'){
   const g=canvas.getContext('2d');g.fillStyle=bg;g.fillRect(0,0,9,9);
   drawMarkerPixels(g,icon,4,4,color);
@@ -135,10 +138,10 @@ function placesUI(){
   $('place-list').replaceChildren();
   settings.places.forEach((p,i)=>{
     const card=document.createElement('div');card.className='place-card';
-    card.innerHTML=`<label class="toggle"><span><i class="place-dot"></i>Place 0${i+1}</span><input type="checkbox" aria-label="Enable place ${i+1}" data-field="on"></label><div data-city-search></div><label class="field">Saved city<select data-field="city" aria-label="City for place ${i+1}"></select></label><div class="place-fields"><label class="field">Short label<input data-field="label" aria-label="Label for place ${i+1}" maxlength="7" pattern="[A-Z0-9 +\\-]{1,7}"></label><label class="field">Map glyph<select data-field="icon" aria-label="Symbol for place ${i+1}"></select></label></div><div class="marker-control"><canvas width="9" height="9" aria-hidden="true"></canvas><span class="marker-description"></span></div><div class="marker-color"><label class="field">Marker color<input data-field="color" type="color" aria-label="Color for place ${i+1}"></label><output data-color-name></output><button type="button" data-color-reset aria-label="Use theme color for place ${i+1}">Use theme color</button></div><details><summary>Coordinates & named time zone</summary><div class="place-fields"><label class="field wide">IANA time zone<input data-field="tz" aria-label="Time zone for place ${i+1}" type="text"></label><label class="field">Latitude<input data-field="lat" aria-label="Latitude for place ${i+1}" type="number" step="0.0001" min="-90" max="90"></label><label class="field">Longitude<input data-field="lon" aria-label="Longitude for place ${i+1}" type="number" step="0.0001" min="-180" max="180"></label></div></details>`;
+    card.innerHTML=`<label class="toggle"><span><i class="place-dot"></i>Place 0${i+1}</span><input type="checkbox" aria-label="Enable place ${i+1}" data-field="on"></label><div data-city-search></div><label class="field">Saved city<select data-field="city" aria-label="City for place ${i+1}"></select></label><div class="place-fields"><label class="field">Short label<input data-field="label" aria-label="Label for place ${i+1}" maxlength="7" pattern="[A-Z0-9 +\\-]{1,7}"></label><label class="field">Map glyph<select data-field="icon" aria-label="Symbol for place ${i+1}"></select></label></div><div class="marker-control"><canvas width="9" height="9" aria-hidden="true"></canvas><span class="marker-description"></span></div><div class="glyph-editor" data-glyph-editor hidden></div><div class="marker-color"><label class="field">Marker color<input data-field="color" type="color" aria-label="Color for place ${i+1}"></label><output data-color-name></output><button type="button" data-color-reset aria-label="Use theme color for place ${i+1}">Use theme color</button></div><details><summary>Coordinates & named time zone</summary><div class="place-fields"><label class="field wide">IANA time zone<input data-field="tz" aria-label="Time zone for place ${i+1}" type="text"></label><label class="field">Latitude<input data-field="lat" aria-label="Latitude for place ${i+1}" type="number" step="0.0001" min="-90" max="90"></label><label class="field">Longitude<input data-field="lon" aria-label="Longitude for place ${i+1}" type="number" step="0.0001" min="-180" max="180"></label></div></details>`;
     const city=card.querySelector('[data-field=city]'),symbol=card.querySelector('[data-field=icon]');
     PLACES.forEach((place,n)=>city.add(new Option(`${place.name} / ${place.label}`,String(n))));city.add(new Option('Custom location','custom'));
-    MARKERS.forEach((mark,n)=>symbol.add(new Option(mark.name,String(n))));
+    MARKERS.forEach((mark,n)=>symbol.add(new Option(mark.name,String(n))));symbol.add(new Option('Draw your own',String(CUSTOM_MARKER)));
     const match=PLACES.findIndex(place=>place.tz===p.tz&&place.lat===p.lat&&place.lon===p.lon);city.value=match<0?'custom':String(match);
     const refreshMarker=()=>{
       const place=settings.places[i],ink=markColor(place,settings,i);
@@ -146,14 +149,19 @@ function placesUI(){
       card.querySelector('[data-field=color]').value=ink;
       card.querySelector('[data-color-name]').textContent=place.color?`${ink} · custom`:`${ink} · theme`;
       card.querySelector('[data-color-reset]').disabled=place.color===null;
-      card.querySelector('.marker-description').textContent=MARKERS[place.icon].meaning;
-      markerSample(card.querySelector('.marker-control canvas'),place.icon,ink,paletteFor(settings).bg);
+      card.querySelector('.marker-description').textContent=placeGlyphMeaning(place);
+      markerSample(card.querySelector('.marker-control canvas'),placeGlyph(place),ink,paletteFor(settings).bg);
+      drawn.hidden=place.icon!==CUSTOM_MARKER;if(!drawn.hidden)editor.refresh();
     };
+    // Drawing your own: a 5×5 grid, starting from the glyph chosen before.
+    const drawn=card.querySelector('[data-glyph-editor]'),editor=glyphEditor(drawn,{label:`Draw the glyph for place ${i+1}`,getRows:()=>placeGlyph(settings.places[i]),getInk:()=>markColor(settings.places[i],settings,i),getBackground:()=>paletteFor(settings).bg,
+      onChange:rows=>{settings.places[i].glyph=rows;refreshMarker();save();}});
     for(const key of ['on','label','icon','tz','lat','lon']){
       const input=card.querySelector(`[data-field=${key}]`);if(key==='on')input.checked=p.on;else input.value=p[key];
       input.onchange=()=>{
         const candidate=clone(settings);
         candidate.places[i][key]=key==='on'?input.checked:['lat','lon','icon'].includes(key)?Number(input.value):key==='label'?input.value.trim().toUpperCase():input.value.trim();
+        if(key==='icon'&&candidate.places[i].icon===CUSTOM_MARKER&&!candidate.places[i].glyph)candidate.places[i].glyph=[...MARKERS[settings.places[i].icon].rows];
         try{settings=validateSettings(candidate,zoneExists);input.setCustomValidity('');input.value=settings.places[i][key];refreshMarker();save();if(['lat','lon','tz'].includes(key))city.value='custom';}
         catch(e){input.setCustomValidity(e.message);input.reportValidity();notice(e.message,true);}
       };
@@ -166,9 +174,9 @@ function placesUI(){
     card.querySelector('[data-color-reset]').onclick=()=>{settings.places[i].color=null;refreshMarker();save();};
     city.onchange=()=>{
       if(city.value==='custom'){card.querySelector('details').open=true;return;}
-      settings.places[i]={...PLACES[+city.value],on:settings.places[i].on,icon:settings.places[i].icon,color:settings.places[i].color};placesUI();save();
+      settings.places[i]={...PLACES[+city.value],...keepMarker(settings.places[i])};placesUI();save();
     };
-    placeSearches.push(citySearch(card.querySelector('[data-city-search]'),{label:`Search city for place ${i+1}`,zoneExists,near:()=>currentCity.sample?null:currentCity,onSelect:place=>{settings.places[i]={...place,on:settings.places[i].on,icon:settings.places[i].icon,color:settings.places[i].color};placesUI();panelEditor.refresh();save();}}));
+    placeSearches.push(citySearch(card.querySelector('[data-city-search]'),{label:`Search city for place ${i+1}`,zoneExists,near:()=>currentCity.sample?null:currentCity,onSelect:place=>{settings.places[i]={...place,...keepMarker(settings.places[i])};placesUI();panelEditor.refresh();save();}}));
     refreshMarker();$('place-list').append(card);
   });
 }
@@ -330,7 +338,7 @@ function render(){
   if(onMap)drawMapTimes(now,local,mx,my,pal,markers);
   // Hull outlines in the ground color, like each glyph's clearing ring.
   ctx.fillStyle=pal.bg;for(const h of markers.hulls)for(const [x,y] of hullPixels(h).outline)ctx.fillRect(mx+x,my+y,1,1);
-  settings.places.forEach((p,i)=>{const s=markers.places[i];if(!s)return;const ink=markColor(p,settings,i);drawMarkerPixels(ctx,p.icon,mx+s.x,my+s.y,ink);const pulsing=pulseNow();if(pulsing&&pulsing.place===i)drawPixelRows(ctx,PULSE_ROWS[pulsing.frame],mx+s.x-8,my+s.y-8,ink);});
+  settings.places.forEach((p,i)=>{const s=markers.places[i];if(!s)return;const ink=markColor(p,settings,i);drawMarkerPixels(ctx,placeGlyph(p),mx+s.x,my+s.y,ink);const pulsing=pulseNow();if(pulsing&&pulsing.place===i)drawPixelRows(ctx,PULSE_ROWS[pulsing.frame],mx+s.x-8,my+s.y-8,ink);});
   // You: a bullseye one size up, in the clock's ink.
   if(markers.you)drawPixelRows(ctx,HERE_ROWS,mx+markers.you.x-3,my+markers.you.y-3,pal.ink);
   canvas.dataset.here=markers.you?markers.you.x+','+markers.you.y:'';
@@ -347,7 +355,7 @@ function render(){
   // nameplate back on top where it reaches (it never touches the figures).
   if(plate&&!strip&&plate.y<ty+th&&plate.y+NAMEPLATE_HEIGHT>ty)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
   if(plate&&strip)drawZoneStrip(ctx,plate.y,settings.places.map((p,i)=>{if(!p.on)return null;const there=moment(now).tz(p.tz);
-    return {icon:p.icon,label:p.label,hour:there.hours(),minute:there.minutes(),delta:Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000),color:markColor(p,settings,i)};}).filter(Boolean),
+    return {icon:placeGlyph(p),label:p.label,hour:there.hours(),minute:there.minutes(),delta:Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000),color:markColor(p,settings,i)};}).filter(Boolean),
     {font:watchTypeface.lining.small,clock24:use24(),ink:pal.ink,accent:pal.accent,bg:pal.bg,compact:settings.zoneStripCompact});
   if(!FLIP_FACES[settings.clockDisplay])minuteClock.reset();
   {
@@ -366,7 +374,8 @@ function render(){
       const font=watchTypeface.lining.small,shown=settings.places.map((p,i)=>[p,i]).filter(([p])=>p.on);
       shown.forEach(([p,i],row)=>{
         const there=moment(now).tz(p.tz),delta=Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000);
-        const r=zoneRow({label:p.label,hour:there.hours(),minute:there.minutes(),clock24:use24(),delta,side,tall:settings.zoneTimesTall},t=>textWidth(font,t)),base=ty+zoneRowBaseline(row,shown.length,settings.zoneTimesTall);
+        const r=zoneRow({label:p.label,hour:there.hours(),minute:there.minutes(),clock24:use24(),delta,side,tall:settings.zoneTimesTall,icon:settings.placeIconsBeside},t=>textWidth(font,t)),base=ty+zoneRowBaseline(row,shown.length,settings.zoneTimesTall);
+        if(settings.placeIconsBeside)drawMarkerPixels(ctx,placeGlyph(p),tx+r.glyphX,base-4,fade(markColor(p,settings,i)));
         drawBitmapText(ctx,font,r.label,tx+r.labelX,base,fade(markColor(p,settings,i)));
         if(settings.zoneTimesTall){ctx.fillStyle=fade(pal.ink);for(const [x,y] of tallPixels(r.time))ctx.fillRect(tx+r.timeX+x,base+y,1,1);}
         else drawBitmapText(ctx,font,r.time,tx+r.timeX,base,fade(pal.ink));
@@ -385,7 +394,7 @@ function render(){
     const delta=Math.round((Date.UTC(there.year(),there.month(),there.date())-Date.UTC(local.year(),local.month(),local.date()))/86400000);
     const ink=markColor(p,settings,i);
     ctx.fillStyle=pal.bg;ctx.fillRect(x,y,60,36);drawPixelRows(ctx,DAY_NIGHT_ROWS[+(dot(direction(p.lat,p.lon),sun)>=0)],x+1,y+5,ink);
-    if(settings.placeIcons)drawMarkerPixels(ctx,p.icon,x+10,y+7,ink);
+    if(settings.placeIcons)drawMarkerPixels(ctx,placeGlyph(p),x+10,y+7,ink);
     paintText(fitLabel(watchTypeface.text.small,p.label,settings.placeIcons?28:34),x+(settings.placeIcons?16:9),y+12,11,ink);if(delta)paintText((delta>0?'+':'')+delta,x+60,y+12,11,pal.accent,'right');
     paintText(two(time.h)+':'+two(time.m),x+2,y+31,16,pal.ink);if(!use24())paintText(time.ampm[0],x+53,y+30,11,pal.accent);
     if(pulseNow()?.place===i)strokeLine(x,y+35,x+59,y+35,ink);

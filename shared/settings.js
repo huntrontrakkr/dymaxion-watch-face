@@ -1,5 +1,5 @@
 import {MAP_SIZE} from './map.js';
-import {MARKERS,LEGACY_MARKER_IDS} from './markers.js';
+import {LEGACY_MARKER_IDS,CUSTOM_MARKER,validGlyph} from './markers.js';
 import {defaultFooter,validateFooter} from './panel-settings.js';
 import {validateLocation} from './city.js';
 import {DISPLAY_STYLES} from './display.js';
@@ -63,7 +63,7 @@ const LEGACY_PRESETS=[{
 }];
 export function defaults() {
   return {version:1,markerSet:2,theme:0,customPalettes:[],customPalette:null,format:1,dayNight:true,edges:false,lights:true,motion:true,sun:true,mapMoon:false,mapRotation:0,moonIndicator:true,batteryGauge:false,stepLine:false,connectionBuzz:'disconnect',
-    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',leadingZero:true,mapBackground:'none',zoneTimes:'when-hidden',zonePosition:'map',mapTimesTurn:false,nameplate:false,mapTimeSize:'medium',zoneTimesTall:false,zoneStripCompact:false,placeIcons:true,clockArt:'none',power:defaultPower(),location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
+    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',leadingZero:true,mapBackground:'none',zoneTimes:'when-hidden',zonePosition:'map',mapTimesTurn:false,nameplate:false,mapTimeSize:'medium',zoneTimesTall:false,zoneStripCompact:false,placeIcons:true,placeIconsBeside:false,clockArt:'none',power:defaultPower(),location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
 }
 // Quick View: a clock the peek would cover moves up to sit just above it,
 // never into the status line (clock_top_for_visible in settings.c).
@@ -158,6 +158,9 @@ export function validateSettings(input,zoneExists) {
   // on unless turned off (it used to follow the theme).
   if(input.placeIcons!==undefined&&typeof input.placeIcons!=='boolean')throw new Error('Invalid place icons.');
   out.placeIcons=input.placeIcons??true;
+  // The same icons beside the names of the place times next to the clock.
+  if(input.placeIconsBeside!==undefined&&typeof input.placeIconsBeside!=='boolean')throw new Error('Invalid place icons beside the clock.');
+  out.placeIconsBeside=input.placeIconsBeside??false;
   const position=(key,pos)=>{
     if(!Array.isArray(pos)||pos.length!==2||!pos.every(Number.isFinite))throw new Error('Invalid position.');
     return clampPosition(out,key,pos);
@@ -170,9 +173,12 @@ export function validateSettings(input,zoneExists) {
     if(typeof p.tz!=='string'||p.tz.length>80||!zoneExists(p.tz))throw new Error('Unknown IANA time zone: '+String(p.tz));
     if(!Number.isFinite(p.lat)||Math.abs(p.lat)>90||!Number.isFinite(p.lon)||Math.abs(p.lon)>180)throw new Error('Coordinates must be latitude ±90 and longitude ±180.');
     const icon=legacyMarkers?LEGACY_MARKER_IDS[p.icon]:p.icon;
-    if(!Number.isInteger(p.icon)||!Number.isInteger(icon)||icon<0||icon>=MARKERS.length||typeof p.on!=='boolean')throw new Error('Invalid place marker.');
+    // CUSTOM_MARKER is a glyph the wearer drew, kept in glyph.
+    if(!Number.isInteger(p.icon)||!Number.isInteger(icon)||icon<0||icon>CUSTOM_MARKER||(legacyMarkers&&icon===CUSTOM_MARKER)||typeof p.on!=='boolean')throw new Error('Invalid place marker.');
+    if(p.glyph!==undefined&&!validGlyph(p.glyph))throw new Error('A drawn glyph needs five rows of five pixels.');
+    if(icon===CUSTOM_MARKER&&p.glyph===undefined)throw new Error('A drawn glyph needs its pixels.');
     const color=p.color==null?null:quantizeColor(p.color);
-    return {label:p.label,name:typeof p.name==='string'?p.name.slice(0,60):p.label,...(typeof p.region==='string'?{region:p.region.slice(0,120)}:{}),tz:p.tz,lat:p.lat,lon:p.lon,icon,color,on:p.on};
+    return {label:p.label,name:typeof p.name==='string'?p.name.slice(0,60):p.label,...(typeof p.region==='string'?{region:p.region.slice(0,120)}:{}),tz:p.tz,lat:p.lat,lon:p.lon,icon,...(p.glyph?{glyph:[...p.glyph]}:{}),color,on:p.on};
   });
   return out;
 }

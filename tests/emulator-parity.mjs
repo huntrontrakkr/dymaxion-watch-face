@@ -11,6 +11,7 @@ import {encodeSettings} from '../shared/protocol.js';
 import {encodeFooter,encodeEnvironment} from '../shared/panel-protocol.js';
 import {encodeDisplay} from '../shared/display.js';
 import {encodePalette} from '../shared/palette-protocol.js';
+import {encodeGlyphs} from '../shared/glyph-protocol.js';
 import {sampleEnvironment} from '../shared/panel-data.js';
 import {encodeCity} from '../shared/city.js';
 
@@ -18,7 +19,7 @@ const base=process.env.PREVIEW_URL||'http://127.0.0.1:5173',out='test-results/em
 mkdirSync(out,{recursive:true});
 // Message key numbers as the SDK assigned them for this build.
 const KEY=JSON.parse(readFileSync('watchface/build/js/message_keys.json','utf8'));
-for(const k of ['SETTINGS','FOOTER','DISPLAY','PALETTE','TIDE','CITY'])if(!Number.isInteger(KEY[k]))throw new Error('No message key for '+k);
+for(const k of ['SETTINGS','FOOTER','DISPLAY','PALETTE','TIDE','CITY','GLYPHS'])if(!Number.isInteger(KEY[k]))throw new Error('No message key for '+k);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 // pebble-tool respawns the phone simulator when it has stopped, which can take
 // a moment to accept connections: try each command a few times.
@@ -36,7 +37,7 @@ const pebble=async(...args)=>{
 // typed-in name marks no position on the map.
 const send=async(settings,slug)=>{
   const city=settings.location.mode==='auto'?{name:'Norfolk',lat:36.9,lon:-76.3,fetched:Math.floor(Date.now()/1000)}:{name:'Norfolk',manual:true};
-  const files={SETTINGS:encodeSettings(settings),FOOTER:encodeFooter(settings),DISPLAY:encodeDisplay(settings),PALETTE:encodePalette(settings),CITY:encodeCity(city)};
+  const files={SETTINGS:encodeSettings(settings),FOOTER:encodeFooter(settings),DISPLAY:encodeDisplay(settings),PALETTE:encodePalette(settings),GLYPHS:encodeGlyphs(settings),CITY:encodeCity(city)};
   if(settings.footer.pages.includes('tide'))files.TIDE=encodeEnvironment(sampleEnvironment(Date.now()).tide,'tide');
   const entries=Object.entries(files).map(([k,bytes])=>{const f=join(process.cwd(),out,`${slug}-${k}.bin`);writeFileSync(f,bytes);return `${KEY[k]}=${f}`;});
   await pebble('send-app-message','--bytes-file',...entries);
@@ -51,6 +52,8 @@ const cases={
   'turned map, current city and place times':{mapRotation:180,mapMoon:true,zoneTimes:'always',zonePosition:'map',location:{mode:'auto',name:''}},
   'place times between the clock and the map':{zoneTimes:'always',zonePosition:'strip'},
   'compact place times between the clock and the map':{zoneTimes:'always',zonePosition:'strip',zoneStripCompact:true},
+  // A drawn glyph for the second place, on the map and before its name beside the clock.
+  'icons beside the clock, a drawn glyph':{zoneTimes:'always',zonePosition:'right',placeIconsBeside:true,places:defaults().places.map((p,i)=>i===1?{...p,icon:12,glyph:['.....','.#.#.','.....','#...#','.###.']}:p)},
   'icosahedron beside the clock, battery gauge':{clockArt:'left',zoneTimes:'panel',batteryGauge:true,theme:theme('Paper')},
   'Ultraviolet, 12-hour':{theme:theme('Ultraviolet'),format:2},
   'tides with highs and lows':{footer:{...defaults().footer,pages:['tide','zones'],home:'tide',tide:{...defaults().footer.tide,station:'8638610'}}}

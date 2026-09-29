@@ -25,6 +25,14 @@ The small scale gives the map room to remain the subject.
 The section sign §, reference mark ※, asterism ⁂ and therefore sign ∴ were
 tried and left out: at five pixels they read as an S, a blur or stray dots.
 
+A place can also carry its own drawing: choose **Draw your own** as its map
+glyph, and a 5×5 grid appears in the place's settings, starting from the glyph
+chosen before. Tap squares to set or clear pixels; **Clear** empties it. The
+drawing is glyph ID 12 and travels in the `GLYPHS` packet
+([protocol](PROTOCOL.md)); it is drawn wherever a built-in glyph would be: on
+the map, in the time-zone drawer, in the strip between the clock and the map,
+and before the name beside the clock when **Icons beside the clock** is on.
+
 Your own location, when the phone sends it, is a 7×7 bullseye one size up
 from the place glyphs (`HERE_ROWS`), in the clock's ink: the big clock is its
 time. It clears a 9×9 square around it.

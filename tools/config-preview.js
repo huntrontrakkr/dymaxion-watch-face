@@ -6,7 +6,7 @@ import {clockMask,drawFlipPixels,flipOffset} from '../shared/minute-flip.js';
 import {drawBitmapText,fitLabel,textWidth} from '../shared/type.js';
 import {clockCaption} from '../shared/city.js';
 import {markColor,hourText,blockSize} from '../shared/settings.js';
-import {drawMarkerPixels} from '../shared/markers.js';
+import {drawMarkerPixels,placeGlyph} from '../shared/markers.js';
 import {projectToMap} from '../shared/map-net.js';
 import {sunDirection,mapNight,mapSun,mapLight} from '../shared/solar.js';
 import {sinceRelight} from '../shared/power.js';
@@ -74,14 +74,14 @@ const night=s.dayNight&&mapNight(light,x,y);
       for(const [x,y]of figures)ctx.fillRect(mx+label.x+x,my+label.y+y,1,1);
     });
   }
-  spots.forEach((point,j)=>{const {p,i}=enabled[j];drawPixelRows(ctx,MARKER_HALO_ROWS,mx+point.x-3,my+point.y-3,pal.bg);drawMarkerPixels(ctx,p.icon,mx+point.x,my+point.y,markColor(p,s,i));});
+  spots.forEach((point,j)=>{const {p,i}=enabled[j];drawPixelRows(ctx,MARKER_HALO_ROWS,mx+point.x-3,my+point.y-3,pal.bg);drawMarkerPixels(ctx,placeGlyph(p),mx+point.x,my+point.y,markColor(p,s,i));});
   const [tx,timeY]=s.time,[tw,th]=blockSize(s,'time');
   // Place times between the clock and the map take the nameplate's place.
   const {plate,clockTop:ty}=s.nameplate||strip?nameplateLayout({mapY:my,timeY,height:th,visible:228}):{plate:null,clockTop:timeY};
   if(plate&&!strip)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
   if(plate&&!strip&&plate.y<ty+th&&plate.y+NAMEPLATE_HEIGHT>ty)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
-  if(plate&&strip)drawZoneStrip(ctx,plate.y,enabled.map(({p,i})=>({icon:p.icon,label:p.label,hour:times[i].h,minute:times[i].m,delta:Math.round((times[i].day-local.day)/86400000),color:markColor(p,s,i)})),{font:font.lining.small,clock24,ink:pal.ink,accent:pal.accent,bg:pal.bg,compact:s.zoneStripCompact});
+  if(plate&&strip)drawZoneStrip(ctx,plate.y,enabled.map(({p,i})=>({icon:placeGlyph(p),label:p.label,hour:times[i].h,minute:times[i].m,delta:Math.round((times[i].day-local.day)/86400000),color:markColor(p,s,i)})),{font:font.lining.small,clock24,ink:pal.ink,accent:pal.accent,bg:pal.bg,compact:s.zoneStripCompact});
   const cityName=s.location.mode==='manual'?s.location.name:city?.name||'YOUR CITY',ampm=now.getHours()<12?'AM':'PM';
   const date=`${['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()]} ${two(now.getDate())} ${['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][now.getMonth()]}`;
   // The clock as the workshop draws it, with AM/PM beside Chamfer when nothing
@@ -91,7 +91,8 @@ const night=s.dayNight&&mapNight(light,x,y);
   if(art&&!beside)drawClockArt(ctx,side,tx,ty,pal.accent);
   if(!beside&&!art&&s.clockDisplay==='chamfer'&&!clock24)drawBitmapText(ctx,font.lining.small,ampm,tx+167,ty+9,pal.accent);
   if(beside)enabled.forEach(({p,i},row)=>{
-    const t=times[i],r=zoneRow({label:p.label,hour:t.h,minute:t.m,clock24,delta:Math.round((t.day-local.day)/86400000),side,tall:s.zoneTimesTall},text=>[...text].reduce((n,c)=>n+(font.lining.small[c]||font.lining.small['?']).a,0)),base=ty+zoneRowBaseline(row,enabled.length,s.zoneTimesTall);
+    const t=times[i],r=zoneRow({label:p.label,hour:t.h,minute:t.m,clock24,delta:Math.round((t.day-local.day)/86400000),side,tall:s.zoneTimesTall,icon:s.placeIconsBeside},text=>[...text].reduce((n,c)=>n+(font.lining.small[c]||font.lining.small['?']).a,0)),base=ty+zoneRowBaseline(row,enabled.length,s.zoneTimesTall);
+    if(s.placeIconsBeside)drawMarkerPixels(ctx,placeGlyph(p),tx+r.glyphX,base-4,markColor(p,s,i));
     drawBitmapText(ctx,font.lining.small,r.label,tx+r.labelX,base,markColor(p,s,i));
     if(s.zoneTimesTall){ctx.fillStyle=pal.ink;for(const [x,y] of tallPixels(r.time))ctx.fillRect(tx+r.timeX+x,base+y,1,1);}
     else drawBitmapText(ctx,font.lining.small,r.time,tx+r.timeX,base,pal.ink);
@@ -102,7 +103,7 @@ const night=s.dayNight&&mapNight(light,x,y);
     // Laid out exactly as the workshop and the watch draw the drawer.
     const delta=Math.round((t.day-local.day)/86400000);
     drawPixelRows(ctx,DAY_NIGHT_ROWS[+(dot(direction(p.lat,p.lon),sun)>=0)],x+1,y+5,ink);
-    if(s.placeIcons)drawMarkerPixels(ctx,p.icon,x+10,y+7,ink);
+    if(s.placeIcons)drawMarkerPixels(ctx,placeGlyph(p),x+10,y+7,ink);
     drawBitmapText(ctx,font.text.small,fitLabel(font.text.small,p.label,s.placeIcons?28:34),x+(s.placeIcons?16:9),y+12,ink);
     if(delta)drawBitmapText(ctx,font.text.small,(delta>0?'+':'')+delta,x+60,y+12,pal.accent,'right');
     drawBitmapText(ctx,font.lining.zone,`${two(clock24?t.h:t.h%12||12)}:${two(t.m)}`,x+2,y+31,pal.ink);

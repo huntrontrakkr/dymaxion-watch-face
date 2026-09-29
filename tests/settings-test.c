@@ -53,7 +53,9 @@ int main(int argc,char **argv) {
   memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+7]='X';assert(!settings_valid(bad,sizeof(bad)));
   memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+14]=255;bad[HEADER_SIZE+15]=127;assert(!settings_valid(bad,sizeof(bad)));
   memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+70]=0x3f;assert(!settings_valid(bad,sizeof(bad)));
-  memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+10]=MARKER_COUNT;assert(!settings_valid(bad,sizeof(bad)));
+  // Glyph ID MARKER_CUSTOM (12) is a drawn glyph; 13 and up are unknown.
+  memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+10]=MARKER_CUSTOM;assert(settings_valid(bad,sizeof(bad)));
+  memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+10]=MARKER_CUSTOM+1;assert(!settings_valid(bad,sizeof(bad)));
   memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+71]=1;assert(!settings_valid(bad,sizeof(bad)));
   memcpy(bad,bytes,sizeof(bytes));bad[HEADER_SIZE+17]=2;assert(!settings_valid(bad,sizeof(bad)));
   // Byte 17 of the second and third places: the battery gauge and the step line, on or off.

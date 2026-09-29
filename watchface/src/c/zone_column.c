@@ -41,8 +41,8 @@ int zone_tall_draw(const char *text,int x,int baseline,ZoneTallPlot plot,void *c
 // flush right, so the times line up in one column.
 // Tall rows drop the pixel after A/P at the edge, a pixel of the gap before
 // the time and the extra pixel between label and day offset.
-void zone_row(ZoneRow *row,const char *label,int hour,int minute,bool clock24,int delta,bool stale,bool right,bool tall,ZoneMeasure measure,const void *font){
-  int x=right?200-ZONE_COLUMN_WIDTH:ZONE_COLUMN_INSET,end=right?200-ZONE_COLUMN_INSET:ZONE_COLUMN_WIDTH;
+void zone_row(ZoneRow *row,const char *label,int hour,int minute,bool clock24,int delta,bool stale,bool right,bool tall,bool icon,ZoneMeasure measure,const void *font){
+  int start=right?200-ZONE_COLUMN_WIDTH:ZONE_COLUMN_INSET,x=start+(icon?ZONE_ROW_GLYPH_ADVANCE:0),end=right?200-ZONE_COLUMN_INSET:ZONE_COLUMN_WIDTH;
   int h=clock24?hour:(hour%12?hour%12:12);
   unsigned hh=(unsigned)h%100,mm=(unsigned)minute%60;
   row->time[0]='0'+hh/10;row->time[1]='0'+hh%10;row->time[2]=':';row->time[3]='0'+mm/10;row->time[4]='0'+mm%10;row->time[5]=0;
@@ -58,7 +58,9 @@ void zone_row(ZoneRow *row,const char *label,int hour,int minute,bool clock24,in
   for(;n<7&&label[n];n++)row->label[n]=(label[n]>='a'&&label[n]<='z')?label[n]-'a'+'A':label[n];
   row->label[n]=0;
   while(n&&measure(row->label,font)>room)row->label[--n]=0;
-  row->label_x=x;row->day_x=x+measure(row->label,font)+1-trim;
+  // With an icon, the glyph names the place: a label cut to one letter is dropped.
+  if(icon&&n<2&&label[0]&&label[1])row->label[0]=0;
+  row->glyph_x=start+2;row->label_x=x;row->day_x=x+measure(row->label,font)+1-trim;
 }
 void zone_strip_entry(ZoneStripItem *item,const char *label,int hour,int minute,bool clock24,int delta,bool stale){
   // 12-hour hours drop their leading zero here, to leave the labels room.

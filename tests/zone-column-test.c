@@ -22,9 +22,9 @@ int main(int argc,char **argv){
     }
     return 0;
   }
-  for(int i=2;i+7<argc;i+=8){
-    ZoneRow r;zone_row(&r,argv[i],atoi(argv[i+1]),atoi(argv[i+2]),atoi(argv[i+3]),atoi(argv[i+4]),atoi(argv[i+5]),atoi(argv[i+6]),atoi(argv[i+7]),measure,font);
-    printf("%s|%d|%s|%d|%s|%d|%s|%d\n",r.label,r.label_x,r.time,r.time_x,r.suffix,r.suffix_x,r.day,r.day_x);
+  for(int i=2;i+8<argc;i+=9){
+    ZoneRow r;zone_row(&r,argv[i],atoi(argv[i+1]),atoi(argv[i+2]),atoi(argv[i+3]),atoi(argv[i+4]),atoi(argv[i+5]),atoi(argv[i+6]),atoi(argv[i+7]),atoi(argv[i+8]),measure,font);
+    printf("%d|%s|%d|%s|%d|%s|%d|%s|%d\n",r.glyph_x,r.label,r.label_x,r.time,r.time_x,r.suffix,r.suffix_x,r.day,r.day_x);
   }
   for(int count=1;count<=3;count++)for(int i=0;i<count;i++)printf("%d ",zone_row_baseline(i,count,false));
   printf("\n");

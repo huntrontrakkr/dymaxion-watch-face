@@ -20,7 +20,7 @@
 #include "generated/cities.h"
 #include "generated/moon_palette.h"
 #include "generated/status_glyphs.h"
-#include "generated/markers.h"
+#include "place_glyphs.h"
 #include "transitions.h"
 #include "power.h"
 #include "step_cache.h"
@@ -33,6 +33,7 @@ static uint8_t s_settings[SETTINGS_SIZE];
 static uint8_t s_palette[PALETTE_SIZE];
 static uint8_t s_city[CITY_SIZE]={1};
 static uint8_t s_display[DISPLAY_SIZE]=DEFAULT_DISPLAY;
+static uint8_t s_glyphs[GLYPHS_SIZE]={1};
 // s_map_dirty: rebuild every map pixel (launch, settings); s_map_relight: the
 // Sun or Moon moved, so only what that changes is repainted.
 static bool s_map_dirty=true,s_map_relight,s_connected=true;
@@ -186,18 +187,16 @@ static void pixel_rows(GContext *ctx,const uint32_t *rows,int width,int height,i
   for(int row=0;row<height;row++)for(int col=0;col<width;col++)
     if(rows[row]&(1u<<(width-1-col)))graphics_draw_pixel(ctx,GPoint(x+col,y+row));
 }
-static void marker_glyph(GContext *ctx,GPoint p,uint8_t icon,GColor c) {
+// Place `place`'s glyph, built in or drawn by the wearer, centred on p.
+static void marker_glyph(GContext *ctx,GPoint p,int place,GColor c) {
+  uint8_t rows[GLYPH_ROWS];place_glyph_rows(s_glyphs,place,s_settings[HEADER_SIZE+place*ZONE_SIZE+10],rows);
   graphics_context_set_stroke_color(ctx,c);
-  for(int y=0;y<MARKER_SIZE;y++)for(int x=0;x<MARKER_SIZE;x++)
-    if(MARKER_ROWS[icon][y] & (1u<<(MARKER_SIZE-1-x)))
-      graphics_draw_pixel(ctx,GPoint(p.x+x-MARKER_SIZE/2,p.y+y-MARKER_SIZE/2));
+  for(int y=0;y<GLYPH_ROWS;y++)for(int x=0;x<GLYPH_ROWS;x++)
+    if(rows[y]&(1u<<(GLYPH_ROWS-1-x)))graphics_draw_pixel(ctx,GPoint(p.x+x-GLYPH_ROWS/2,p.y+y-GLYPH_ROWS/2));
 }
-static void marker(GContext *ctx,GPoint p,uint8_t icon,GColor c) {
+static void marker(GContext *ctx,GPoint p,int place,GColor c) {
   pixel_rows(ctx,MARKER_HALO,7,7,p.x-3,p.y-3,color(0));
-  graphics_context_set_stroke_color(ctx,c);
-  for(int y=0;y<MARKER_SIZE;y++)for(int x=0;x<MARKER_SIZE;x++)
-    if(MARKER_ROWS[icon][y] & (1u<<(MARKER_SIZE-1-x)))
-      graphics_draw_pixel(ctx,GPoint(p.x+x-MARKER_SIZE/2,p.y+y-MARKER_SIZE/2));
+  marker_glyph(ctx,p,place,c);
 }
 static int ordinal(const struct tm *t) {
   return calendar_ordinal(t->tm_year+1900,t->tm_mon+1,t->tm_mday);
@@ -505,7 +504,7 @@ static void draw_zones(GContext *ctx,time_t now,struct tm *local,int visible) {
       label[strlen(label)-1]=0;
     bool daylight=illumination((int8_t)z[11],(int8_t)z[12],(int8_t)z[13])>=0;
     pixel_rows(ctx,DAY_NIGHT_GLYPHS[daylight],5,5,x+1,y+5,mark_color(i));
-    if(glyph)marker(ctx,GPoint(x+10,y+7),z[10],mark_color(i));
+    if(glyph)marker(ctx,GPoint(x+10,y+7),i,mark_color(i));
     text(ctx,label,s_small,GRect(x+(glyph?16:9),y,glyph?28:38,14),GTextAlignmentLeft,mark_color(i));
     if(stale)snprintf(day,sizeof(day),"?");
     else if(delta)snprintf(day,sizeof(day),"%+d",delta);else day[0]=0;
@@ -563,9 +562,12 @@ static void draw_zone_column(GContext *ctx,time_t now,const struct tm *local,int
     struct tm zone=zone_time(z,now,local,&delta,&stale);char label[8];
     snprintf(label,sizeof(label),"%.7s",(const char *)z);
     bool tall=DISPLAY_ZONE_TALL(s_display);
-    ZoneRow r;zone_row(&r,label,zone.tm_hour,zone.tm_min,is_24(),delta,stale,beside_right(),tall,caps_measure,s_caps);
+    bool icon=glyphs_beside(s_glyphs);
+    ZoneRow r;zone_row(&r,label,zone.tm_hour,zone.tm_min,is_24(),delta,stale,beside_right(),tall,icon,caps_measure,s_caps);
     int base=y+zone_row_baseline(row++,count,tall);
     CapsPen mark={ctx,faded(mark_color(i),alpha)},ink={ctx,faded(color(6),alpha)},accent={ctx,faded(color(7),alpha)};
+    // The icon is centred on the capitals, as in the strip.
+    if(icon)marker_glyph(ctx,GPoint(x+r.glyph_x,base-4),i,mark.color);
     caps_draw(s_caps,r.label,x+r.label_x,base,false,caps_span,&mark);
     if(tall){graphics_context_set_stroke_color(ctx,ink.color);zone_tall_draw(r.time,x+r.time_x,base,tall_plot,ctx);}
     else caps_draw(s_caps,r.time,x+r.time_x,base,false,caps_span,&ink);
@@ -598,7 +600,7 @@ static void draw_zone_strip(GContext *ctx,time_t now,const struct tm *local,int 
   int base=top+(compact?ZONE_STRIP_COMPACT_BASELINE:ZONE_STRIP_BASELINE),glyph_y=top+(compact?ZONE_STRIP_COMPACT_GLYPH_Y:ZONE_STRIP_GLYPH_Y);CapsPen ink={ctx,color(6)},accent={ctx,color(7)};
   for(int k=0;k<n;k++){
     const ZoneStripItem *e=&items[k];int i=index[k];CapsPen mark={ctx,mark_color(i)};
-    marker_glyph(ctx,GPoint(e->glyph_x,glyph_y),s_settings[HEADER_SIZE+i*ZONE_SIZE+10],mark_color(i));
+    marker_glyph(ctx,GPoint(e->glyph_x,glyph_y),i,mark_color(i));
     caps_draw(s_caps,e->label,e->label_x,base,false,caps_span,&mark);
     if(compact)caps_draw(s_caps,e->time,e->time_x,base,false,caps_span,&ink);
     else{graphics_context_set_stroke_color(ctx,ink.color);zone_tall_draw(e->time,e->time_x,base,tall_plot,ctx);}
@@ -870,8 +872,8 @@ static void update_proc(Layer *layer,GContext *ctx) {
   graphics_context_set_stroke_color(ctx,color(0));
   for(int k=0;k<s_spots.hull_count;k++)map_hull_outline(&s_spots.hulls[k],hull_pixel,&ground);
   for(int i=0;i<3;i++)if(s_spots.index[i]>=0) {
-    const uint8_t *z=s_settings+HEADER_SIZE+i*ZONE_SIZE;const MapMarker *m=&s_spots.layout[s_spots.index[i]];GPoint pos=GPoint(mx+m->x,my+m->y);
-    marker_glyph(ctx,pos,z[10],mark_color(i));
+    const MapMarker *m=&s_spots.layout[s_spots.index[i]];GPoint pos=GPoint(mx+m->x,my+m->y);
+    marker_glyph(ctx,pos,i,mark_color(i));
     if(i==pulsing_place())pixel_rows(ctx,PULSE_GLYPHS[s_frame%4],PULSE_SIZE,PULSE_SIZE,pos.x-8,pos.y-8,mark_color(i));
   }
   // You: a bullseye one size up, in the clock's ink.
@@ -987,6 +989,11 @@ static void received(DictionaryIterator *iter,void *context) {
     full=true;
     memcpy(s_city,city->value->data,CITY_SIZE);persist_write_data(2,s_city,CITY_SIZE);
   }
+  Tuple *glyphs=dict_find(iter,MESSAGE_KEY_GLYPHS);
+  if(glyphs&&glyphs->type==TUPLE_BYTE_ARRAY&&glyphs_valid(glyphs->value->data,glyphs->length)&&memcmp(s_glyphs,glyphs->value->data,GLYPHS_SIZE)){
+    full=true;
+    memcpy(s_glyphs,glyphs->value->data,GLYPHS_SIZE);persist_write_data(5,s_glyphs,GLYPHS_SIZE);
+  }
   Tuple *t=dict_find(iter,MESSAGE_KEY_SETTINGS);
   if(t&&t->type==TUPLE_BYTE_ARRAY&&settings_valid(t->value->data,t->length)&&memcmp(s_settings,t->value->data,SETTINGS_SIZE)){
     full=true;
@@ -1025,6 +1032,8 @@ static void init(void) {
   uint8_t display[DISPLAY_SIZE];int display_length=persist_read_data(3,display,sizeof(display));
   if(display_normalize(s_display,display,display_length)&&memcmp(display,s_display,DISPLAY_SIZE))
     persist_write_data(3,s_display,DISPLAY_SIZE);
+  uint8_t glyphs[GLYPHS_SIZE];int glyphs_length=persist_read_data(5,glyphs,sizeof(glyphs));
+  if(glyphs_valid(glyphs,glyphs_length))memcpy(s_glyphs,glyphs,GLYPHS_SIZE);
   uint8_t custom[PALETTE_SIZE];int palette_length=persist_read_data(4,custom,sizeof(custom));
   if(palette_valid(custom,palette_length))memcpy(s_palette,custom,PALETTE_SIZE);
   s_small=fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_DRAFT_12));

@@ -1,7 +1,7 @@
 {
   "name": "dymaxion",
   "author": "huntrontrakkr",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "license": "Apache-2.0",
   "private": true,
   "dependencies": {},
@@ -18,7 +18,7 @@
       "watchface": true
     },
     "capabilities": ["configurable", "location", "health"],
-    "messageKeys": ["SETTINGS", "REQUEST", "FOOTER", "WEATHER", "TIDE", "CITY", "DISPLAY", "PALETTE"],
+    "messageKeys": ["SETTINGS", "REQUEST", "FOOTER", "WEATHER", "TIDE", "CITY", "DISPLAY", "PALETTE", "GLYPHS"],
     "resources": {
       "media": [
         {"type":"raw","name":"MAP_LANDSCAPE","file":"maps/map-0.bin"},
