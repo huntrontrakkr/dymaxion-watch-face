@@ -45,6 +45,26 @@ try{
   assert.equal((await saved()).customPalettes[0].marks[0],'#FFFFAA','the choice is saved');
   await page.getByLabel('Palette place 1 default',{exact:true}).click();await page.keyboard.press('Escape');
   assert(await picker.isHidden(),'Escape closes it');
+  // The same 64 colors in four arrangements: honeycomb, RGB cube, CIELAB
+  // lightness and CIE 1931 chromaticity; the choice is remembered.
+  await page.getByLabel('Palette place 1 default',{exact:true}).click();
+  for(const name of ['RGB cube','Lightness','Chromaticity','Honeycomb']){
+    await picker.getByRole('button',{name,exact:true}).click();
+    assert.equal(await picker.getByRole('button',{name,exact:true}).getAttribute('aria-pressed'),'true',name);
+    assert.equal(await picker.getByRole('radio').count(),64,`${name}: all 64 colors`);
+    assert.equal(await picker.getByRole('radio',{name:'#FFFFAA',exact:true}).getAttribute('aria-checked'),'true',`${name}: the current color is marked`);
+  }
+  await picker.getByRole('button',{name:'RGB cube',exact:true}).click();
+  // Arrow keys move to the nearest color in that direction: right of FF0000
+  // (the end of the blue-00 square's top row) is 000055, starting blue 55; below it is FF5500.
+  await picker.getByRole('radio',{name:'#FF0000',exact:true}).focus();await page.keyboard.press('ArrowRight');
+  assert.equal(await page.evaluate(()=>document.activeElement.getAttribute('aria-label')),'#000055');
+  await picker.getByRole('radio',{name:'#FF0000',exact:true}).focus();await page.keyboard.press('ArrowDown');
+  assert.equal(await page.evaluate(()=>document.activeElement.getAttribute('aria-label')),'#FF5500');
+  await page.keyboard.press('Escape');
+  await page.getByLabel('Palette place 1 default',{exact:true}).click();
+  assert.equal(await picker.getByRole('button',{name:'RGB cube',exact:true}).getAttribute('aria-pressed'),'true','the arrangement is remembered');
+  await picker.getByRole('button',{name:'Honeycomb',exact:true}).click();await page.keyboard.press('Escape');
   // The preview's "As on the watch" is the same choice as the picker's, and
   // shows the watch colors over the preview, which keeps its true pixels.
   await page.getByLabel('As on the watch',{exact:true}).check();

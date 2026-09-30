@@ -1,5 +1,7 @@
 # Dymaxion
 
+![Dymaxion: the map on its triangular lattice](docs/screenshots/dymaxion-banner.png)
+
 A watch face for **Pebble Time 2 / Emery** built on Buckminster Fuller's
 Dymaxion map, which unfolds the globe onto the twenty faces of an icosahedron
 without splitting a continent. Fuller called it a deck plan of Spaceship Earth.

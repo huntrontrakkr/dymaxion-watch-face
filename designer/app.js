@@ -40,6 +40,7 @@ import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,labelHu
 import {minuteFlipClock,drawFlipPixels,FLIP_FACES,flipOffset} from '../shared/minute-flip.js';
 import {installWatchColorPicker} from '../shared/color-picker.js';
 import {colorView,setColorView,onColorViewChange,watchViewOverlay} from '../shared/watch-view.js';
+import {onSecretTaps} from '../shared/secret-taps.js';
 installWatchColorPicker();
 
 const $=id=>document.getElementById(id),zoneExists=tz=>!!moment.tz.zone(tz);
@@ -68,6 +69,7 @@ const STORAGE='dymaxion-workshop-v1';
 try {const saved=localStorage.getItem(STORAGE);if(saved)settings=validateSettings(JSON.parse(saved),zoneExists);}catch{notice('Saved settings could not be read, so the defaults are loaded.');}
 const paletteLink=new URLSearchParams(location.search).get('palette');
 const linkedTheme=THEMES.findIndex(theme=>theme.slug&&theme.slug===paletteLink);
+const hiddenTheme=THEMES.findIndex(theme=>theme.hidden);
 if(linkedTheme>=0){
   settings.theme=linkedTheme;settings.customPalette=null;
   const url=new URL(location.href);url.searchParams.delete('palette');history.replaceState(null,'',url);
@@ -109,6 +111,9 @@ for(const [id,name] of [['meridian','Meridian'],['horizon','Horizon']]){
   button.innerHTML=`<svg viewBox="0 0 40 46" aria-hidden="true"><path d="${drawings[id]}"/></svg><span>${name}</span>`;
   button.onclick=()=>{Object.assign(settings,presetFor(id,settings.clockDisplay));sync();save();};$('presets').append(button);
 }
+// Five taps on the edition mark add the hidden palette to the list for this visit.
+let unlocked=false;
+onSecretTaps(document.querySelector('.edition'),()=>{if(unlocked)return;unlocked=true;sync();switchTab($('tab-character'));document.querySelector(`[data-theme="${hiddenTheme}"]`).scrollIntoView({block:'center'});});
 THEMES.forEach((t,i)=>{
   const button=document.createElement('button');button.type='button';button.dataset.theme=i;button.setAttribute('aria-pressed','false');
   button.setAttribute('aria-label',t.name);
@@ -186,7 +191,7 @@ function sync(){
   $('mapRotation').value=settings.mapRotation;
   $('format').value=settings.format;$('connectionBuzz').value=settings.connectionBuzz;$('mapBackground').value=settings.mapBackground;
   document.querySelectorAll('[data-theme]').forEach(b=>{
-    const id=+b.dataset.theme;b.hidden=!!THEMES[id].hidden&&id!==settings.theme;
+    const id=+b.dataset.theme;b.hidden=!!THEMES[id].hidden&&id!==settings.theme&&!unlocked;
     b.setAttribute('aria-pressed',String(settings.customPalette===null&&id===settings.theme));
   });
   const current=activePreset(settings);document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.preset===current)));

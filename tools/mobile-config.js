@@ -11,6 +11,7 @@ import {citySearch} from '../shared/place-search.js';
 import {renderConfigPreview} from './config-preview.js';
 import {PANEL_PAGES} from '../shared/panel-settings.js';
 import {quoteOfTheDay} from '../shared/fuller-quotes.js';
+import {onSecretTaps} from '../shared/secret-taps.js';
 import {installWatchColorPicker} from '../shared/color-picker.js';
 import {colorView,setColorView,onColorViewChange,watchViewOverlay} from '../shared/watch-view.js';
 installWatchColorPicker();
@@ -51,10 +52,11 @@ for(const [key,title,note,root] of [['moonIndicator','Moon','The current phase o
   const input=document.createElement('input');input.type='checkbox';input.id=key;input.setAttribute('aria-label',title);label.append(span,input);$(root).append(label);
 }
 function swatches(root,p){root.replaceChildren();for(const color of [p.bg,p.ocean,p.land,p.nightOcean,p.nightLand,p.ink]){const i=document.createElement('i');i.style.background=color;root.append(i);}}
+let unlocked=false;
 function paletteChoices(){
   const palette=paletteFor(s);$('palette-name').textContent=palette.name;swatches($('palette-swatches'),palette);
   $('palette-options').replaceChildren();THEMES.forEach((p,i)=>{
-    if(p.hidden&&i!==s.theme)return;
+    if(p.hidden&&i!==s.theme&&!unlocked)return;
     const button=document.createElement('button');button.type='button';button.setAttribute('aria-label',p.name);button.setAttribute('aria-pressed',String(s.customPalette===null&&s.theme===i));
     const colors=document.createElement('span');colors.className='palette-swatches';colors.setAttribute('aria-hidden','true');swatches(colors,p);
     const name=document.createElement('span');name.textContent=p.name;button.append(colors,name);
@@ -62,7 +64,7 @@ function paletteChoices(){
   });
 }
 function refresh(){
-  options($('theme'),THEMES.flatMap((t,i)=>!t.hidden||i===s.theme?[[t.name,i]]:[]));
+  options($('theme'),THEMES.flatMap((t,i)=>!t.hidden||i===s.theme||unlocked?[[t.name,i]]:[]));
   panelEditor.refresh();
   cityEditor.refresh();
   displayEditor.refresh();
@@ -101,6 +103,8 @@ $('preset').onchange=()=>{const preset=$('preset').value;if(preset!=='custom')Ob
 $('connectionBuzz').onchange=()=>{s.connectionBuzz=$('connectionBuzz').value;};
 $('mapRotation').onchange=()=>{s.mapRotation=+$('mapRotation').value;changed();};
 $('mapBackground').onchange=()=>{s.mapBackground=$('mapBackground').value;changed();};
+// Five taps on the eyebrow add the hidden palette to the lists for this visit.
+onSecretTaps(document.querySelector('.page-header .eyebrow'),()=>{if(unlocked)return;unlocked=true;refresh();$('palette-picker').open=true;$('palette-picker').scrollIntoView({block:'start'});});
 for(const key of ['theme','format'])$(key).onchange=()=>{s[key]=Number($(key).value);if(key==='theme'){s.customPalette=null;refresh();}changed();};
 for(const key of ['moonIndicator','batteryGauge','stepLine','dayNight','lights','sun','mapMoon','edges','motion'])$(key).onchange=()=>{s[key]=$(key).checked;powerEditor.refresh();changed();};
 function importText(text){try{s=validateSettings(JSON.parse(text),exists);$('error').textContent='Composition loaded.';$('preset').value='custom';refresh();}catch(e){$('error').textContent=e.message;}}

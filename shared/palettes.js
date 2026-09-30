@@ -70,7 +70,7 @@ export const THEMES = [
     bg:'#FFFFAA',ocean:'#005555',land:'#AAAA55',nightOcean:'#000000',nightLand:'#555500',
     edge:'#555555',ink:'#005555',accent:'#AA5500',marks:['#0055AA','#AA5500','#550055'],moonShadow:'#AAAA55',inactive:'#AAAA55',
     panelColors:{temperature:'#AA5500',rain:'#0055AA',humidity:'#005555',tide:'#0055AA',saturday:'#0055AA',sunday:'#AA5500',holiday:'#550055',today:'#005555'}},
-  {name:'Hot Dog Stand',hidden:true,slug:'hot-dog-stand',description:'Extra mustard. Absolutely no restraint.',
+  {name:'People’s Glizzy Stand',hidden:true,slug:'peoples-glizzy-stand',description:'Extra mustard. Absolutely no restraint.',
     bg:'#FF0000',ocean:'#AA0000',land:'#FFFF00',nightOcean:'#550000',nightLand:'#AAAA00',
     edge:'#000000',ink:'#FFFF00',accent:'#FFFFFF',marks:['#FFFFFF','#FFFF00','#000000'],moonShadow:'#AA0000',inactive:'#AA0000',
     panelColors:{temperature:'#FFFF00',rain:'#FFFFFF',humidity:'#000000',tide:'#FFFFFF',saturday:'#FFFF00',sunday:'#000000',holiday:'#FFFFFF',today:'#FFFF00'}}
