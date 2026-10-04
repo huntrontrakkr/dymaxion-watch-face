@@ -303,3 +303,20 @@ any other length. In exported JSON a drawn glyph is `glyph`, five strings of
 `.` and `#`, beside `icon: 12`; a place with a built-in glyph may keep an
 earlier drawing in `glyph` for later, and JSON `placeIconsBeside` defaults to
 false.
+
+`LANGUAGE` is 2 bytes, persisted under key 6 (`shared/watch-text.js`,
+`watch_text.c`): version 1, then the face's language as an index into the
+watch languages of `LANGUAGES` (0 English, 1 Spanish, … 16 Korean; append
+only). The companion sends the chosen language, or for **Automatic** the
+phone's as the settings page last saw it (`deviceLanguage` in the settings
+JSON), else the companion runtime's own. A language the face cannot draw
+(Arabic, Hindi) sends English. The watch loads that language's resource,
+`TEXT_<CODE>`, and keeps it in memory while it is in use; it refuses other
+versions, indexes and lengths, and an invalid resource leaves the face in
+English. In exported JSON the choice is `language` (`auto` or a code) beside
+`deviceLanguage`.
+
+The tide footer flag (byte 41) is set for a NOAA station, a modelled place or
+automatic mode. A modelled tide place is `footer.tide.point` in JSON
+(`{lat, lon}`, three decimals), with `station` empty; the tide packet itself is
+unchanged.

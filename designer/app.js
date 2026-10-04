@@ -41,7 +41,7 @@ import {minuteFlipClock,drawFlipPixels,FLIP_FACES,flipOffset} from '../shared/mi
 import {installWatchColorPicker} from '../shared/color-picker.js';
 import {colorView,setColorView,onColorViewChange,watchViewOverlay} from '../shared/watch-view.js';
 import {onSecretTaps} from '../shared/secret-taps.js';
-import {resolveLanguage,watchText,watchDate} from '../shared/watch-text.js';
+import {resolveLanguage,watchText,watchDate,LANGUAGES} from '../shared/watch-text.js';
 import {localizedFont} from '../shared/watch-font.js';
 installWatchColorPicker();
 
@@ -191,7 +191,7 @@ markerGallery();
 function sync(){
   for(const key of ['dayNight','edges','lights','sun','mapMoon','motion','moonIndicator','batteryGauge','stepLine'])$(key).checked=settings[key];
   $('mapRotation').value=settings.mapRotation;
-  $('format').value=settings.format;$('connectionBuzz').value=settings.connectionBuzz;$('mapBackground').value=settings.mapBackground;
+  $('format').value=settings.format;$('language').value=settings.language;$('connectionBuzz').value=settings.connectionBuzz;$('mapBackground').value=settings.mapBackground;
   document.querySelectorAll('[data-theme]').forEach(b=>{
     const id=+b.dataset.theme;b.hidden=!!THEMES[id].hidden&&id!==settings.theme&&!unlocked;
     b.setAttribute('aria-pressed',String(settings.customPalette===null&&id===settings.theme));
@@ -202,6 +202,10 @@ function sync(){
 for(const key of ['dayNight','edges','lights','sun','mapMoon','motion','moonIndicator','batteryGauge','stepLine'])$(key).onchange=()=>{settings[key]=$(key).checked;move('time',settings.time);positionFields();displayEditor.refresh();powerEditor.refresh();save();};
 $('mapRotation').onchange=()=>{settings.mapRotation=+$('mapRotation').value;save();};
 $('format').onchange=()=>{settings.format=+$('format').value;save();};
+// The face's language; Automatic shows this browser's, as the phone page would.
+$('language').add(new Option('Automatic — this browser’s language','auto'));
+for(const {code,name,watch} of LANGUAGES)$('language').add(new Option(watch===false?`${name} (page only; the face stays English)`:name,code));
+$('language').onchange=()=>{settings.language=$('language').value;save();};
 $('connectionBuzz').onchange=()=>{settings.connectionBuzz=$('connectionBuzz').value;save();};
 $('mapBackground').onchange=()=>{settings.mapBackground=$('mapBackground').value;save();};
 $('element').onchange=()=>{selected=$('element').value;positionFields();$('guides').checked=true;render();};

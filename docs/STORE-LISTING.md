@@ -21,11 +21,13 @@ Sunlight crosses the map through the day; city lights come on at night. An optio
 
 Up to three other time zones can sit in the bottom panel, beside the clock, between the clock and map, or by each city on the map. Daylight saving is handled per zone.
 
-The bottom panel offers weather, sunrise and sunset, a two-week calendar, humidity, NOAA tides and Pebble Health. Tides follow the nearest supported NOAA station as you travel, or a station you pin. Panels change on a wrist flick, a timer, or when rain or a turning tide approaches.
+The bottom panel offers weather, sunrise and sunset, a two-week calendar, humidity, tides and Pebble Health. Tides follow the nearest NOAA station as you travel, or Open-Meteo's modelled sea level anywhere else. Panels change on a wrist flick, a timer, or when rain or a turning tide approaches.
 
 The top bar has its own Moon, battery gauge, Quiet Time mark and step line. Choose from twenty-five palettes, custom colors and eight clock typefaces, with a preview in the phone settings.
 
 Fuller's word for doing more with less was ephemeralization. The map is redrawn at an interval rather than every minute, and a power saver cuts redraws at night or during Quiet Time.
+
+The face and its settings speak 19 languages, including Chinese, Japanese, Korean, Russian and Arabic.
 
 Requires Pebble Time 2. Automatic city, weather and tides use the phone's location. Health stays on the watch. Screenshot weather and tides are examples. Source code is on GitHub.
 

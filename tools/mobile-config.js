@@ -12,6 +12,8 @@ import {renderConfigPreview} from './config-preview.js';
 import {PANEL_PAGES} from '../shared/panel-settings.js';
 import {quoteOfTheDay} from '../shared/fuller-quotes.js';
 import {onSecretTaps} from '../shared/secret-taps.js';
+import {LANGUAGES,resolveLanguage} from '../shared/watch-text.js';
+import {translatePage} from '../shared/ui-language.js';
 import {installWatchColorPicker} from '../shared/color-picker.js';
 import {colorView,setColorView,onColorViewChange,watchViewOverlay} from '../shared/watch-view.js';
 installWatchColorPicker();
@@ -101,6 +103,7 @@ function refresh(){
     ['X','Y'].forEach((axis,j)=>{const labelEl=document.createElement('label');labelEl.textContent=label+' '+axis;const input=document.createElement('input');input.type='number';input.value=pos[j];input.min=j&&key!=='map'?16:0;input.max=(j?228:200)-size[j];input.required=true;input.onchange=()=>{pos[j]=Number(input.value);changed();};labelEl.append(input);row.append(labelEl);});$('positions').append(row);
   }
   preview();
+  showLanguage();
 }
 $('preset').onchange=()=>{const preset=$('preset').value;if(preset!=='custom')Object.assign(s,presetFor(preset,s.clockDisplay));refresh();};
 $('connectionBuzz').onchange=()=>{s.connectionBuzz=$('connectionBuzz').value;};
@@ -121,4 +124,15 @@ watchViewOverlay($('watch-preview'));
 const showWatchView=()=>$('preview-watch-colors').setAttribute('aria-pressed',String(colorView()==='watch'));
 $('preview-watch-colors').onclick=()=>setColorView(colorView()==='watch'?'screen':'watch');onColorViewChange(showWatchView);showWatchView();
 for(const [id,value]of [['preview-day',false],['preview-night',true]])$(id).onclick=()=>{evening=value;$('preview-day').setAttribute('aria-pressed',String(!value));$('preview-night').setAttribute('aria-pressed',String(value));preview();};
+// The language of the face and of this page: the phone's, or the one chosen.
+// Language names stay in their own language, so anyone can find theirs.
+var pageLanguage;
+function showLanguage(){
+  $('language').value=s.language;
+  const code=resolveLanguage(s.language,phoneLanguages);
+  if(code!==pageLanguage){pageLanguage=code;translatePage(document,code);}
+}
+$('language').add(new Option('Automatic — the phone’s language','auto'));
+for(const {code,name} of LANGUAGES)$('language').add(new Option(name,code));
+$('language').onchange=()=>{s.language=$('language').value;showLanguage();changed();};
 refresh();

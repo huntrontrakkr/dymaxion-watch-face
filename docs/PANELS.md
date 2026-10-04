@@ -88,7 +88,7 @@ Native Emery screenshots, with actual forecast and NOAA response data:
 | Weather | One chart: temperature line, dotted humidity line (fixed 0–100%), dimmed precipitation bars, daylight strip/night dots; header gives temperature, humidity and next rise/set | Current location (default) or saved city, °C/°F, 12/24/48 hours, probability/amount/off, mm/in, rain scale, automatic/fixed temperature range, refresh interval |
 | Calendar | Weekday labels and fourteen dates, with today highlighted | Sunday (default), Monday or Saturday start; previous/current or current/next week; weekend pattern in one weekend color; optional public holidays for the United States (federal, observed dates), Canada, Mexico, the United Kingdom (England and Wales), Germany, France or Australia; filled/outlined today |
 | Humidity | Relative humidity alone (not in the default rotation; the weather chart carries it) | Fixed 0–100% or fitted range; uses the weather location and cache |
-| Tide | Predicted water-height curve and next high/low time (optional: not in the default rotation; switch it on in the panel list. NOAA predictions are fetched only while it is included) | NOAA station, station time zone, meters/feet, automatic/fixed scale, zero line |
+| Tide | Predicted water-height curve and next high/low time (optional: not in the default rotation; switch it on in the panel list. Predictions are fetched only while it is included) | NOAA station or, anywhere else, Open-Meteo's modelled sea level; station time zone, meters/feet, automatic/fixed scale, zero line |
 
 Chart range labels, faint midline and colors are configurable. Colors follow
 the active theme by default; every light-ground palette and the six palettes
@@ -237,10 +237,25 @@ nearby NOAA stations** refreshes the alternatives without replacing a fixed
 choice. The user can choose a better match for their waterway; proximity alone
 does not establish tidal equivalence. Without a nearby station, a network
 connection or location permission, eleven coastal presets and manual
-ID/label/time-zone entry remain available. Automatic mode clears an old coast's
-chart when outside coverage. A failed location fix marks usable cached data
+ID/label/time-zone entry remain available. A failed location fix marks usable cached data
 OLD, and selection failures back off for fifteen minutes. Late responses cannot
 replace a newly chosen fixed station.
+
+Outside NOAA's coverage, tides come from
+[Open-Meteo's marine model](https://open-meteo.com/en/docs/marine-weather-api):
+its hourly sea level (`sea_level_height_msl`, tides included) on a grid of a
+few kilometres, relative to mean sea level. In **Follow current location**
+mode, when no hourly NOAA station is within 150 km, the phone asks for the
+model at its position (rounded to two decimal places, about a kilometre) and
+labels the chart **TIDE**, on the phone's clock. **Anywhere: modelled tides**
+in the station list searches for any coastal place and keeps it fixed. The
+model answers from its nearest sea cell; if that cell is more than 50 km from
+the place, the chart shows **DATA UNAVAILABLE** rather than another coast.
+The highs and lows are read from the hourly curve: each is the most extreme
+hour within two hours either side (which ignores small wiggles), refined to the
+minute by a parabola through it and its neighbours (`curveExtremes` in
+`shared/panel-data.js`). Modelled tides are good for the shape of the day, not
+for navigation; the settings page says so where they are chosen.
 
 Opening phone settings reuses the low-accuracy location fix shared with weather
 and city naming (up to fifteen minutes old). The data-URL settings page receives
@@ -263,8 +278,8 @@ A failed refresh keeps valid cached samples and marks the chart **OLD**.
 Age also marks weather old after twice its refresh interval and tides after
 12 hours. Once fewer than two samples remain, **FORECAST EXPIRED** replaces the
 curve. Missing values are rejected instead of becoming zero-temperature,
-zero-rain or zero-tide samples. No configured tide station produces **CHOOSE A
-NOAA STATION**. A missing first response produces **WAITING FOR PHONE** or
+zero-rain or zero-tide samples. No configured tide station or place produces
+**SET UP TIDES IN SETTINGS**. A missing first response produces **WAITING FOR PHONE** or
 **DATA UNAVAILABLE**.
 
 The workshop starts with clearly labeled **DEMO** curves to make layout editing
