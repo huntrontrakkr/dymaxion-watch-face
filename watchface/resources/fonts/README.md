@@ -8,6 +8,7 @@ The Emery build packages two original **Dymaxion Draft** cuts:
 The default Chamfer clock and the status line do not use font resources: their
 pixel masters are raw resources in `resources/data/`. `clock-chamfer.bin` comes
 from `tools/generate-chamfer-clock.mjs`, which enlarges the Draft zone numerals;
+`clock-broad.bin` holds the Broad clock's digits from `tools/generate-broad-clock.mjs`;
 `caps.bin` comes from `tools/generate-caps.mjs`, which packs Draft Micro's lining
 capitals. The Span option uses **Dymaxion Span**. Its exact pixel runs are generated
 in `watchface/src/c/generated/span_font.h` and drawn directly by native C to

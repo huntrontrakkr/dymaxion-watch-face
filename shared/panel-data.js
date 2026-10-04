@@ -59,6 +59,43 @@ export function tideUrls(station,now=Date.now()){
   const base='https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=DymaxionWatch&format=json&time_zone=gmt&units=metric&datum=MLLW&station='+encodeURIComponent(station.station)+'&begin_date='+start+'&end_date='+end;
   return [base+'&interval=h',base+'&interval=hilo'];
 }
+// Away from NOAA's stations: Open-Meteo's modelled sea level (its marine
+// model, tides included, on a grid of a few kilometres). Hourly heights are
+// relative to mean sea level; the highs and lows are found in the curve.
+// Good for the shape of the day, not for navigation.
+export const MODEL_TIDE_KM=50;
+const kilometres=(a,b)=>{const r=Math.PI/180,h=Math.sin((b.lat-a.lat)*r/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin((b.lon-a.lon)*r/2)**2;return 12742*Math.asin(Math.sqrt(Math.min(1,h)));};
+export function modelTideUrl(point){
+  return 'https://marine-api.open-meteo.com/v1/marine?latitude='+point.lat+'&longitude='+point.lon+'&hourly=sea_level_height_msl&timeformat=unixtime&timezone=GMT&past_days=1&forecast_days=4&cell_selection=sea';
+}
+// A high or low: the hour that is the most extreme within two hours either
+// side (which ignores small wiggles), refined to the minute by a parabola
+// through it and its neighbours.
+export function curveExtremes(times,heights){
+  const out=[];
+  for(let i=2;i<heights.length-2;i++){
+    const h=heights[i],near=heights.slice(i-2,i+3),high=h===Math.max(...near)&&h>heights[i-1],low=h===Math.min(...near)&&h<heights[i-1];
+    if(!high&&!low)continue;
+    const a=heights[i-1],b=heights[i+1],bend=a-2*h+b,shift=bend?Math.max(-.5,Math.min(.5,(a-b)/(2*bend))):0;
+    out.push({time:times[i]+Math.round(shift*60)*60,height:h-(a-b)*shift/4,high});
+  }
+  return out;
+}
+export function normalizeModelTide(raw,place,now=Date.now()){
+  const t=times(raw?.hourly?.time),levels=raw.hourly.sea_level_height_msl;
+  if(!Array.isArray(levels)||levels.length!==t.length||levels.every(v=>v===null))throw new Error('There is no modelled sea level here. Choose a place on the coast.');
+  if(levels.some(v=>!number(v,-30,30)))throw new Error('Open-Meteo returned an incomplete sea-level series.');
+  // The model answers from its nearest sea cell; far inland that is not your coast.
+  if(place.point&&Number.isFinite(raw.latitude)&&Number.isFinite(raw.longitude)&&kilometres(place.point,{lat:raw.latitude,lon:raw.longitude})>MODEL_TIDE_KM)throw new Error(`The nearest modelled sea is over ${MODEL_TIDE_KM} km away.`);
+  const start=Math.floor(now/3600000)*HOUR,first=t.indexOf(start);
+  if(first<0||t.length-first<SAMPLE_COUNT)throw new Error('The sea-level forecast does not cover the next 48 hours.');
+  const samples=Array.from({length:SAMPLE_COUNT},(_,i)=>({height:Math.round(levels[first+i]*100),hour:moment.unix(t[first+i]).tz(place.tz).hour()}));
+  const extremes=curveExtremes(t,levels),next=high=>extremes.find(e=>e.high===high&&e.time>=now/1000);
+  const high=next(true),low=next(false);
+  if(!high||!low)throw new Error('The sea-level forecast shows no tides here.');
+  const events=extremes.filter(e=>e.time>=start&&e.time<=start+(SAMPLE_COUNT-1)*HOUR).slice(0,TIDE_EVENTS).map(e=>({time:e.time,height:Math.round(e.height*100),high:e.high}));
+  return {kind:'tide',start,fetched:Math.floor(now/1000),label:place.label,station:'',high:high.time,low:low.time,highHeight:Math.round(high.height*100),lowHeight:Math.round(low.height*100),highMinute:localMinute(high.time,place.tz),lowMinute:localMinute(low.time,place.tz),samples,events,model:true,demo:false,error:false};
+}
 // Workshop examples, for the preview and the store screenshots. These are
 // never fetched or sent by the phone.
 export function sampleEnvironment(now=Date.now()){

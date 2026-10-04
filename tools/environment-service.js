@@ -1,4 +1,4 @@
-import {normalizeForecast,normalizeTide,weatherUrl,tideUrls,environmentIsValid,DATA_VERSION} from '../shared/panel-data.js';
+import {normalizeForecast,normalizeTide,normalizeModelTide,weatherUrl,tideUrls,modelTideUrl,environmentIsValid,DATA_VERSION} from '../shared/panel-data.js';
 import moment from 'moment-timezone';
 import {devicePosition} from './device-position.js';
 import {travelTides} from './travel-tides.js';
@@ -10,13 +10,13 @@ export function requestJSON(url){return new Promise((resolve,reject)=>{
 });}
 export function environmentService({getSettings,send,storage,getJSON=requestJSON,getPosition=devicePosition,getTimeZone=()=>moment.tz.guess(true)||'Etc/UTC',now=Date.now,stationLookup}){
   const memory={},inflight={},retryAfter={};
-  const travel=travelTides({getSettings,getPosition,getJSON,storage,now,lookup:stationLookup});
+  const travel=travelTides({getSettings,getPosition,getJSON,storage,now,lookup:stationLookup,getTimeZone});
   function descriptor(kind){
     const s=getSettings(),f=s.footer,weather=kind==='weather',current=weather&&f.weather.place==='current',place=s.places[f.weather.place];
     const tz=current?getTimeZone():place?.tz;
     const automatic=!weather&&f.tide.mode==='auto',selection=travel.current(),tide=automatic?selection.station:f.tide;
-    const enabled=f.enabled&&(weather?f.weather.enabled&&f.pages.some(p=>p==='weather'||p==='humidity'):!!tide?.station&&f.pages.includes('tide'));
-    return {enabled,current,tz,automatic,locationError:automatic&&selection.error,key:JSON.stringify(weather?(current?['current',tz]:[place.lat,place.lon,place.tz,place.label]):[f.tide.mode,tide?.station,tide?.label,tide?.tz]),label:weather?(current?'TEMP':place.label):tide?.label||'TIDE',place,tide,interval:weather?f.weather.refreshMinutes*60000:6*3600000};
+    const enabled=f.enabled&&(weather?f.weather.enabled&&f.pages.some(p=>p==='weather'||p==='humidity'):!!(tide?.station||tide?.point)&&f.pages.includes('tide'));
+    return {enabled,current,tz,automatic,locationError:automatic&&selection.error,key:JSON.stringify(weather?(current?['current',tz]:[place.lat,place.lon,place.tz,place.label]):[f.tide.mode,tide?.station,tide?.point?.lat,tide?.point?.lon,tide?.label,tide?.tz]),label:weather?(current?'TEMP':place.label):tide?.label||'TIDE',place,tide,interval:weather?f.weather.refreshMinutes*60000:6*3600000};
   }
   function read(kind,key){
     try{
@@ -50,7 +50,7 @@ export function environmentService({getSettings,send,storage,getJSON=requestJSON
         place={lat:+c.latitude.toFixed(3),lon:+c.longitude.toFixed(3),tz:d.tz,label:d.label};
       }
       const stamp=now();
-      const data=kind==='weather'?{...normalizeForecast(await getJSON(weatherUrl(place)),place,stamp),place}:await Promise.all(tideUrls(d.tide,stamp).map(getJSON)).then(([hourly,extrema])=>normalizeTide(hourly,extrema,d.tide,stamp));
+      const data=kind==='weather'?{...normalizeForecast(await getJSON(weatherUrl(place)),place,stamp),place}:d.tide.point?normalizeModelTide(await getJSON(modelTideUrl(d.tide.point)),d.tide,stamp):await Promise.all(tideUrls(d.tide,stamp).map(getJSON)).then(([hourly,extrema])=>normalizeTide(hourly,extrema,d.tide,stamp));
       if(!active())return;
       memory[kind]={key:d.key,version:DATA_VERSION,data};try{storage.setItem('dymaxion-environment-'+kind,JSON.stringify(memory[kind]));}catch{}
       delete retryAfter[kind];send(kind,data);

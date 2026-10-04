@@ -41,6 +41,8 @@ import {minuteFlipClock,drawFlipPixels,FLIP_FACES,flipOffset} from '../shared/mi
 import {installWatchColorPicker} from '../shared/color-picker.js';
 import {colorView,setColorView,onColorViewChange,watchViewOverlay} from '../shared/watch-view.js';
 import {onSecretTaps} from '../shared/secret-taps.js';
+import {resolveLanguage,watchText,watchDate,LANGUAGES} from '../shared/watch-text.js';
+import {localizedFont} from '../shared/watch-font.js';
 installWatchColorPicker();
 
 const $=id=>document.getElementById(id),zoneExists=tz=>!!moment.tz.zone(tz);
@@ -86,7 +88,7 @@ const panelEditor=panelControls($('panel-controls'),()=>settings,footer=>{
   const candidate=clone(settings);candidate.footer=footer;const previous=settings.footer.home;
   settings=validateSettings(candidate,zoneExists);if(previous!==settings.footer.home||!settings.footer.pages.includes(footerPage))footerPage=settings.footer.home;
   panelChanged=Date.now();save();if(environmentMode==='live')environment.refresh();
-});
+},{zoneExists});
 function nextPanel(){const pages=settings.footer.pages;manualAt=Date.now();trayStart();footerPage=pages[(pages.indexOf(footerPage)+1)%pages.length];panelChanged=Date.now();if(footerPage==='zones')startPulse();render();}
 $('next-panel').onclick=nextPanel;
 $('sample-data').onclick=()=>{environmentMode='sample';render();};
@@ -189,7 +191,7 @@ markerGallery();
 function sync(){
   for(const key of ['dayNight','edges','lights','sun','mapMoon','motion','moonIndicator','batteryGauge','stepLine'])$(key).checked=settings[key];
   $('mapRotation').value=settings.mapRotation;
-  $('format').value=settings.format;$('connectionBuzz').value=settings.connectionBuzz;$('mapBackground').value=settings.mapBackground;
+  $('format').value=settings.format;$('language').value=settings.language;$('connectionBuzz').value=settings.connectionBuzz;$('mapBackground').value=settings.mapBackground;
   document.querySelectorAll('[data-theme]').forEach(b=>{
     const id=+b.dataset.theme;b.hidden=!!THEMES[id].hidden&&id!==settings.theme&&!unlocked;
     b.setAttribute('aria-pressed',String(settings.customPalette===null&&id===settings.theme));
@@ -200,6 +202,10 @@ function sync(){
 for(const key of ['dayNight','edges','lights','sun','mapMoon','motion','moonIndicator','batteryGauge','stepLine'])$(key).onchange=()=>{settings[key]=$(key).checked;move('time',settings.time);positionFields();displayEditor.refresh();powerEditor.refresh();save();};
 $('mapRotation').onchange=()=>{settings.mapRotation=+$('mapRotation').value;save();};
 $('format').onchange=()=>{settings.format=+$('format').value;save();};
+// The face's language; Automatic shows this browser's, as the phone page would.
+$('language').add(new Option('Automatic — this browser’s language','auto'));
+for(const {code,name,watch} of LANGUAGES)$('language').add(new Option(watch===false?`${name} (page only; the face stays English)`:name,code));
+$('language').onchange=()=>{settings.language=$('language').value;save();};
 $('connectionBuzz').onchange=()=>{settings.connectionBuzz=$('connectionBuzz').value;save();};
 $('mapBackground').onchange=()=>{settings.mapBackground=$('mapBackground').value;save();};
 $('element').onchange=()=>{selected=$('element').value;positionFields();$('guides').checked=true;render();};
@@ -354,7 +360,9 @@ function render(){
   // Status line: lining capitals, date and city at the top left.
   // AM/PM belongs to the clock when it can show it (Chamfer, with nothing beside it).
   const clockAmpm=settings.clockDisplay==='chamfer'&&!besideOn;
-  const status=clockCaption(local.format('ddd DD MMM').toUpperCase(),city.toUpperCase(),use24()||clockAmpm?'':ampm,statusWidth(),t=>textWidth(watchTypeface.lining.small,t),'  ');
+  // The face's language and its lettering, as the watch draws them.
+  const language=resolveLanguage(settings.language,[...(navigator.languages||[navigator.language])]),words=watchText(language),caps=localizedFont(watchTypeface.lining.small,language);
+  const status=clockCaption(watchDate(words,new Date(local.year(),local.month(),local.date())),city.toUpperCase(),use24()||clockAmpm?'':ampm,statusWidth(),t=>textWidth(caps,t),'  ');
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
   // The strip is taller than the figures (46 pixels for Broad and Span): put the
   // nameplate back on top where it reaches (it never touches the figures).
@@ -404,12 +412,12 @@ function render(){
     paintText(two(time.h)+':'+two(time.m),x+2,y+31,16,pal.ink);if(!use24())paintText(time.ampm[0],x+53,y+30,11,pal.accent);
     if(pulseNow()?.place===i)strokeLine(x,y+35,x+59,y+35,ink);
   });
-  if(band)drawFooter(ctx,settings,footerPage,{...(environmentMode==='sample'?sampleEnvironment(+now):liveData),palette:pal,daylight:daylightPlace()},+now,watchTypeface.lining.small,use24());
+  if(band)drawFooter(ctx,settings,footerPage,{...(environmentMode==='sample'?sampleEnvironment(+now):liveData),palette:pal,daylight:daylightPlace(),text:words},+now,caps,use24());
   trayCompose(band);
   $('panel-preview-label').textContent=settings.footer.enabled?PANEL_PAGES.find(([id])=>id===footerPage)[1]:'Time zones';
   $('data-state').textContent=environmentMode==='sample'?'Showing sample data. Load live data to see real readings.':`Forecast source: ${settings.footer.weather.place==='current'?'your current location':settings.places[settings.footer.weather.place].name}. ${liveData.weather?.error?'Weather update unavailable; check location permission and connection. Cached data is marked OLD.':''} ${liveData.tide?.error?'NOAA update unavailable.':''}`;
   ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,18);
-  drawBitmapText(ctx,watchTypeface.lining.small,status,4,12,pal.accent);
+  drawBitmapText(ctx,caps,status,4,12,pal.accent);
   drawMoonIndicator(now);drawBluetoothIndicator();
   // The battery and step samples: the preview's battery choice and the example health day.
   const battery=$('preview-battery').value,percent=battery==='low'?settings.power.lowBattery:86;

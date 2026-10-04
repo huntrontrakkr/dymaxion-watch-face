@@ -19,6 +19,6 @@ test('the shipped bridge distinguishes routine refresh, full resync and configur
   assert.equal(messages.length,1);assert(messages[0].SETTINGS);messages.length=0;
   for(const payload of [{REQUEST:1},{10001:1},{}, {REQUEST:99}]){
     handlers.appmessage({payload});await settled();assert.equal(messages.length,4);
-    assert.deepEqual(messages.map(m=>Object.keys(m).join('+')).sort(),['SETTINGS+FOOTER+DISPLAY+PALETTE+GLYPHS','WEATHER','TIDE','CITY'].sort());messages.length=0;
+    assert.deepEqual(messages.map(m=>Object.keys(m).join('+')).sort(),['SETTINGS+FOOTER+DISPLAY+PALETTE+GLYPHS+LANGUAGE','WEATHER','TIDE','CITY'].sort());messages.length=0;
   }
 });

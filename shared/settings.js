@@ -12,6 +12,7 @@ import {THEMES} from './palettes.js';
 import {paletteFor,validatePalettes} from './palette-settings.js';
 import extraPlaces from './extra-places.json' with {type:'json'};
 export {THEMES,MOON_COLORS} from './palettes.js';
+import {LANGUAGES} from './watch-text.js';
 export function quantizeColor(value){
   if(typeof value!=='string'||!/^#[0-9a-f]{6}$/i.test(value))throw new Error('Choose a six-digit color.');
   return '#'+[1,3,5].map(i=>Math.round(parseInt(value.slice(i,i+2),16)/85)*85)
@@ -63,7 +64,7 @@ const LEGACY_PRESETS=[{
 }];
 export function defaults() {
   return {version:1,markerSet:2,theme:0,customPalettes:[],customPalette:null,format:1,dayNight:true,edges:false,lights:true,motion:true,sun:true,mapMoon:false,mapRotation:0,moonIndicator:true,batteryGauge:false,stepLine:false,connectionBuzz:'disconnect',
-    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',leadingZero:true,mapBackground:'none',zoneTimes:'when-hidden',zonePosition:'map',mapTimesTurn:false,nameplate:false,mapTimeSize:'medium',zoneTimesTall:false,zoneStripCompact:false,placeIcons:true,placeIconsBeside:false,clockArt:'none',power:defaultPower(),location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
+    ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',leadingZero:true,mapBackground:'none',zoneTimes:'when-hidden',zonePosition:'map',mapTimesTurn:false,nameplate:false,mapTimeSize:'medium',zoneTimesTall:false,zoneStripCompact:false,placeIcons:true,placeIconsBeside:false,clockArt:'none',language:'auto',deviceLanguage:'',power:defaultPower(),location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
 }
 // Quick View: a clock the peek would cover moves up to sit just above it,
 // never into the status line (clock_top_for_visible in settings.c).
@@ -161,6 +162,11 @@ export function validateSettings(input,zoneExists) {
   // The same icons beside the names of the place times next to the clock.
   if(input.placeIconsBeside!==undefined&&typeof input.placeIconsBeside!=='boolean')throw new Error('Invalid place icons beside the clock.');
   out.placeIconsBeside=input.placeIconsBeside??false;
+  // 'auto' follows the phone's language, the last one the settings page saw.
+  if(input.language!==undefined&&input.language!=='auto'&&!LANGUAGES.some(l=>l.code===input.language))throw new Error('Invalid language.');
+  out.language=input.language??'auto';
+  if(input.deviceLanguage!==undefined&&(typeof input.deviceLanguage!=='string'||!/^([A-Za-z]{2,3}([-_][A-Za-z0-9]{1,8})*)?$/.test(input.deviceLanguage)))throw new Error('Invalid device language.');
+  out.deviceLanguage=input.deviceLanguage??'';
   const position=(key,pos)=>{
     if(!Array.isArray(pos)||pos.length!==2||!pos.every(Number.isFinite))throw new Error('Invalid position.');
     return clampPosition(out,key,pos);

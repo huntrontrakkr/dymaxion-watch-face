@@ -68,7 +68,7 @@ try{
   await page.getByLabel('Forecast location',{exact:true}).selectOption('current');
   await page.getByRole('button',{name:'Load live data',exact:true}).click();await page.waitForFunction(()=>!!localStorage.getItem('dymaxion-environment-weather'));
   await page.locator('#screen').screenshot({path:'test-results/panel-weather-live.png'});
-  await page.getByText('NOAA tides',{exact:true}).click();await page.getByLabel('Tide station',{exact:true}).selectOption('8518750');
+  await page.getByText('Tides',{exact:true}).click();await page.getByLabel('Tide station',{exact:true}).selectOption('8518750');
   // The tide panel is optional; including it starts the NOAA download.
   await page.getByLabel('Include Tide',{exact:true}).check();
   await page.waitForFunction(()=>!!localStorage.getItem('dymaxion-environment-tide'));

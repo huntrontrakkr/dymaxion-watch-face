@@ -15,6 +15,7 @@
 #include "map_markers.h"
 #include "nameplate.h"
 #include "caps.h"
+#include "watch_text.h"
 #include "palette.h"
 #include "generated/defaults.h"
 #include "generated/cities.h"
@@ -53,10 +54,10 @@ static int pulsing_place(void){
 static AppTimer *s_animation;
 static AppTimer *s_clock_timer;
 static ClockFlip s_clock_flip;
-static ClockFace s_chamfer,s_styled;
+static ClockFace s_broad,s_chamfer,s_styled;
 // Flip state lives in the heap, sized for the active face; see clock_configure.
 static const ClockFace *s_clock_face;
-static uint8_t *s_clock_memory,*s_clock_pixels,*s_chamfer_data,*s_glyph_data,*s_caps;
+static uint8_t *s_clock_memory,*s_clock_pixels,*s_face_data,*s_glyph_data,*s_caps;
 static GBitmap *s_clock_bitmap;
 static GColor s_clock_palette[4];
 static uint8_t s_clock_digits[4];
@@ -252,7 +253,7 @@ static void draw_flip_time(GContext *ctx,struct tm *local,time_t now,int x,int y
   }
   uint8_t colors[4]={palette()[0],palette()[6],clock_shade(palette()[0],palette()[6]),clock_shade(palette()[6],palette()[0])};
   // Broad figures sit two pixels above the time block; the rest fill it.
-  int top=s_clock_face==&BROAD_FACE?y-2:y;
+  int top=s_clock_face==&s_broad?y-2:y;
   if(s_clock_bitmap){
     for(int i=0;i<4;i++)s_clock_palette[i]=(GColor){.argb=colors[i]};
     graphics_draw_bitmap_in_rect(ctx,s_clock_bitmap,GRect(x,top,CLOCK_WIDTH,s_clock_face->height));
@@ -269,8 +270,8 @@ static void clock_release(void){
   free(s_clock_memory);
   if(s_clock_bitmap)gbitmap_destroy(s_clock_bitmap);else free(s_clock_pixels);
   s_clock_bitmap=NULL;
-  free(s_chamfer_data);free(s_glyph_data);
-  s_clock_memory=s_clock_pixels=s_chamfer_data=s_glyph_data=NULL;
+  free(s_face_data);free(s_glyph_data);
+  s_clock_memory=s_clock_pixels=s_face_data=s_glyph_data=NULL;
 }
 // One font's glyphs from clock-glyphs.bin, repacked as a one-font resource so
 // only that block (under 1 KB) stays in the heap.
@@ -289,17 +290,21 @@ static const uint8_t *clock_load_font(uint8_t code,int8_t *box_top){
   return NULL;
 }
 // Choose the flip face for the current display and allocate only its state.
-// Chamfer tables are a resource so the app image stays under 64 KB; the other
-// styles without Broad's slots borrow its lattice. If the heap cannot hold
+// Broad's digits and Chamfer's tables are resources so the app image stays
+// under 64 KB; the other styles without Broad's slots borrow its lattice. If the heap cannot hold
 // them, the clock is drawn without the transition (Broad and Chamfer as Span).
 static void clock_configure(void){
   clock_release();
   const ClockFace *face=NULL;uint8_t style=s_display[1];
-  if(style==2)face=&BROAD_FACE;
+  if(style==2){
+    ResHandle handle=resource_get_handle(RESOURCE_ID_CLOCK_BROAD);size_t length=resource_size(handle);
+    s_face_data=malloc(length);
+    if(s_face_data&&resource_load(handle,s_face_data,length)==length&&broad_face_init(&s_broad,s_face_data,length))face=&s_broad;
+  }
   else {
     ResHandle handle=resource_get_handle(RESOURCE_ID_CLOCK_CHAMFER);size_t length=resource_size(handle);
-    s_chamfer_data=malloc(length);
-    if(s_chamfer_data&&resource_load(handle,s_chamfer_data,length)==length&&chamfer_face_init(&s_chamfer,s_chamfer_data,length))face=&s_chamfer;
+    s_face_data=malloc(length);
+    if(s_face_data&&resource_load(handle,s_face_data,length)==length&&chamfer_face_init(&s_chamfer,s_face_data,length))face=&s_chamfer;
     if(face&&style!=4){
       int8_t box_top=0;const uint8_t *font=style>=5?clock_load_font(style,&box_top):NULL;
       face=clock_style_face(&s_styled,&s_chamfer,style,font,box_top)?&s_styled:NULL;
@@ -391,7 +396,7 @@ static void draw_system_time(GContext *ctx,const char *timebuf,int x,int y){
 }
 static int status_width(const char *caption){return s_caps?caps_width(s_caps,caption):0;}
 static void clock_caption(char *out,size_t size,const char *date,const char *ampm,int width,time_t now,const char *separator,int (*measure)(const char *)){
-  char city[44]={0},prefix[32]={0},suffix[8]={0};
+  char city[44]={0},prefix[64]={0},suffix[8]={0};
   if(city_usable(s_city,now))snprintf(city,sizeof(city),"%.39s%s",(const char *)s_city+8,city_stale(s_city,now)?"?":"");
   if(!city[0]){snprintf(out,size,"%s%s%s",date,date[0]&&ampm[0]?separator:"",ampm);return;}
   if(date[0])snprintf(prefix,sizeof(prefix),"%s%s",date,separator);
@@ -743,9 +748,8 @@ static void draw_status_line(GContext *ctx,struct tm *local,time_t now,const cha
   // AM/PM belongs to the clock when it can show it (Chamfer, with nothing
   // beside it), which leaves the status line room for the city.
   bool clock_ampm=s_display[1]==4&&!s_beside;
-  char date[24],status[96];const char *ampm=is_24()||clock_ampm?"":(local->tm_hour<12?"AM":"PM");
-  snprintf(date,sizeof(date),"%s %02d %s",(const char *[]){"Sun","Mon","Tue","Wed","Thu","Fri","Sat"}[local->tm_wday],local->tm_mday,
-    (const char *[]){"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"}[local->tm_mon]);
+  char date[48],status[128];const char *ampm=is_24()||clock_ampm?"":(local->tm_hour<12?"AM":"PM");
+  watch_text_fill(date,sizeof(date),watch_text(WT_DATE),watch_text(WT_WEEKDAYS+local->tm_wday),local->tm_mday,watch_text(WT_MONTHS+local->tm_mon),"",0);
   clock_caption(status,sizeof(status),date,ampm,s_settings[HEADER_SIZE+17]?126:140,now,"  ",status_width);
   CapsPen accent={ctx,color(7)};
   caps_draw(s_caps,status,4,12,false,caps_span,&accent);
@@ -851,7 +855,7 @@ static void update_proc(Layer *layer,GContext *ctx) {
   else if(s_map_relight){sun_update(now-now%300);relight_map();}
   int mx=s_settings[MAP_X],my=s_settings[MAP_Y];
   if(s_map)graphics_draw_bitmap_in_rect(ctx,s_map,GRect(mx,my,s_map_w,s_map_h));
-  else text(ctx,"MAP UNAVAILABLE",s_small,GRect(0,90,200,30),GTextAlignmentCenter,color(6));
+  else if(s_caps){CapsPen pen={ctx,color(6)};caps_draw(s_caps,watch_text(WT_MAP_UNAVAILABLE),100-caps_width(s_caps,watch_text(WT_MAP_UNAVAILABLE))/2,104,false,caps_span,&pen);}
   if((s_settings[FLAGS]&LIGHTS)&&(s_settings[FLAGS]&DAY_NIGHT)) {
     for(int i=0;i<CITY_COUNT;i++) {
       const City *c=&CITIES[i];
@@ -982,6 +986,20 @@ static void connection_changed(bool connected) {
   }
   s_connected=connected;redraw();if(connected)request_sync(true);
 }
+// The face's language (shared/watch-text.js): its words and glyphs stay
+// loaded while it is in use. English is a resource too, so its words stay
+// out of the app image.
+static uint8_t s_language,*s_text;
+static void language_load(void){
+  static const uint32_t resources[WT_LANGUAGE_COUNT]=WT_RESOURCES;
+  watch_text_use(NULL,0);free(s_text);s_text=NULL;
+  if(s_language>=WT_LANGUAGE_COUNT)s_language=0;
+  ResHandle handle=resource_get_handle(resources[s_language]);size_t length=resource_size(handle);
+  s_text=malloc(length);
+  if(s_text&&resource_load(handle,s_text,length)==length&&watch_text_valid(s_text,length))watch_text_use(s_text,length);
+  else{free(s_text);s_text=NULL;}
+}
+static bool language_valid(const uint8_t *data,size_t length){return length==2&&data[0]==1&&data[1]<WT_LANGUAGE_COUNT;}
 static void received(DictionaryIterator *iter,void *context) {
   uint8_t panel_changes=panels_receive(iter);bool full=panel_changes&PANELS_CONFIG;
   if(full)memset(&s_tap,0,sizeof(s_tap));
@@ -1003,6 +1021,13 @@ static void received(DictionaryIterator *iter,void *context) {
   if(glyphs&&glyphs->type==TUPLE_BYTE_ARRAY&&glyphs_valid(glyphs->value->data,glyphs->length)&&memcmp(s_glyphs,glyphs->value->data,GLYPHS_SIZE)){
     full=true;
     memcpy(s_glyphs,glyphs->value->data,GLYPHS_SIZE);persist_write_data(5,s_glyphs,GLYPHS_SIZE);
+  }
+  Tuple *language=dict_find(iter,MESSAGE_KEY_LANGUAGE);
+  uint8_t next_language[2]={0};
+  if(language&&language->type==TUPLE_BYTE_ARRAY&&language->length==2)memcpy(next_language,language->value->data,2);
+  if(language_valid(next_language,language?language->length:0)&&next_language[1]!=s_language){
+    full=true;
+    s_language=next_language[1];persist_write_data(6,next_language,2);language_load();
   }
   Tuple *t=dict_find(iter,MESSAGE_KEY_SETTINGS);
   if(t&&t->type==TUPLE_BYTE_ARRAY&&settings_valid(t->value->data,t->length)&&memcmp(s_settings,t->value->data,SETTINGS_SIZE)){
@@ -1046,6 +1071,9 @@ static void init(void) {
   if(glyphs_valid(glyphs,glyphs_length))memcpy(s_glyphs,glyphs,GLYPHS_SIZE);
   uint8_t custom[PALETTE_SIZE];int palette_length=persist_read_data(4,custom,sizeof(custom));
   if(palette_valid(custom,palette_length))memcpy(s_palette,custom,PALETTE_SIZE);
+  uint8_t language[2];int language_length=persist_read_data(6,language,sizeof(language));
+  if(language_length>0&&language_valid(language,language_length))s_language=language[1];
+  language_load();
   s_small=fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_DRAFT_12));
   s_zone=fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_DRAFT_18));
   ResHandle caps=resource_get_handle(RESOURCE_ID_TYPE_CAPS);size_t caps_length=resource_size(caps);
@@ -1074,6 +1102,6 @@ static void deinit(void) {
   tick_timer_service_unsubscribe();unobstructed_area_service_unsubscribe();if(s_accel_subscribed)accel_tap_service_unsubscribe();if(s_backlight_subscribed)backlight_service_unsubscribe();battery_state_service_unsubscribe();connection_service_unsubscribe();app_message_deregister_callbacks();
   layer_destroy(s_layer);window_destroy(s_window);if(s_map)gbitmap_destroy(s_map);
   fonts_unload_custom_font(s_small);fonts_unload_custom_font(s_zone);
-  clock_release();free(s_caps);
+  clock_release();free(s_caps);watch_text_use(NULL,0);free(s_text);
 }
 int main(void) {init();app_event_loop();deinit();}

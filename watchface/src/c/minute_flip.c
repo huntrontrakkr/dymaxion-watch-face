@@ -12,7 +12,7 @@ static int slot_at(const ClockFace *f,int x){
   return -1;
 }
 
-static const uint8_t *broad_glyph(const ClockFace *f,int digit){(void)f;return CLOCK_GLYPHS[digit];}
+static const uint8_t *broad_glyph(const ClockFace *f,int digit){return f->data+digit*BROAD_GLYPH_BYTES;}
 // Each row lists where its tile changes; a binary search finds the run.
 static uint16_t broad_owner(const ClockFace *f,int x,int y){
   (void)f;int lo=CLOCK_OWNER_ROWS[y],hi=CLOCK_OWNER_ROWS[y+1]-1;
@@ -26,7 +26,11 @@ static void broad_colon(uint8_t *bits){
     for(int x=inset;x<8-inset;x++)set_bit(bits,(top+y)*CLOCK_WIDTH+96+x);
   }
 }
-const ClockFace BROAD_FACE={40,4,32,45,{2,49,106,153},CLOCK_CELL_COUNT,broad_glyph,broad_owner,broad_cell,broad_colon,NULL,NULL,0,0,NULL};
+bool broad_face_init(ClockFace *f,const uint8_t *glyphs,size_t length){
+  if(!f||!glyphs||length!=10*BROAD_GLYPH_BYTES)return false;
+  *f=(ClockFace){40,4,32,45,{2,49,106,153},CLOCK_CELL_COUNT,broad_glyph,broad_owner,broad_cell,broad_colon,glyphs,NULL,0,0,NULL};
+  return true;
+}
 
 static uint16_t u16(const uint8_t *p){return (uint16_t)(p[0]|p[1]<<8);}
 static const uint8_t *chamfer_glyph(const ClockFace *f,int digit){return f->data+digit*CHAMFER_GLYPH_BYTES;}

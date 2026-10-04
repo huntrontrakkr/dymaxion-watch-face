@@ -34,12 +34,15 @@ and [Fuller](https://www.bfi.org/about-fuller/) at the Buckminster Fuller Instit
   Delta, a variant of Leco with corners cut to the map's 60-degree angles. An
   optional Dymaxion nameplate sits between the clock and the map.
 - **Layouts.** Meridian puts the clock above the map; Horizon puts it below.
-- **Bottom panels.** Time zones, weather, a two-week calendar, humidity, NOAA
-  tide predictions and Pebble Health. Choose up to five and their order,
+- **Bottom panels.** Time zones, weather, a two-week calendar, humidity, tide
+  predictions (NOAA's, or Open-Meteo's modelled sea level anywhere else) and
+  Pebble Health. Choose up to five and their order,
   colors, units and scales. Change them with wrist flicks, on a timer, or with
   **Smart** rotation, which picks the page that matters now (rain on the way,
   a turning tide, a walk, the morning's calendar). Health data stays on the
   watch.
+- **Languages.** The face and its settings speak 19 languages; see
+  [Languages](docs/LANGUAGES.md).
 - **Battery.** The map is reshaded at an interval you choose, animations can
   be turned off, and a night saver (for set hours or the watch's Quiet Time)
   reshades less often and can hold the screen until the backlight comes on.
@@ -85,17 +88,21 @@ interval (hourly by default). These features need location permission and phone
 connectivity; they catch up after reconnecting, rather than tracking the flight
 continuously. A manually entered city name changes only the caption.
 
-Enable **Tide** under **Bottom panels**. **NOAA tides → Tide location → Follow
+Enable **Tide** under **Bottom panels**. **Tides → Tide location → Follow
 current location** is the default, including when upgrading older settings. The
 phone checks about hourly for the nearest NOAA station with hourly predictions
 within 150 km, updates the station label and its local time zone, and fetches
 new tides when the station changes. Predictions from the same station stay
-cached for six hours. Outside NOAA coverage the chart shows unavailable data;
-if location access fails, usable cached predictions are marked **OLD**.
+cached for six hours. Outside NOAA coverage the tides are Open-Meteo's
+modelled sea level for where you are, good for the shape of the day but not
+for navigation; if location access fails, usable cached predictions are marked
+**OLD**.
 
-Choose a particular station to switch to **Keep a fixed station**, useful when a
-different station better represents your waterway. Nearby alternatives, coastal
-presets and custom stations remain available. Save the changes to the watch.
+Choose a particular station to switch to **Keep a fixed station or place**,
+useful when a different station better represents your waterway. Nearby
+alternatives, coastal presets and custom stations remain available, and
+**Anywhere: modelled tides** keeps the model at any coastal place you search
+for. Save the changes to the watch.
 
 Under **Map**, enable **Moon on the map** or select **Map rotation → 180°**.
 The Moon marks the point on Earth where it is overhead, using eight small phase

@@ -1,4 +1,5 @@
 #include "health.h"
+#include "watch_text.h"
 #include <stdio.h>
 static const int SCALES[]={500,1000,1500,2000,3000,4000,5000,6000,8000,10000};
 int health_step_scale(int max){
@@ -31,8 +32,11 @@ void health_view(const HealthDay *h,bool range_labels,int hour_width,HealthView 
     v->usual[i]=chart_y(h->typical[i],0,scale);
     v->pulse[i]=i<=h->hour&&h->heart[i]>0?chart_y(h->heart[i],lo,hi):-1;
   }
-  if(h->heart_now>0)snprintf(v->title,sizeof(v->title),"STEPS %d HR %d",total,h->heart_now);
-  else snprintf(v->title,sizeof(v->title),"STEPS %d",total);
-  if(typical>0){int d=round_div((total-typical)*100,typical);snprintf(v->right,sizeof(v->right),"TYPICAL %s%d%%",d>0?"+":"",d);}
+  // The title without the heart rate is for when the whole one meets the
+  // right-hand label (shared/health.js).
+  snprintf(v->short_title,sizeof(v->short_title),"%s %d",watch_text(WT_STEPS),total);
+  if(h->heart_now>0)snprintf(v->title,sizeof(v->title),"%s %s %d",v->short_title,watch_text(WT_HR),h->heart_now);
+  else snprintf(v->title,sizeof(v->title),"%s",v->short_title);
+  if(typical>0){int d=round_div((total-typical)*100,typical);snprintf(v->right,sizeof(v->right),"%s %s%d%%",watch_text(WT_TYPICAL),d>0?"+":"",d);}
   else v->right[0]=0;
 }

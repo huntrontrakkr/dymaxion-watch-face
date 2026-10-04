@@ -9,6 +9,7 @@ import {encodeCity} from '../shared/city.js';
 import {encodeDisplay} from '../shared/display.js';
 import {encodePalette} from '../shared/palette-protocol.js';
 import {encodeGlyphs} from '../shared/glyph-protocol.js';
+import {encodeLanguage,resolveLanguage} from '../shared/watch-text.js';
 import {watchSync} from './watch-sync.js';
 import html from './mobile-config.generated.html';
 const STORAGE='dymaxion-settings-v1';
@@ -18,7 +19,10 @@ const transport=watchSync({send:(message,ok,fail)=>Pebble.sendAppMessage(message
 const enqueue=(kind,message)=>transport.enqueue(kind,message);
 const environment=environmentService({getSettings:()=>settings,storage:localStorage,send:(kind,data)=>enqueue(kind,{[kind.toUpperCase()]:Array.from(encodeEnvironment(data,kind))})});
 const location=locationService({getSettings:()=>settings,storage:localStorage,send:city=>enqueue('city',{CITY:Array.from(encodeCity(city))})});
-function sync(full=false){if(full)transport.forgetAcknowledged();enqueue('settings',{SETTINGS:Array.from(encodeSettings(settings)),FOOTER:Array.from(encodeFooter(settings)),DISPLAY:Array.from(encodeDisplay(settings)),PALETTE:Array.from(encodePalette(settings)),GLYPHS:Array.from(encodeGlyphs(settings))});environment.refresh();location.refresh();}
+// The face's language: the chosen one, or the phone's (as the settings page
+// last saw it, else this runtime's own).
+function faceLanguage(){const own=typeof navigator!=='undefined'&&navigator.language||'';return resolveLanguage(settings.language,[settings.deviceLanguage,own]);}
+function sync(full=false){if(full)transport.forgetAcknowledged();enqueue('settings',{SETTINGS:Array.from(encodeSettings(settings)),FOOTER:Array.from(encodeFooter(settings)),DISPLAY:Array.from(encodeDisplay(settings)),PALETTE:Array.from(encodePalette(settings)),GLYPHS:Array.from(encodeGlyphs(settings)),LANGUAGE:Array.from(encodeLanguage(faceLanguage()))});environment.refresh();location.refresh();}
 Pebble.addEventListener('ready',()=>sync(true));
 // REQUEST=2 is a routine update. Older watches, launch and reconnect request
 // full state with 1; unknown requests also safely receive a full sync.

@@ -3,6 +3,7 @@
 // layout. The watch reads the numbers from Pebble Health and draws the same
 // geometry (watchface/src/c/health.c); the workshop shows example data.
 import {chartLayout,chartX,chartY} from './chart-axis.js';
+import {WATCH_TEXT} from './watch-text.js';
 export const HEALTH_HOURS = 24;
 const SCALES = [500, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 8000, 10000];
 // The bar scale: the smallest round number that holds the busiest hour.
@@ -13,7 +14,7 @@ export function stepScale(max) {
 // Rounded integer division, halves away from zero (as in C).
 const roundDiv = (a, b) => a >= 0 ? Math.trunc((a + Math.trunc(b / 2)) / b) : -Math.trunc((-a + Math.trunc(b / 2)) / b);
 // h: {steps[24], typical[24], heart[24] (0: no reading), hour, minute, heartNow}.
-export function healthView(h, rangeLabels = true, hourWidth = 12) {
+export function healthView(h, rangeLabels = true, hourWidth = 12, text = WATCH_TEXT.en) {
   let total = 0, typical = 0, busiest = 100, lo = 0, hi = 0;
   for (let i = 0; i <= h.hour; i++) total += h.steps[i];
   for (let i = 0; i < h.hour; i++) typical += h.typical[i];
@@ -34,8 +35,10 @@ export function healthView(h, rangeLabels = true, hourWidth = 12) {
   const pulse = h.heart.map((v, i) => i <= h.hour && v > 0 ? chartY(v, lo, hi, layout.top, layout.bottom) : -1);
   const delta = typical > 0 ? roundDiv((total - typical) * 100, typical) : null;
   return {layout, upper, lower, scale, lo, hi, bars, usual, pulse,
-    title: `STEPS ${total}${h.heartNow > 0 ? ` HR ${h.heartNow}` : ''}`,
-    right: delta === null ? '' : `TYPICAL ${delta > 0 ? '+' : ''}${delta}%`};
+    // The title without the heart rate is for when the whole one meets the
+    // right-hand label.
+    title: `${text.steps} ${total}${h.heartNow > 0 ? ` ${text.hr} ${h.heartNow}` : ''}`, shortTitle: `${text.steps} ${total}`,
+    right: delta === null ? '' : `${text.typical} ${delta > 0 ? '+' : ''}${delta}%`};
 }
 // Workshop example: a commute, a lunch walk and an evening stroll, up to now.
 export function sampleHealth(now = Date.now()) {

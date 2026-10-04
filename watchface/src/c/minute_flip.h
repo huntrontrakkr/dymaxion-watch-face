@@ -31,7 +31,9 @@ typedef struct {
   ClockCell *cells;
   int16_t *scales;
 } ClockFlip;
-extern const ClockFace BROAD_FACE;
+// Broad's digit masters are data/clock-broad.bin: ten 40 x 45 bitmaps.
+#define BROAD_GLYPH_BYTES 180
+bool broad_face_init(ClockFace *face,const uint8_t *glyphs,size_t length);
 bool chamfer_face_init(ClockFace *face,const uint8_t *data,size_t length);
 static inline int clock_pixels(const ClockFace *face){return CLOCK_WIDTH*face->height;}
 static inline size_t clock_frame_bytes(const ClockFace *face){return (size_t)clock_pixels(face)/4;}

@@ -24,6 +24,8 @@ import {zonesBeside,zonesOnMap,zonesOnStrip,artBeside,besideSide,zoneColumn,zone
 import {drawClockArt,drawZoneStrip} from '../shared/beside-render.js';
 import {placeMapTimes,mapTimeTemplate,mapTimeText,tinyPixels,routePixels,labelHull,hullRect,MAP_TIME_SIZES} from '../shared/map-times.js';
 import {layoutMarkers,markerClearance} from '../shared/map-markers.js';
+import {resolveLanguage,watchText,watchDate} from '../shared/watch-text.js';
+import {localizedFont} from '../shared/watch-font.js';
 
 const pixels=Uint8Array.from(atob(mapBase64),c=>c.charCodeAt(0)),signed=new Int8Array(pixels.buffer),map=makeMap();
 const two=n=>String(n).padStart(2,'0');
@@ -31,8 +33,10 @@ const zoned=(date,tz)=>{
   const parts=new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',hourCycle:'h23',year:'numeric',month:'numeric',day:'numeric'}).formatToParts(date);
   const p=Object.fromEntries(parts.map(p=>[p.type,p.value]));return {h:+p.hour%24,m:+p.minute,day:Date.UTC(+p.year,+p.month-1,+p.day)};
 };
-export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,city=null}={}){
+export function renderConfigPreview(canvas,s,{evening=false,page=s.footer.home,city=null,languages=[]}={}){
   const ctx=canvas.getContext('2d'),pal=paletteFor(s),now=new Date();now.setHours(evening?22:10,8,0,0);
+  // The face's language and its lettering, as the watch draws them.
+  const language=resolveLanguage(s.language,[s.deviceLanguage,...languages]),words=watchText(language),caps=localizedFont(font.lining.small,language);
   // The map reshades on the watch's schedule, so the sun is where it was at the last reshade.
   const sun=sunDirection(new Date(+now-sinceRelight(s.power,now.getHours(),now.getMinutes())*60000)),[w,h]=MAP_SIZE,[mx,my]=s.map;
   ctx.imageSmoothingEnabled=false;ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,228);
@@ -82,8 +86,8 @@ const night=s.dayNight&&mapNight(light,x,y);
   ctx.fillStyle=pal.bg;ctx.fillRect(tx,ty,tw,th);
   if(plate&&!strip&&plate.y<ty+th&&plate.y+NAMEPLATE_HEIGHT>ty)drawPixelRows(ctx,NAMEPLATE_ROWS,plate.x,plate.y,pal.accent);
   if(plate&&strip)drawZoneStrip(ctx,plate.y,enabled.map(({p,i})=>({icon:placeGlyph(p),label:p.label,hour:times[i].h,minute:times[i].m,delta:Math.round((times[i].day-local.day)/86400000),color:markColor(p,s,i)})),{font:font.lining.small,clock24,ink:pal.ink,accent:pal.accent,bg:pal.bg,compact:s.zoneStripCompact});
-  const cityName=s.location.mode==='manual'?s.location.name:city?.name||'YOUR CITY',ampm=now.getHours()<12?'AM':'PM';
-  const date=`${['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()]} ${two(now.getDate())} ${['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][now.getMonth()]}`;
+  const cityName=s.location.mode==='manual'?s.location.name:city?.name||words.yourCity,ampm=now.getHours()<12?'AM':'PM';
+  const date=watchDate(words,now);
   // The clock as the workshop draws it, with AM/PM beside Chamfer when nothing
   // sits beside the clock.
   // The column beside a narrow clock holds the place times, or else the icosahedron.
@@ -111,12 +115,12 @@ const night=s.dayNight&&mapNight(light,x,y);
   });
   const forecastPlace=s.footer.weather.place==='current'?city:s.places[s.footer.weather.place];
   const daylight=Number.isFinite(forecastPlace?.lat)&&Number.isFinite(forecastPlace?.lon)?direction(forecastPlace.lat,forecastPlace.lon):null;
-  if(s.footer.enabled)drawFooter(ctx,s,page,{...sampleEnvironment(+now),palette:pal,daylight},+now,font.lining.small,clock24);
+  if(s.footer.enabled)drawFooter(ctx,s,page,{...sampleEnvironment(+now),palette:pal,daylight,text:words},+now,caps,clock24);
   ctx.fillStyle=pal.bg;ctx.fillRect(0,0,200,18);
   // The status line as the workshop and watch build it: date, city, and AM/PM
   // unless the clock shows it (Chamfer, with nothing beside it).
   const clockAmpm=s.clockDisplay==='chamfer'&&!beside&&!art;
-  drawBitmapText(ctx,font.lining.small,clockCaption(date,cityName.toUpperCase(),clock24||clockAmpm?'':ampm,s.moonIndicator?126:140,t=>textWidth(font.lining.small,t),'  '),4,12,pal.accent);
+  drawBitmapText(ctx,caps,clockCaption(date,cityName.toUpperCase(),clock24||clockAmpm?'':ampm,s.moonIndicator?126:140,t=>textWidth(caps,t),'  '),4,12,pal.accent);
   ctx.fillStyle=pal.bg;ctx.fillRect(130,0,70,18);
   if(s.moonIndicator)MOON_GLYPHS[moonFrame(now)].forEach((row,y)=>[...row].forEach((pixel,x)=>{if(pixel!=='.'){ctx.fillStyle=pixel==='#'?pal.ink:pal.moonShadow;ctx.fillRect(134+x,3+y,1,1);}}));
   drawPixelRows(ctx,BLUETOOTH_ROWS,148,2,pal.ink);drawBatteryStatus(ctx,font.lining.small,86,{gauge:s.batteryGauge,quiet:false,ink:pal.ink,bg:pal.bg,accent:pal.accent});
