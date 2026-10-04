@@ -13,7 +13,7 @@ const CASES=[
 ];
 test('the watch lays out the health drawer exactly as the workshop does',()=>{
   mkdirSync('test-results',{recursive:true});
-  execFileSync('cc',['-std=c11','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/health-test.c','watchface/src/c/health.c','watchface/src/c/chart_axis.c','watchface/src/c/watch_text.c','-o','test-results/health-test']);
+  execFileSync('cc',['-std=c11','-DWATCH_TEXT_ENGLISH','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/health-test.c','watchface/src/c/health.c','watchface/src/c/chart_axis.c','watchface/src/c/watch_text.c','-o','test-results/health-test']);
   for(const [labels,width,h] of CASES){
     const out=execFileSync('test-results/health-test',[+labels,width,h.hour,h.minute,h.heartNow,...h.steps,...h.typical,...h.heart].map(String)).toString().split('\n');
     const v=healthView(h,labels,width);

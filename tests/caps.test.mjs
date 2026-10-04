@@ -12,7 +12,7 @@ function render(text){
 }
 test('native status-line capitals match the workshop pixel for pixel',()=>{
   mkdirSync('test-results',{recursive:true});
-  execFileSync('cc',['-std=c11','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/caps-test.c','watchface/src/c/caps.c','watchface/src/c/watch_text.c','-o','test-results/caps-test']);
+  execFileSync('cc',['-std=c11','-DWATCH_TEXT_ENGLISH','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/caps-test.c','watchface/src/c/caps.c','watchface/src/c/watch_text.c','-o','test-results/caps-test']);
   const samples=['WED 23 SEP  NORFOLK','SUN 01 JAN  SAO PAULO? PM','THU 30 APR  KATHMANDU...','86%','100%','0123456789 +-/:.,%','ETE ~`{|}'];
   const output=execFileSync('test-results/caps-test',['watchface/resources/data/caps.bin','-',...samples]);
   let at=0;

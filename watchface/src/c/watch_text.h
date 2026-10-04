@@ -3,11 +3,11 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "generated/watch_text_data.h"
-// The face's words in the chosen language (shared/watch-text.js). English is
-// built in; another language is a resource from tools/generate-watch-text.mjs
-// holding its words and the glyphs they need beyond the Draft capitals.
-// watch_text_use keeps a pointer to the resource's bytes, so they must stay
-// loaded; NULL (or an invalid resource) returns to English.
+// The face's words in the chosen language (shared/watch-text.js). Each
+// language is a resource from tools/generate-watch-text.mjs holding its words
+// and the glyphs they need beyond the Draft capitals. watch_text_use keeps a
+// pointer to the resource's bytes, so they must stay loaded. Without one the
+// words are empty, or English when built with WATCH_TEXT_ENGLISH (host tests).
 bool watch_text_valid(const uint8_t *pack,size_t length);
 void watch_text_use(const uint8_t *pack,size_t length);
 const char *watch_text(int key);

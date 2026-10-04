@@ -54,10 +54,10 @@ static int pulsing_place(void){
 static AppTimer *s_animation;
 static AppTimer *s_clock_timer;
 static ClockFlip s_clock_flip;
-static ClockFace s_chamfer,s_styled;
+static ClockFace s_broad,s_chamfer,s_styled;
 // Flip state lives in the heap, sized for the active face; see clock_configure.
 static const ClockFace *s_clock_face;
-static uint8_t *s_clock_memory,*s_clock_pixels,*s_chamfer_data,*s_glyph_data,*s_caps;
+static uint8_t *s_clock_memory,*s_clock_pixels,*s_face_data,*s_glyph_data,*s_caps;
 static GBitmap *s_clock_bitmap;
 static GColor s_clock_palette[4];
 static uint8_t s_clock_digits[4];
@@ -253,7 +253,7 @@ static void draw_flip_time(GContext *ctx,struct tm *local,time_t now,int x,int y
   }
   uint8_t colors[4]={palette()[0],palette()[6],clock_shade(palette()[0],palette()[6]),clock_shade(palette()[6],palette()[0])};
   // Broad figures sit two pixels above the time block; the rest fill it.
-  int top=s_clock_face==&BROAD_FACE?y-2:y;
+  int top=s_clock_face==&s_broad?y-2:y;
   if(s_clock_bitmap){
     for(int i=0;i<4;i++)s_clock_palette[i]=(GColor){.argb=colors[i]};
     graphics_draw_bitmap_in_rect(ctx,s_clock_bitmap,GRect(x,top,CLOCK_WIDTH,s_clock_face->height));
@@ -270,8 +270,8 @@ static void clock_release(void){
   free(s_clock_memory);
   if(s_clock_bitmap)gbitmap_destroy(s_clock_bitmap);else free(s_clock_pixels);
   s_clock_bitmap=NULL;
-  free(s_chamfer_data);free(s_glyph_data);
-  s_clock_memory=s_clock_pixels=s_chamfer_data=s_glyph_data=NULL;
+  free(s_face_data);free(s_glyph_data);
+  s_clock_memory=s_clock_pixels=s_face_data=s_glyph_data=NULL;
 }
 // One font's glyphs from clock-glyphs.bin, repacked as a one-font resource so
 // only that block (under 1 KB) stays in the heap.
@@ -290,17 +290,21 @@ static const uint8_t *clock_load_font(uint8_t code,int8_t *box_top){
   return NULL;
 }
 // Choose the flip face for the current display and allocate only its state.
-// Chamfer tables are a resource so the app image stays under 64 KB; the other
-// styles without Broad's slots borrow its lattice. If the heap cannot hold
+// Broad's digits and Chamfer's tables are resources so the app image stays
+// under 64 KB; the other styles without Broad's slots borrow its lattice. If the heap cannot hold
 // them, the clock is drawn without the transition (Broad and Chamfer as Span).
 static void clock_configure(void){
   clock_release();
   const ClockFace *face=NULL;uint8_t style=s_display[1];
-  if(style==2)face=&BROAD_FACE;
+  if(style==2){
+    ResHandle handle=resource_get_handle(RESOURCE_ID_CLOCK_BROAD);size_t length=resource_size(handle);
+    s_face_data=malloc(length);
+    if(s_face_data&&resource_load(handle,s_face_data,length)==length&&broad_face_init(&s_broad,s_face_data,length))face=&s_broad;
+  }
   else {
     ResHandle handle=resource_get_handle(RESOURCE_ID_CLOCK_CHAMFER);size_t length=resource_size(handle);
-    s_chamfer_data=malloc(length);
-    if(s_chamfer_data&&resource_load(handle,s_chamfer_data,length)==length&&chamfer_face_init(&s_chamfer,s_chamfer_data,length))face=&s_chamfer;
+    s_face_data=malloc(length);
+    if(s_face_data&&resource_load(handle,s_face_data,length)==length&&chamfer_face_init(&s_chamfer,s_face_data,length))face=&s_chamfer;
     if(face&&style!=4){
       int8_t box_top=0;const uint8_t *font=style>=5?clock_load_font(style,&box_top):NULL;
       face=clock_style_face(&s_styled,&s_chamfer,style,font,box_top)?&s_styled:NULL;
@@ -983,12 +987,13 @@ static void connection_changed(bool connected) {
   s_connected=connected;redraw();if(connected)request_sync(true);
 }
 // The face's language (shared/watch-text.js): its words and glyphs stay
-// loaded while it is in use; English needs nothing.
+// loaded while it is in use. English is a resource too, so its words stay
+// out of the app image.
 static uint8_t s_language,*s_text;
 static void language_load(void){
   static const uint32_t resources[WT_LANGUAGE_COUNT]=WT_RESOURCES;
   watch_text_use(NULL,0);free(s_text);s_text=NULL;
-  if(!s_language||s_language>=WT_LANGUAGE_COUNT)return;
+  if(s_language>=WT_LANGUAGE_COUNT)s_language=0;
   ResHandle handle=resource_get_handle(resources[s_language]);size_t length=resource_size(handle);
   s_text=malloc(length);
   if(s_text&&resource_load(handle,s_text,length)==length&&watch_text_valid(s_text,length))watch_text_use(s_text,length);
@@ -1018,9 +1023,11 @@ static void received(DictionaryIterator *iter,void *context) {
     memcpy(s_glyphs,glyphs->value->data,GLYPHS_SIZE);persist_write_data(5,s_glyphs,GLYPHS_SIZE);
   }
   Tuple *language=dict_find(iter,MESSAGE_KEY_LANGUAGE);
-  if(language&&language->type==TUPLE_BYTE_ARRAY&&language_valid(language->value->data,language->length)&&language->value->data[1]!=s_language){
+  uint8_t next_language[2]={0};
+  if(language&&language->type==TUPLE_BYTE_ARRAY&&language->length==2)memcpy(next_language,language->value->data,2);
+  if(language_valid(next_language,language?language->length:0)&&next_language[1]!=s_language){
     full=true;
-    s_language=language->value->data[1];persist_write_data(6,language->value->data,2);language_load();
+    s_language=next_language[1];persist_write_data(6,next_language,2);language_load();
   }
   Tuple *t=dict_find(iter,MESSAGE_KEY_SETTINGS);
   if(t&&t->type==TUPLE_BYTE_ARRAY&&settings_valid(t->value->data,t->length)&&memcmp(s_settings,t->value->data,SETTINGS_SIZE)){
@@ -1065,7 +1072,8 @@ static void init(void) {
   uint8_t custom[PALETTE_SIZE];int palette_length=persist_read_data(4,custom,sizeof(custom));
   if(palette_valid(custom,palette_length))memcpy(s_palette,custom,PALETTE_SIZE);
   uint8_t language[2];int language_length=persist_read_data(6,language,sizeof(language));
-  if(language_length>0&&language_valid(language,language_length)){s_language=language[1];language_load();}
+  if(language_length>0&&language_valid(language,language_length))s_language=language[1];
+  language_load();
   s_small=fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_DRAFT_12));
   s_zone=fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_DRAFT_18));
   ResHandle caps=resource_get_handle(RESOURCE_ID_TYPE_CAPS);size_t caps_length=resource_size(caps);

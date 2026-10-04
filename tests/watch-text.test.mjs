@@ -29,7 +29,7 @@ test('the face follows the phone, or the chosen language',()=>{
 
 test('every language resource carries its words and fills patterns like the previews',()=>{
   mkdirSync('test-results',{recursive:true});
-  execFileSync('cc',['-std=c11','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/watch-text-test.c','watchface/src/c/watch_text.c','-o','test-results/watch-text-test']);
+  execFileSync('cc',['-std=c11','-DWATCH_TEXT_ENGLISH','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/watch-text-test.c','watchface/src/c/watch_text.c','-o','test-results/watch-text-test']);
   const day=new Date(2026,9,7);
   for(const code of WATCH_LANGUAGES){
     if(code!=='en')assert(existsSync(pack(code)),code);
@@ -40,7 +40,7 @@ test('every language resource carries its words and fills patterns like the prev
 });
 
 test('the watch draws every language\'s words exactly as the previews do',()=>{
-  execFileSync('cc',['-std=c11','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/caps-test.c','watchface/src/c/caps.c','watchface/src/c/watch_text.c','-o','test-results/caps-test']);
+  execFileSync('cc',['-std=c11','-DWATCH_TEXT_ENGLISH','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/caps-test.c','watchface/src/c/caps.c','watchface/src/c/watch_text.c','-o','test-results/caps-test']);
   for(const code of WATCH_LANGUAGES){
     const t=WATCH_TEXT[code],font=localizedFont(caps,code);
     const samples=[watchDate(t,new Date(2026,9,7))+'  NORFOLK',t.months.join(' '),t.weekdays.join(' ')+' '+t.initials.join(''),

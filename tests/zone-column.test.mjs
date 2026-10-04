@@ -11,7 +11,7 @@ const caps=JSON.parse(readFileSync('designer/public/type/draft.json')).lining.sm
 const STYLE_CODES=['span',null,'broad',null,'chamfer','leco','bitham-bold','bitham-light','bitham-medium','leco-delta'];
 test('the watch lays out place times beside the clock exactly as the workshop does',()=>{
   mkdirSync('test-results',{recursive:true});
-  execFileSync('cc',['-std=c11','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/zone-column-test.c','watchface/src/c/zone_column.c','watchface/src/c/caps.c','watchface/src/c/watch_text.c','-o','test-results/zone-column-test']);
+  execFileSync('cc',['-std=c11','-DWATCH_TEXT_ENGLISH','-Wall','-Wextra','-Werror','-Iwatchface/src/c','tests/zone-column-test.c','watchface/src/c/zone_column.c','watchface/src/c/caps.c','watchface/src/c/watch_text.c','-o','test-results/zone-column-test']);
   const base=[['NYC',9,5,1,0,0],['LON',17,34,0,0,0],['TYO',1,34,0,1,0],['Tokyo',13,7,0,1,0],['SYDNEY',23,59,1,-1,0],['HNL',0,0,0,-1,0],['X',12,0,0,0,1],['ABCDEFG',11,11,1,0,0]];
   const rows=[0,1].flatMap(icon=>[0,1].flatMap(tall=>[0,1].flatMap(right=>base.map(r=>[...r,right,tall,icon]))));
   const native=execFileSync('test-results/zone-column-test',['watchface/resources/data/caps.bin',...rows.flat().map(String)]).toString().trim().split('\n');

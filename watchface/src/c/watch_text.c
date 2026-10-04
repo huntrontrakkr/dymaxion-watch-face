@@ -1,4 +1,3 @@
-#define WATCH_TEXT_ENGLISH
 #include "watch_text.h"
 #include <stdio.h>
 #include <string.h>
@@ -19,7 +18,10 @@ bool watch_text_valid(const uint8_t *p,size_t length){
 void watch_text_use(const uint8_t *pack,size_t length){s_pack=watch_text_valid(pack,length)?pack:NULL;}
 const char *watch_text(int key){
   if(key<0||key>=WT_STRING_COUNT)return "";
-  return s_pack?(const char *)s_pack+u16(s_pack+8+2*key):WT_ENGLISH[key];
+#ifdef WATCH_TEXT_ENGLISH
+  if(!s_pack)return WT_ENGLISH[key];
+#endif
+  return s_pack?(const char *)s_pack+u16(s_pack+8+2*key):"";
 }
 bool watch_text_glyph(uint32_t code,WatchGlyph *glyph){
   if(!s_pack)return false;
