@@ -18,7 +18,7 @@
       "watchface": true
     },
     "capabilities": ["configurable", "location", "health"],
-    "messageKeys": ["SETTINGS", "REQUEST", "FOOTER", "WEATHER", "TIDE", "CITY", "DISPLAY", "PALETTE", "GLYPHS"],
+    "messageKeys": ["SETTINGS", "REQUEST", "FOOTER", "WEATHER", "TIDE", "CITY", "DISPLAY", "PALETTE", "GLYPHS", "LANGUAGE"],
     "resources": {
       "media": [
         {"type":"raw","name":"MAP_LANDSCAPE","file":"maps/map-0.bin"},
@@ -28,6 +28,22 @@
         {"type":"raw","name":"CLOCK_CHAMFER","file":"data/clock-chamfer.bin"},
         {"type":"raw","name":"CLOCK_GLYPHS","file":"data/clock-glyphs.bin"},
         {"type":"raw","name":"TYPE_CAPS","file":"data/caps.bin"},
+        {"type":"raw","name":"TEXT_ES","file":"data/text-es.bin"},
+        {"type":"raw","name":"TEXT_FR","file":"data/text-fr.bin"},
+        {"type":"raw","name":"TEXT_DE","file":"data/text-de.bin"},
+        {"type":"raw","name":"TEXT_IT","file":"data/text-it.bin"},
+        {"type":"raw","name":"TEXT_PT","file":"data/text-pt.bin"},
+        {"type":"raw","name":"TEXT_NL","file":"data/text-nl.bin"},
+        {"type":"raw","name":"TEXT_PL","file":"data/text-pl.bin"},
+        {"type":"raw","name":"TEXT_TR","file":"data/text-tr.bin"},
+        {"type":"raw","name":"TEXT_ID","file":"data/text-id.bin"},
+        {"type":"raw","name":"TEXT_RU","file":"data/text-ru.bin"},
+        {"type":"raw","name":"TEXT_UK","file":"data/text-uk.bin"},
+        {"type":"raw","name":"TEXT_EL","file":"data/text-el.bin"},
+        {"type":"raw","name":"TEXT_ZH_HANS","file":"data/text-zh-Hans.bin"},
+        {"type":"raw","name":"TEXT_ZH_HANT","file":"data/text-zh-Hant.bin"},
+        {"type":"raw","name":"TEXT_JA","file":"data/text-ja.bin"},
+        {"type":"raw","name":"TEXT_KO","file":"data/text-ko.bin"},
         {"type":"bitmap","name":"MENU_ICON","file":"images/menu-icon.png","menuIcon":true}
       ]
     }

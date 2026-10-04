@@ -21,7 +21,7 @@ async function phone({settings=defaults(),location=position(),reply}={}){
   await page.goto('data:text/html;charset=utf-8,'+encodeURIComponent(html));
   await page.waitForFunction(()=>document.querySelector('#preview-caption').textContent.includes('Sample readings'));
   await page.locator('.config-section > summary').filter({hasText:'Bottom panels'}).click();
-  return {page,requests,open:()=>page.getByText('NOAA tides',{exact:true}).click(),
+  return {page,requests,open:()=>page.getByText('Tides',{exact:true}).click(),
     station:()=>page.getByLabel('NOAA station ID',{exact:true}).inputValue(),
     settled:()=>page.waitForFunction(()=>!document.querySelector('[data-nearby-tides]').disabled)};
 }
@@ -66,7 +66,17 @@ try{
     assert.equal(await denied.station(),'8518750');await denied.page.close();
   }
   const inland=await phone({location:{...position(),lat:39.74,lon:-104.99}});await inland.open();
-  await inland.page.getByText('No hourly NOAA tide stations within 150 km.',{exact:false}).waitFor();assert.equal(await inland.station(),'');assert.equal(inland.requests.length,1);await inland.page.close();
+  await inland.page.getByText('No hourly NOAA station within 150 km',{exact:false}).waitFor();assert.equal(await inland.station(),'');assert.equal(inland.requests.length,1);
+  // Anywhere else: a searched place, with Open-Meteo's modelled tides.
+  await inland.page.getByLabel('Tide station',{exact:true}).selectOption('model');
+  await inland.page.getByLabel('Search for a coastal place',{exact:true}).fill('Sy');await inland.page.locator('[data-model-search] [role=option]').filter({hasText:'Sydney'}).click();
+  assert.equal(await inland.page.getByLabel('Tide label',{exact:true}).inputValue(),'SYDNEY');assert.equal(await inland.station(),'');
+  assert.equal(await inland.page.getByLabel('Tide station time zone',{exact:true}).inputValue(),'Australia/Sydney');
+  assert.equal(await inland.page.getByLabel('Tide location',{exact:true}).inputValue(),'fixed');
+  assert.match(await inland.page.locator('[data-tide-selected]').textContent(),/Modelled by Open-Meteo · SYDNEY · -33\.87, 151\.21/);
+  // A NOAA station replaces the place.
+  await inland.page.getByLabel('Tide station',{exact:true}).selectOption('8518750');assert.equal(await inland.station(),'8518750');
+  assert.doesNotMatch(await inland.page.locator('[data-tide-selected]').textContent(),/Modelled/);await inland.page.close();
   const offline=await phone({reply:async(route,url,n)=>{if(n===1){await route.abort();return true;}}});await offline.open();
   await offline.page.getByText('NOAA station lookup is unavailable.',{exact:false}).waitFor();
   await offline.page.getByRole('button',{name:'Find nearby NOAA stations',exact:true}).click();await waitStation(offline.page,'8638660');await offline.page.close();

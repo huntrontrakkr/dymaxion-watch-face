@@ -19,12 +19,15 @@ const $=id=>document.getElementById(id),data=window.DYMAXION_CONFIG;
 {const q=quoteOfTheDay();$('fuller-quote').textContent=q.text;$('fuller-source').textContent=q.source;}
 const exists=zone=>data.zoneNames.indexOf(zone)>=0;
 let s=validateSettings(data.settings||defaults(),exists);
+// The phone's language, for a face set to follow it (the companion may not see it).
+const phoneLanguages=[...(navigator.languages||[]),navigator.language].filter(l=>typeof l==='string'&&/^[A-Za-z]{2,3}([-_][A-Za-z0-9]{1,8})*$/.test(l));
+if(phoneLanguages[0])s.deviceLanguage=phoneLanguages[0];
 let searches=[],previewPage=s.footer.home,evening=false,previewFrame=0;
 function preview(){
   cancelAnimationFrame(previewFrame);
   previewFrame=requestAnimationFrame(()=>{
     if(!s.footer.pages.includes(previewPage))previewPage=s.footer.home;
-    try{renderConfigPreview($('watch-preview'),s,{evening,page:previewPage,city:data.city});$('preview-error').textContent='';}
+    try{renderConfigPreview($('watch-preview'),s,{evening,page:previewPage,city:data.city,languages:phoneLanguages});$('preview-error').textContent='';}
     catch{$('preview-error').textContent='Preview unavailable. Your settings can still be saved.';}
     $('preview-palette').textContent=paletteFor(s).name;
     $('preview-caption').textContent=(s.footer.enabled?PANEL_PAGES.find(([id])=>id===previewPage)[1]:'World clocks')+' · Sample readings';
@@ -36,7 +39,7 @@ const panelEditor=panelControls($('panel-controls'),()=>s,footer=>{const before=
   const p=data.position,age=Date.now()-p?.fetched;
   if(!p||!Number.isFinite(p.lat)||Math.abs(p.lat)>90||!Number.isFinite(p.lon)||Math.abs(p.lon)>180||!(age>=0&&age<15*60000))throw new Error('Phone location unavailable. Enable location for Pebble, then reopen settings. You can also choose a station manually.');
   return {coords:{latitude:p.lat,longitude:p.lon}};
-}});
+},zoneExists:exists});
 const cityEditor=cityControls($('city-controls'),()=>s,location=>{s.location=validateSettings({...s,location},exists).location;changed();});
 const displayEditor=displayControls($('display-controls'),()=>s,value=>{s={...withClockDisplay(s,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,mapTimeSize:value.mapTimeSize,zoneTimesTall:value.zoneTimesTall,zoneStripCompact:value.zoneStripCompact,placeIcons:value.placeIcons,placeIconsBeside:value.placeIconsBeside,nameplate:value.nameplate,clockArt:value.clockArt};refresh();});
 // Everything about how place times look lives with where they appear.

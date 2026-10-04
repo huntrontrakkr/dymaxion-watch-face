@@ -19,7 +19,10 @@ function setup(){
   const getPosition=async()=>{fixes++;if(blocked)throw Error('Location denied');return position;};
   const lookup={nearby:async p=>{lookups++;if(fail)throw Error('Offline');return p.lat>50?[]:[p.lon< -100?west:east];},resolve:async s=>s};
   const options={getSettings:()=>s,storage,now:()=>time,getPosition,stationLookup:lookup,
-    send:(kind,data)=>{if(kind==='tide')sent.push(data);},getJSON:async url=>{requests.push(url);return url.includes('interval=hilo')?extrema:hourly;}};
+    send:(kind,data)=>{if(kind==='tide')sent.push(data);},getJSON:async url=>{requests.push(url);return url.includes('marine-api')?model(url):url.includes('interval=hilo')?extrema:hourly;}};
+  // Open-Meteo's modelled sea level: a semidiurnal tide around the requested point.
+  const model=url=>{const q=new URL(url).searchParams,first=Math.floor(time/3600000)*3600-24*3600;
+    return {latitude:+q.get('latitude')+.04,longitude:+q.get('longitude'),hourly:{time:Array.from({length:120},(_,i)=>first+i*3600),sea_level_height_msl:Array.from({length:120},(_,i)=>+(1.2*Math.cos(2*Math.PI*(i-4)/12.42)).toFixed(3))}};};
   return {s,options,sent,requests,lookup,storage,latest:()=>sent.at(-1),advance:ms=>time+=ms,move:p=>position=p,
     fail:v=>fail=v,block:v=>blocked=v,counts:()=>({fixes,lookups}),create:()=>environmentService(options)};
 }
@@ -43,9 +46,19 @@ test('a flight selects a new station and refetches its tides inside the six-hour
   assert.equal(h.s.footer.tide.station,'','runtime selection never overwrites a pinned station in settings');
   await h.create().refresh();assert.deepEqual(h.counts(),{fixes:3,lookups:3});assert.equal(h.requests.length,4,'restart reuses fresh station and tide caches');
 });
-test('outside NOAA coverage clears the previous coast instead of presenting it as local',async()=>{
-  const h=setup(),service=h.create();await service.refresh();h.move(fix(51.5,0));h.advance(61*60000);await service.refresh();
-  assert.deepEqual(h.latest(),{label:'TIDE',samples:[],error:true});assert.equal(h.requests.length,2);
+test('outside NOAA coverage the tides are modelled at the new position, never the previous coast',async()=>{
+  const h=setup(),service=h.create();await service.refresh();h.move(fix(51.5123,0.0456));h.advance(61*60000);await service.refresh();
+  assert.equal(h.requests.length,3);assert.match(h.requests[2],/marine-api\.open-meteo\.com.*latitude=51\.51&longitude=0\.05/);
+  const d=h.latest();assert.equal(d.label,'TIDE');assert.equal(d.model,true);assert.equal(d.samples.length,49);assert(!d.error);
+  assert(d.events.length>=6&&d.events.some(e=>e.high)&&d.events.some(e=>!e.high));
+});
+test('modelled tides refuse a sea cell far from the requested place',async()=>{
+  const h=setup(),first=Math.floor(meta.capturedAt/3600000)*3600-3600,errors=[],log=console.log;
+  h.options.getJSON=async url=>{h.requests.push(url);return {latitude:50.9,longitude:0,hourly:{time:Array.from({length:96},(_,i)=>first+i*3600),sea_level_height_msl:Array.from({length:96},(_,i)=>Math.cos(i/2))}};};
+  console.log=m=>errors.push(m);
+  Object.assign(h.s.footer.tide,{mode:'fixed',point:{lat:51.5,lon:0},label:'LONDON',tz:'Europe/London'});
+  try{await h.create().refresh();}finally{console.log=log;}
+  assert.equal(h.latest().error,true);assert.equal(h.latest().samples.length,0);assert.match(errors.join(),/over 50 km/);
 });
 test('denied location marks cached tides old; a failed lookup after a known move clears them',async()=>{
   const h=setup(),service=h.create();await service.refresh();h.advance(61*60000);h.block(true);await service.refresh();
@@ -77,7 +90,7 @@ test('late automatic station or forecast responses cannot replace a subsequently
 test('travel tides share the phone’s coarse position request and reject corrupt cached selections',async()=>{
   const h=setup();let fixes=0;
   const getPosition=positionProvider({getPosition:async()=>{fixes++;return fix(36.85,-76.29);},now:h.options.now});
-  h.storage.setItem('dymaxion-travel-tide-v1',JSON.stringify({checked:meta.capturedAt,position:{lat:91,lon:0},station:west}));
+  h.storage.setItem('dymaxion-travel-tide-v2',JSON.stringify({checked:meta.capturedAt,position:{lat:91,lon:0},station:west}));
   const travel=travelTides({...h.options,getPosition,lookup:h.lookup});
   await Promise.all([getPosition(),travel.refresh(),travel.refresh()]);assert.equal(fixes,1);assert.equal(travel.current().station.station,east.station);
 });

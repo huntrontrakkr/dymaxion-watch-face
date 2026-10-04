@@ -5,6 +5,7 @@
 #include "caps.h"
 #include "solar.h"
 #include "health.h"
+#include "watch_text.h"
 #include "smart_tray.h"
 #include "generated/footer_defaults.h"
 #define MIN(a,b) ((a)<(b)?(a):(b))
@@ -151,11 +152,11 @@ static void decimal(char *out,int size,int tenth){tenth=MAX(-100000,MIN(100000,t
 static void page_dots(GContext *ctx){for(int i=0;i<s_footer[F_COUNT];i++)rect(ctx,196-4*(s_footer[F_COUNT]-i),227,s_footer[F_ORDER+i]==s_page?3:1,1,s_footer[F_ORDER+i]==s_page?color(6):color(5));}
 static void calendar_draw(GContext *ctx,const struct tm *local){
   CalendarCell cells[14];panel_calendar(local->tm_year+1900,local->tm_mon+1,local->tm_mday,local->tm_wday,s_footer,cells);
-  static const char *months[]={"JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
-  static const char *weekdays[]={"S","M","T","W","T","F","S"};char title[24];
-  if(cells[0].month!=cells[13].month)snprintf(title,sizeof(title),"%s / %s",months[cells[0].month-1],months[cells[13].month-1]);else snprintf(title,sizeof(title),"%s %d",months[local->tm_mon],local->tm_year+1900);
+  char title[48];
+  if(cells[0].month!=cells[13].month)watch_text_fill(title,sizeof(title),watch_text(WT_CALENDAR_SPAN),"",0,watch_text(WT_MONTHS+cells[0].month-1),watch_text(WT_MONTHS+cells[13].month-1),0);
+  else watch_text_fill(title,sizeof(title),watch_text(WT_CALENDAR_TITLE),"",0,watch_text(WT_MONTHS+local->tm_mon),"",local->tm_year+1900);
   label(ctx,title,4,191,160,GTextAlignmentLeft,color(7));
-  for(int col=0;col<7;col++)label(ctx,weekdays[(col+s_footer[F_WEEK_START])%7],4+col*28,201,24,GTextAlignmentCenter,color(5));
+  for(int col=0;col<7;col++)label(ctx,watch_text(WT_INITIALS+(col+s_footer[F_WEEK_START])%7),4+col*28,201,24,GTextAlignmentCenter,color(5));
   for(int i=0;i<14;i++){
     CalendarCell d=cells[i];int x=4+(i%7)*28,y=i<7?212:224;char day[3];snprintf(day,sizeof(day),"%d",d.day);
     GColor ink=d.holiday?custom(F_HOLIDAY_COLOR):d.weekend?custom(F_SAT_COLOR):color(6);
@@ -226,11 +227,11 @@ static int metric(const uint8_t *p,int i,bool tide,bool humidity){
 }
 static void graph_draw(GContext *ctx,time_t now){
   bool tide=s_page==PANEL_TIDE,humidity=s_page==PANEL_HUMIDITY;const uint8_t *p=tide?s_tide:s_weather;
-  const char *kind=tide?"TIDE":humidity?"HUMIDITY":"WEATHER";
-  int start=environment_start_index(p,now);char title[32],right[24],value[12];
+  const char *kind=watch_text(tide?WT_TIDE:humidity?WT_HUMIDITY:WT_WEATHER);
+  int start=environment_start_index(p,now);char title[48],right[40],value[12];
   if((tide&&!s_footer[F_TIDE_ON])||(!tide&&!s_footer[F_WEATHER_ON])||start<0){
     label(ctx,kind,4,193,190,GTextAlignmentLeft,color(7));
-    const char *message=tide&&!s_footer[F_TIDE_ON]?"CHOOSE A NOAA STATION":!tide&&!s_footer[F_WEATHER_ON]?"ENABLE WEATHER IN SETTINGS":p[1]?"FORECAST EXPIRED":p[2]&2?"DATA UNAVAILABLE":"WAITING FOR PHONE";
+    const char *message=watch_text(tide&&!s_footer[F_TIDE_ON]?WT_SET_UP_TIDES:!tide&&!s_footer[F_WEATHER_ON]?WT_ENABLE_WEATHER:p[1]?WT_EXPIRED:p[2]&2?WT_UNAVAILABLE:WT_WAITING);
     label(ctx,message,4,214,192,GTextAlignmentLeft,color(6));return;
   }
   int count=MIN(s_footer[F_HORIZON]+1,p[1]-start),lo=32767,hi=-32768;
@@ -241,19 +242,19 @@ static void graph_draw(GContext *ctx,time_t now){
   else{int pad=MAX(tide?10:10,(hi-lo)/8);lo-=pad;hi+=pad;if(humidity){lo=MAX(0,lo);hi=MIN(1000,hi);}}
   int n=metric(p,start,tide,humidity);
   if(tide){decimal(value,sizeof(value),(n+(n<0?-5:5))/10);snprintf(title,sizeof(title),"%.7s %s%s",(const char *)p+28,value,s_footer[F_TIDE_FEET]?"FT":"M");}
-  else if(humidity)snprintf(title,sizeof(title),"RH %d%%",n/10);
-  else if(s_footer[F_HUMID_LINE])snprintf(title,sizeof(title),"%.7s %d%c RH %d%%",(const char *)p+24,(n+(n<0?-5:5))/10,s_footer[F_FAHRENHEIT]?'F':'C',p[32+start*8+2]);
+  else if(humidity)snprintf(title,sizeof(title),"%s %d%%",watch_text(WT_RH),n/10);
+  else if(s_footer[F_HUMID_LINE])snprintf(title,sizeof(title),"%.7s %d%c %s %d%%",(const char *)p+24,(n+(n<0?-5:5))/10,s_footer[F_FAHRENHEIT]?'F':'C',watch_text(WT_RH),p[32+start*8+2]);
   else snprintf(title,sizeof(title),"%.7s %d%c",(const char *)p+24,(n+(n<0?-5:5))/10,s_footer[F_FAHRENHEIT]?'F':'C');
   right[0]=0;
   bool stale=(p[2]&2)||((uint32_t)now>read_u32(p+4)+(tide?12*3600:s_footer[F_REFRESH]*120));
-  if(stale&&!(p[2]&1))snprintf(right,sizeof(right),"OLD");
+  if(stale&&!(p[2]&1))snprintf(right,sizeof(right),"%s",watch_text(WT_OLD));
   HeaderTime times[2];int time_count=0;
   if(!right[0])time_count=tide?next_tides(p,now,times):s_footer[F_SOLAR]?next_suns(p,now,times):0;
   if(!right[0]&&!time_count&&!tide&&!humidity&&s_footer[F_RAIN]){
     int peak=0;for(int i=0;i<count;i++){const uint8_t *sample=p+32+(start+i)*8;int rain=s_footer[F_RAIN]==1?sample[3]:(uint16_t)read_i16(sample+4);peak=MAX(peak,rain);}
-    if(s_footer[F_RAIN]==1)snprintf(right,sizeof(right),"RAIN %d%%",peak);
-    else if(s_footer[F_RAIN_INCH]){int hundredths=(peak*100+127)/254;snprintf(right,sizeof(right),"MAX %d.%02dIN",hundredths/100,hundredths%100);}
-    else{decimal(value,sizeof(value),peak);snprintf(right,sizeof(right),"MAX %sMM",value);}
+    if(s_footer[F_RAIN]==1)snprintf(right,sizeof(right),"%s %d%%",watch_text(WT_RAIN),peak);
+    else if(s_footer[F_RAIN_INCH]){int hundredths=(peak*100+127)/254;snprintf(right,sizeof(right),"%s %d.%02dIN",watch_text(WT_MAX),hundredths/100,hundredths%100);}
+    else{decimal(value,sizeof(value),peak);snprintf(right,sizeof(right),"%s %sMM",watch_text(WT_MAX),value);}
   }
   label(ctx,title,4,191,104,GTextAlignmentLeft,color(6));label(ctx,right,107,191,89,GTextAlignmentRight,color(7));
   header_times(ctx,times,time_count);
@@ -361,14 +362,15 @@ static void health_refresh(time_t now,const struct tm *local){(void)now;(void)lo
 static void health_draw(GContext *ctx,time_t now,const struct tm *local){
   health_refresh(now,local);
   if(!s_health_ok){
-    label(ctx,"HEALTH",4,193,190,GTextAlignmentLeft,color(7));
-    label(ctx,"ALLOW HEALTH IN THE PEBBLE APP",4,214,192,GTextAlignmentLeft,color(6));return;
+    label(ctx,watch_text(WT_HEALTH),4,193,190,GTextAlignmentLeft,color(7));
+    label(ctx,watch_text(WT_ALLOW_HEALTH),4,214,192,GTextAlignmentLeft,color(6));return;
   }
   // On the heap for the draw only: the app's static memory is nearly full.
   HealthView *hv=malloc(sizeof(HealthView));if(!hv)return;
   health_view(&s_health,s_footer[F_RANGE_LABELS],chart_text_width(s_clock24?"23":"12A"),hv);
   const ChartLayout l=hv->layout;
-  label(ctx,hv->title,4,191,104,GTextAlignmentLeft,color(6));label(ctx,hv->right,107,191,89,GTextAlignmentRight,color(7));
+  bool fits=!s_caps||caps_width(s_caps,hv->title)+4+caps_width(s_caps,hv->right)<=192;
+  label(ctx,fits?hv->title:hv->short_title,4,191,104,GTextAlignmentLeft,color(6));label(ctx,hv->right,107,191,89,GTextAlignmentRight,color(7));
   for(int i=1;i<HEALTH_HOURS;i++)dotted_line(ctx,chart_x(l,i-1),hv->usual[i-1],chart_x(l,i),hv->usual[i],color(6));
   for(int i=0;i<hv->bar_count;i++)if(hv->bar_h[i])rect(ctx,hv->bar_x[i],hv->bar_y[i],hv->bar_w[i],hv->bar_h[i],custom(F_RAIN_COLOR));
   for(int i=1;i<HEALTH_HOURS;i++)if(hv->pulse[i-1]>=0&&hv->pulse[i]>=0)line(ctx,chart_x(l,i-1),hv->pulse[i-1],chart_x(l,i),hv->pulse[i],custom(F_TEMP_COLOR));

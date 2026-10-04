@@ -24,7 +24,7 @@ export function defaultFooter(){return {
   flicks:2,enabled:true,pages:PANEL_PAGES.map(([id])=>id).filter(id=>id!=='humidity'&&id!=='tide'),home:'zones',rotationMinutes:0,shake:true,horizon:24,
   weather:{enabled:true,place:'current',temperatureUnit:'c',precipitation:'probability',rainUnit:'mm',rainMax:5,daylight:true,solarTimes:true,grid:false,rangeLabels:true,humidityLine:true,temperatureScale:'auto',temperatureMin:-10,temperatureMax:40,humidityScale:'percent',refreshMinutes:60},
   calendar:{weekStart:0,weeks:'current-next',weekends:'sat-sun',holidays:'none',todayStyle:'fill'},
-  tide:{mode:'auto',station:'',label:'TIDE',tz:'America/New_York',unit:'m',zeroLine:true,scale:'auto',min:-1,max:3},
+  tide:{mode:'auto',station:'',point:null,label:'TIDE',tz:'America/New_York',unit:'m',zeroLine:true,scale:'auto',min:-1,max:3},
   colorMode:'theme',colors:{...LEGACY_COLORS}
 };}
 export function validateFooter(input,zoneExists,quantize){
@@ -47,6 +47,10 @@ export function validateFooter(input,zoneExists,quantize){
   if(!Number.isFinite(w.rainMax)||w.rainMax<.1||w.rainMax>100)throw new Error('Rain scale must be between 0.1 and 100 mm/hour.');
   choice(c,'weekStart',[0,1,6]);choice(c,'weeks',['current-next','previous-current']);choice(c,'weekends',['sat-sun','fri-sat','none']);choice(c,'holidays',HOLIDAY_REGIONS.map(([id])=>id));choice(c,'todayStyle',['fill','outline']);
   if(typeof t.station!=='string'||!/^([A-Z0-9]{7})?$/.test(t.station))throw new Error('Enter a seven-character NOAA tide station ID.');
+  // A fixed place for modelled tides (Open-Meteo), where NOAA has no station.
+  if(t.point!==null&&!(t.point&&typeof t.point==='object'&&Number.isFinite(t.point.lat)&&Math.abs(t.point.lat)<=90&&Number.isFinite(t.point.lon)&&Math.abs(t.point.lon)<=180))throw new Error('Invalid modelled tide place.');
+  if(t.point&&t.station)throw new Error('Choose a NOAA station or a modelled place, not both.');
+  if(t.point)t.point={lat:Math.round(t.point.lat*1000)/1000,lon:Math.round(t.point.lon*1000)/1000};
   if(typeof t.label!=='string'||!/^[A-Z0-9 -]{1,7}$/.test(t.label))throw new Error('Tide labels need 1–7 uppercase letters or numbers.');
   if(typeof t.tz!=='string'||t.tz.length>80||!zoneExists(t.tz))throw new Error('Choose the tide station’s IANA time zone.');
   choice(t,'unit',['m','ft']);bool(t,'zeroLine');

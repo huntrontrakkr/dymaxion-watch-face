@@ -5,6 +5,7 @@ import {panelColors} from './panel-settings.js';
 import {drawPixelLine,drawPixelRows} from './pixels.js';
 import {sunUp,nextSunEvent} from './solar.js';
 import {healthView} from './health.js';
+import {WATCH_TEXT,calendarTitle} from './watch-text.js';
 import {drawRangeText,drawAxisText,drawNarrowText,axisTextWidth,axisValue,chartLayout,chartX,chartY,chartHourLabels,tideMarks,chartExtremes,HEADER_GLYPHS} from './chart-axis.js';
 // One RGB222 step (85) per channel toward the ground: a dimmer version of a color.
 export function dimColor(color,ground){
@@ -12,16 +13,16 @@ export function dimColor(color,ground){
 }
 export function drawFooter(ctx,settings,page,data,now,font,clock24){
   const f=settings.footer;if(!f.enabled)return;
-  const pal=data.palette,w=f.weather,c=panelColors(settings);
+  const pal=data.palette,w=f.weather,c=panelColors(settings),tx=data.text||WATCH_TEXT.en;
   const text=(t,x,y,color=pal.ink,align='left')=>drawBitmapText(ctx,font,String(t),x,y,color,align);
   const rect=(x,y,width,height,color)=>{ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),Math.round(width),Math.round(height));};
   const line=(x,y,xx,yy,color,dotted=false)=>drawPixelLine(ctx,x,y,xx,yy,color,dotted);
   if(page!=='zones')rect(0,184,200,44,pal.bg);
   const timeLabel=minute=>{const h=Math.floor(minute/60),m=String(minute%60).padStart(2,'0');return clock24?`${String(h).padStart(2,'0')}:${m}`:`${h%12||12}:${m}${h<12?'A':'P'}`;};
   if(page==='calendar'){
-    const d=new Date(now),cells=calendarCells(d.getFullYear(),d.getMonth(),d.getDate(),f.calendar),months=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    text(cells[0].month!==cells[13].month?`${months[cells[0].month]} / ${months[cells[13].month]}`:`${months[d.getMonth()]} ${d.getFullYear()}`,4,191,pal.accent);
-    for(let col=0;col<7;col++)text('SMTWTFS'[(col+f.calendar.weekStart)%7],16+col*28,201,pal.edge,'center');
+    const d=new Date(now),cells=calendarCells(d.getFullYear(),d.getMonth(),d.getDate(),f.calendar);
+    text(cells[0].month!==cells[13].month?calendarTitle(tx,d.getFullYear(),cells[0].month,cells[13].month):calendarTitle(tx,d.getFullYear(),d.getMonth()),4,191,pal.accent);
+    for(let col=0;col<7;col++)text(tx.initials[(col+f.calendar.weekStart)%7],16+col*28,201,pal.edge,'center');
     cells.forEach((day,i)=>{
       const x=4+i%7*28,y=i<7?212:224;let ink=day.holiday?c.holiday:day.weekend?c.saturday:pal.ink;
       if(day.today){if(f.calendar.todayStyle==='outline'){line(x+1,y-9,x+22,y-9,c.today);line(x+1,y+1,x+22,y+1,c.today);line(x+1,y-9,x+1,y+1,c.today);line(x+22,y-9,x+22,y+1,c.today);}else{rect(x+1,y-9,22,11,c.today);const channels=[1,3,5].map(i=>parseInt(c.today.slice(i,i+2),16));ink=channels[0]*.299+channels[1]*.587+channels[2]*.114>127?'#000000':'#FFFFFF';}}
@@ -31,10 +32,11 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
     // Today on Pebble Health: steps per hour as bars, heart rate as a line and
     // this weekday's typical steps dotted behind (shared/health.js).
     const h=data.health;
-    if(!h){text('HEALTH',4,193,pal.accent);text('STEPS AND HEART RATE ARE ON THE WATCH',4,214);}
+    if(!h){text(tx.health,4,193,pal.accent);text(tx.healthPreview,4,214);}
     else{
-      const v=healthView(h,w.rangeLabels,axisTextWidth(clock24?'23':'12A')),l=v.layout;
-      text(v.title,4,191);text(v.right,196,191,pal.accent,'right');
+      const v=healthView(h,w.rangeLabels,axisTextWidth(clock24?'23':'12A'),tx),l=v.layout;
+      // Without the heart rate if the whole title would meet the right label (panels.c).
+      text(textWidth(font,v.title)+4+textWidth(font,v.right)<=192?v.title:v.shortTitle,4,191);text(v.right,196,191,pal.accent,'right');
       for(let i=1;i<24;i++)line(chartX(l,i-1),v.usual[i-1],chartX(l,i),v.usual[i],pal.ink,true);
       for(const b of v.bars)if(b.height)rect(b.x,b.y,b.width,b.height,c.rain);
       for(let i=1;i<24;i++)if(v.pulse[i-1]>=0&&v.pulse[i]>=0)line(chartX(l,i-1),v.pulse[i-1],chartX(l,i),v.pulse[i],c.temperature);
@@ -44,10 +46,10 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       for(const label of chartHourLabels(l,[...Array(24).keys()],clock24))drawAxisText(ctx,label.text,label.x,l.labelBaseline-6,pal.ink);
     }
   }else if(page!=='zones'){
-    const tide=page==='tide',humidity=page==='humidity',series=data[tide?'tide':'weather'],window=dataWindow(series,now,f.horizon),kind=tide?'TIDE':humidity?'HUMIDITY':'WEATHER';
-    if(tide&&!f.tide.station&&!series?.demo||!tide&&!w.enabled||!window){
+    const tide=page==='tide',humidity=page==='humidity',series=data[tide?'tide':'weather'],window=dataWindow(series,now,f.horizon),kind=tide?tx.tide:humidity?tx.humidity:tx.weather;
+    if(tide&&!f.tide.station&&!f.tide.point&&!series?.demo||!tide&&!w.enabled||!window){
       text(kind,4,193,pal.accent);
-      text(tide&&!f.tide.station&&!series?.demo?'CHOOSE A NOAA STATION':!tide&&!w.enabled?'ENABLE WEATHER IN SETTINGS':series?.samples?.length?'FORECAST EXPIRED':series?.error?'DATA UNAVAILABLE':'WAITING FOR PHONE',4,214);
+      text(tide&&!f.tide.station&&!f.tide.point&&!series?.demo?tx.setUpTides:!tide&&!w.enabled?tx.enableWeather:series?.samples?.length?tx.expired:series?.error?tx.unavailable:tx.waiting,4,214);
     }else{
       const samples=window.samples,metric=p=>tide?(f.tide.unit==='ft'?Math.trunc(p.height*328/100):p.height):humidity?p.humidity*10:w.temperatureUnit==='f'?Math.trunc(p.temperature*9/5)+320:p.temperature;
       const values=samples.map(metric);let lo=Math.min(...values),hi=Math.max(...values);
@@ -55,7 +57,7 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
       else if(humidity&&w.humidityScale==='percent'){lo=0;hi=1000;}
       else if(!tide&&!humidity&&w.temperatureScale==='fixed'){lo=w.temperatureMin*10;hi=w.temperatureMax*10;}
       else{const pad=Math.max(10,Math.trunc((hi-lo)/8));lo-=pad;hi+=pad;if(humidity){lo=Math.max(0,lo);hi=Math.min(1000,hi);}}
-      const n=values[0],title=tide?`${series.label} ${(n/100).toFixed(1)}${f.tide.unit.toUpperCase()}`:humidity?`RH ${Math.round(n/10)}%`:`${series.label} ${Math.round(n/10)}${w.temperatureUnit.toUpperCase()}${w.humidityLine?` RH ${samples[0].humidity}%`:''}`;
+      const n=values[0],title=tide?`${series.label} ${(n/100).toFixed(1)}${f.tide.unit.toUpperCase()}`:humidity?`${tx.rh} ${Math.round(n/10)}%`:`${series.label} ${Math.round(n/10)}${w.temperatureUnit.toUpperCase()}${w.humidityLine?` ${tx.rh} ${samples[0].humidity}%`:''}`;
       const stale=series.error||now/1000-series.fetched>(tide?12*3600:w.refreshMinutes*120),at=Math.floor(now/1000);
       // Current-location solar times use the main clock. Saved-city times are
       // already localized by the provider, just like their chart hour labels.
@@ -66,9 +68,9 @@ export function drawFooter(ctx,settings,page,data,now,font,clock24){
         return [[series.rise,series.riseMinute,'rise'],[series.set,series.setMinute,'set']].filter(([t])=>t>=at).map(([time,minute,glyph])=>({time,minute,glyph}));
       };
       // Sample data shows sample times, and never goes stale.
-      let right=!series.demo&&stale?'OLD':'';
+      let right=!series.demo&&stale?tx.old:'';
       const times=right?[]:tide?nextTides(series,at).map(t=>({...t,glyph:t.high?'high':'low'})):w.solarTimes?suns():[];
-      if(!right&&!times.length&&!tide&&!humidity&&w.precipitation!=='off')right=w.precipitation==='probability'?`RAIN ${Math.max(...samples.map(p=>p.probability))}%`:`MAX ${(Math.max(...samples.map(p=>p.rain))/10/(w.rainUnit==='in'?25.4:1)).toFixed(w.rainUnit==='in'?2:1)}${w.rainUnit.toUpperCase()}`;
+      if(!right&&!times.length&&!tide&&!humidity&&w.precipitation!=='off')right=w.precipitation==='probability'?`${tx.rain} ${Math.max(...samples.map(p=>p.probability))}%`:`${tx.max} ${(Math.max(...samples.map(p=>p.rain))/10/(w.rainUnit==='in'?25.4:1)).toFixed(w.rainUnit==='in'?2:1)}${w.rainUnit.toUpperCase()}`;
       text(title,4,191);text(right,196,191,pal.accent,'right');
       // Up to two times, soonest first, each after its glyph, ending at the right edge.
       let hx=196;for(const t of times.sort((a,b)=>a.time-b.time).reverse()){const label=timeLabel(t.minute),left=hx-textWidth(font,label);text(label,hx,191,pal.accent,'right');drawPixelRows(ctx,HEADER_GLYPHS[t.glyph],left-7,185,pal.accent);hx=left-12;}
