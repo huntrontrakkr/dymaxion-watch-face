@@ -476,5 +476,6 @@
 "Utiliser le réglage de la montre",
 "Couleur du rétroéclairage",
 "Réinitialiser la couleur du rétroéclairage",
-"Enregistré séparément pour chaque palette. Les couleurs restent proches du blanc pour faciliter la lecture. La luminosité et la durée suivent les réglages de la montre. L’aperçu ne simule pas le rétroéclairage."
+"Enregistré séparément pour chaque palette. Choisissez une couleur RVB 24 bits. Les couleurs sombres ou saturées peuvent réduire la lisibilité. La luminosité et la durée suivent les réglages de la montre. L’aperçu ne simule pas le rétroéclairage.",
+"Code hexadécimal du rétroéclairage"
 ]

@@ -15,15 +15,18 @@ white for a custom palette. Existing custom palettes without a tint migrate
 to white. **Use watch setting**, the default, restores the system color while
 keeping saved overrides for later.
 
-To avoid dark or saturated illumination, input colors are brightened until
-the strongest channel is 255, then every channel is clamped to at least 224.
-This normalization is idempotent and retains full 8-bit channel precision;
-it does not change any screen pixels, backlight brightness setting or timeout.
-The browser preview deliberately does not simulate LED color. Physical
-readability and LED appearance still need checking on a Time 2.
+Custom colors use the full 24-bit RGB888 range (16,777,216 values), independent
+of the screen's 64 colors. Choose a color or enter its exact `#RRGGBB` value
+under **Backlight hex**. All three channels, including zero, are preserved
+through saving, export/import and the native packet; no quantization,
+brightening or clamping is applied. Dark or saturated choices may reduce
+readability, so the built-in defaults remain gentle and Reset restores them.
+The screen pixels, brightness setting and timeout are unchanged. The browser
+preview does not simulate LED color; physical appearance still needs checking
+on a Time 2.
 
 The six-byte `BACKLIGHT` packet is `[version=1, theme, enabled, red, green,
-blue]`. The watch validates the whole packet, including the near-white bounds,
+blue]`. The watch validates packet length, version, theme and enabled flag,
 and persists it at key 7. Missing state or an older companion uses the system
 color. A theme mismatch cannot apply an old tint. The watch applies the color
 on launch, settings changes and regained focus; it restores the system color

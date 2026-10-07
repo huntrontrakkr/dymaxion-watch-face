@@ -2,8 +2,8 @@
 #include "backlight.h"
 #include "generated/palette_sizes.h"
 bool backlight_valid(const uint8_t *p,size_t length){
-  return p&&length==BACKLIGHT_SIZE&&p[0]==1&&p[1]<THEME_COUNT&&p[2]<=1
-    &&p[3]>=224&&p[4]>=224&&p[5]>=224&&(p[3]==255||p[4]==255||p[5]==255);
+  // Each RGB channel is an unrestricted byte (0–255).
+  return p&&length==BACKLIGHT_SIZE&&p[0]==1&&p[1]<THEME_COUNT&&p[2]<=1;
 }
 void backlight_apply(const uint8_t *p,uint8_t theme,bool focused){
 #ifdef PBL_RGB_BACKLIGHT

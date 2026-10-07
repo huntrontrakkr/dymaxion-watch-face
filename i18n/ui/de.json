@@ -476,5 +476,6 @@
 "Uhreinstellung verwenden",
 "Farbe der Hintergrundbeleuchtung",
 "Beleuchtungsfarbe zurücksetzen",
-"Für jede Palette separat gespeichert. Die Farben bleiben zur besseren Lesbarkeit nahe an Weiß. Helligkeit und Dauer richten sich nach der Uhr. Die Vorschau simuliert die Hintergrundbeleuchtung nicht."
+"Für jede Palette separat gespeichert. Wähle eine beliebige 24-Bit-RGB-Farbe. Dunkle oder gesättigte Farben können die Lesbarkeit verringern. Helligkeit und Dauer richten sich nach der Uhr. Die Vorschau simuliert die Hintergrundbeleuchtung nicht.",
+"Hexcode der Hintergrundbeleuchtung"
 ]

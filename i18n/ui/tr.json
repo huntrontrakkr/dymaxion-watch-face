@@ -476,5 +476,6 @@
 "Saat ayarını kullan",
 "Arka ışık rengi",
 "Arka ışık rengini sıfırla",
-"Her palet için ayrı kaydedilir. Okunabilirlik için renkler beyaza yakın tutulur. Parlaklık ve süre saatin ayarlarına uyar. Önizleme arka ışığı göstermez."
+"Her palet için ayrı kaydedilir. İstediğiniz 24 bit RGB rengini seçin. Koyu veya doygun renkler okunabilirliği azaltabilir. Parlaklık ve süre saatin ayarlarına uyar. Önizleme arka ışığı göstermez.",
+"Arka ışık hex kodu"
 ]

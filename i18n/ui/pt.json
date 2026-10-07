@@ -476,5 +476,6 @@
 "Usar definição do relógio",
 "Cor da luz de fundo",
 "Repor cor da luz de fundo",
-"Guardado separadamente para cada paleta. As cores ficam próximas do branco para facilitar a leitura. O brilho e a duração seguem as definições do relógio. A pré-visualização não simula a luz de fundo."
+"Guardado separadamente para cada paleta. Escolha qualquer cor RGB de 24 bits. Cores escuras ou saturadas podem dificultar a leitura. O brilho e a duração seguem as definições do relógio. A pré-visualização não simula a luz de fundo.",
+"Código hexadecimal da luz de fundo"
 ]

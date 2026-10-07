@@ -1,11 +1,10 @@
 import {THEMES} from './palettes.js';
 
-// LED RGB888, separate from the screen's RGB222 colors. Keep every channel
-// at least 224/255 and one at full output: a gentle tint, never a dark filter.
+// LED RGB888, separate from the screen's RGB222 colors. Preserve every
+// channel exactly; only the built-in defaults are restricted to gentle tints.
 export function backlightColor(value){
   if(typeof value!=='string'||!/^#[0-9a-f]{6}$/i.test(value))throw new Error('Choose a six-digit backlight color.');
-  const rgb=[1,3,5].map(i=>parseInt(value.slice(i,i+2),16)),max=Math.max(...rgb);
-  return '#'+rgb.map(v=>Math.max(224,v+255-max).toString(16).padStart(2,'0').toUpperCase()).join('');
+  return value.toUpperCase();
 }
 export function validateBacklight(input){
   // Upgrades/imports keep the watch's own color until explicitly enabled.

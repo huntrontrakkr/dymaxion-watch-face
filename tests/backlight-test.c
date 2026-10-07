@@ -13,16 +13,23 @@ int main(int argc,char **argv){
   assert(backlight_valid(p,sizeof p));assert(!backlight_valid(NULL,sizeof p));
   for(size_t n=0;n<BACKLIGHT_SIZE;n++)assert(!backlight_valid(p,n));
   assert(!backlight_valid(p,BACKLIGHT_SIZE+1));
-  for(int i=0;i<6;i++){
-    memcpy(bad,p,sizeof p);bad[i]=i==0?2:i==1?THEME_COUNT:i==2?2:223;
+  for(int i=0;i<3;i++){
+    memcpy(bad,p,sizeof p);bad[i]=i==0?2:i==1?THEME_COUNT:2;
     assert(!backlight_valid(bad,sizeof bad));
   }
-  memcpy(bad,p,sizeof p);bad[3]=254;assert(!backlight_valid(bad,sizeof bad));
+  for(int channel=3;channel<6;channel++)for(int value=0;value<256;value++){
+    memcpy(bad,p,sizeof p);bad[channel]=value;assert(backlight_valid(bad,sizeof bad));
+  }
+  memcpy(bad,p,sizeof p);memset(bad+3,0,3);assert(backlight_valid(bad,sizeof bad));
+  backlight_apply(bad,0,true);
+#ifdef PBL_RGB_BACKLIGHT
+  assert(rgb==0);assert(sets==1);sets=0;
+#endif
   backlight_apply(p,0,true);backlight_apply(p,0,false);backlight_apply(p,0,true);
   backlight_apply(p,1,true);p[2]=0;backlight_apply(p,0,true);
   memset(p,0,sizeof p);backlight_apply(p,0,true);
 #ifdef PBL_RGB_BACKLIGHT
-  assert(rgb==0xfff1e7);assert(sets==2);assert(resets==4);
+  assert(rgb==0x1234ab);assert(sets==2);assert(resets==4);
 #else
   assert(!rgb&&!sets&&!resets);
 #endif

@@ -476,5 +476,6 @@
 "Usa impostazione dell’orologio",
 "Colore della retroilluminazione",
 "Ripristina colore della retroilluminazione",
-"Salvato separatamente per ogni tavolozza. I colori restano vicini al bianco per facilitare la lettura. Luminosità e durata seguono le impostazioni dell’orologio. L’anteprima non simula la retroilluminazione."
+"Salvato separatamente per ogni tavolozza. Scegli qualsiasi colore RGB a 24 bit. I colori scuri o saturi possono ridurre la leggibilità. Luminosità e durata seguono le impostazioni dell’orologio. L’anteprima non simula la retroilluminazione.",
+"Codice esadecimale della retroilluminazione"
 ]

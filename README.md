@@ -130,8 +130,10 @@ palette's backlight tint. Change **Backlight color** to save a tint for the
 current palette; **Reset backlight color** restores its preset (neutral white
 for a custom palette). The workshop has the same controls under **Character**.
 **Use watch setting** is the default and restores your watch's own color.
-Colors are kept close to white to help preserve readability, with neutral
-white defaults for Paper, Monochrome, Signal and High Visibility. The screen
+Built-in tints stay close to white to help preserve readability, with neutral
+white defaults for Paper, Monochrome, Signal and High Visibility. Custom colors
+use full 24-bit RGB: choose a color or enter an exact `#RRGGBB` value under
+**Backlight hex**. Dark or saturated choices can reduce readability. The screen
 preview does not simulate the physical backlight. Actual appearance depends
 on the watch and ambient light.
 

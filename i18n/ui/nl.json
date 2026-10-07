@@ -476,5 +476,6 @@
 "Horloge-instelling gebruiken",
 "Kleur van achtergrondverlichting",
 "Verlichtingskleur herstellen",
-"Apart opgeslagen voor elk palet. De kleuren blijven dicht bij wit voor de leesbaarheid. Helderheid en duur volgen het horloge. Het voorbeeld simuleert de achtergrondverlichting niet."
+"Apart opgeslagen voor elk palet. Kies elke gewenste 24-bits RGB-kleur. Donkere of verzadigde kleuren kunnen de leesbaarheid verminderen. Helderheid en duur volgen het horloge. Het voorbeeld simuleert de achtergrondverlichting niet.",
+"Hexcode van achtergrondverlichting"
 ]

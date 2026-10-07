@@ -476,5 +476,6 @@
 "Gunakan pengaturan jam",
 "Warna lampu latar",
 "Atur ulang warna lampu latar",
-"Disimpan terpisah untuk setiap palet. Warna tetap mendekati putih agar mudah dibaca. Kecerahan dan durasi mengikuti pengaturan jam. Pratinjau tidak menyimulasikan lampu latar."
+"Disimpan terpisah untuk setiap palet. Pilih warna RGB 24-bit apa pun. Warna gelap atau pekat dapat mengurangi keterbacaan. Kecerahan dan durasi mengikuti pengaturan jam. Pratinjau tidak menyimulasikan lampu latar.",
+"Kode heksadesimal lampu latar"
 ]

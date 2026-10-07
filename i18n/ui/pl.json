@@ -476,5 +476,6 @@
 "Użyj ustawienia zegarka",
 "Kolor podświetlenia",
 "Przywróć kolor podświetlenia",
-"Zapisywane osobno dla każdej palety. Kolory pozostają bliskie bieli dla lepszej czytelności. Jasność i czas działania zależą od ustawień zegarka. Podgląd nie symuluje podświetlenia."
+"Zapisywane osobno dla każdej palety. Wybierz dowolny 24-bitowy kolor RGB. Ciemne lub nasycone kolory mogą pogorszyć czytelność. Jasność i czas działania zależą od ustawień zegarka. Podgląd nie symuluje podświetlenia.",
+"Kod szesnastkowy podświetlenia"
 ]

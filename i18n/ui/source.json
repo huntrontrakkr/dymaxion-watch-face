@@ -476,5 +476,6 @@
 "Use watch setting",
 "Backlight color",
 "Reset backlight color",
-"Saved separately for each palette. Colors stay close to white for readability. Brightness and timeout follow the watch. The preview does not simulate the backlight."
+"Saved separately for each palette. Choose any 24-bit RGB color. Dark or saturated colors may reduce readability. Brightness and timeout follow the watch. The preview does not simulate the backlight.",
+"Backlight hex"
 ]
