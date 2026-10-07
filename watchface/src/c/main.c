@@ -17,6 +17,7 @@
 #include "caps.h"
 #include "watch_text.h"
 #include "palette.h"
+#include "backlight.h"
 #include "generated/defaults.h"
 #include "generated/cities.h"
 #include "generated/moon_palette.h"
@@ -32,6 +33,7 @@ static GBitmap *s_map;
 static GFont s_small,s_zone;
 static uint8_t s_settings[SETTINGS_SIZE];
 static uint8_t s_palette[PALETTE_SIZE];
+static uint8_t s_backlight[BACKLIGHT_SIZE];
 static uint8_t s_city[CITY_SIZE]={1};
 static uint8_t s_display[DISPLAY_SIZE]=DEFAULT_DISPLAY;
 static uint8_t s_glyphs[GLYPHS_SIZE]={1};
@@ -320,7 +322,7 @@ static void clock_configure(void){
   clock_flip_attach(&s_clock_flip,face,s_clock_memory);s_clock_face=face;
 }
 static void focus_changed(bool focused){
-  s_focused=focused;memset(&s_tap,0,sizeof(s_tap));
+  s_focused=focused;backlight_apply(s_backlight,s_settings[THEME],focused);memset(&s_tap,0,sizeof(s_tap));
   configure_shake();clock_stop();s_clock_ready=false;if(focused)redraw();
 }
 static float lunar_sin(float degrees) {
@@ -1051,6 +1053,16 @@ static void received(DictionaryIterator *iter,void *context) {
     memset(s_palette,0,PALETTE_SIZE);persist_delete(4);s_map_dirty=true;
     clock_stop();s_clock_ready=false;
   }
+  Tuple *light=dict_find(iter,MESSAGE_KEY_BACKLIGHT);
+  if(light&&light->type==TUPLE_BYTE_ARRAY&&backlight_valid(light->value->data,light->length)){
+    if(light->value->data[1]==s_settings[THEME]&&memcmp(s_backlight,light->value->data,BACKLIGHT_SIZE)){
+      memcpy(s_backlight,light->value->data,BACKLIGHT_SIZE);persist_write_data(7,s_backlight,BACKLIGHT_SIZE);
+    }
+  }else if(!light&&t&&t->type==TUPLE_BYTE_ARRAY&&settings_valid(t->value->data,t->length)){
+    // An older companion cannot select a tint. Return to the watch setting.
+    memset(s_backlight,0,BACKLIGHT_SIZE);persist_delete(7);
+  }
+  if(light||t)backlight_apply(s_backlight,s_settings[THEME],s_focused);
   if(full){configure_shake();redraw();pulse_on_zones();}
   else {
     int page=panels_page();
@@ -1073,6 +1085,8 @@ static void init(void) {
   if(palette_valid(custom,palette_length))memcpy(s_palette,custom,PALETTE_SIZE);
   uint8_t language[2];int language_length=persist_read_data(6,language,sizeof(language));
   if(language_length>0&&language_valid(language,language_length))s_language=language[1];
+  uint8_t light[BACKLIGHT_SIZE];int light_length=persist_read_data(7,light,sizeof(light));
+  if(backlight_valid(light,light_length))memcpy(s_backlight,light,BACKLIGHT_SIZE);
   language_load();
   s_small=fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_DRAFT_12));
   s_zone=fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_DRAFT_18));
@@ -1091,10 +1105,12 @@ static void init(void) {
   tick_timer_service_subscribe(MINUTE_UNIT,tick);configure_shake();
   unobstructed_area_service_subscribe((UnobstructedAreaHandlers){.change=obstruction_changed,.did_change=obstruction_done},NULL);
   app_focus_service_subscribe(focus_changed);
+  backlight_apply(s_backlight,s_settings[THEME],true);
   app_message_register_inbox_received(received);app_message_open(1024,64);
   request_sync(true);s_zones_shown=panels_showing_zones();pulse();
 }
 static void deinit(void) {
+  backlight_apply(s_backlight,s_settings[THEME],false);
   clock_stop();app_focus_service_unsubscribe();if(s_map_timer)app_timer_cancel(s_map_timer);
   if(s_animation)app_timer_cancel(s_animation);
   if(s_motion_timer)app_timer_cancel(s_motion_timer);

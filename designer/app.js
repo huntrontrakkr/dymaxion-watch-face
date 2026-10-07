@@ -3,6 +3,7 @@ import '../shared/palette-controls.css';
 import '../shared/place-search.css';
 import {citySearch} from '../shared/place-search.js';
 import {paletteFor} from '../shared/palette-settings.js';
+import {backlightControls} from '../shared/backlight-controls.js';
 import {paletteControls} from '../shared/palette-controls.js';
 import moment from 'moment-timezone';
 import {drawBitmapText,fitLabel,textWidth} from '../shared/type.js';
@@ -83,6 +84,7 @@ const cityEditor=cityControls($('city-controls'),()=>settings,value=>{settings=v
 const powerEditor=powerControls($('power-controls'),()=>settings,power=>{settings={...settings,power};sync();save();});
 const displayEditor=displayControls($('display-controls'),()=>settings,value=>{settings={...withClockDisplay(settings,value.clockDisplay),leadingZero:value.leadingZero,zoneTimes:value.zoneTimes,zonePosition:value.zonePosition,mapTimesTurn:value.mapTimesTurn,mapTimeSize:value.mapTimeSize,zoneTimesTall:value.zoneTimesTall,zoneStripCompact:value.zoneStripCompact,placeIcons:value.placeIcons,placeIconsBeside:value.placeIconsBeside,nameplate:value.nameplate,clockArt:value.clockArt};sync();save();});
 const paletteEditor=paletteControls($('palette-controls'),()=>settings,patch=>{settings=validateSettings({...settings,...patch},zoneExists);sync();save();});
+const backlightEditor=backlightControls($('backlight-controls'),()=>settings,patch=>{settings=validateSettings({...settings,...patch},zoneExists);sync();save();});
 const environment=environmentService({getSettings:()=>settings,storage:localStorage,send:(kind,data)=>{liveData[kind]=data;render();}});
 const panelEditor=panelControls($('panel-controls'),()=>settings,footer=>{
   const candidate=clone(settings);candidate.footer=footer;const previous=settings.footer.home;
@@ -197,7 +199,7 @@ function sync(){
     b.setAttribute('aria-pressed',String(settings.customPalette===null&&id===settings.theme));
   });
   const current=activePreset(settings);document.querySelectorAll('[data-preset]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.preset===current)));
-  positionFields();placesUI();panelEditor.refresh();cityEditor.refresh();displayEditor.refresh();powerEditor.refresh();paletteEditor.refresh();
+  positionFields();placesUI();panelEditor.refresh();cityEditor.refresh();displayEditor.refresh();powerEditor.refresh();paletteEditor.refresh();backlightEditor.refresh();
 }
 for(const key of ['dayNight','edges','lights','sun','mapMoon','motion','moonIndicator','batteryGauge','stepLine'])$(key).onchange=()=>{settings[key]=$(key).checked;move('time',settings.time);positionFields();displayEditor.refresh();powerEditor.refresh();save();};
 $('mapRotation').onchange=()=>{settings.mapRotation=+$('mapRotation').value;save();};

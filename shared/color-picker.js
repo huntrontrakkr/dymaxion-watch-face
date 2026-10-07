@@ -119,8 +119,8 @@ export function installWatchColorPicker(doc = document) {
   });
   doc.addEventListener('pointerdown', e => { if (!pop.hidden && !pop.contains(e.target) && e.target !== target) close(false); });
   addEventListener('resize', () => close(false));
-  // Every color input, now and later, opens the grid instead of the system picker.
-  const claim = root => root.querySelectorAll?.('input[type="color"]:not([data-watch-picker])').forEach(input => {
+  // Screen color inputs use the RGB222 grid; LED tints keep the RGB888 picker.
+  const claim = root => root.querySelectorAll?.('input[type="color"]:not([data-watch-picker]):not([data-rgb888])').forEach(input => {
     input.dataset.watchPicker = '';
     input.addEventListener('click', e => { e.preventDefault();if (target === input && !pop.hidden) close();else open(input); });
     input.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault();open(input); } });

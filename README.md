@@ -34,6 +34,9 @@ and [Fuller](https://www.bfi.org/about-fuller/) at the Buckminster Fuller Instit
   Delta, a variant of Leco with corners cut to the map's 60-degree angles. An
   optional Dymaxion nameplate sits between the clock and the map.
 - **Layouts.** Meridian puts the clock above the map; Horizon puts it below.
+- **Backlight.** Optional gentle tints for each palette, with a separately saved
+  custom color for every preset and custom palette. Brightness and timeout
+  follow the watch's settings.
 - **Bottom panels.** Time zones, weather, a two-week calendar, humidity, tide
   predictions (NOAA's, or Open-Meteo's modelled sea level anywhere else) and
   Pebble Health. Choose up to five and their order,
@@ -121,6 +124,16 @@ Choose **Export settings**, then **Import settings from the workshop** in the
 phone settings, load the JSON and **Save to watch**. Gallery layouts use the
 same import. Per-place colors and custom panel colors override palette defaults;
 choose **Use theme color(s)** to follow the selected palette again.
+
+Under **Appearance → Backlight**, choose **Use theme color** to enable the
+palette's backlight tint. Change **Backlight color** to save a tint for the
+current palette; **Reset backlight color** restores its preset (neutral white
+for a custom palette). The workshop has the same controls under **Character**.
+**Use watch setting** is the default and restores your watch's own color.
+Colors are kept close to white to help preserve readability, with neutral
+white defaults for Paper, Monochrome, Signal and High Visibility. The screen
+preview does not simulate the physical backlight. Actual appearance depends
+on the watch and ambient light.
 
 ## Build and explore
 

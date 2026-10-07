@@ -7,6 +7,7 @@ import {locationService} from './location-service.js';
 import {devicePosition} from './device-position.js';
 import {encodeCity} from '../shared/city.js';
 import {encodeDisplay} from '../shared/display.js';
+import {encodeBacklight} from '../shared/backlight.js';
 import {encodePalette} from '../shared/palette-protocol.js';
 import {encodeGlyphs} from '../shared/glyph-protocol.js';
 import {encodeLanguage,resolveLanguage} from '../shared/watch-text.js';
@@ -22,7 +23,7 @@ const location=locationService({getSettings:()=>settings,storage:localStorage,se
 // The face's language: the chosen one, or the phone's (as the settings page
 // last saw it, else this runtime's own).
 function faceLanguage(){const own=typeof navigator!=='undefined'&&navigator.language||'';return resolveLanguage(settings.language,[settings.deviceLanguage,own]);}
-function sync(full=false){if(full)transport.forgetAcknowledged();enqueue('settings',{SETTINGS:Array.from(encodeSettings(settings)),FOOTER:Array.from(encodeFooter(settings)),DISPLAY:Array.from(encodeDisplay(settings)),PALETTE:Array.from(encodePalette(settings)),GLYPHS:Array.from(encodeGlyphs(settings)),LANGUAGE:Array.from(encodeLanguage(faceLanguage()))});environment.refresh();location.refresh();}
+function sync(full=false){if(full)transport.forgetAcknowledged();enqueue('settings',{SETTINGS:Array.from(encodeSettings(settings)),FOOTER:Array.from(encodeFooter(settings)),DISPLAY:Array.from(encodeDisplay(settings)),PALETTE:Array.from(encodePalette(settings)),BACKLIGHT:Array.from(encodeBacklight(settings)),GLYPHS:Array.from(encodeGlyphs(settings)),LANGUAGE:Array.from(encodeLanguage(faceLanguage()))});environment.refresh();location.refresh();}
 Pebble.addEventListener('ready',()=>sync(true));
 // REQUEST=2 is a routine update. Older watches, launch and reconnect request
 // full state with 1; unknown requests also safely receive a full sync.

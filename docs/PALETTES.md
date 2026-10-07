@@ -1,7 +1,42 @@
 # Watch palettes
 
+## Backlight tints
+
+Every built-in palette includes a gentle RGB888 LED tint, separate from its
+RGB222 screen colors. Warm palettes use warm white, blue palettes use cool
+white, and mint/rose palettes use slight matching tints. Paper, Monochrome,
+Signal and High Visibility stay neutral white.
+
+Enable **Use theme color** under **Backlight** in the phone's Appearance
+section or the workshop's Character tab. Each preset remembers its own
+override. A new custom palette copies the active tint, and keeps its own
+editable color through export/import. Reset restores the preset's tint or
+white for a custom palette. Existing custom palettes without a tint migrate
+to white. **Use watch setting**, the default, restores the system color while
+keeping saved overrides for later.
+
+To avoid dark or saturated illumination, input colors are brightened until
+the strongest channel is 255, then every channel is clamped to at least 224.
+This normalization is idempotent and retains full 8-bit channel precision;
+it does not change any screen pixels, backlight brightness setting or timeout.
+The browser preview deliberately does not simulate LED color. Physical
+readability and LED appearance still need checking on a Time 2.
+
+The six-byte `BACKLIGHT` packet is `[version=1, theme, enabled, red, green,
+blue]`. The watch validates the whole packet, including the near-white bounds,
+and persists it at key 7. Missing state or an older companion uses the system
+color. A theme mismatch cannot apply an old tint. The watch applies the color
+on launch, settings changes and regained focus; it restores the system color
+on lost focus and exit. It never turns the light on or adds timers. Calls are
+guarded by `PBL_RGB_BACKLIGHT`; unsupported builds use a no-op.
+
+See the official [Light API](https://developer.repebble.com/docs/c/User_Interface/Light/)
+for `light_set_color_rgb888()` and `light_set_system_color()`.
+
+## Screen colors
+
 Choose a palette in the workshop's **Character** tab or the phone's **Theme**
-selector. All colors are authored directly on Pebble's 64-color RGB222 grid.
+selector. Screen colors are authored directly on Pebble's 64-color RGB222 grid.
 These are color treatments; the pixel typefaces and map geometry stay the same.
 
 Solarized Dark and Solarized Light adapt [Ethan Schoonover’s Solarized](https://ethanschoonover.com/solarized/)

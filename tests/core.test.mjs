@@ -48,7 +48,7 @@ test('invalid imports fail before replacing settings; placements are constrained
   s.places[0].lat=51;s.time=[-100,900];assert.deepEqual(validateSettings(s,zoneExists).time,[0,188],'the 40-pixel Chamfer strip stays on screen');
   assert.deepEqual(validateSettings({...s,clockDisplay:'broad'},zoneExists).time,[0,182]);
   assert.throws(()=>validateSettings({...s,time:[NaN,4]},zoneExists));
-  for(const theme of THEMES)for(const v of Object.values(theme).flat())if(typeof v==='string'&&v.startsWith('#'))assert.match(v,/^#(?:00|55|AA|FF){3}$/i);
+  for(const theme of THEMES)for(const v of Object.entries(theme).filter(([key])=>key!=='backlight').flatMap(([,value])=>value))if(typeof v==='string'&&v.startsWith('#'))assert.match(v,/^#(?:00|55|AA|FF){3}$/i);
   for(const palette of MOON_COLORS)for(const color of palette)assert.match(color,/^#(?:00|55|AA|FF){3}$/i);
   assert.equal(MOON_COLORS.length,THEMES.length);
   for(let theme=0;theme<THEMES.length;theme++){

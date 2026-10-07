@@ -1,3 +1,4 @@
+import {validateBacklight} from './backlight.js';
 import {MAP_SIZE} from './map.js';
 import {LEGACY_MARKER_IDS,CUSTOM_MARKER,validGlyph} from './markers.js';
 import {defaultFooter,validateFooter} from './panel-settings.js';
@@ -63,7 +64,7 @@ const LEGACY_PRESETS=[{
   horizon:{orientation:0,time:[20,132],map:[4,19],zones:[[4,189],[70,189],[136,189]]}
 }];
 export function defaults() {
-  return {version:1,markerSet:2,theme:0,customPalettes:[],customPalette:null,format:1,dayNight:true,edges:false,lights:true,motion:true,sun:true,mapMoon:false,mapRotation:0,moonIndicator:true,batteryGauge:false,stepLine:false,connectionBuzz:'disconnect',
+  return {backlight:{mode:'system',colors:{}},version:1,markerSet:2,theme:0,customPalettes:[],customPalette:null,format:1,dayNight:true,edges:false,lights:true,motion:true,sun:true,mapMoon:false,mapRotation:0,moonIndicator:true,batteryGauge:false,stepLine:false,connectionBuzz:'disconnect',
     ...JSON.parse(JSON.stringify(PRESETS.meridian)),clockDisplay:'chamfer',leadingZero:true,mapBackground:'none',zoneTimes:'when-hidden',zonePosition:'map',mapTimesTurn:false,nameplate:false,mapTimeSize:'medium',zoneTimesTall:false,zoneStripCompact:false,placeIcons:true,placeIconsBeside:false,clockArt:'none',language:'auto',deviceLanguage:'',power:defaultPower(),location:validateLocation(),footer:defaultFooter(),places:PLACES.slice(0,3).map((p,i)=>({...p,on:true,icon:i===0?1:i===1?2:0,color:null}))};
 }
 // Quick View: a clock the peek would cover moves up to sit just above it,
@@ -104,6 +105,7 @@ export function validateSettings(input,zoneExists) {
   // Atlas retired with the nameplate; its faces become Meridian.
   if(preset)input={...input,...PRESETS[preset[0]==='atlas'?'meridian':preset[0]]};
   const out=defaults();
+  out.backlight=validateBacklight(input.backlight);
   Object.assign(out,validatePalettes(input,quantizeColor));
   for(const [key,max] of [['theme',THEMES.length-1],['format',2],['orientation',0]]) {
     if(!Number.isInteger(input[key])||input[key]<0||input[key]>max)throw new Error('Invalid '+key+'.');

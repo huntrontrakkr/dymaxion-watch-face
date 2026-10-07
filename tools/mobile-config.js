@@ -5,6 +5,7 @@ import {panelControls} from '../shared/panel-controls.js';
 import {cityControls} from '../shared/city-controls.js';
 import {displayControls} from '../shared/display-controls.js';
 import {powerControls} from '../shared/power-controls.js';
+import {backlightControls} from '../shared/backlight-controls.js';
 import {paletteControls} from '../shared/palette-controls.js';
 import {paletteFor} from '../shared/palette-settings.js';
 import {citySearch} from '../shared/place-search.js';
@@ -49,6 +50,7 @@ for(const selector of ['[data-zone-times]','[data-zone-position]','[data-zone-ta
 $('place-clock-options').append($('display-controls').querySelector('[data-zone-note]'));
 const powerEditor=powerControls($('power-controls'),()=>s,power=>{s=validateSettings({...s,power},exists);refresh();});
 const paletteEditor=paletteControls($('palette-controls'),()=>s,patch=>{s=validateSettings({...s,...patch},exists);refresh();});
+const backlightEditor=backlightControls($('backlight-controls'),()=>s,patch=>{s=validateSettings({...s,...patch},exists);refresh();});
 function options(select,entries){select.replaceChildren();entries.forEach(([label,value])=>select.add(new Option(label,value)));}
 for(const [key,title,note,root] of [['moonIndicator','Moon','The current phase of the moon.','top-bar-switches'],['batteryGauge','Battery gauge','Frames the percentage in a small battery, filled as far as the charge.','top-bar-switches'],['stepLine','Step line','A thin line under the top bar that grows with today’s steps and reaches the edge at a typical day’s total.','top-bar-switches'],
   ['dayNight','Day and night','','switches'],['lights','City lights','','switches'],['sun','Sun on the map','','switches'],['mapMoon','Moon on the map','Where the Moon is overhead, shaded for its waxing or waning phase. Separate from the top-bar Moon.','switches'],['edges','Triangle edges','','switches']]){
@@ -74,7 +76,7 @@ function refresh(){
   cityEditor.refresh();
   displayEditor.refresh();
   powerEditor.refresh();
-  paletteEditor.refresh();
+  paletteEditor.refresh();backlightEditor.refresh();
   paletteChoices();
   $('theme').value=s.theme;$('format').value=s.format;$('connectionBuzz').value=s.connectionBuzz;$('mapBackground').value=s.mapBackground;$('mapRotation').value=s.mapRotation;
   for(const k of ['moonIndicator','batteryGauge','stepLine','dayNight','lights','sun','mapMoon','edges','motion'])$(k).checked=s[k];
